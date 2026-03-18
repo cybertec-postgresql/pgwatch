@@ -1,9 +1,7 @@
 package reaper
 
 import (
-	"cmp"
 	"context"
-	"fmt"
 	"runtime"
 	"slices"
 	"strings"
@@ -39,7 +37,8 @@ type Reaper struct {
 	logger               log.Logger
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
-	cancelFuncs          map[string]context.CancelFunc
+	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
+	sourceReapers        map[string]*SourceReaper      // [sourceName] — active SourceReaper instances
 }
 
 // NewReaper creates a new Reaper instance
@@ -51,7 +50,8 @@ func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
-		cancelFuncs:          make(map[string]context.CancelFunc), // [db1+metric1]cancel()
+		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
+		sourceReapers:        make(map[string]*SourceReaper),
 	}
 }
 
@@ -150,46 +150,34 @@ func (r *Reaper) Reap(ctx context.Context) {
 			}
 			hostLastKnownStatusInRecovery[monitoredSource.Name] = monitoredSource.IsInRecovery
 
-			for metricName, interval := range metricsConfig {
-				metricDefExists := false
-				var mvp metrics.Metric
-
-				mvp, metricDefExists = metricDefs.GetMetricDef(metricName)
-
-				dbMetric := monitoredSource.Name + dbMetricJoinStr + metricName
-				_, cancelFuncExists := r.cancelFuncs[dbMetric]
-
-				if metricDefExists && !cancelFuncExists { // initialize a new per db/per metric control channel
-					if interval > 0 {
-						srcL.WithField("metric", metricName).WithField("interval", interval).Info("starting gatherer")
-						metricCtx, cancelFunc := context.WithCancel(ctx)
-						r.cancelFuncs[dbMetric] = cancelFunc
-
-						metricNameForStorage := metricName
-						if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
-							metricNameForStorage = mvp.StorageName
-						}
-
-						if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, sinks.AddOp); err != nil {
-							srcL.Error(err)
-						}
-
-						go r.reapMetricMeasurements(metricCtx, monitoredSource, metricName)
-					}
-				} else if (!metricDefExists && cancelFuncExists) || interval <= 0 {
-					// metric definition files were recently removed or interval set to zero
-					if cancelFunc, isOk := r.cancelFuncs[dbMetric]; isOk {
-						cancelFunc()
-					}
-					srcL.WithField("metric", metricName).Warning("shutting down gatherer...")
-					delete(r.cancelFuncs, dbMetric)
-				} else if !metricDefExists {
+			// Sync metric names with sinks for the active config
+			for metricName := range metricsConfig {
+				mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
+				if !metricDefExists {
 					epoch, ok := lastSQLFetchError.Load(metricName)
-					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) { // complain only 1x per hour
+					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
 						srcL.WithField("metric", metricName).Warning("metric definition not found")
 						lastSQLFetchError.Store(metricName, time.Now().Unix())
 					}
+					continue
 				}
+				metricNameForStorage := metricName
+				if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
+					metricNameForStorage = mvp.StorageName
+				}
+				if err := r.SinksWriter.SyncMetric(monitoredSource.Name, metricNameForStorage, sinks.AddOp); err != nil {
+					srcL.Error(err)
+				}
+			}
+
+			// Start SourceReaper for this source if not already running
+			if _, exists := r.sourceReapers[monitoredSource.Name]; !exists {
+				srcL.Info("starting source reaper")
+				sr := NewSourceReaper(r, monitoredSource)
+				sourceCtx, cancelFunc := context.WithCancel(ctx)
+				r.cancelFuncs[monitoredSource.Name] = cancelFunc
+				r.sourceReapers[monitoredSource.Name] = sr
+				go sr.Run(sourceCtx)
 			}
 		}
 
@@ -242,47 +230,27 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 
 func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
 	logger := r.logger
-	// loop over existing channels and stop workers if DB or metric removed from config
+	// loop over existing source reapers and stop if DB removed from config
 	// or state change makes it uninteresting
 	logger.Debug("checking if any workers need to be shut down...")
-	for dbMetric, cancelFunc := range r.cancelFuncs {
-		var currentMetricConfig metrics.MetricIntervals
-		var md *sources.SourceConn
+	for sourceName, cancelFunc := range r.cancelFuncs {
 		var dbRemovedFromConfig bool
-		var metricRemovedFromPreset bool
-		splits := strings.Split(dbMetric, dbMetricJoinStr)
-		db := splits[0]
-		metric := splits[1]
 
-		_, wholeDbShutDown := hostsToShutDown[db]
+		_, wholeDbShutDown := hostsToShutDown[sourceName]
 		if !wholeDbShutDown {
-			md = r.monitoredSources.GetMonitoredDatabase(db)
+			md := r.monitoredSources.GetMonitoredDatabase(sourceName)
 			if md == nil { // normal removing of DB from config
 				dbRemovedFromConfig = true
-				logger.Debugf("DB %s removed from config, shutting down all metric worker processes...", db)
+				logger.Debugf("DB %s removed from config, shutting down source reaper...", sourceName)
 			}
 		}
 
-		// Detects metrics removed from a preset definition.
-		//
-		// If not using presets, a metric removed from configs will
-		// be detected earlier by `LoadSources()` as configs change that
-		// triggers a restart and get passed in `hostsToShutDown`.
-		if !(wholeDbShutDown || dbRemovedFromConfig) {
-			if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-				currentMetricConfig = md.MetricsStandby
-			} else {
-				currentMetricConfig = md.Metrics
-			}
-			interval, isMetricActive := currentMetricConfig[metric]
-			metricRemovedFromPreset = !isMetricActive || interval <= 0
-		}
-
-		if ctx.Err() != nil || wholeDbShutDown || dbRemovedFromConfig || metricRemovedFromPreset {
-			logger.WithField("source", db).WithField("metric", metric).Info("stopping gatherer...")
+		if ctx.Err() != nil || wholeDbShutDown || dbRemovedFromConfig {
+			logger.WithField("source", sourceName).Info("stopping source reaper...")
 			cancelFunc()
-			delete(r.cancelFuncs, dbMetric)
-			if err := r.SinksWriter.SyncMetric(db, metric, sinks.DeleteOp); err != nil {
+			delete(r.cancelFuncs, sourceName)
+			delete(r.sourceReapers, sourceName)
+			if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -290,105 +258,6 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 
 	// Destroy conn pools and metric writers
 	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDown)
-}
-
-func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceConn, metricName string) {
-	var lastUptimeS int64 = -1 // used for "server restarted" event detection
-	var lastErrorNotificationTime time.Time
-	var err error
-	var ok bool
-
-	failedFetches := 0
-	lastDBVersionFetchTime := time.Unix(0, 0) // check DB ver. ev. 5 min
-
-	l := log.GetLogger(ctx).WithField("metric", metricName)
-	ctx = log.WithLogger(ctx, l)
-
-	if metricName == specialMetricServerLogEventCounts {
-		lp, err := NewLogParser(ctx, md, r.measurementCh)
-		if err != nil {
-			l.WithError(err).Error("Failed to init log parser")
-			return
-		}
-		err = lp.ParseLogs()
-		if err != nil {
-			l.WithError(err).Error("Error parsing logs")
-		}
-		return
-	}
-
-	for {
-		interval := md.GetMetricInterval(metricName)
-		if lastDBVersionFetchTime.Add(time.Minute * time.Duration(5)).Before(time.Now()) {
-			// in case of errors just ignore metric "disabled" time ranges
-			if err = md.FetchRuntimeInfo(ctx, false); err != nil {
-				lastDBVersionFetchTime = time.Now()
-			}
-
-			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-				l.WithField("source", md.Name).Error("metric definition not found")
-				return
-			}
-		}
-
-		var metricStoreMessages *metrics.MeasurementEnvelope
-
-		t1 := time.Now()
-		// 1st try local overrides for system metrics if operating on the same host
-		if IsDirectlyFetchableMetric(md, metricName) {
-			if metricStoreMessages, err = r.FetchStatsDirectlyFromOS(ctx, md, metricName); err != nil {
-				l.WithError(err).Errorf("Could not read metric directly from OS")
-			}
-		}
-		if metricStoreMessages == nil {
-			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
-		}
-
-		if time.Since(t1) > interval {
-			l.Warningf("Total fetching time of %v bigger than %v interval", time.Since(t1), interval)
-		}
-
-		if err != nil {
-			failedFetches++
-			// complain only 1x per 10min per host/metric...
-			if time.Since(lastErrorNotificationTime) > time.Minute*10 {
-				l.WithError(err).WithField("count", failedFetches).Error("failed to fetch metric data")
-				lastErrorNotificationTime = time.Now()
-			}
-		} else if metricStoreMessages != nil && len(metricStoreMessages.Data) > 0 {
-			r.measurementCh <- *metricStoreMessages
-			// pick up "server restarted" events here to avoid doing extra selects from CheckForPGObjectChangesAndStore code
-			if metricName == "db_stats" {
-				postmasterUptimeS, ok := (metricStoreMessages.Data)[0]["postmaster_uptime_s"]
-				if ok {
-					if lastUptimeS != -1 {
-						if postmasterUptimeS.(int64) < lastUptimeS { // restart (or possibly also failover when host is routed) happened
-							message := "Detected server restart (or failover)"
-							l.Warning(message)
-							detectedChangesSummary := make(metrics.Measurements, 0)
-							entry := metrics.NewMeasurement(metricStoreMessages.Data.GetEpoch())
-							entry["details"] = message
-							detectedChangesSummary = append(detectedChangesSummary, entry)
-							r.measurementCh <- metrics.MeasurementEnvelope{
-								DBName:     md.Name,
-								MetricName: "object_changes",
-								Data:       detectedChangesSummary,
-								CustomTags: metricStoreMessages.CustomTags,
-							}
-						}
-					}
-					lastUptimeS = postmasterUptimeS.(int64)
-				}
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(interval):
-			// continue
-		}
-	}
 }
 
 // LoadSources loads sources from the reader
@@ -443,6 +312,11 @@ func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
 	}
 }
 
+// GetMeasurementCache returns the instance-level metric cache
+func (r *Reaper) GetMeasurementCache(key string) metrics.Measurements {
+	return r.measurementCache.Get(key, r.Metrics.CacheAge())
+}
+
 // WriteMeasurements() writes the metrics to the sinks
 func (r *Reaper) WriteMeasurements(ctx context.Context) {
 	var err error
@@ -467,54 +341,4 @@ func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources
 			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
 		}
 	}
-}
-
-func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metricName string) (_ *metrics.MeasurementEnvelope, err error) {
-	var sql string
-	var data metrics.Measurements
-	var metric metrics.Metric
-	var fromCache bool
-	var cacheKey string
-	var ok bool
-
-	if metric, ok = metricDefs.GetMetricDef(metricName); !ok {
-		return nil, metrics.ErrMetricNotFound
-	}
-	l := log.GetLogger(ctx)
-
-	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && md.GetMetricInterval(metricName) < r.Metrics.CacheAge() {
-		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
-	}
-	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
-	fromCache = len(data) > 0
-	if !fromCache {
-		if (metric.PrimaryOnly() && md.IsInRecovery) || (metric.StandbyOnly() && !md.IsInRecovery) {
-			l.Debug("Skipping fetching of as server in wrong IsInRecovery: ", md.IsInRecovery)
-			return nil, nil
-		}
-		switch metricName {
-		case specialMetricChangeEvents:
-			data, err = r.GetObjectChangesMeasurement(ctx, md)
-		case specialMetricInstanceUp:
-			data, err = r.GetInstanceUpMeasurement(ctx, md)
-		default:
-			sql = metric.GetSQL(md.Version)
-			if sql == "" {
-				l.WithField("source", md.Name).WithField("version", md.Version).Warning("no SQL found for metric version")
-				return nil, nil
-			}
-			data, err = QueryMeasurements(ctx, md, sql)
-		}
-		if err != nil || len(data) == 0 {
-			return nil, err
-		}
-		r.measurementCache.Put(cacheKey, data)
-	}
-	r.AddSysinfoToMeasurements(data, md)
-	l.WithField("cache", fromCache).WithField("rows", len(data)).Info("measurements fetched")
-	return &metrics.MeasurementEnvelope{
-		DBName:     md.Name,
-		MetricName: cmp.Or(metric.StorageName, metricName),
-		Data:       data,
-		CustomTags: md.CustomTags}, nil
 }
