@@ -660,7 +660,7 @@
 <span id="L603" class="ln">   603  </span>func TestHandlePresetItem(t *testing.T) {
 <span id="L604" class="ln">   604  </span>	t.Run(&#34;GET&#34;, func(t *testing.T) {
 <span id="L605" class="ln">   605  </span>		t.Run(&#34;Success&#34;, func(t *testing.T) {
-<span id="L606" class="ln">   606  </span>			preset := metrics.Preset{Description: &#34;test preset&#34;, Metrics: map[string]float64{&#34;cpu&#34;: 1.0}}
+<span id="L606" class="ln">   606  </span>			preset := metrics.Preset{Description: &#34;test preset&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 1.0}}
 <span id="L607" class="ln">   607  </span>			mock := &amp;testutil.MockMetricsReaderWriter{
 <span id="L608" class="ln">   608  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) {
 <span id="L609" class="ln">   609  </span>					return &amp;metrics.Metrics{
@@ -731,7 +731,7 @@
 <span id="L674" class="ln">   674  </span>			}
 <span id="L675" class="ln">   675  </span>			ts := newTestMetricServer(mock)
 <span id="L676" class="ln">   676  </span>
-<span id="L677" class="ln">   677  </span>			preset := metrics.Preset{Description: &#34;updated preset&#34;, Metrics: map[string]float64{&#34;memory&#34;: 2.0}}
+<span id="L677" class="ln">   677  </span>			preset := metrics.Preset{Description: &#34;updated preset&#34;, Metrics: metrics.MetricIntervals{&#34;memory&#34;: 2.0}}
 <span id="L678" class="ln">   678  </span>			b, _ := jsoniter.ConfigFastest.Marshal(preset)
 <span id="L679" class="ln">   679  </span>			r := newPresetItemRequest(http.MethodPut, &#34;test-preset&#34;, bytes.NewReader(b))
 <span id="L680" class="ln">   680  </span>			w := httptest.NewRecorder()

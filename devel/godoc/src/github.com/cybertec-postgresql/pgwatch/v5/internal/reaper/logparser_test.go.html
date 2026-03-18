@@ -85,7 +85,7 @@
 <span id="L28" class="ln">    28  </span>	sourceConn := &amp;sources.SourceConn{
 <span id="L29" class="ln">    29  </span>		Source: sources.Source{
 <span id="L30" class="ln">    30  </span>			Name:    &#34;test-source&#34;,
-<span id="L31" class="ln">    31  </span>			Metrics: map[string]float64{specialMetricServerLogEventCounts: 60.0},
+<span id="L31" class="ln">    31  </span>			Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60.0},
 <span id="L32" class="ln">    32  </span>		},
 <span id="L33" class="ln">    33  </span>		Conn: mock,
 <span id="L34" class="ln">    34  </span>	}
@@ -105,7 +105,7 @@
 <span id="L48" class="ln">    48  </span>		assert.Equal(t, tempDir, lp.Directory)
 <span id="L49" class="ln">    49  </span>		assert.Equal(t, &#34;en&#34;, lp.ServerMessagesLang)
 <span id="L50" class="ln">    50  </span>		assert.Equal(t, false, lp.TruncateOnRotation)
-<span id="L51" class="ln">    51  </span>		assert.Equal(t, 60.0, lp.Interval)
+<span id="L51" class="ln">    51  </span>		assert.Equal(t, 60, lp.Interval)
 <span id="L52" class="ln">    52  </span>		assert.NotNil(t, lp.LogsMatchRegex)
 <span id="L53" class="ln">    53  </span>		assert.NoError(t, mock.ExpectationsWereMet())
 <span id="L54" class="ln">    54  </span>	})
@@ -653,7 +653,7 @@
 <span id="L596" class="ln">   596  </span>		sourceConn := &amp;sources.SourceConn{
 <span id="L597" class="ln">   597  </span>			Source: sources.Source{
 <span id="L598" class="ln">   598  </span>				Name:    &#34;test-source&#34;,
-<span id="L599" class="ln">   599  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// 60s interval - won&#39;t trigger during test</span>
+<span id="L599" class="ln">   599  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, <span class="comment">// 60s interval - won&#39;t trigger during test</span>
 <span id="L600" class="ln">   600  </span>			},
 <span id="L601" class="ln">   601  </span>			Conn: mock,
 <span id="L602" class="ln">   602  </span>		}
@@ -714,7 +714,7 @@
 <span id="L657" class="ln">   657  </span>		sourceConn := &amp;sources.SourceConn{
 <span id="L658" class="ln">   658  </span>			Source: sources.Source{
 <span id="L659" class="ln">   659  </span>				Name:    &#34;test-source&#34;,
-<span id="L660" class="ln">   660  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+<span id="L660" class="ln">   660  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
 <span id="L661" class="ln">   661  </span>			},
 <span id="L662" class="ln">   662  </span>			Conn: mock,
 <span id="L663" class="ln">   663  </span>		}
@@ -778,7 +778,7 @@
 <span id="L721" class="ln">   721  </span>		sourceConn := &amp;sources.SourceConn{
 <span id="L722" class="ln">   722  </span>			Source: sources.Source{
 <span id="L723" class="ln">   723  </span>				Name:    &#34;test-source&#34;,
-<span id="L724" class="ln">   724  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, <span class="comment">// Long interval</span>
+<span id="L724" class="ln">   724  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, <span class="comment">// Long interval</span>
 <span id="L725" class="ln">   725  </span>			},
 <span id="L726" class="ln">   726  </span>			Conn: mock,
 <span id="L727" class="ln">   727  </span>		}
@@ -847,7 +847,7 @@
 <span id="L790" class="ln">   790  </span>		sourceConn := &amp;sources.SourceConn{
 <span id="L791" class="ln">   791  </span>			Source: sources.Source{
 <span id="L792" class="ln">   792  </span>				Name:    &#34;test-source&#34;,
-<span id="L793" class="ln">   793  </span>				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+<span id="L793" class="ln">   793  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
 <span id="L794" class="ln">   794  </span>			},
 <span id="L795" class="ln">   795  </span>			Conn: mock,
 <span id="L796" class="ln">   796  </span>		}

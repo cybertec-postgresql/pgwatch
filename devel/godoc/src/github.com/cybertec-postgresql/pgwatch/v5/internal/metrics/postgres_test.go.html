@@ -253,7 +253,7 @@
 <span id="L196" class="ln">   196  </span>	}
 <span id="L197" class="ln">   197  </span>	presetRows := func() *pgxmock.Rows {
 <span id="L198" class="ln">   198  </span>		return pgxmock.NewRows([]string{&#34;name&#34;, &#34;description&#34;, &#34;metrics&#34;}).
-<span id="L199" class="ln">   199  </span>			AddRow(&#34;test&#34;, &#34;desc&#34;, map[string]float64{&#34;metric&#34;: 30})
+<span id="L199" class="ln">   199  </span>			AddRow(&#34;test&#34;, &#34;desc&#34;, metrics.MetricIntervals{&#34;metric&#34;: 30})
 <span id="L200" class="ln">   200  </span>	}
 <span id="L201" class="ln">   201  </span>
 <span id="L202" class="ln">   202  </span>	t.Run(&#34;GetMetrics&#34;, func(t *testing.T) {

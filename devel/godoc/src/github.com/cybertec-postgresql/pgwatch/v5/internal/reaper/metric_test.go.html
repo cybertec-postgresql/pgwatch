@@ -92,14 +92,14 @@
 <span id="L35" class="ln">    35  </span>		&#34;metric1&#34;: metrics.Metric{Description: &#34;metric1&#34;},
 <span id="L36" class="ln">    36  </span>	}
 <span id="L37" class="ln">    37  </span>	initialPresetDefs = metrics.PresetDefs{
-<span id="L38" class="ln">    38  </span>		&#34;preset1&#34;: metrics.Preset{Description: &#34;preset1&#34;, Metrics: map[string]float64{&#34;metric1&#34;: 1.0}},
+<span id="L38" class="ln">    38  </span>		&#34;preset1&#34;: metrics.Preset{Description: &#34;preset1&#34;, Metrics: metrics.MetricIntervals{&#34;metric1&#34;: 1.0}},
 <span id="L39" class="ln">    39  </span>	}
 <span id="L40" class="ln">    40  </span>
 <span id="L41" class="ln">    41  </span>	newMetricDefs = metrics.MetricDefs{
 <span id="L42" class="ln">    42  </span>		&#34;metric2&#34;: metrics.Metric{Description: &#34;metric2&#34;},
 <span id="L43" class="ln">    43  </span>	}
 <span id="L44" class="ln">    44  </span>	newPresetDefs = metrics.PresetDefs{
-<span id="L45" class="ln">    45  </span>		&#34;preset2&#34;: metrics.Preset{Description: &#34;preset2&#34;, Metrics: map[string]float64{&#34;metric2&#34;: 2.0}},
+<span id="L45" class="ln">    45  </span>		&#34;preset2&#34;: metrics.Preset{Description: &#34;preset2&#34;, Metrics: metrics.MetricIntervals{&#34;metric2&#34;: 2.0}},
 <span id="L46" class="ln">    46  </span>	}
 <span id="L47" class="ln">    47  </span>)
 <span id="L48" class="ln">    48  </span>
@@ -196,7 +196,7 @@
 <span id="L139" class="ln">   139  </span>	t.Run(&#34;updates metricDefs on success&#34;, func(t *testing.T) {
 <span id="L140" class="ln">   140  </span>		defs := &amp;metrics.Metrics{
 <span id="L141" class="ln">   141  </span>			MetricDefs: metrics.MetricDefs{&#34;m1&#34;: {Description: &#34;M1&#34;}},
-<span id="L142" class="ln">   142  </span>			PresetDefs: metrics.PresetDefs{&#34;p1&#34;: {Description: &#34;P1&#34;, Metrics: map[string]float64{&#34;m1&#34;: 1.0}}},
+<span id="L142" class="ln">   142  </span>			PresetDefs: metrics.PresetDefs{&#34;p1&#34;: {Description: &#34;P1&#34;, Metrics: metrics.MetricIntervals{&#34;m1&#34;: 1.0}}},
 <span id="L143" class="ln">   143  </span>		}
 <span id="L144" class="ln">   144  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
 <span id="L145" class="ln">   145  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
@@ -254,8 +254,8 @@
 <span id="L197" class="ln">   197  </span>				&#34;m2&#34;: {Description: &#34;M2&#34;},
 <span id="L198" class="ln">   198  </span>			},
 <span id="L199" class="ln">   199  </span>			PresetDefs: metrics.PresetDefs{
-<span id="L200" class="ln">   200  </span>				&#34;preset1&#34;:  {Metrics: map[string]float64{&#34;m1&#34;: 10.0}},
-<span id="L201" class="ln">   201  </span>				&#34;standby1&#34;: {Metrics: map[string]float64{&#34;m2&#34;: 20.0}},
+<span id="L200" class="ln">   200  </span>				&#34;preset1&#34;:  {Metrics: metrics.MetricIntervals{&#34;m1&#34;: 10.0}},
+<span id="L201" class="ln">   201  </span>				&#34;standby1&#34;: {Metrics: metrics.MetricIntervals{&#34;m2&#34;: 20.0}},
 <span id="L202" class="ln">   202  </span>			},
 <span id="L203" class="ln">   203  </span>		}
 <span id="L204" class="ln">   204  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
@@ -273,12 +273,12 @@
 <span id="L216" class="ln">   216  </span>		assert.NoError(t, r.LoadMetrics())
 <span id="L217" class="ln">   217  </span>
 <span id="L218" class="ln">   218  </span>		sc := r.monitoredSources[0]
-<span id="L219" class="ln">   219  </span>		assert.Equal(t, map[string]float64{&#34;m1&#34;: 10.0}, sc.Metrics)
-<span id="L220" class="ln">   220  </span>		assert.Equal(t, map[string]float64{&#34;m2&#34;: 20.0}, sc.MetricsStandby)
+<span id="L219" class="ln">   219  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;m1&#34;: 10.0}, sc.Metrics)
+<span id="L220" class="ln">   220  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;m2&#34;: 20.0}, sc.MetricsStandby)
 <span id="L221" class="ln">   221  </span>	})
 <span id="L222" class="ln">   222  </span>
 <span id="L223" class="ln">   223  </span>	t.Run(&#34;skips preset resolution for sources without presets&#34;, func(t *testing.T) {
-<span id="L224" class="ln">   224  </span>		customMetrics := map[string]float64{&#34;cpu&#34;: 5.0}
+<span id="L224" class="ln">   224  </span>		customMetrics := metrics.MetricIntervals{&#34;cpu&#34;: 5.0}
 <span id="L225" class="ln">   225  </span>		defs := &amp;metrics.Metrics{
 <span id="L226" class="ln">   226  </span>			MetricDefs: metrics.MetricDefs{&#34;cpu&#34;: {Description: &#34;CPU&#34;}},
 <span id="L227" class="ln">   227  </span>			PresetDefs: metrics.PresetDefs{},
@@ -306,7 +306,7 @@
 <span id="L249" class="ln">   249  </span>		initialDefs := &amp;metrics.Metrics{
 <span id="L250" class="ln">   250  </span>			MetricDefs: metrics.MetricDefs{&#34;test_metric&#34;: {}},
 <span id="L251" class="ln">   251  </span>			PresetDefs: metrics.PresetDefs{
-<span id="L252" class="ln">   252  </span>				&#34;test_preset&#34;: {Metrics: map[string]float64{&#34;test_metric&#34;: 1}},
+<span id="L252" class="ln">   252  </span>				&#34;test_preset&#34;: {Metrics: metrics.MetricIntervals{&#34;test_metric&#34;: 1}},
 <span id="L253" class="ln">   253  </span>			},
 <span id="L254" class="ln">   254  </span>		}
 <span id="L255" class="ln">   255  </span>		src := sources.Source{
@@ -329,7 +329,7 @@
 <span id="L272" class="ln">   272  </span>		})
 <span id="L273" class="ln">   273  </span>		require.NoError(t, r.LoadSources(ctx))
 <span id="L274" class="ln">   274  </span>		require.NoError(t, r.LoadMetrics())
-<span id="L275" class="ln">   275  </span>		assert.Equal(t, map[string]float64{&#34;test_metric&#34;: 1}, r.monitoredSources[0].Metrics)
+<span id="L275" class="ln">   275  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 1}, r.monitoredSources[0].Metrics)
 <span id="L276" class="ln">   276  </span>
 <span id="L277" class="ln">   277  </span>		<span class="comment">// Attach a mock connection so CloseResourcesForRemovedMonitoredDBs doesn&#39;t panic</span>
 <span id="L278" class="ln">   278  </span>		<span class="comment">// when the custom_tags change triggers a full source restart.</span>
@@ -345,14 +345,14 @@
 <span id="L288" class="ln">   288  </span>		updatedDefs := &amp;metrics.Metrics{
 <span id="L289" class="ln">   289  </span>			MetricDefs: metrics.MetricDefs{&#34;test_metric&#34;: {}},
 <span id="L290" class="ln">   290  </span>			PresetDefs: metrics.PresetDefs{
-<span id="L291" class="ln">   291  </span>				&#34;test_preset&#34;: {Metrics: map[string]float64{&#34;test_metric&#34;: 2}},
+<span id="L291" class="ln">   291  </span>				&#34;test_preset&#34;: {Metrics: metrics.MetricIntervals{&#34;test_metric&#34;: 2}},
 <span id="L292" class="ln">   292  </span>			},
 <span id="L293" class="ln">   293  </span>		}
 <span id="L294" class="ln">   294  </span>		getMetricsFn = func() (*metrics.Metrics, error) { return updatedDefs, nil }
 <span id="L295" class="ln">   295  </span>
 <span id="L296" class="ln">   296  </span>		require.NoError(t, r.LoadSources(ctx))
 <span id="L297" class="ln">   297  </span>		require.NoError(t, r.LoadMetrics())
-<span id="L298" class="ln">   298  </span>		assert.Equal(t, map[string]float64{&#34;test_metric&#34;: 2}, r.monitoredSources[0].Metrics,
+<span id="L298" class="ln">   298  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 2}, r.monitoredSources[0].Metrics,
 <span id="L299" class="ln">   299  </span>			&#34;preset interval should be updated after source config change triggered a restart&#34;)
 <span id="L300" class="ln">   300  </span>	})
 <span id="L301" class="ln">   301  </span>}

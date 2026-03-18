@@ -98,7 +98,7 @@
 <span id="L41" class="ln">    41  </span>	return
 <span id="L42" class="ln">    42  </span>}
 <span id="L43" class="ln">    43  </span>
-<span id="L44" class="ln">    44  </span>func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m map[string]float64) {
+<span id="L44" class="ln">    44  </span>func (cmd *ConcurrentMetricDefs) GetPresetMetrics(name string) (m metrics.MetricIntervals) {
 <span id="L45" class="ln">    45  </span>	cmd.RLock()
 <span id="L46" class="ln">    46  </span>	defer cmd.RUnlock()
 <span id="L47" class="ln">    47  </span>	return cmd.PresetDefs[name].Metrics

@@ -118,7 +118,7 @@
 <span id="L61" class="ln">    61  </span>		PresetDefs: metrics.PresetDefs{
 <span id="L62" class="ln">    62  </span>			&#34;test_preset&#34;: metrics.Preset{
 <span id="L63" class="ln">    63  </span>				Description: &#34;Test preset&#34;,
-<span id="L64" class="ln">    64  </span>				Metrics: map[string]float64{
+<span id="L64" class="ln">    64  </span>				Metrics: metrics.MetricIntervals{
 <span id="L65" class="ln">    65  </span>					&#34;test_metric&#34;: 1.0,
 <span id="L66" class="ln">    66  </span>				},
 <span id="L67" class="ln">    67  </span>			},
@@ -162,7 +162,7 @@
 <span id="L105" class="ln">   105  </span>		PresetDefs: metrics.PresetDefs{
 <span id="L106" class="ln">   106  </span>			&#34;test_preset&#34;: metrics.Preset{
 <span id="L107" class="ln">   107  </span>				Description: &#34;Test preset&#34;,
-<span id="L108" class="ln">   108  </span>				Metrics: map[string]float64{
+<span id="L108" class="ln">   108  </span>				Metrics: metrics.MetricIntervals{
 <span id="L109" class="ln">   109  </span>					&#34;existing_metric&#34;: 1.0,
 <span id="L110" class="ln">   110  </span>				},
 <span id="L111" class="ln">   111  </span>			},
@@ -221,7 +221,7 @@
 <span id="L164" class="ln">   164  </span>	presetDefs := metrics.PresetDefs{
 <span id="L165" class="ln">   165  </span>		&#34;existing_preset&#34;: metrics.Preset{
 <span id="L166" class="ln">   166  </span>			Description: &#34;Existing preset&#34;,
-<span id="L167" class="ln">   167  </span>			Metrics: map[string]float64{
+<span id="L167" class="ln">   167  </span>			Metrics: metrics.MetricIntervals{
 <span id="L168" class="ln">   168  </span>				&#34;existing_metric&#34;: 1.0,
 <span id="L169" class="ln">   169  </span>			},
 <span id="L170" class="ln">   170  </span>		},
@@ -243,7 +243,7 @@
 <span id="L186" class="ln">   186  </span>	<span class="comment">// Call the function being tested</span>
 <span id="L187" class="ln">   187  </span>	newPreset := metrics.Preset{
 <span id="L188" class="ln">   188  </span>		Description: &#34;New preset&#34;,
-<span id="L189" class="ln">   189  </span>		Metrics: map[string]float64{
+<span id="L189" class="ln">   189  </span>		Metrics: metrics.MetricIntervals{
 <span id="L190" class="ln">   190  </span>			&#34;new_metric&#34;: 1.0,
 <span id="L191" class="ln">   191  </span>		},
 <span id="L192" class="ln">   192  </span>	}
@@ -372,7 +372,7 @@
 <span id="L315" class="ln">   315  </span>		<span class="comment">// Create a new preset</span>
 <span id="L316" class="ln">   316  </span>		testPreset := metrics.Preset{
 <span id="L317" class="ln">   317  </span>			Description: &#34;Test preset for creation&#34;,
-<span id="L318" class="ln">   318  </span>			Metrics:     map[string]float64{&#34;db_stats&#34;: 60},
+<span id="L318" class="ln">   318  </span>			Metrics:     metrics.MetricIntervals{&#34;db_stats&#34;: 60},
 <span id="L319" class="ln">   319  </span>		}
 <span id="L320" class="ln">   320  </span>		err = yamlrw.CreatePreset(&#34;test_preset&#34;, testPreset)
 <span id="L321" class="ln">   321  </span>		a.NoError(err)
@@ -403,7 +403,7 @@
 <span id="L346" class="ln">   346  </span>		PresetDefs: map[string]metrics.Preset{
 <span id="L347" class="ln">   347  </span>			&#34;preset1&#34;: {
 <span id="L348" class="ln">   348  </span>				Description: &#34;preset1 description&#34;,
-<span id="L349" class="ln">   349  </span>				Metrics: map[string]float64{
+<span id="L349" class="ln">   349  </span>				Metrics: metrics.MetricIntervals{
 <span id="L350" class="ln">   350  </span>					&#34;metric1&#34;: 10,
 <span id="L351" class="ln">   351  </span>				},
 <span id="L352" class="ln">   352  </span>			},
@@ -420,7 +420,7 @@
 <span id="L363" class="ln">   363  </span>		PresetDefs: map[string]metrics.Preset{
 <span id="L364" class="ln">   364  </span>			&#34;preset2&#34;: {
 <span id="L365" class="ln">   365  </span>				Description: &#34;preset2 description&#34;,
-<span id="L366" class="ln">   366  </span>				Metrics: map[string]float64{
+<span id="L366" class="ln">   366  </span>				Metrics: metrics.MetricIntervals{
 <span id="L367" class="ln">   367  </span>					&#34;metric2&#34;: 10,
 <span id="L368" class="ln">   368  </span>				},
 <span id="L369" class="ln">   369  </span>			},
@@ -517,7 +517,7 @@
 <span id="L460" class="ln">   460  </span>			presetName := fmt.Sprintf(&#34;preset_%d&#34;, id)
 <span id="L461" class="ln">   461  </span>			testPreset := metrics.Preset{
 <span id="L462" class="ln">   462  </span>				Description: fmt.Sprintf(&#34;Test preset %d&#34;, id),
-<span id="L463" class="ln">   463  </span>				Metrics:     map[string]float64{fmt.Sprintf(&#34;metric_%d&#34;, id): 60},
+<span id="L463" class="ln">   463  </span>				Metrics:     metrics.MetricIntervals{fmt.Sprintf(&#34;metric_%d&#34;, id): 60},
 <span id="L464" class="ln">   464  </span>			}
 <span id="L465" class="ln">   465  </span>			time.Sleep(time.Millisecond * time.Duration(id%3))
 <span id="L466" class="ln">   466  </span>			err := yamlrw.UpdatePreset(presetName, testPreset)

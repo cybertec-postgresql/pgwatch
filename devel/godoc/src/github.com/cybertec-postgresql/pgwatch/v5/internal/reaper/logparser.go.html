@@ -100,7 +100,7 @@
 <span id="L43" class="ln">    43  </span>	ctx              context.Context
 <span id="L44" class="ln">    44  </span>	LogsMatchRegex   *regexp.Regexp
 <span id="L45" class="ln">    45  </span>	SourceConn       *sources.SourceConn
-<span id="L46" class="ln">    46  </span>	Interval         float64
+<span id="L46" class="ln">    46  </span>	Interval         int
 <span id="L47" class="ln">    47  </span>	StoreCh          chan&lt;- metrics.MeasurementEnvelope
 <span id="L48" class="ln">    48  </span>	eventCounts      map[string]int64 <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
 <span id="L49" class="ln">    49  </span>	eventCountsTotal map[string]int64 <span class="comment">// for the whole instance</span>

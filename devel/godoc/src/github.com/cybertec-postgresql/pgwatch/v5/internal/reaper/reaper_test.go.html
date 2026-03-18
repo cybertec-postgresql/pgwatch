@@ -163,8 +163,8 @@
 <span id="L106" class="ln">   106  </span>			IsEnabled:      true,
 <span id="L107" class="ln">   107  </span>			Kind:           sources.SourcePostgres,
 <span id="L108" class="ln">   108  </span>			ConnStr:        &#34;postgres://localhost:5432/testdb&#34;,
-<span id="L109" class="ln">   109  </span>			Metrics:        map[string]float64{&#34;cpu&#34;: 10, &#34;memory&#34;: 20},
-<span id="L110" class="ln">   110  </span>			MetricsStandby: map[string]float64{&#34;cpu&#34;: 30},
+<span id="L109" class="ln">   109  </span>			Metrics:        metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20},
+<span id="L110" class="ln">   110  </span>			MetricsStandby: metrics.MetricIntervals{&#34;cpu&#34;: 30},
 <span id="L111" class="ln">   111  </span>			CustomTags:     map[string]string{&#34;env&#34;: &#34;test&#34;},
 <span id="L112" class="ln">   112  </span>			Group:          &#34;default&#34;,
 <span id="L113" class="ln">   113  </span>		}
@@ -219,28 +219,28 @@
 <span id="L162" class="ln">   162  </span>			{
 <span id="L163" class="ln">   163  </span>				name: &#34;custom metrics change interval&#34;,
 <span id="L164" class="ln">   164  </span>				modifySource: func(s *sources.Source) {
-<span id="L165" class="ln">   165  </span>					s.Metrics = map[string]float64{&#34;cpu&#34;: 15, &#34;memory&#34;: 20}
+<span id="L165" class="ln">   165  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 15, &#34;memory&#34;: 20}
 <span id="L166" class="ln">   166  </span>				},
 <span id="L167" class="ln">   167  </span>				expectCancel: true,
 <span id="L168" class="ln">   168  </span>			},
 <span id="L169" class="ln">   169  </span>			{
 <span id="L170" class="ln">   170  </span>				name: &#34;custom metrics add new metric&#34;,
 <span id="L171" class="ln">   171  </span>				modifySource: func(s *sources.Source) {
-<span id="L172" class="ln">   172  </span>					s.Metrics = map[string]float64{&#34;cpu&#34;: 10, &#34;memory&#34;: 20, &#34;disk&#34;: 30}
+<span id="L172" class="ln">   172  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20, &#34;disk&#34;: 30}
 <span id="L173" class="ln">   173  </span>				},
 <span id="L174" class="ln">   174  </span>				expectCancel: true,
 <span id="L175" class="ln">   175  </span>			},
 <span id="L176" class="ln">   176  </span>			{
 <span id="L177" class="ln">   177  </span>				name: &#34;custom metrics remove metric&#34;,
 <span id="L178" class="ln">   178  </span>				modifySource: func(s *sources.Source) {
-<span id="L179" class="ln">   179  </span>					s.Metrics = map[string]float64{&#34;cpu&#34;: 10}
+<span id="L179" class="ln">   179  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
 <span id="L180" class="ln">   180  </span>				},
 <span id="L181" class="ln">   181  </span>				expectCancel: true,
 <span id="L182" class="ln">   182  </span>			},
 <span id="L183" class="ln">   183  </span>			{
 <span id="L184" class="ln">   184  </span>				name: &#34;standby metrics change&#34;,
 <span id="L185" class="ln">   185  </span>				modifySource: func(s *sources.Source) {
-<span id="L186" class="ln">   186  </span>					s.MetricsStandby = map[string]float64{&#34;cpu&#34;: 60}
+<span id="L186" class="ln">   186  </span>					s.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
 <span id="L187" class="ln">   187  </span>				},
 <span id="L188" class="ln">   188  </span>				expectCancel: true,
 <span id="L189" class="ln">   189  </span>			},
@@ -339,14 +339,14 @@
 <span id="L282" class="ln">   282  </span>			IsEnabled: true,
 <span id="L283" class="ln">   283  </span>			Kind:      sources.SourcePostgres,
 <span id="L284" class="ln">   284  </span>			ConnStr:   &#34;postgres://localhost:5432/db1&#34;,
-<span id="L285" class="ln">   285  </span>			Metrics:   map[string]float64{&#34;cpu&#34;: 10},
+<span id="L285" class="ln">   285  </span>			Metrics:   metrics.MetricIntervals{&#34;cpu&#34;: 10},
 <span id="L286" class="ln">   286  </span>		}
 <span id="L287" class="ln">   287  </span>		source2 := sources.Source{
 <span id="L288" class="ln">   288  </span>			Name:      &#34;Source2&#34;,
 <span id="L289" class="ln">   289  </span>			IsEnabled: true,
 <span id="L290" class="ln">   290  </span>			Kind:      sources.SourcePostgres,
 <span id="L291" class="ln">   291  </span>			ConnStr:   &#34;postgres://localhost:5432/db2&#34;,
-<span id="L292" class="ln">   292  </span>			Metrics:   map[string]float64{&#34;memory&#34;: 20},
+<span id="L292" class="ln">   292  </span>			Metrics:   metrics.MetricIntervals{&#34;memory&#34;: 20},
 <span id="L293" class="ln">   293  </span>		}
 <span id="L294" class="ln">   294  </span>
 <span id="L295" class="ln">   295  </span>		initialReader := &amp;testutil.MockSourcesReaderWriter{
@@ -586,7 +586,7 @@
 <span id="L529" class="ln">   529  </span>		}
 <span id="L530" class="ln">   530  </span>		md, mock := createTestSourceConn(t)
 <span id="L531" class="ln">   531  </span>		defer mock.Close()
-<span id="L532" class="ln">   532  </span>		md.Metrics = map[string]float64{&#34;cached_metric&#34;: 10}
+<span id="L532" class="ln">   532  </span>		md.Metrics = metrics.MetricIntervals{&#34;cached_metric&#34;: 10}
 <span id="L533" class="ln">   533  </span>
 <span id="L534" class="ln">   534  </span>		<span class="comment">// Pre-populate the cache</span>
 <span id="L535" class="ln">   535  </span>		cachedData := metrics.Measurements{

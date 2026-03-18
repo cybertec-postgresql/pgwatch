@@ -185,7 +185,7 @@
 <span id="L128" class="ln">   128  </span>}
 <span id="L129" class="ln">   129  </span>
 <span id="L130" class="ln">   130  </span><span class="comment">// GetMetricInterval returns the metric interval for the connection</span>
-<span id="L131" class="ln">   131  </span>func (md *SourceConn) GetMetricInterval(name string) float64 {
+<span id="L131" class="ln">   131  </span>func (md *SourceConn) GetMetricInterval(name string) int {
 <span id="L132" class="ln">   132  </span>	md.RLock()
 <span id="L133" class="ln">   133  </span>	defer md.RUnlock()
 <span id="L134" class="ln">   134  </span>	if md.IsInRecovery &amp;&amp; len(md.MetricsStandby) &gt; 0 {

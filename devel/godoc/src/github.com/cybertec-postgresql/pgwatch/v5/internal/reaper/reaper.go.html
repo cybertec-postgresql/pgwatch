@@ -84,7 +84,7 @@
 <span id="L27" class="ln">    27  </span>var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 <span id="L28" class="ln">    28  </span>
 <span id="L29" class="ln">    29  </span>var hostLastKnownStatusInRecovery = make(map[string]bool) <span class="comment">// isInRecovery</span>
-<span id="L30" class="ln">    30  </span>var metricsConfig map[string]float64                      <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
+<span id="L30" class="ln">    30  </span>var metricsConfig metrics.MetricIntervals                 <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
 <span id="L31" class="ln">    31  </span>var metricDefs = NewConcurrentMetricDefs()
 <span id="L32" class="ln">    32  </span>
 <span id="L33" class="ln">    33  </span><span class="comment">// Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks</span>
@@ -303,7 +303,7 @@
 <span id="L246" class="ln">   246  </span>	<span class="comment">// or state change makes it uninteresting</span>
 <span id="L247" class="ln">   247  </span>	logger.Debug(&#34;checking if any workers need to be shut down...&#34;)
 <span id="L248" class="ln">   248  </span>	for dbMetric, cancelFunc := range r.cancelFuncs {
-<span id="L249" class="ln">   249  </span>		var currentMetricConfig map[string]float64
+<span id="L249" class="ln">   249  </span>		var currentMetricConfig metrics.MetricIntervals
 <span id="L250" class="ln">   250  </span>		var md *sources.SourceConn
 <span id="L251" class="ln">   251  </span>		var dbRemovedFromConfig bool
 <span id="L252" class="ln">   252  </span>		var metricRemovedFromPreset bool
