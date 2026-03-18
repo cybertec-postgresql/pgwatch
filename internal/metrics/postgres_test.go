@@ -196,7 +196,7 @@ func TestMetricsToPostgres(t *testing.T) {
 	}
 	presetRows := func() *pgxmock.Rows {
 		return pgxmock.NewRows([]string{"name", "description", "metrics"}).
-			AddRow("test", "desc", map[string]float64{"metric": 30})
+			AddRow("test", "desc", metrics.MetricIntervals{"metric": 30})
 	}
 
 	t.Run("GetMetrics", func(t *testing.T) {

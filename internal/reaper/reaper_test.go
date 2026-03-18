@@ -106,8 +106,8 @@ func TestReaper_LoadSources(t *testing.T) {
 			IsEnabled:      true,
 			Kind:           sources.SourcePostgres,
 			ConnStr:        "postgres://localhost:5432/testdb",
-			Metrics:        map[string]float64{"cpu": 10, "memory": 20},
-			MetricsStandby: map[string]float64{"cpu": 30},
+			Metrics:        metrics.MetricIntervals{"cpu": 10, "memory": 20},
+			MetricsStandby: metrics.MetricIntervals{"cpu": 30},
 			CustomTags:     map[string]string{"env": "test"},
 			Group:          "default",
 		}
@@ -162,28 +162,28 @@ func TestReaper_LoadSources(t *testing.T) {
 			{
 				name: "custom metrics change interval",
 				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 15, "memory": 20}
+					s.Metrics = metrics.MetricIntervals{"cpu": 15, "memory": 20}
 				},
 				expectCancel: true,
 			},
 			{
 				name: "custom metrics add new metric",
 				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 10, "memory": 20, "disk": 30}
+					s.Metrics = metrics.MetricIntervals{"cpu": 10, "memory": 20, "disk": 30}
 				},
 				expectCancel: true,
 			},
 			{
 				name: "custom metrics remove metric",
 				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 10}
+					s.Metrics = metrics.MetricIntervals{"cpu": 10}
 				},
 				expectCancel: true,
 			},
 			{
 				name: "standby metrics change",
 				modifySource: func(s *sources.Source) {
-					s.MetricsStandby = map[string]float64{"cpu": 60}
+					s.MetricsStandby = metrics.MetricIntervals{"cpu": 60}
 				},
 				expectCancel: true,
 			},
@@ -282,14 +282,14 @@ func TestReaper_LoadSources(t *testing.T) {
 			IsEnabled: true,
 			Kind:      sources.SourcePostgres,
 			ConnStr:   "postgres://localhost:5432/db1",
-			Metrics:   map[string]float64{"cpu": 10},
+			Metrics:   metrics.MetricIntervals{"cpu": 10},
 		}
 		source2 := sources.Source{
 			Name:      "Source2",
 			IsEnabled: true,
 			Kind:      sources.SourcePostgres,
 			ConnStr:   "postgres://localhost:5432/db2",
-			Metrics:   map[string]float64{"memory": 20},
+			Metrics:   metrics.MetricIntervals{"memory": 20},
 		}
 
 		initialReader := &testutil.MockSourcesReaderWriter{
@@ -529,7 +529,7 @@ func TestReaper_FetchMetric(t *testing.T) {
 		}
 		md, mock := createTestSourceConn(t)
 		defer mock.Close()
-		md.Metrics = map[string]float64{"cached_metric": 10}
+		md.Metrics = metrics.MetricIntervals{"cached_metric": 10}
 
 		// Pre-populate the cache
 		cachedData := metrics.Measurements{

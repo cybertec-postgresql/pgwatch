@@ -603,7 +603,7 @@ func newPresetItemRequest(method, name string, body io.Reader) *http.Request {
 func TestHandlePresetItem(t *testing.T) {
 	t.Run("GET", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
-			preset := metrics.Preset{Description: "test preset", Metrics: map[string]float64{"cpu": 1.0}}
+			preset := metrics.Preset{Description: "test preset", Metrics: metrics.MetricIntervals{"cpu": 1.0}}
 			mock := &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return &metrics.Metrics{
@@ -674,7 +674,7 @@ func TestHandlePresetItem(t *testing.T) {
 			}
 			ts := newTestMetricServer(mock)
 
-			preset := metrics.Preset{Description: "updated preset", Metrics: map[string]float64{"memory": 2.0}}
+			preset := metrics.Preset{Description: "updated preset", Metrics: metrics.MetricIntervals{"memory": 2.0}}
 			b, _ := jsoniter.ConfigFastest.Marshal(preset)
 			r := newPresetItemRequest(http.MethodPut, "test-preset", bytes.NewReader(b))
 			w := httptest.NewRecorder()
