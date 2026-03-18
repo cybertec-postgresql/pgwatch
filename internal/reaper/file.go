@@ -70,6 +70,7 @@ func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.Sourc
 	if err != nil {
 		return nil, err
 	}
+	r.AddSysinfoToMeasurements(data, md)
 	return &metrics.MeasurementEnvelope{
 		DBName:     md.Name,
 		MetricName: metricName,

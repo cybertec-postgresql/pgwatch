@@ -178,7 +178,7 @@ func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (
 		return ctx.Err()
 	}
 
-	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-2)) { // use cached version for 2 min
+	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-5)) { // use cached version for 2 min
 		return nil
 	}
 	switch md.Kind {
