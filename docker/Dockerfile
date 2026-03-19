@@ -42,6 +42,7 @@ FROM go-deps AS go-builder
 ARG VERSION
 ARG GIT_HASH
 ARG GIT_TIME
+ARG GO_TAGS
 
 # Copy source code
 COPY . .
@@ -50,7 +51,7 @@ COPY --from=webui-builder /webserver/build ./internal/webserver/build
 
 # Generate protobuf and build the application
 RUN go generate ./api/pb/ && \
-    CGO_ENABLED=0 go build -ldflags "\
+    CGO_ENABLED=0 go build -tags "${GO_TAGS}" -ldflags "\
         -X 'main.commit=${GIT_HASH}' \
         -X 'main.date=${GIT_TIME}' \
         -X 'main.version=${VERSION}'" ./cmd/pgwatch
