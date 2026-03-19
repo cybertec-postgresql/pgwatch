@@ -46,11 +46,11 @@ func (sr *SourceReaper) activeMetrics() map[string]time.Duration {
 	if sr.md.IsInRecovery && len(sr.md.MetricsStandby) > 0 {
 		src = sr.md.MetricsStandby
 	}
-	copy := make(map[string]time.Duration, len(src))
+	c := make(map[string]time.Duration, len(src))
 	for k, v := range src {
-		copy[k] = time.Duration(v) * time.Second
+		c[k] = time.Duration(v) * time.Second
 	}
-	return copy
+	return c
 }
 
 // GCDSlice computes GCD across a slice. Returns 0 for empty input.

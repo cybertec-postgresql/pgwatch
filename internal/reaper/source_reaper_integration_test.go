@@ -67,7 +67,7 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 		delete(metricDefs.MetricDefs, "integ_uptime")
 	}()
 
-	md.Source.Metrics = metrics.MetricIntervals{
+	md.Metrics = metrics.MetricIntervals{
 		"integ_version": 30,
 		"integ_uptime":  60,
 	}
@@ -131,7 +131,7 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 		delete(metricDefs.MetricDefs, "integ_run_size")
 	}()
 
-	md.Source.Metrics = metrics.MetricIntervals{
+	md.Metrics = metrics.MetricIntervals{
 		"integ_run_version": 5,
 		"integ_run_size":    5,
 	}
