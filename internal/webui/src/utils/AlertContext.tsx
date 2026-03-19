@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import { AlertColor, SnackbarCloseReason } from "@mui/material";
 
 export type AlertContextType = {
@@ -20,11 +20,11 @@ export const AlertProvider = ({ children }: AlertProviderProps) => {
   const [severity, setSeverity] = useState<AlertColor>("success");
   const [message, setMessage] = useState("");
 
-  const callAlert = (alertSeverity: AlertColor, alertMessage: string) => {
+  const callAlert = useCallback((alertSeverity: AlertColor, alertMessage: string) => {
     setSeverity(alertSeverity);
     setMessage(alertMessage);
     setOpen(true);
-  };
+  }, []);
 
   const closeAlert = (_event: Event | React.SyntheticEvent<any, Event>, reason: SnackbarCloseReason) => {
     if (reason && (reason === "clickaway" || reason === "escapeKeyDown")) {

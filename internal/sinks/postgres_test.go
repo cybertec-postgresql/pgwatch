@@ -975,3 +975,109 @@ func Test_Maintain(t *testing.T) {
 		}
 	})
 }
+
+// TestEnsureMetricDbnameTime_SpecialSourceNames verifies that source names with special characters
+// (dots, uppercase, hyphens, underscores) are accepted by the partition functions.
+func TestEnsureMetricDbnameTime_SpecialSourceNames(t *testing.T) {
+	r := require.New(t)
+	a := assert.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 day",
+		RetentionInterval:   "7 days",
+		MaintenanceInterval: "12 hours",
+		BatchingDelay:       time.Second,
+	}
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
+
+	specialNames := []string{
+		"source.new",
+		"Source.With.Dots",
+		"UPPERCASE_SOURCE",
+		"MixedCase_Source-123",
+		"source-with-hyphens",
+		"source_with_underscores",
+		"Source123.Test_Name-456",
+	}
+
+	m := make(map[string]map[string]ExistingPartitionInfo)
+	m["test_metric"] = make(map[string]ExistingPartitionInfo)
+	for _, name := range specialNames {
+		m["test_metric"][name] = ExistingPartitionInfo{
+			StartTime: time.Now(),
+			EndTime:   time.Now().Add(time.Hour),
+		}
+	}
+
+	err = pgw.EnsureMetricDbnameTime(m)
+	r.NoError(err, "EnsureMetricDbnameTime should handle special source names")
+
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+	defer conn.Close(ctx)
+
+	var partitionCount int
+	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric') WHERE level = 1").Scan(&partitionCount)
+	r.NoError(err)
+	a.Equal(len(specialNames), partitionCount, "expected one dbname-level partition per special source name")
+}
+
+// TestEnsureMetricDbnameTime_IdempotentAcrossRestarts verifies that repeated calls to
+// EnsureMetricDbnameTime with fresh writer instances (simulating process restarts)
+// do not create duplicate partitions.
+func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
+	r := require.New(t)
+	a := assert.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 day",
+		RetentionInterval:   "7 days",
+		MaintenanceInterval: "12 hours",
+		BatchingDelay:       time.Second,
+	}
+
+	m := map[string]map[string]ExistingPartitionInfo{
+		"restart_test_metric": {
+			"test_source": {
+				StartTime: time.Now(),
+				EndTime:   time.Now().Add(time.Hour),
+			},
+		},
+	}
+
+	var partitionCountAfterFirst int
+	for i := range 5 {
+		pgw, err := NewPostgresWriter(ctx, connStr, opts)
+		r.NoError(err)
+		r.NoError(pgw.EnsureMetricDbnameTime(m))
+
+		conn, err := pgx.Connect(ctx, connStr)
+		r.NoError(err)
+		var count int
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('restart_test_metric') WHERE isleaf").Scan(&count)
+		conn.Close(ctx)
+		r.NoError(err)
+
+		if i == 0 {
+			partitionCountAfterFirst = count
+		} else {
+			a.Equal(partitionCountAfterFirst, count,
+				"partition count should not grow on restart %d", i+1)
+		}
+	}
+}

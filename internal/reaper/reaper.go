@@ -27,7 +27,7 @@ const (
 var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
-var metricsConfig map[string]float64                      // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
+var metricsConfig metrics.MetricIntervals                 // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
 
 // Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
@@ -246,7 +246,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 	// or state change makes it uninteresting
 	logger.Debug("checking if any workers need to be shut down...")
 	for dbMetric, cancelFunc := range r.cancelFuncs {
-		var currentMetricConfig map[string]float64
+		var currentMetricConfig metrics.MetricIntervals
 		var md *sources.SourceConn
 		var dbRemovedFromConfig bool
 		var metricRemovedFromPreset bool
@@ -326,7 +326,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			}
 
 			if _, ok = metricDefs.GetMetricDef(metricName); !ok {
-				l.Error("Could not get metric version properties")
+				l.WithField("source", md.Name).Error("metric definition not found")
 				return
 			}
 		}
@@ -344,8 +344,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
 		}
 
-		if time.Since(t1) > (time.Second * time.Duration(interval)) {
-			l.Warningf("Total fetching time of %v bigger than %vs interval", time.Since(t1), interval)
+		if time.Since(t1) > interval {
+			l.Warningf("Total fetching time of %v bigger than %v interval", time.Since(t1), interval)
 		}
 
 		if err != nil {
@@ -385,7 +385,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Second * time.Duration(interval)):
+		case <-time.After(interval):
 			// continue
 		}
 	}
@@ -482,7 +482,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 	}
 	l := log.GetLogger(ctx)
 
-	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && time.Second*time.Duration(md.GetMetricInterval(metricName)) < r.Metrics.CacheAge() {
+	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && md.GetMetricInterval(metricName) < r.Metrics.CacheAge() {
 		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
 	}
 	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
@@ -500,7 +500,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 		default:
 			sql = metric.GetSQL(md.Version)
 			if sql == "" {
-				l.Warning("Ignoring fetching because of empty SQL")
+				l.WithField("source", md.Name).WithField("version", md.Version).Warning("no SQL found for metric version")
 				return nil, nil
 			}
 			data, err = QueryMeasurements(ctx, md, sql)

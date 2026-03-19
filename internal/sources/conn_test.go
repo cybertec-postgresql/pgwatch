@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -173,27 +174,27 @@ func TestSourceConn_Ping(t *testing.T) {
 func TestSourceConn_GetMetricInterval(t *testing.T) {
 	md := &sources.SourceConn{
 		Source: sources.Source{
-			Metrics:        map[string]float64{"foo": 1.5, "bar": 2.5},
-			MetricsStandby: map[string]float64{"foo": 3.5},
+			Metrics:        metrics.MetricIntervals{"foo": 15, "bar": 25},
+			MetricsStandby: metrics.MetricIntervals{"foo": 35},
 		},
 	}
 
 	t.Run("primary uses Metrics", func(t *testing.T) {
 		md.IsInRecovery = false
-		assert.Equal(t, 1.5, md.GetMetricInterval("foo"))
-		assert.Equal(t, 2.5, md.GetMetricInterval("bar"))
+		assert.Equal(t, 15*time.Second, md.GetMetricInterval("foo"))
+		assert.Equal(t, 25*time.Second, md.GetMetricInterval("bar"))
 	})
 
 	t.Run("standby uses MetricsStandby if present", func(t *testing.T) {
 		md.IsInRecovery = true
-		assert.Equal(t, 3.5, md.GetMetricInterval("foo"))
-		assert.Equal(t, 0.0, md.GetMetricInterval("bar"))
+		assert.Equal(t, 35*time.Second, md.GetMetricInterval("foo"))
+		assert.Equal(t, time.Duration(0), md.GetMetricInterval("bar"))
 	})
 
 	t.Run("standby with empty MetricsStandby falls back to Metrics", func(t *testing.T) {
 		md.IsInRecovery = true
-		md.MetricsStandby = map[string]float64{}
-		assert.Equal(t, 1.5, md.GetMetricInterval("foo"))
+		md.MetricsStandby = metrics.MetricIntervals{}
+		assert.Equal(t, 15*time.Second, md.GetMetricInterval("foo"))
 	})
 }
 
@@ -392,8 +393,8 @@ func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
 		Conn: mock,
 		Source: sources.Source{
 			Name:           "testdb",
-			Metrics:        map[string]float64{"metric1": 42, "nonexistent": 0},
-			MetricsStandby: map[string]float64{"metric1": 42},
+			Metrics:        metrics.MetricIntervals{"metric1": 42, "nonexistent": 0},
+			MetricsStandby: metrics.MetricIntervals{"metric1": 42},
 		},
 	}
 

@@ -1,8 +1,12 @@
-import { Box } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
+import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+import sql from "react-syntax-highlighter/dist/esm/languages/hljs/sql";
+import { atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
+
+SyntaxHighlighter.registerLanguage("sql", sql);
 
 export const useSqlPopUpColumns = (): GridColDef[] => [
-  {
+  { 
     field: "version",
     headerName: "Version",
     width: 80,
@@ -15,23 +19,19 @@ export const useSqlPopUpColumns = (): GridColDef[] => [
     headerAlign: "left",
     flex: 1,
     renderCell: ({ value }) => (
-      <Box
-        component="pre"
-        sx={{
-          fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', monospace",
+       <SyntaxHighlighter
+        language="sql"
+        style={atomOneLight}
+        wrapLongLines
+        customStyle={{
           fontSize: "0.75rem",
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          overflowX: "auto",
-          m: 0,
-          py: 1.5,
-          px: 0,
-          color: "text.primary",
+          borderRadius: "4px",
+          width: "100%",
+          margin: 0,
         }}
       >
         {value}
-      </Box>
+      </SyntaxHighlighter>
     ),
   },
 ];

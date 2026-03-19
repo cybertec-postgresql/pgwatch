@@ -299,16 +299,13 @@ metrics:
         sqls:
             14: |-
                 select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  datname as tag_database,
-                  count(*) * (current_setting('block_size')::int8) as size_b
-                FROM
-                  pg_buffercache AS b,
-                  pg_database AS d
-                WHERE
-                  d.oid = b.reldatabase
-                GROUP BY
-                  datname
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    coalesce(d.datname, 'shared') as tag_database,
+                    count(*) * current_setting('block_size')::int8 as size_b
+                from
+                    pg_buffercache as b left join pg_database as d on d.oid = b.reldatabase
+                group by
+                    coalesce(d.datname, 'shared')
         gauges:
             - '*'
         is_instance_level: true
@@ -323,22 +320,20 @@ metrics:
         sqls:
             14: |-
                 select /* pgwatch_generated */
-                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
-                  CASE
-                    WHEN relkind = 'r' THEN 'Table'   -- TODO all relkinds covered?
-                    WHEN relkind = 'i' THEN 'Index'
-                    WHEN relkind = 't' THEN 'Toast'
-                    WHEN relkind = 'm' THEN 'Materialized view'
-                    ELSE 'Other'
-                  END as tag_relkind,
-                  count(*) * (current_setting('block_size')::int8) size_b
-                FROM
-                  pg_buffercache AS b,
-                  pg_class AS d
-                WHERE
-                  d.oid = b.relfilenode
-                GROUP BY
-                  relkind
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    case
+                        when d.relkind = 'r' then 'Table'
+                        when d.relkind = 'i' then 'Index'
+                        when d.relkind = 'S' then 'Sequence'
+                        when d.relkind = 't' then 'Toast'
+                        when d.relkind = 'm' then 'Materialized view'
+                    end as tag_relkind,
+                    count(*) * current_setting('block_size')::int8 as size_b
+                from
+                    pg_buffercache as b join pg_class as d on d.relkind in ('r', 'i', 'S', 't', 'm')
+                    and pg_relation_filenode(d.oid) = b.relfilenode
+                group by
+                    d.relkind
         gauges:
             - '*'
         is_instance_level: true
@@ -4226,6 +4221,31 @@ presets:
             table_stats: 300
             wal: 60
             wal_receiver: 120
+    aurora:
+        description: AWS Aurora doesn't expose all Postgres functions and there's no WAL
+        metrics:
+            archiver: 60
+            archiver_pending_count: 120
+            backends: 60
+            bgwriter: 60
+            checkpointer: 60
+            change_events: 300
+            db_size: 300
+            db_stats: 60
+            index_stats: 900
+            locks: 60
+            locks_mode: 60
+            replication: 120
+            replication_slots: 120
+            sequence_health: 3600
+            settings: 7200
+            sproc_stats: 180
+            stat_activity: 30
+            stat_statements: 180
+            stat_statements_calls: 60
+            table_bloat_approx_summary_sql: 7200
+            table_io_stats: 600
+            table_stats: 300
     azure:
         description: similar to 'exhaustive' with stuff that's not accessible on Azure Database for PostgreSQL removed
         metrics:

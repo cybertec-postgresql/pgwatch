@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import TableViewIcon from '@mui/icons-material/TableView';
-import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
+import { Box, Chip, Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useSqlPopUpColumns } from "./SqlPopUp.consts";
 
@@ -31,11 +31,12 @@ export const SqlPopUp = ({ SQLs }: Props) => {
 
   return rows.length !== 0 ? (
     <>
-      <IconButton onClick={handleOpen}>
-        <Tooltip title="View SQLs table">
-          <span>
-            <TableViewIcon />
-          </span>
+      <IconButton onClick={handleOpen} size="small">
+        <Tooltip title={`View SQLs (${rows.length})`}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <TableViewIcon fontSize="small" color="primary" />
+            <Chip label={rows.length} size="small" variant="outlined" sx={{ height: 20, fontSize: "0.75rem" }} />
+          </Box>
         </Tooltip>
       </IconButton>
       <Dialog

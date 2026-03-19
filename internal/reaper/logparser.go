@@ -43,7 +43,7 @@ type LogParser struct {
 	ctx              context.Context
 	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.SourceConn
-	Interval         float64
+	Interval         time.Duration
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance
@@ -97,7 +97,7 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 }
 
 func (lp *LogParser) HasSendIntervalElapsed() bool {
-	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval)))
+	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
 }
 
 func (lp *LogParser) ParseLogs() error {
@@ -107,12 +107,12 @@ func (lp *LogParser) ParseLogs() error {
 		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
 			return lp.parseLogsLocal()
 		}
-		l.WithError(err).Error("Could't parse logs locally, lacking required privileges")
+		l.WithError(err).Error("Couldn't parse logs locally, lacking required privileges")
 	}
 
 	l.Info("DB is not detected to be on the same host, parsing logs remotely")
 	if err := checkHasRemotePrivileges(lp.ctx, lp.SourceConn, lp.Directory); err != nil {
-		l.WithError(err).Error("could't parse logs remotely, lacking required privileges")
+		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
 	return lp.parseLogsRemote()

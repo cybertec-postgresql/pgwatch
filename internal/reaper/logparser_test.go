@@ -28,7 +28,7 @@ func TestNewLogParser(t *testing.T) {
 	sourceConn := &sources.SourceConn{
 		Source: sources.Source{
 			Name:    "test-source",
-			Metrics: map[string]float64{specialMetricServerLogEventCounts: 60.0},
+			Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60.0},
 		},
 		Conn: mock,
 	}
@@ -48,7 +48,7 @@ func TestNewLogParser(t *testing.T) {
 		assert.Equal(t, tempDir, lp.Directory)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
 		assert.Equal(t, false, lp.TruncateOnRotation)
-		assert.Equal(t, 60.0, lp.Interval)
+		assert.Equal(t, 60*time.Second, lp.Interval)
 		assert.NotNil(t, lp.LogsMatchRegex)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -596,7 +596,7 @@ func TestLogParseRemote(t *testing.T) {
 		sourceConn := &sources.SourceConn{
 			Source: sources.Source{
 				Name:    "test-source",
-				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, // 60s interval - won't trigger during test
+				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, // 60s interval - won't trigger during test
 			},
 			Conn: mock,
 		}
@@ -657,7 +657,7 @@ func TestLogParseRemote(t *testing.T) {
 		sourceConn := &sources.SourceConn{
 			Source: sources.Source{
 				Name:    "test-source",
-				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
 			},
 			Conn: mock,
 		}
@@ -721,7 +721,7 @@ incomplete line without proper fields
 		sourceConn := &sources.SourceConn{
 			Source: sources.Source{
 				Name:    "test-source",
-				Metrics: map[string]float64{specialMetricServerLogEventCounts: 60}, // Long interval
+				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, // Long interval
 			},
 			Conn: mock,
 		}
@@ -790,7 +790,7 @@ incomplete line without proper fields
 		sourceConn := &sources.SourceConn{
 			Source: sources.Source{
 				Name:    "test-source",
-				Metrics: map[string]float64{specialMetricServerLogEventCounts: 0.1},
+				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
 			},
 			Conn: mock,
 		}

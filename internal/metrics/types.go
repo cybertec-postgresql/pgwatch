@@ -66,11 +66,16 @@ func (m Metric) GetSQL(version int) string {
 	return m.SQLs[closestVersion]
 }
 
+// MetricIntervals maps metric name to collection interval in seconds
+type MetricIntervals map[string]int
+
+// PresetDefs maps preset name to its definition, which includes description and the metrics it contains
 type PresetDefs map[string]Preset
 
+// Preset represents a collection of metrics grouped together with a description
 type Preset struct {
 	Description string
-	Metrics     map[string]float64
+	Metrics     MetricIntervals
 }
 
 const (

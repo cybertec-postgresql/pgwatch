@@ -86,14 +86,14 @@ func TestFilterByNames(t *testing.T) {
 		PresetDefs: PresetDefs{
 			"minimal": Preset{
 				Description: "Minimal preset",
-				Metrics: map[string]float64{
+				Metrics: MetricIntervals{
 					"cpu_load": 60,
 					"db_size":  300,
 				},
 			},
 			"standard": Preset{
 				Description: "Standard preset",
-				Metrics: map[string]float64{
+				Metrics: MetricIntervals{
 					"cpu_load":    60,
 					"db_size":     300,
 					"db_stats":    60,
@@ -104,12 +104,12 @@ func TestFilterByNames(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		names         []string
-		wantMetrics   []string
-		wantPresets   []string
-		wantErr       bool
-		errContains   string
+		name        string
+		names       []string
+		wantMetrics []string
+		wantPresets []string
+		wantErr     bool
+		errContains string
 	}{
 		{
 			name:        "empty names returns all",

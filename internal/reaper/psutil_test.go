@@ -18,7 +18,7 @@ func TestGetGoPsutilCPU(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Call the GetGoPsutilCPU function with a 1-second interval
-	result, err := GetGoPsutilCPU(1.0)
+	result, err := GetGoPsutilCPU(time.Second)
 	a.NoError(err)
 	a.NotEmpty(result)
 

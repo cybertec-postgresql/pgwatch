@@ -143,7 +143,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 	if err != nil {
 		// Check for unique constraint violation using PostgreSQL error code
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.SQLState() == "23505" {
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return ErrMetricExists
 		}
 	}

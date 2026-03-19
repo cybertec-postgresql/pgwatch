@@ -61,7 +61,7 @@ func TestWriteMetricsToFile(t *testing.T) {
 		PresetDefs: metrics.PresetDefs{
 			"test_preset": metrics.Preset{
 				Description: "Test preset",
-				Metrics: map[string]float64{
+				Metrics: metrics.MetricIntervals{
 					"test_metric": 1.0,
 				},
 			},
@@ -105,7 +105,7 @@ func TestMetricsToFile(t *testing.T) {
 		PresetDefs: metrics.PresetDefs{
 			"test_preset": metrics.Preset{
 				Description: "Test preset",
-				Metrics: map[string]float64{
+				Metrics: metrics.MetricIntervals{
 					"existing_metric": 1.0,
 				},
 			},
@@ -164,7 +164,7 @@ func TestPresetsToFile(t *testing.T) {
 	presetDefs := metrics.PresetDefs{
 		"existing_preset": metrics.Preset{
 			Description: "Existing preset",
-			Metrics: map[string]float64{
+			Metrics: metrics.MetricIntervals{
 				"existing_metric": 1.0,
 			},
 		},
@@ -186,7 +186,7 @@ func TestPresetsToFile(t *testing.T) {
 	// Call the function being tested
 	newPreset := metrics.Preset{
 		Description: "New preset",
-		Metrics: map[string]float64{
+		Metrics: metrics.MetricIntervals{
 			"new_metric": 1.0,
 		},
 	}
@@ -315,7 +315,7 @@ func TestCreateMetricAndPreset(t *testing.T) {
 		// Create a new preset
 		testPreset := metrics.Preset{
 			Description: "Test preset for creation",
-			Metrics:     map[string]float64{"db_stats": 60},
+			Metrics:     metrics.MetricIntervals{"db_stats": 60},
 		}
 		err = yamlrw.CreatePreset("test_preset", testPreset)
 		a.NoError(err)
@@ -346,7 +346,7 @@ func TestMetricsDir(t *testing.T) {
 		PresetDefs: map[string]metrics.Preset{
 			"preset1": {
 				Description: "preset1 description",
-				Metrics: map[string]float64{
+				Metrics: metrics.MetricIntervals{
 					"metric1": 10,
 				},
 			},
@@ -363,7 +363,7 @@ func TestMetricsDir(t *testing.T) {
 		PresetDefs: map[string]metrics.Preset{
 			"preset2": {
 				Description: "preset2 description",
-				Metrics: map[string]float64{
+				Metrics: metrics.MetricIntervals{
 					"metric2": 10,
 				},
 			},
@@ -460,7 +460,7 @@ func TestConcurrentPresetUpdates(t *testing.T) {
 			presetName := fmt.Sprintf("preset_%d", id)
 			testPreset := metrics.Preset{
 				Description: fmt.Sprintf("Test preset %d", id),
-				Metrics:     map[string]float64{fmt.Sprintf("metric_%d", id): 60},
+				Metrics:     metrics.MetricIntervals{fmt.Sprintf("metric_%d", id): 60},
 			}
 			time.Sleep(time.Millisecond * time.Duration(id%3))
 			err := yamlrw.UpdatePreset(presetName, testPreset)
