@@ -310,7 +310,7 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 	t.Run("metric not found in definitions", func(t *testing.T) {
 		sr, _, mock := newSR(t)
 		defer mock.Close()
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, "no_such_special_xyz"))
+		assert.Error(t, sr.fetchSpecialMetric(ctx, "no_such_special_xyz"))
 		select {
 		case <-sr.reaper.measurementCh:
 			t.Error("expected no measurement")
