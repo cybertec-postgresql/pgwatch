@@ -181,20 +181,20 @@ func TestSourceConn_GetMetricInterval(t *testing.T) {
 
 	t.Run("primary uses Metrics", func(t *testing.T) {
 		md.IsInRecovery = false
-		assert.Equal(t, 15, md.GetMetricInterval("foo"))
-		assert.Equal(t, 25, md.GetMetricInterval("bar"))
+		assert.Equal(t, 15*time.Second, md.GetMetricInterval("foo"))
+		assert.Equal(t, 25*time.Second, md.GetMetricInterval("bar"))
 	})
 
 	t.Run("standby uses MetricsStandby if present", func(t *testing.T) {
 		md.IsInRecovery = true
-		assert.Equal(t, 35, md.GetMetricInterval("foo"))
-		assert.Equal(t, 0, md.GetMetricInterval("bar"))
+		assert.Equal(t, 35*time.Second, md.GetMetricInterval("foo"))
+		assert.Equal(t, time.Duration(0), md.GetMetricInterval("bar"))
 	})
 
 	t.Run("standby with empty MetricsStandby falls back to Metrics", func(t *testing.T) {
 		md.IsInRecovery = true
 		md.MetricsStandby = metrics.MetricIntervals{}
-		assert.Equal(t, 15, md.GetMetricInterval("foo"))
+		assert.Equal(t, 15*time.Second, md.GetMetricInterval("foo"))
 	})
 }
 
