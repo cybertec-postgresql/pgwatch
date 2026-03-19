@@ -48,7 +48,7 @@ func TestNewLogParser(t *testing.T) {
 		assert.Equal(t, tempDir, lp.Directory)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
 		assert.Equal(t, false, lp.TruncateOnRotation)
-		assert.Equal(t, 60, lp.Interval)
+		assert.Equal(t, 60*time.Second, lp.Interval)
 		assert.NotNil(t, lp.LogsMatchRegex)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
