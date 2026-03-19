@@ -75,7 +75,7 @@
 <span id="L18" class="ln">    18  </span>	time.Sleep(100 * time.Millisecond)
 <span id="L19" class="ln">    19  </span>
 <span id="L20" class="ln">    20  </span>	<span class="comment">// Call the GetGoPsutilCPU function with a 1-second interval</span>
-<span id="L21" class="ln">    21  </span>	result, err := GetGoPsutilCPU(1.0)
+<span id="L21" class="ln">    21  </span>	result, err := GetGoPsutilCPU(time.Second)
 <span id="L22" class="ln">    22  </span>	a.NoError(err)
 <span id="L23" class="ln">    23  </span>	a.NotEmpty(result)
 <span id="L24" class="ln">    24  </span>

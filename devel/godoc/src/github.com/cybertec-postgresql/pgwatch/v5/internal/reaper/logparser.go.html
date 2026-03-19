@@ -100,7 +100,7 @@
 <span id="L43" class="ln">    43  </span>	ctx              context.Context
 <span id="L44" class="ln">    44  </span>	LogsMatchRegex   *regexp.Regexp
 <span id="L45" class="ln">    45  </span>	SourceConn       *sources.SourceConn
-<span id="L46" class="ln">    46  </span>	Interval         int
+<span id="L46" class="ln">    46  </span>	Interval         time.Duration
 <span id="L47" class="ln">    47  </span>	StoreCh          chan&lt;- metrics.MeasurementEnvelope
 <span id="L48" class="ln">    48  </span>	eventCounts      map[string]int64 <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
 <span id="L49" class="ln">    49  </span>	eventCountsTotal map[string]int64 <span class="comment">// for the whole instance</span>
@@ -154,7 +154,7 @@
 <span id="L97" class="ln">    97  </span>}
 <span id="L98" class="ln">    98  </span>
 <span id="L99" class="ln">    99  </span>func (lp *LogParser) HasSendIntervalElapsed() bool {
-<span id="L100" class="ln">   100  </span>	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval)))
+<span id="L100" class="ln">   100  </span>	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
 <span id="L101" class="ln">   101  </span>}
 <span id="L102" class="ln">   102  </span>
 <span id="L103" class="ln">   103  </span>func (lp *LogParser) ParseLogs() error {

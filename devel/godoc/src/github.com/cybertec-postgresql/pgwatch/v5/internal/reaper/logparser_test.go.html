@@ -105,7 +105,7 @@
 <span id="L48" class="ln">    48  </span>		assert.Equal(t, tempDir, lp.Directory)
 <span id="L49" class="ln">    49  </span>		assert.Equal(t, &#34;en&#34;, lp.ServerMessagesLang)
 <span id="L50" class="ln">    50  </span>		assert.Equal(t, false, lp.TruncateOnRotation)
-<span id="L51" class="ln">    51  </span>		assert.Equal(t, 60, lp.Interval)
+<span id="L51" class="ln">    51  </span>		assert.Equal(t, 60*time.Second, lp.Interval)
 <span id="L52" class="ln">    52  </span>		assert.NotNil(t, lp.LogsMatchRegex)
 <span id="L53" class="ln">    53  </span>		assert.NoError(t, mock.ExpectationsWereMet())
 <span id="L54" class="ln">    54  </span>	})

@@ -401,8 +401,8 @@
 <span id="L344" class="ln">   344  </span>			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
 <span id="L345" class="ln">   345  </span>		}
 <span id="L346" class="ln">   346  </span>
-<span id="L347" class="ln">   347  </span>		if time.Since(t1) &gt; (time.Second * time.Duration(interval)) {
-<span id="L348" class="ln">   348  </span>			l.Warningf(&#34;Total fetching time of %v bigger than %vs interval&#34;, time.Since(t1), interval)
+<span id="L347" class="ln">   347  </span>		if time.Since(t1) &gt; interval {
+<span id="L348" class="ln">   348  </span>			l.Warningf(&#34;Total fetching time of %v bigger than %v interval&#34;, time.Since(t1), interval)
 <span id="L349" class="ln">   349  </span>		}
 <span id="L350" class="ln">   350  </span>
 <span id="L351" class="ln">   351  </span>		if err != nil {
@@ -442,7 +442,7 @@
 <span id="L385" class="ln">   385  </span>		select {
 <span id="L386" class="ln">   386  </span>		case &lt;-ctx.Done():
 <span id="L387" class="ln">   387  </span>			return
-<span id="L388" class="ln">   388  </span>		case &lt;-time.After(time.Second * time.Duration(interval)):
+<span id="L388" class="ln">   388  </span>		case &lt;-time.After(interval):
 <span id="L389" class="ln">   389  </span>			<span class="comment">// continue</span>
 <span id="L390" class="ln">   390  </span>		}
 <span id="L391" class="ln">   391  </span>	}
@@ -539,7 +539,7 @@
 <span id="L482" class="ln">   482  </span>	}
 <span id="L483" class="ln">   483  </span>	l := log.GetLogger(ctx)
 <span id="L484" class="ln">   484  </span>
-<span id="L485" class="ln">   485  </span>	if metric.IsInstanceLevel &amp;&amp; r.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; time.Second*time.Duration(md.GetMetricInterval(metricName)) &lt; r.Metrics.CacheAge() {
+<span id="L485" class="ln">   485  </span>	if metric.IsInstanceLevel &amp;&amp; r.Metrics.InstanceLevelCacheMaxSeconds &gt; 0 &amp;&amp; md.GetMetricInterval(metricName) &lt; r.Metrics.CacheAge() {
 <span id="L486" class="ln">   486  </span>		cacheKey = fmt.Sprintf(&#34;%s:%s&#34;, md.GetClusterIdentifier(), metricName)
 <span id="L487" class="ln">   487  </span>	}
 <span id="L488" class="ln">   488  </span>	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())

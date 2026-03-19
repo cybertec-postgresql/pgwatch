@@ -120,7 +120,7 @@ and send measurements to sinks.
 				<dd><a href="#DoesEmergencyTriggerfileExist">func DoesEmergencyTriggerfileExist(fname string) bool</a></dd>
 			
 				
-				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval int) (metrics.Measurements, error)</a></dd>
+				<dd><a href="#GetGoPsutilCPU">func GetGoPsutilCPU(interval time.Duration) (metrics.Measurements, error)</a></dd>
 			
 				
 				<dd><a href="#GetGoPsutilDiskPG">func GetGoPsutilDiskPG(pgDirs metrics.Measurements) (metrics.Measurements, error)</a></dd>
@@ -503,7 +503,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 				
 				
 			</h2>
-			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/builtin/#int">int</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func GetGoPsutilCPU(interval <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			<p>GetGoPsutilCPU simulates &quot;psutil&quot; metric output. Assumes the result from last call as input
 
 			
@@ -1000,7 +1000,7 @@ so including them would double-count and skew percentage calculations.
 <span id="LogParser.ctx"></span>    ctx              <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
 <span id="LogParser.LogsMatchRegex"></span>    LogsMatchRegex   *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>
 <span id="LogParser.SourceConn"></span>    SourceConn       *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>
-<span id="LogParser.Interval"></span>    Interval         <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="LogParser.Interval"></span>    Interval         <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
 <span id="LogParser.StoreCh"></span>    StoreCh          chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
 <span id="LogParser.eventCounts"></span>    eventCounts      map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
 <span id="LogParser.eventCountsTotal"></span>    eventCountsTotal map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the whole instance</span>

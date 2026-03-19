@@ -97,7 +97,7 @@
 <span id="L40" class="ln">    40  </span>}
 <span id="L41" class="ln">    41  </span>
 <span id="L42" class="ln">    42  </span><span class="comment">// GetGoPsutilCPU simulates &#34;psutil&#34; metric output. Assumes the result from last call as input</span>
-<span id="L43" class="ln">    43  </span>func GetGoPsutilCPU(interval int) (metrics.Measurements, error) {
+<span id="L43" class="ln">    43  </span>func GetGoPsutilCPU(interval time.Duration) (metrics.Measurements, error) {
 <span id="L44" class="ln">    44  </span>	prevCPULoadTimeStatsLock.RLock()
 <span id="L45" class="ln">    45  </span>	prevTime := prevCPULoadTimestamp
 <span id="L46" class="ln">    46  </span>	prevTimeStat := prevCPULoadTimeStats
@@ -107,7 +107,7 @@
 <span id="L50" class="ln">    50  </span>	if err != nil {
 <span id="L51" class="ln">    51  </span>		return nil, err
 <span id="L52" class="ln">    52  </span>	}
-<span id="L53" class="ln">    53  </span>	if time.Since(prevTime) &gt;= time.Duration(int(time.Second)*interval) {
+<span id="L53" class="ln">    53  </span>	if time.Since(prevTime) &gt;= interval {
 <span id="L54" class="ln">    54  </span>		prevCPULoadTimeStatsLock.Lock() <span class="comment">// update the cache</span>
 <span id="L55" class="ln">    55  </span>		prevCPULoadTimeStats = curCallStats[0]
 <span id="L56" class="ln">    56  </span>		prevCPULoadTimestamp = time.Now()

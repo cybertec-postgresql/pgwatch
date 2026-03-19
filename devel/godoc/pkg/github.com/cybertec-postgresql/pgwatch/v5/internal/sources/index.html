@@ -245,7 +245,7 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetDatabaseName">func (md *SourceConn) GetDatabaseName() string</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetMetricInterval">func (md *SourceConn) GetMetricInterval(name string) int</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#SourceConn.GetMetricInterval">func (md *SourceConn) GetMetricInterval(name string) time.Duration</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#SourceConn.IsClientOnSameHost">func (md *SourceConn) IsClientOnSameHost() bool</a></dd>
@@ -1054,7 +1054,7 @@ primary and all replicas but connection information is different
 					
 					
 				</h3>
-				<pre>func (md *<a href="#SourceConn">SourceConn</a>) GetMetricInterval(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#int">int</a></pre>
+				<pre>func (md *<a href="#SourceConn">SourceConn</a>) GetMetricInterval(name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
 				<p>GetMetricInterval returns the metric interval for the connection
 
 				
