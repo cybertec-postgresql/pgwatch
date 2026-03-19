@@ -40,7 +40,7 @@ func goPsutilCalcCPUUtilization(probe0, probe1 cpu.TimesStat) float64 {
 }
 
 // GetGoPsutilCPU simulates "psutil" metric output. Assumes the result from last call as input
-func GetGoPsutilCPU(interval int) (metrics.Measurements, error) {
+func GetGoPsutilCPU(interval time.Duration) (metrics.Measurements, error) {
 	prevCPULoadTimeStatsLock.RLock()
 	prevTime := prevCPULoadTimestamp
 	prevTimeStat := prevCPULoadTimeStats
@@ -50,7 +50,7 @@ func GetGoPsutilCPU(interval int) (metrics.Measurements, error) {
 	if err != nil {
 		return nil, err
 	}
-	if time.Since(prevTime) >= time.Duration(int(time.Second)*interval) {
+	if time.Since(prevTime) >= interval {
 		prevCPULoadTimeStatsLock.Lock() // update the cache
 		prevCPULoadTimeStats = curCallStats[0]
 		prevCPULoadTimestamp = time.Now()

@@ -128,13 +128,13 @@ func (md *SourceConn) GetDatabaseName() string {
 }
 
 // GetMetricInterval returns the metric interval for the connection
-func (md *SourceConn) GetMetricInterval(name string) int {
+func (md *SourceConn) GetMetricInterval(name string) time.Duration {
 	md.RLock()
 	defer md.RUnlock()
 	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-		return md.MetricsStandby[name]
+		return time.Duration(md.MetricsStandby[name]) * time.Second
 	}
-	return md.Metrics[name]
+	return time.Duration(md.Metrics[name]) * time.Second
 }
 
 // IsClientOnSameHost checks if the pgwatch client is running on the same host as the PostgreSQL server

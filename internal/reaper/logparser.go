@@ -43,7 +43,7 @@ type LogParser struct {
 	ctx              context.Context
 	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.SourceConn
-	Interval         int
+	Interval         time.Duration
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance
@@ -97,7 +97,7 @@ func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- m
 }
 
 func (lp *LogParser) HasSendIntervalElapsed() bool {
-	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-time.Second*time.Duration(lp.Interval)))
+	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
 }
 
 func (lp *LogParser) ParseLogs() error {

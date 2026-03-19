@@ -344,8 +344,8 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 			metricStoreMessages, err = r.FetchMetric(ctx, md, metricName)
 		}
 
-		if time.Since(t1) > (time.Second * time.Duration(interval)) {
-			l.Warningf("Total fetching time of %v bigger than %vs interval", time.Since(t1), interval)
+		if time.Since(t1) > interval {
+			l.Warningf("Total fetching time of %v bigger than %v interval", time.Since(t1), interval)
 		}
 
 		if err != nil {
@@ -385,7 +385,7 @@ func (r *Reaper) reapMetricMeasurements(ctx context.Context, md *sources.SourceC
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Second * time.Duration(interval)):
+		case <-time.After(interval):
 			// continue
 		}
 	}
@@ -482,7 +482,7 @@ func (r *Reaper) FetchMetric(ctx context.Context, md *sources.SourceConn, metric
 	}
 	l := log.GetLogger(ctx)
 
-	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && time.Second*time.Duration(md.GetMetricInterval(metricName)) < r.Metrics.CacheAge() {
+	if metric.IsInstanceLevel && r.Metrics.InstanceLevelCacheMaxSeconds > 0 && md.GetMetricInterval(metricName) < r.Metrics.CacheAge() {
 		cacheKey = fmt.Sprintf("%s:%s", md.GetClusterIdentifier(), metricName)
 	}
 	data = r.measurementCache.Get(cacheKey, r.Metrics.CacheAge())
