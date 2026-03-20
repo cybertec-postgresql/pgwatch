@@ -21,7 +21,7 @@ export const PresetsGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnResize
+    onColumnWidthChange
   } = useGridState('PRESETS_GRID', columns);
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
@@ -63,7 +63,7 @@ export const PresetsGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnResize={onColumnResize}
+          onColumnWidthChange={onColumnWidthChange}
         />
         <PresetFormDialog />
       </PresetFormProvider>
