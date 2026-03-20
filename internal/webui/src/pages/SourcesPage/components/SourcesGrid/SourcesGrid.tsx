@@ -19,7 +19,8 @@ export const SourcesGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnWidthChange
+    onColumnWidthChange,
+    resetColumnSizes 
   } = useGridState('SOURCES_GRID', columns, {
     Kind: false,
     IncludePattern: false,
@@ -52,7 +53,7 @@ export const SourcesGrid = () => {
           rows={data ?? []}
           pageSizeOptions={[]}
           slots={{ 
-            toolbar: () => <SourcesGridToolbar />
+            toolbar: () => <SourcesGridToolbar onResetColumns={resetColumnSizes} />
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
