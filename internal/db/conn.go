@@ -43,6 +43,7 @@ type PgxPoolIface interface {
 	Close()
 	Config() *pgxpool.Config
 	Ping(ctx context.Context) error
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	Stat() *pgxpool.Stat
 }
 
