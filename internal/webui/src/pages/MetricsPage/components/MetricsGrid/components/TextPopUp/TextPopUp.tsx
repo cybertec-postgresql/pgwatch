@@ -4,6 +4,8 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Tooltip, Typography } from "@mui/material";
 import ReactMarkdown from 'react-markdown';
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 type Props = {
   title: string;
@@ -60,18 +62,18 @@ export const TextPopUp = ({ title, content, type = "description" }: Props) => {
             }}
           >
             {type === "sql" ? (
-              <Typography
-                component="pre"
-                sx={{
-                  margin: 0,
-                  fontFamily: "monospace",
+              <SyntaxHighlighter
+                language="sql"
+                style={atomOneLight}
+                wrapLongLines
+                customStyle={{
                   fontSize: "0.875rem",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
+                  borderRadius: "4px",
+                  margin: 0,
                 }}
               >
                 {content}
-              </Typography>
+              </SyntaxHighlighter>
             ) : (
               <Box sx={{ 
                 '& p': { marginTop: 0, marginBottom: 1 },
