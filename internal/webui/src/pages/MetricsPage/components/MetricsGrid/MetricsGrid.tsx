@@ -21,7 +21,7 @@ export const MetricsGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnResize
+    onColumnWidthChange
   } = useGridState('METRICS_GRID', columns);
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
@@ -63,7 +63,7 @@ export const MetricsGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnResize={onColumnResize}
+          onColumnWidthChange={onColumnWidthChange}
           initialState={{
             sorting: {
               sortModel: [{ field: 'Key', sort: 'asc' }],
