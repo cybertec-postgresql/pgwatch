@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Box, Toolbar } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -12,11 +12,12 @@ import { PrivateRoute } from "layout/PrivateRoute";
 import { privateRoutes, publicRoutes } from "layout/Routes";
 
 import { AppBar } from "./layout/AppBar";
-
+import { CopilotDrawer } from "components/CopilotDrawer/CopilotDrawer";
 const mdTheme = createTheme();
 
 export default function App() {
-
+  //Initialize the Copilot visibility state
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const publicRoutesItems = useMemo(
     () =>
       publicRoutes.map((route) => (
@@ -38,7 +39,12 @@ export default function App() {
       <ThemeProvider theme={mdTheme}>
         <Box sx={{ display: "flex" }}>
           <CssBaseline />
-          <AppBar />
+          {/*Pass the toggle function to the AppBar */}
+          <AppBar onToggleCopilot={() => setIsCopilotOpen(!isCopilotOpen)} />
+          <CopilotDrawer
+            open={isCopilotOpen}
+            onClose={() => setIsCopilotOpen(false)}
+          />
           <Box
             component="main"
             sx={{
