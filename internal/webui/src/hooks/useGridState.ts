@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
 export interface GridColumnSizingModel {
@@ -49,25 +49,26 @@ export const useGridState = (
   }, [storageKey]);
 
   const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
-    const newState = {
-      ...gridState,
-      columnVisibility: newModel
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
+    setGridState(prev => {
+      const newState = { ...prev, columnVisibility: newModel };
+      saveToStorage(newState);
+      return newState;
+    });
+  }, [saveToStorage]);
 
-  const handleColumnResize = useCallback((params: any) => {
-    const newState = {
-      ...gridState,
-      columnSizing: {
-        ...gridState.columnSizing,
-        [params.field || params.colDef?.field]: params.width
-      }
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [gridState, saveToStorage]);
+  const handleColumnWidthChange = useCallback((params: any) => {
+    setGridState(prev => {
+      const newState = {
+        ...prev,
+        columnSizing: {
+          ...prev.columnSizing,
+          [params.field || params.colDef?.field]: params.width
+        }
+      };
+      saveToStorage(newState);
+      return newState;
+    });
+  }, [saveToStorage]);
 
   const resetColumnSizes = useCallback(() => {
     const defaultSizing = columns?.reduce((acc, col) => ({
@@ -75,26 +76,25 @@ export const useGridState = (
       [col.field]: col.width || 150
     }), {});
 
-    const newState = {
-      ...gridState,
-      columnSizing: defaultSizing
-    };
-    setGridState(newState);
-    saveToStorage(newState);
-  }, [columns, gridState, saveToStorage]);
+    setGridState(prev => {
+      const newState = { ...prev, columnSizing: defaultSizing };
+      saveToStorage(newState);
+      return newState;
+    });
+  }, [columns, saveToStorage]);
 
-  // Generate columns with applied widths
-  const columnsWithSizing = columns?.map(col => ({
+  // Memoize columns with applied widths so objects are stable between renders
+  const columnsWithSizing = useMemo(() => columns?.map(col => ({
     ...col,
     width: gridState.columnSizing[col.field] || col.width || 150
-  }));
+  })), [columns, gridState.columnSizing]);
 
   return {
     columnVisibility: gridState.columnVisibility,
     columnSizing: gridState.columnSizing,
     columnsWithSizing,
     onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnResize: handleColumnResize,
+    onColumnWidthChange: handleColumnWidthChange,
     resetColumnSizes
   };
 };
