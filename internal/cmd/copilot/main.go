@@ -1,3 +1,5 @@
+// Package main provides the Terminal User Interface for the pgwatch3 AI Copilot.
+// This TUI structure and gRPC integration were implemented with the assistance of Antigravity (AI).
 package main
 
 import (

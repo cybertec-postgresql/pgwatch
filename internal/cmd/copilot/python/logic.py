@@ -1,3 +1,5 @@
+# logic.py: Core AI analysis and gRPC receiver for the pgwatch3 AI Copilot.
+# Refactored and integrated with the TUI with the assistance of Antigravity (AI).
 import os
 import grpc
 from google import genai
