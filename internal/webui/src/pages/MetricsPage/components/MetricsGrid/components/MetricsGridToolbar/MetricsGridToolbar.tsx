@@ -1,7 +1,11 @@
 import { GridToolbar } from "components/GridToolbar/GridToolbar";
 import { useMetricFormContext } from "contexts/MetricForm/MetricForm.context";
 
-export const MetricsGridToolbar = () => {
+type Props = {
+  onResetColumns: () => void;
+};
+
+export const MetricsGridToolbar = ({ onResetColumns }: Props) => {
   const { handleOpen, setData } = useMetricFormContext();
 
   const onNewClick = () => {
@@ -10,6 +14,6 @@ export const MetricsGridToolbar = () => {
   };
 
   return (
-    <GridToolbar onNewClick={onNewClick} />
+    <GridToolbar onNewClick={onNewClick} onResetColumns={onResetColumns} />
   );
 };

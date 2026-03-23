@@ -21,7 +21,8 @@ export const PresetsGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnWidthChange
+    onColumnWidthChange,
+    resetColumnSizes 
   } = useGridState('PRESETS_GRID', columns);
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
@@ -59,7 +60,7 @@ export const PresetsGrid = () => {
           rows={rows}
           pageSizeOptions={[]}
           slots={{ 
-            toolbar: () => <PresetsGridToolbar />
+            toolbar: () => <PresetsGridToolbar onResetColumns={resetColumnSizes} />
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
