@@ -42,12 +42,12 @@ func NewSourceReaper(r *Reaper, md *sources.SourceConn) *SourceReaper {
 func (sr *SourceReaper) activeMetrics() map[string]time.Duration {
 	sr.md.RLock()
 	defer sr.md.RUnlock()
-	src := sr.md.Metrics
+	am := sr.md.Metrics
 	if sr.md.IsInRecovery && len(sr.md.MetricsStandby) > 0 {
-		src = sr.md.MetricsStandby
+		am = sr.md.MetricsStandby
 	}
-	c := make(map[string]time.Duration, len(src))
-	for k, v := range src {
+	c := make(map[string]time.Duration, len(am))
+	for k, v := range am {
 		c[k] = time.Duration(v) * time.Second
 	}
 	return c
