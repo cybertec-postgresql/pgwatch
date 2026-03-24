@@ -94,7 +94,8 @@ func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool {
 
 // sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the
 // measurement channel.
-func (sr *SourceReaper) sendEnvelope(name, storageName string, data metrics.Measurements) {
+func (sr *SourceReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements) {
+	log.GetLogger(ctx).WithField("metric", name).WithField("rows", len(data)).Info("measurements fetched")
 	sr.reaper.AddSysinfoToMeasurements(data, sr.md)
 	sr.reaper.measurementCh <- metrics.MeasurementEnvelope{
 		DBName:     sr.md.Name,
@@ -110,7 +111,7 @@ func (sr *SourceReaper) dispatchMetricData(ctx context.Context, name string, met
 	if key := sr.cacheKey(metric, name); key != "" {
 		sr.reaper.measurementCache.Put(key, data)
 	}
-	sr.sendEnvelope(name, metric.StorageName, data)
+	sr.sendEnvelope(ctx, name, metric.StorageName, data)
 	if name == "db_stats" {
 		sr.detectServerRestart(ctx, data)
 	}
@@ -167,7 +168,8 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 					continue
 				}
 				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) > 0 {
-					sr.sendEnvelope(name, metric.StorageName, cached)
+					l.WithField("metric", name).Info("instance level cache hit")
+					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
 					break
 				}
 				sql := metric.GetSQL(sr.md.Version)
@@ -255,6 +257,7 @@ func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error {
 		return fmt.Errorf("could not read metric from OS: %v", err)
 	}
 	if msg != nil && len(msg.Data) > 0 {
+		log.GetLogger(ctx).WithField("metric", name).WithField("rows", len(msg.Data)).Info("measurements fetched")
 		sr.reaper.measurementCh <- *msg
 	}
 	return nil
@@ -283,7 +286,7 @@ func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name string) err
 		return fmt.Errorf("failed to fetch special metric: %v", err)
 	}
 	if len(data) > 0 {
-		sr.sendEnvelope(name, metric.StorageName, data)
+		sr.sendEnvelope(ctx, name, metric.StorageName, data)
 	}
 	return err
 }
