@@ -1,7 +1,11 @@
 import { GridToolbar } from "components/GridToolbar/GridToolbar";
 import { usePresetFormContext } from "contexts/PresetForm/PresetForm.context";
 
-export const PresetsGridToolbar = () => {
+type Props = {
+  onResetColumns: () => void;
+};
+
+export const PresetsGridToolbar = ({ onResetColumns }: Props) => {
   const { handleOpen, setData } = usePresetFormContext();
 
   const onNewClick = () => {
@@ -10,6 +14,6 @@ export const PresetsGridToolbar = () => {
   };
 
   return (
-    <GridToolbar onNewClick={onNewClick} />
+    <GridToolbar onNewClick={onNewClick} onResetColumns={onResetColumns} />
   );
 };
