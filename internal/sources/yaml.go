@@ -36,7 +36,10 @@ func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
 
 // writeSources writes sources to file without locking (internal use only)
 func (fcr *fileSourcesReaderWriter) writeSources(mds Sources) error {
-	yamlData, _ := yaml.Marshal(mds)
+	yamlData, err := yaml.Marshal(mds)
+	if err != nil {
+		return err
+	}
 	return os.WriteFile(fcr.path, yamlData, 0644)
 }
 

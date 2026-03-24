@@ -364,3 +364,79 @@ func TestConcurrentSourceUpdates(t *testing.T) {
 	a.NoError(err)
 	a.Equal(numGoroutines, len(finalSources), "Some updates were lost due to race condition!")
 }
+
+func TestWriteSourcesDoesNotCorruptFile(t *testing.T) {
+	tests := []struct {
+		name       string
+		initial    sources.Sources
+		update     sources.Sources
+		wantCount  int
+		setupPath  func(t *testing.T, initial sources.Sources) (path string, rw sources.ReaderWriter)
+		wantErr    bool
+	}{
+		{
+			name: "valid roundtrip preserves all fields",
+			initial: sources.Sources{
+				{Name: "db1", ConnStr: "postgresql://localhost/db1", Kind: sources.SourcePostgres, IsEnabled: true},
+			},
+			update: sources.Sources{
+				{Name: "db1", ConnStr: "postgresql://localhost/db1", Kind: sources.SourcePostgres, IsEnabled: true},
+				{Name: "db2", ConnStr: "postgresql://localhost/db2", Kind: sources.SourcePostgres, IsEnabled: true},
+			},
+			wantCount: 2,
+			setupPath: func(t *testing.T, initial sources.Sources) (string, sources.ReaderWriter) {
+				path := filepath.Join(t.TempDir(), "sources.yaml")
+				rw, _ := sources.NewYAMLSourcesReaderWriter(ctx, path)
+				_ = rw.WriteSources(initial)
+				return path, rw
+			},
+		},
+		{
+			name: "write to directory path returns error",
+			initial: sources.Sources{
+				{Name: "db1", ConnStr: "postgresql://localhost/db1", Kind: sources.SourcePostgres},
+			},
+			update: sources.Sources{
+				{Name: "db1", ConnStr: "postgresql://localhost/db1", Kind: sources.SourcePostgres},
+			},
+			wantErr: true,
+			setupPath: func(t *testing.T, _ sources.Sources) (string, sources.ReaderWriter) {
+				dir := t.TempDir()
+				rw, _ := sources.NewYAMLSourcesReaderWriter(ctx, dir)
+				return dir, rw
+			},
+		},
+		{
+			name: "empty sources list writes valid empty file",
+			initial: sources.Sources{
+				{Name: "db1", ConnStr: "postgresql://localhost/db1", Kind: sources.SourcePostgres, IsEnabled: true},
+			},
+			update:    sources.Sources{},
+			wantCount: 0,
+			setupPath: func(t *testing.T, initial sources.Sources) (string, sources.ReaderWriter) {
+				path := filepath.Join(t.TempDir(), "sources.yaml")
+				rw, _ := sources.NewYAMLSourcesReaderWriter(ctx, path)
+				_ = rw.WriteSources(initial)
+				return path, rw
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := assert.New(t)
+			_, rw := tt.setupPath(t, tt.initial)
+
+			err := rw.WriteSources(tt.update)
+			if tt.wantErr {
+				a.Error(err)
+				return
+			}
+			a.NoError(err)
+
+			got, err := rw.GetSources()
+			a.NoError(err)
+			a.Len(got, tt.wantCount)
+		})
+	}
+}
