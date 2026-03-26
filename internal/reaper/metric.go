@@ -98,12 +98,14 @@ func (r *Reaper) LoadMetrics() (err error) {
 		}(), "metrics and presets refreshed")
 	// update the monitored sources with real metric definitions from presets
 	for _, md := range r.monitoredSources {
+		md.Lock()
 		if md.PresetMetrics > "" {
 			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
 		}
 		if md.PresetMetricsStandby > "" {
 			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
 		}
+		md.Unlock()
 	}
 	return
 }
