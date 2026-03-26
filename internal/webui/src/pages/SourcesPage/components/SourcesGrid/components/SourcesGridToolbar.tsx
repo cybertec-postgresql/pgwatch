@@ -2,7 +2,11 @@ import { GridToolbar } from "components/GridToolbar/GridToolbar";
 import { useSourceFormContext } from "contexts/SourceForm/SourceForm.context";
 import { SourceFormActions } from "contexts/SourceForm/SourceForm.types";
 
-export const SourcesGridToolbar = () => {
+type Props = {
+  onResetColumns: () => void;
+};
+
+export const SourcesGridToolbar = ({ onResetColumns }: Props) => {
   const { handleOpen, setData, setAction } = useSourceFormContext();
 
   const onNewClick = () => {
@@ -12,6 +16,6 @@ export const SourcesGridToolbar = () => {
   };
 
   return (
-    <GridToolbar onNewClick={onNewClick} />
+    <GridToolbar onNewClick={onNewClick} onResetColumns={onResetColumns} />
   );
 };
