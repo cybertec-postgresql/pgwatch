@@ -26,6 +26,7 @@ export default defineConfig(({ command }) => ({
       include: '**/*.svg',
     }),
   ],
+  base: './',
   server: {
     port: 4000,
     proxy: {
