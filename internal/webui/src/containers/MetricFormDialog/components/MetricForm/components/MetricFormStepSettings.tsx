@@ -5,7 +5,7 @@ import { MetricFormValues } from "../MetricForm.types";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-sql";
-import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/themes/prism.css";
 import { Controller } from "react-hook-form";
 
 export const MetricFormStepSettings = () => {
@@ -59,8 +59,8 @@ export const MetricFormStepSettings = () => {
                 minHeight: "120px",
                 border: "1px solid rgba(0,0,0,0.23)",
                 borderRadius: "4px",
-                backgroundColor: "#2d2d2d",
-                color: "#ccc",
+                backgroundColor: "#fafafa",
+                color: "#333",
               }}
             />
           )}
