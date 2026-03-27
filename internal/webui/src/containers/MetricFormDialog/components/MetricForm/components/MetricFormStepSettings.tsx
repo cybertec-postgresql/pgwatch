@@ -2,12 +2,17 @@ import { Checkbox, FormControl, FormControlLabel, FormHelperText, InputLabel, Ou
 import { useController, useFormContext } from "react-hook-form";
 import { useFormStyles } from "styles/form";
 import { MetricFormValues } from "../MetricForm.types";
+import Editor from "react-simple-code-editor";
+import { highlight, languages } from "prismjs";
+import "prismjs/components/prism-sql";
+import "prismjs/themes/prism-tomorrow.css";
+import { Controller } from "react-hook-form";
 
 export const MetricFormStepSettings = () => {
   const { register, control } = useFormContext<MetricFormValues>();
   const { classes, cx } = useFormStyles();
 
-  const { field } = useController({ name: "IsInstanceLevel", control });
+  const { field: instanceLevelField } = useController({ name: "IsInstanceLevel", control });
 
   return (
     <div className={classes.form}>
@@ -30,13 +35,35 @@ export const MetricFormStepSettings = () => {
         className={cx(classes.formControlInput, classes.widthFull)}
         variant="outlined"
       >
-        <InputLabel htmlFor="InitSQL">Init SQL</InputLabel>
-        <OutlinedInput
-          {...register("InitSQL")}
-          id="InitSQL"
-          label="Init SQL"
-          multiline
-          maxRows={5}
+         <InputLabel
+          shrink
+          htmlFor="InitSQL"
+          sx={{ backgroundColor: "white", px: 0.5 }}
+        >
+          Init SQL
+        </InputLabel>
+         <Controller
+          name="InitSQL"
+          control={control}
+          render={({ field }) => (
+            <Editor
+              value={field.value ?? ""}
+              onValueChange={field.onChange}
+              highlight={(code) => highlight(code, languages.sql, "sql")}
+              padding={12}
+              id="InitSQL"
+              style={{
+                fontFamily: "'Fira Code', 'Consolas', monospace",
+                fontSize: "0.75rem",
+                lineHeight: 1.6,
+                minHeight: "120px",
+                border: "1px solid rgba(0,0,0,0.23)",
+                borderRadius: "4px",
+                backgroundColor: "#2d2d2d",
+                color: "#ccc",
+              }}
+            />
+          )}
         />
       </FormControl>
       <FormControlLabel
@@ -45,9 +72,9 @@ export const MetricFormStepSettings = () => {
         labelPlacement="start"
         control={
           <Checkbox
-            {...field}
+            {...instanceLevelField}
             size="medium"
-            checked={field.value}
+            checked={instanceLevelField.value}
           />
         }
       />
