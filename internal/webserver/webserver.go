@@ -17,6 +17,9 @@ import (
 	"strings"
 	"time"
 
+	"encoding/json"
+
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/copilot"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -46,9 +49,10 @@ type WebUIServer struct {
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        ReadyChecker
+	copilotClient       *copilot.Client
 }
 
-func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (_ *WebUIServer, err error) {
+func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker, cc *copilot.Client) (_ *WebUIServer, err error) {
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
@@ -67,6 +71,7 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 		metricsReaderWriter: mrw,
 		sourcesReaderWriter: srw,
 		readyChecker:        rc,
+		copilotClient:       cc,
 	}
 
 	s.basePath = "/" + opts.WebBasePath
@@ -82,6 +87,9 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	mux.Handle(s.basePath+"preset", NewEnsureAuth(s.handlePresets))
 	mux.Handle(s.basePath+"preset/{name}", NewEnsureAuth(s.handlePresetItem))
 	mux.Handle(s.basePath+"log", NewEnsureAuth(s.serveWsLog))
+	if s.copilotClient != nil {
+		mux.Handle(s.basePath+"ai/analyze", http.HandlerFunc(s.handleAIAnalyze))
+	}
 	mux.HandleFunc(s.basePath+"login", s.handleLogin)
 	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
 	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
@@ -219,4 +227,30 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+func (s *WebUIServer) handleAIAnalyze(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Database string                   `json:"database"`
+		Metric   string                   `json:"metric"`
+		Data     []map[string]interface{} `json:"data"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := s.copilotClient.Analyze(s.ctx, req.Database, req.Metric, req.Data)
+	if err != nil {
+		http.Error(w, "AI analysis failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"analysis": result})
 }

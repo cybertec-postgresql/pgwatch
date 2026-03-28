@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("GEMINI")
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 
 client = genai.Client(api_key=API_KEY)
 
@@ -50,17 +50,25 @@ class CopilotReceiver(pgwatch_pb2_grpc.ReceiverServicer):
                 self._log(f"[bold yellow]Analyzing {metric_name} for {db_name}...[/]")
                 
                 if not API_KEY or API_KEY == "your_api_key_here":
-                    response_text = f"MOCK REPORT: {metric_name} is showing high pressure on {db_name}. (API Key Missing)"
+                    response_text = f"MOCK REPORT: {metric_name} is showing issues on {db_name}. (API Key Missing)"
                 else:
-                    response = client.models.generate_content(
-                        model=GEMINI_MODEL,
-                        contents=prompt
-                    )
-                    response_text = response.text
+                    try:
+                        response = client.models.generate_content(
+                            model=GEMINI_MODEL,
+                            contents=prompt
+                        )
+                        response_text = response.text
+                    except Exception as ai_err:
+                        self._log(f"[bold red][AI Quota/Model Error] {ai_err}[/]")
+                        # Access struct fields safely
+                        status = "unknown"
+                        if metric_name in first_point.fields:
+                            status = str(first_point.fields[metric_name])
+                        response_text = f"MOCK REPORT (Fallback): {metric_name} is showing status {status} on {db_name}. (AI API unavailable: {type(ai_err).__name__})"
                 
                 self._log(f"\n[bold green]--- AI REPORT ---[/]\n{response_text}\n[bold green]------------------[/]\n")
             except Exception as e:
-                self._log(f"[bold red][AI Error] Failed to generate content: {e}[/]")
+                self._log(f"[bold red][Error] {e}[/]")
         return pgwatch_pb2.Reply(logmsg="Copilot analysis complete.")
 
     def _build_prompt(self, db_name: str, metric_name: str, data_point: Any) -> str:

@@ -82,6 +82,10 @@ func main() {
 		return
 	}
 
+	if err := opts.InitCopilot(mainCtx); err != nil {
+		logger.Error("failed to initialize AI copilot: ", err)
+	}
+
 	if err := opts.InitSinkWriter(mainCtx); err != nil {
 		exitCode.Store(cmdopts.ExitCodeConfigError)
 		logger.Error(err)
@@ -104,7 +108,7 @@ func main() {
 	reaper := reaper.NewReaper(mainCtx, opts)
 
 	if _, err = webserver.Init(mainCtx, opts.WebUI, opts.MetricsReaderWriter,
-		opts.SourcesReaderWriter, reaper); err != nil {
+		opts.SourcesReaderWriter, reaper, opts.CopilotClient); err != nil {
 		exitCode.Store(cmdopts.ExitCodeWebUIError)
 		logger.Error("failed to initialize web UI: ", err)
 		return

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/copilot"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -44,11 +45,13 @@ type Options struct {
 	Sinks   sinks.CmdOpts     `group:"Sinks"`
 	Logging log.CmdOpts       `group:"Logging"`
 	WebUI   webserver.CmdOpts `group:"WebUI"`
+	Copilot copilot.CmdOpts   `group:"Copilot"`
 	Help    bool
 
 	SourcesReaderWriter sources.ReaderWriter
 	MetricsReaderWriter metrics.ReaderWriter
 	SinksWriter         sinks.Writer
+	CopilotClient       *copilot.Client
 
 	ExitCode         int32
 	CommandCompleted bool
@@ -169,6 +172,12 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 		return err
 	}
 	return db.NeedsMigration(c.SinksWriter, sinks.ErrNeedsMigration)
+}
+
+// InitCopilot initializes the AI Copilot client.
+func (c *Options) InitCopilot(ctx context.Context) (err error) {
+	c.CopilotClient, err = copilot.New(ctx, c.Copilot)
+	return
 }
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.

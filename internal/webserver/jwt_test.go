@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var json = jsoniter.ConfigFastest
+// var json = jsoniter.ConfigFastest (removed to avoid collision with encoding/json)
 
 func TestIsCorrectPassword(t *testing.T) {
 	ts := &WebUIServer{CmdOpts: CmdOpts{WebUser: "user", WebPassword: "pass"}}
@@ -24,7 +24,7 @@ func TestIsCorrectPassword(t *testing.T) {
 
 func TestHandleLogin_POST_Success(t *testing.T) {
 	ts := &WebUIServer{CmdOpts: CmdOpts{WebUser: "user", WebPassword: "pass"}}
-	body, _ := json.Marshal(map[string]string{"user": "user", "password": "pass"})
+	body, _ := jsoniter.ConfigFastest.Marshal(map[string]string{"user": "user", "password": "pass"})
 	r := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 	ts.handleLogin(w, r)
@@ -36,7 +36,7 @@ func TestHandleLogin_POST_Success(t *testing.T) {
 
 func TestHandleLogin_POST_Fail(t *testing.T) {
 	ts := &WebUIServer{CmdOpts: CmdOpts{WebUser: "user", WebPassword: "pass"}}
-	body, _ := json.Marshal(map[string]string{"user": "user", "password": "wrong"})
+	body, _ := jsoniter.ConfigFastest.Marshal(map[string]string{"user": "user", "password": "wrong"})
 	r := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 	ts.handleLogin(w, r)

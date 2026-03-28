@@ -27,11 +27,11 @@ func (ready *ReadyBool) Ready() bool {
 
 func TestWebDisableOpt(t *testing.T) {
 	var ready ReadyBool
-	restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebDisable: "all"}, nil, nil, &ready)
+	restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebDisable: "all"}, nil, nil, &ready, nil)
 	assert.Nil(t, restsrv, "no webserver should be started")
 	assert.NoError(t, err)
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079", WebDisable: "ui"}, nil, nil, &ready)
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079", WebDisable: "ui"}, nil, nil, &ready, nil)
 	assert.NotNil(t, restsrv)
 	assert.NoError(t, err)
 	r, err := http.Get("http://localhost:8079/")
@@ -41,7 +41,7 @@ func TestWebDisableOpt(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, r.StatusCode, "rest api should be served though")
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready)
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready, nil)
 	assert.Nil(t, restsrv)
 	assert.Error(t, err, "port should be in use")
 }
@@ -49,7 +49,7 @@ func TestWebDisableOpt(t *testing.T) {
 func TestHealth(t *testing.T) {
 	var ready ReadyBool
 	ctx, cancel := context.WithCancel(context.Background())
-	restsrv, _ := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, nil, nil, &ready)
+	restsrv, _ := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, nil, nil, &ready, nil)
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/liveness")
@@ -73,7 +73,7 @@ func TestHealth(t *testing.T) {
 
 func TestServerNoAuth(t *testing.T) {
 	host := "http://localhost:8081"
-	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, nil, nil, nil, nil)
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// cors OPTIONS
@@ -113,7 +113,7 @@ func TestServerNoAuth(t *testing.T) {
 
 func TestGetToken(t *testing.T) {
 	host := "http://localhost:8082"
-	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, nil, nil, nil, nil)
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{
