@@ -87,14 +87,23 @@ class CopilotReceiver(pgwatch_pb2_grpc.ReceiverServicer):
         self._log("[bold magenta][Copilot] Defining metrics...[/]")
         return pgwatch_pb2.Reply(logmsg="Metrics defined.")
 
-def serve():
-    """Starts the gRPC server."""
+def serve(host: str = "[::]", port: int = 50051):
+    """Starts the gRPC server with configurable host and port."""
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     pgwatch_pb2_grpc.add_ReceiverServicer_to_server(CopilotReceiver(), server)
-    server.add_insecure_port('[::]:50051')
-    print("AI Copilot is listening on port 50051...")
+    
+    address = f"{host}:{port}"
+    server.add_insecure_port(address)
+    print(f"🚀 AI Copilot is listening on {address}...")
+
     server.start()
     server.wait_for_termination()
 
 if __name__ == "__main__":
-    serve()
+    parser = argparse.ArgumentParser(description="pgwatch3 AI copilot Backend")
+    parser.add_argument("--host", type=str, default="[::]", help="Host interface to bind to (default: [::])")
+    parser.add_argument("--port", type=int, default=50051, help="Port to listen on (default: 50051)")
+    args = parser.parse_args()
+
+    serve(host=args.host, port=args.port)
+
