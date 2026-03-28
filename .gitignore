@@ -35,3 +35,16 @@ debug
 
 # MCP and AI related output
 .playwright-mcp/
+.agents/
+.copilot/
+
+# Python related
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Local test configurations
+metrics.yaml
+sources.yaml
+git_status_check.txt
