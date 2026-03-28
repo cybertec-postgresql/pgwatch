@@ -25,10 +25,9 @@ func New(ctx context.Context, opts CmdOpts) (*Client, error) {
 
 	// Connect to the Python AI service using insecure credentials for local communication
 	conn, err := grpc.DialContext(ctx, opts.CopilotAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to copilot server at %s: %w", opts.CopilotAddr, err)
+		return nil, fmt.Errorf("failed to dial copilot server at %s: %w", opts.CopilotAddr, err)
 	}
 
 	return &Client{
