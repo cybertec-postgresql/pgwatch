@@ -220,6 +220,7 @@ func TestErrorHandlingToFile(t *testing.T) {
 
 	// Test WriteMetrics
 	err = fmr.WriteMetrics(&metrics.Metrics{})
+	assert.Contains(t, err.Error(), "failed to write metrics file")
 	assert.Error(t, err)
 
 	// Test GetMetrics
@@ -256,6 +257,7 @@ func TestErrorHandlingToFile(t *testing.T) {
 
 	_, err = fmr.GetMetrics()
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to unmarshal")
 }
 
 func TestCreateMetricAndPreset(t *testing.T) {

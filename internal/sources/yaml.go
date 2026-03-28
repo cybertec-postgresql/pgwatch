@@ -4,6 +4,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -36,8 +37,14 @@ func (fcr *fileSourcesReaderWriter) WriteSources(mds Sources) error {
 
 // writeSources writes sources to file without locking (internal use only)
 func (fcr *fileSourcesReaderWriter) writeSources(mds Sources) error {
-	yamlData, _ := yaml.Marshal(mds)
-	return os.WriteFile(fcr.path, yamlData, 0644)
+	yamlData, err := yaml.Marshal(mds)
+	if err != nil {
+		return fmt.Errorf("failed to marshal sources to YAML: %w", err)
+	}
+	if err := os.WriteFile(fcr.path, yamlData, 0644); err != nil {
+		return fmt.Errorf("failed to write sources file to %s: %w", fcr.path, err)
+	}
+	return nil
 }
 
 // UpdateSource updates an existing source or creates it if it doesn't exist, then writes the updated sources back to file
@@ -130,11 +137,11 @@ func (fcr *fileSourcesReaderWriter) getSources() (dbs Sources, err error) {
 func (fcr *fileSourcesReaderWriter) loadSourcesFromFile(configFilePath string) (dbs Sources, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(configFilePath); err != nil {
-		return
+		return nil, fmt.Errorf("failed to read sources file %s: %w", configFilePath, err)
 	}
 	c := make(Sources, 0) // there can be multiple configs in a single file
 	if err = yaml.Unmarshal(yamlFile, &c); err != nil {
-		return
+		return nil, fmt.Errorf("failed to unmarshal sources from %s: %w", configFilePath, err)
 	}
 	for _, v := range c {
 		dbs = append(dbs, fcr.expandEnvVars(v))

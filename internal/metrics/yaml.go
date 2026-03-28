@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"io/fs"
 	"maps"
 	"os"
@@ -38,8 +39,16 @@ func (fmr *fileMetricReader) WriteMetrics(metricDefs *Metrics) error {
 
 // writeMetrics writes metrics to file without locking (internal use only)
 func (fmr *fileMetricReader) writeMetrics(metricDefs *Metrics) error {
-	yamlData, _ := yaml.Marshal(metricDefs)
-	return os.WriteFile(fmr.path, yamlData, 0644)
+	yamlData, err := yaml.Marshal(metricDefs)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metrics to YAML: %w", err)
+	}
+
+	if err := os.WriteFile(fmr.path, yamlData, 0644); err != nil {
+		return fmt.Errorf("failed to write metrics file to %s: %w", fmr.path, err)
+	}
+
+	return nil
 }
 
 //go:embed metrics.yaml
@@ -56,7 +65,9 @@ func (fmr *fileMetricReader) GetMetrics() (metrics *Metrics, err error) {
 func (fmr *fileMetricReader) getMetrics() (metrics *Metrics, err error) {
 	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
 	if fmr.path == "" {
-		err = yaml.Unmarshal(defaultMetricsYAML, metrics)
+		if err = yaml.Unmarshal(defaultMetricsYAML, metrics); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal default metrics: %w", err)
+		}
 		return
 	}
 
@@ -91,10 +102,12 @@ func (fmr *fileMetricReader) getMetrics() (metrics *Metrics, err error) {
 func (fmr *fileMetricReader) loadMetricsFromFile(metricsFilePath string) (metrics *Metrics, err error) {
 	var yamlFile []byte
 	if yamlFile, err = os.ReadFile(metricsFilePath); err != nil {
-		return
+		return nil, fmt.Errorf("failed to read metrics file %s: %w", metricsFilePath, err)
 	}
 	metrics = &Metrics{MetricDefs{}, PresetDefs{}}
-	err = yaml.Unmarshal(yamlFile, &metrics)
+	if err = yaml.Unmarshal(yamlFile, metrics); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metrics from %s: %w", metricsFilePath, err)
+	}
 	return
 }
 

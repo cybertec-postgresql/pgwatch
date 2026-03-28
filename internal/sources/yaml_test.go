@@ -364,3 +364,30 @@ func TestConcurrentSourceUpdates(t *testing.T) {
 	a.NoError(err)
 	a.Equal(numGoroutines, len(finalSources), "Some updates were lost due to race condition!")
 }
+
+func TestErrorHandlingContext(t *testing.T) {
+	t.Run("write failure", func(t *testing.T) {
+		a := assert.New(t)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, "/")
+		a.NoError(err)
+
+		err = yamlrw.WriteSources(sources.Sources{})
+		a.Error(err)
+		a.Contains(err.Error(), "failed to write sources file")
+	})
+
+	t.Run("unmarshal failure", func(t *testing.T) {
+		a := assert.New(t)
+		tmpFile := filepath.Join(t.TempDir(), "invalid.yaml")
+		err := os.WriteFile(tmpFile, []byte("invalid yaml content"), 0644)
+		a.NoError(err)
+
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		_, err = yamlrw.GetSources()
+		a.Error(err)
+		a.Contains(err.Error(), "failed to unmarshal sources from")
+	})
+}
+
