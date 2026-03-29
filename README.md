@@ -167,3 +167,7 @@ docker compose -f ./docker/docker-compose.yml logs pgwatch --follow
 # Contributing
 
 Feedback, suggestions, problem reports, and pull requests are very much appreciated.
+## AI Integration
+
+For AI-powered database health monitoring with pgwatch,
+see [pgwatch-ai](https://github.com/piuushhh-07/pgwatch-ai).
