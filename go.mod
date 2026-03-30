@@ -3,7 +3,7 @@ module github.com/cybertec-postgresql/pgwatch/v5
 go 1.26.0
 
 require (
-	github.com/cybertec-postgresql/pgx-migrator v1.3.0
+	github.com/cybertec-postgresql/pgx-migrator v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.9.1
