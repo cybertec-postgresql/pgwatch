@@ -121,6 +121,18 @@ func (s *Source) Clone() *Source {
 	return c
 }
 
+// to check if connection configs are the same, then update the metrics and tags without a full restart
+func (s Source) IsSameConnection(s2 Source) bool {
+	return s.Name == s2.Name &&
+		s.Group == s2.Group &&
+		s.ConnStr == s2.ConnStr &&
+		s.Kind == s2.Kind &&
+		s.IsEnabled == s2.IsEnabled &&
+		s.IncludePattern == s2.IncludePattern &&
+		s.ExcludePattern == s2.ExcludePattern &&
+		s.OnlyIfMaster == s2.OnlyIfMaster
+}
+
 type Reader interface {
 	GetSources() (Sources, error)
 }

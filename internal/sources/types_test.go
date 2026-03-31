@@ -118,3 +118,155 @@ func TestSource_Equal(t *testing.T) {
 	assert.False(t, s1.Equal(srcs[3]))
 	assert.False(t, s1.Equal(srcs[4]))
 }
+
+func TestSource_IsSameConnection(t *testing.T) {
+	s1 := sources.Source{
+		Name:                 "test_db",
+		Group:                "default",
+		ConnStr:              "postgres://user:pass@localhost:5432/db",
+		Kind:                 sources.SourcePostgres,
+		IncludePattern:       "prod_*",
+		ExcludePattern:       "test_*",
+		IsEnabled:            true,
+		OnlyIfMaster:         false,
+		Metrics:              map[string]float64{"wal": 60},
+		MetricsStandby:       map[string]float64{"wal": 60},
+		PresetMetrics:        "basic",
+		PresetMetricsStandby: "basic",
+		CustomTags:           map[string]string{"env": "prod"},
+	}
+
+	srcs := sources.Sources{
+		{
+			// Same connection details and different metrics/presets/tags
+			Name:                 "test_db",
+			Group:                "default",
+			ConnStr:              "postgres://user:pass@localhost:5432/db",
+			Kind:                 sources.SourcePostgres,
+			IncludePattern:       "prod_*",
+			ExcludePattern:       "test_*",
+			IsEnabled:            true,
+			OnlyIfMaster:         false,
+			Metrics:              map[string]float64{"db_size": 300},
+			MetricsStandby:       map[string]float64{"db_size": 300},
+			PresetMetrics:        "exhaustive",
+			PresetMetricsStandby: "exhaustive",
+			CustomTags:           map[string]string{"env": "staging"},
+		},
+		{
+			// Different name "different connection"
+			Name:           "different_name",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// Different group "different connection"
+			Name:           "test_db",
+			Group:          "different_group",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different connection string "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@remote:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different kind "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePgBouncer,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different include pattern "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "dev_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different exclude pattern "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "ignore_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different enabled state "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      false,
+			OnlyIfMaster:   false,
+		},
+		{
+			// different master only state "different connection"
+			Name:           "test_db",
+			Group:          "default",
+			ConnStr:        "postgres://user:pass@localhost:5432/db",
+			Kind:           sources.SourcePostgres,
+			IncludePattern: "prod_*",
+			ExcludePattern: "test_*",
+			IsEnabled:      true,
+			OnlyIfMaster:   true,
+		},
+		{
+			// identical to s1 "same connection"
+			Name:                 "test_db",
+			Group:                "default",
+			ConnStr:              "postgres://user:pass@localhost:5432/db",
+			Kind:                 sources.SourcePostgres,
+			IncludePattern:       "prod_*",
+			ExcludePattern:       "test_*",
+			IsEnabled:            true,
+			OnlyIfMaster:         false,
+			Metrics:              map[string]float64{"wal": 60},
+			MetricsStandby:       map[string]float64{"wal": 60},
+			PresetMetrics:        "basic",
+			PresetMetricsStandby: "basic",
+			CustomTags:           map[string]string{"env": "prod"},
+		},
+	}
+
+	assert.True(t, s1.IsSameConnection(srcs[0]))
+	assert.False(t, s1.IsSameConnection(srcs[1]))
+	assert.False(t, s1.IsSameConnection(srcs[2]))
+	assert.False(t, s1.IsSameConnection(srcs[3]))
+	assert.False(t, s1.IsSameConnection(srcs[4]))
+	assert.False(t, s1.IsSameConnection(srcs[5]))
+	assert.False(t, s1.IsSameConnection(srcs[6]))
+	assert.False(t, s1.IsSameConnection(srcs[7]))
+	assert.False(t, s1.IsSameConnection(srcs[8]))
+	assert.True(t, s1.IsSameConnection(srcs[9]))
+}

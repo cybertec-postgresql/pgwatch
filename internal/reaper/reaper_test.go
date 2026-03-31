@@ -100,7 +100,7 @@ func TestReaper_LoadSources(t *testing.T) {
 		assert.Equal(t, 5, len(r.monitoredSources), "Expected five monitored sources after resetting groups")
 	})
 
-	t.Run("Test source config changes trigger restart", func(t *testing.T) {
+	t.Run("Test source connection config changes trigger restart", func(t *testing.T) {
 		baseSource := sources.Source{
 			Name:           "TestSource",
 			IsEnabled:      true,
@@ -115,105 +115,30 @@ func TestReaper_LoadSources(t *testing.T) {
 		testCases := []struct {
 			name         string
 			modifySource func(s *sources.Source)
-			expectCancel bool
 		}{
-			{
-				name: "custom tags change",
-				modifySource: func(s *sources.Source) {
-					s.CustomTags = map[string]string{"env": "production"}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "custom tags add new tag",
-				modifySource: func(s *sources.Source) {
-					s.CustomTags = map[string]string{"env": "test", "region": "us-east"}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "custom tags remove tag",
-				modifySource: func(s *sources.Source) {
-					s.CustomTags = map[string]string{}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "preset metrics change",
-				modifySource: func(s *sources.Source) {
-					s.PresetMetrics = "exhaustive"
-				},
-				expectCancel: true,
-			},
-			{
-				name: "preset standby metrics change",
-				modifySource: func(s *sources.Source) {
-					s.PresetMetricsStandby = "standby-preset"
-				},
-				expectCancel: true,
-			},
 			{
 				name: "connection string change",
 				modifySource: func(s *sources.Source) {
 					s.ConnStr = "postgres://localhost:5433/newdb"
 				},
-				expectCancel: true,
-			},
-			{
-				name: "custom metrics change interval",
-				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 15, "memory": 20}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "custom metrics add new metric",
-				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 10, "memory": 20, "disk": 30}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "custom metrics remove metric",
-				modifySource: func(s *sources.Source) {
-					s.Metrics = map[string]float64{"cpu": 10}
-				},
-				expectCancel: true,
-			},
-			{
-				name: "standby metrics change",
-				modifySource: func(s *sources.Source) {
-					s.MetricsStandby = map[string]float64{"cpu": 60}
-				},
-				expectCancel: true,
 			},
 			{
 				name: "group change",
 				modifySource: func(s *sources.Source) {
 					s.Group = "new-group"
 				},
-				expectCancel: true,
 			},
 			{
 				name: "kind change",
 				modifySource: func(s *sources.Source) {
 					s.Kind = sources.SourcePgBouncer
 				},
-				expectCancel: true,
 			},
 			{
 				name: "only if master change",
 				modifySource: func(s *sources.Source) {
 					s.OnlyIfMaster = true
 				},
-				expectCancel: true,
-			},
-			{
-				name: "no change - same config",
-				modifySource: func(_ *sources.Source) {
-					// No modifications - source stays the same
-				},
-				expectCancel: false,
 			},
 		}
 
@@ -265,9 +190,168 @@ func TestReaper_LoadSources(t *testing.T) {
 
 				for metric := range initialSource.Metrics {
 					dbMetric := initialSource.Name + "¤¤¤" + metric
-					assert.Equal(t, tc.expectCancel, cancelCalled[dbMetric])
-					if tc.expectCancel {
-						assert.Nil(t, mockConn.ExpectationsWereMet(), "Expected all mock expectations to be met")
+					// Since it is a connection config change, the cancel function should be called for each metric
+					assert.True(t, cancelCalled[dbMetric])
+
+					assert.Nil(t, mockConn.ExpectationsWereMet(), "Expected all mock expectations to be met")
+					_, exists := r.cancelFuncs[dbMetric]
+					assert.False(t, exists, "Expected cancel func to be removed from map after cancellation")
+				}
+			})
+		}
+	})
+
+	t.Run("Test metric or tag config changes trigger update", func(t *testing.T) {
+		baseSource := sources.Source{
+			Name:           "TestSource",
+			IsEnabled:      true,
+			Kind:           sources.SourcePostgres,
+			ConnStr:        "postgres://localhost:5432/testdb",
+			Metrics:        map[string]float64{"cpu": 10, "memory": 20},
+			MetricsStandby: map[string]float64{"cpu": 30},
+			CustomTags:     map[string]string{"env": "test"},
+			Group:          "default",
+		}
+
+		testCases := []struct {
+			name              string
+			modifySource      func(s *sources.Source)
+			expectedCancelled []string // List of metrics that shold be stopped
+		}{
+			{
+				name: "custom tags change",
+				modifySource: func(s *sources.Source) {
+					s.CustomTags = map[string]string{"env": "production"}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new tags
+			},
+			{
+				name: "custom tags add new tag",
+				modifySource: func(s *sources.Source) {
+					s.CustomTags = map[string]string{"env": "test", "region": "us-east"}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new tags
+			},
+			{
+				name: "custom tags remove tag",
+				modifySource: func(s *sources.Source) {
+					s.CustomTags = map[string]string{}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new tags
+			},
+			{
+				name: "preset metrics change",
+				modifySource: func(s *sources.Source) {
+					s.PresetMetrics = "exhaustive"
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new preset that will be applied on next iteration
+			},
+			{
+				name: "preset standby metrics change",
+				modifySource: func(s *sources.Source) {
+					s.PresetMetricsStandby = "standby-preset"
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new preset that will be applied on next iteration
+			},
+			{
+				name: "custom metrics change interval",
+				modifySource: func(s *sources.Source) {
+					s.Metrics = map[string]float64{"cpu": 15, "memory": 20}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new interval for cpu metric
+			},
+			{
+				name: "custom metrics add new metric",
+				modifySource: func(s *sources.Source) {
+					s.Metrics = map[string]float64{"cpu": 10, "memory": 20, "disk": 30}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new metric
+			},
+			{
+				name: "custom metrics remove metric",
+				modifySource: func(s *sources.Source) {
+					s.Metrics = map[string]float64{"cpu": 10}
+				},
+				expectedCancelled: []string{"memory"}, // Only memory metric should be cancelled
+			},
+			{
+				name: "standby metrics change",
+				modifySource: func(s *sources.Source) {
+					s.MetricsStandby = map[string]float64{"cpu": 60}
+				},
+				expectedCancelled: nil, // No metrics should be cancelled, just updated with new standby metrics
+			},
+			{
+				name: "no change - same config",
+				modifySource: func(_ *sources.Source) {
+					// No modifications - source stays the same
+				},
+				expectedCancelled: nil, // No metrics should be cancelled
+			},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				initialSource := *baseSource.Clone()
+				initialReader := &testutil.MockSourcesReaderWriter{
+					GetSourcesFunc: func() (sources.Sources, error) {
+						return sources.Sources{initialSource}, nil
+					},
+				}
+
+				r := NewReaper(ctx, &cmdopts.Options{
+					SourcesReaderWriter: initialReader,
+					SinksWriter:         &sinks.MultiWriter{},
+				})
+				assert.NoError(t, r.LoadSources(ctx))
+				assert.Equal(t, 1, len(r.monitoredSources), "Expected one monitored source after initial load")
+
+				mockConn, err := pgxmock.NewPool()
+				require.NoError(t, err)
+
+				// no close expectation set on mockConn here because we should reuse the same connecrion for metric or tag config changes
+				r.monitoredSources[0].Conn = mockConn
+
+				// Add a mock cancel function for a metric gatherer
+				cancelCalled := make(map[string]bool)
+				for metric := range initialSource.Metrics {
+					dbMetric := initialSource.Name + "¤¤¤" + metric
+					r.cancelFuncs[dbMetric] = func() {
+						cancelCalled[dbMetric] = true
+					}
+				}
+
+				// create modified source
+				modifiedSource := *baseSource.Clone()
+				tc.modifySource(&modifiedSource)
+
+				modifiedReader := &testutil.MockSourcesReaderWriter{
+					GetSourcesFunc: func() (sources.Sources, error) {
+						return sources.Sources{modifiedSource}, nil
+					},
+				}
+				r.SourcesReaderWriter = modifiedReader
+
+				// reload sources
+				assert.NoError(t, r.LoadSources(ctx))
+				// call ShutdownOldWorkers to simulate actual behavior and ensure cancel functions are called
+				r.ShutdownOldWorkers(ctx, nil)
+
+				assert.Equal(t, 1, len(r.monitoredSources), "Expected one monitored source after reload")
+				assert.Equal(t, modifiedSource, r.monitoredSources[0].Source)
+
+				for metric := range initialSource.Metrics {
+					dbMetric := initialSource.Name + "¤¤¤" + metric
+
+					shouldBeCancelled := false
+					for _, m := range tc.expectedCancelled {
+						if m == metric {
+							shouldBeCancelled = true
+							break
+						}
+					}
+					assert.Equal(t, shouldBeCancelled, cancelCalled[dbMetric])
+					assert.Nil(t, mockConn.ExpectationsWereMet(), "Expected all mock expectations to be met")
+					if shouldBeCancelled {
 						_, exists := r.cancelFuncs[dbMetric]
 						assert.False(t, exists, "Expected cancel func to be removed from map after cancellation")
 					}

@@ -421,8 +421,23 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 			newSrcs[i] = md
 			continue
 		}
+		if md.IsSameConnection(newMD.Source) {
+			// same connection config, then update the existing struct with new metrics and tags
+			r.logger.WithField("source", md.Name).Info("Metric OR Tag configs changed, updating without full restart")
+
+			// lock to ensure data integrity
+			md.Lock()
+			md.Metrics = newMD.Metrics
+			md.MetricsStandby = newMD.MetricsStandby
+			md.PresetMetrics = newMD.PresetMetrics
+			md.PresetMetricsStandby = newMD.PresetMetricsStandby
+			md.CustomTags = newMD.CustomTags
+			md.Unlock()
+			newSrcs[i] = md
+			continue
+		}
+
 		// Source configs changed, stop all running gatherers to trigger a restart
-		// TODO: Optimize this for single metric addition/deletion/interval-change cases to not do a full restart
 		r.logger.WithField("source", md.Name).Info("Source configs changed, restarting all gatherers...")
 		r.ShutdownOldWorkers(ctx, map[string]bool{md.Name: true})
 	}
