@@ -23,6 +23,7 @@ export const EnabledSourceSwitch = ({ source }: EnabledSourceSwitchProps) => {
     <Switch
       checked={checked}
       onChange={handleChange}
+      disabled={editEnabled.isPending}
     />
   );
 };
