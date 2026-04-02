@@ -270,13 +270,16 @@ func TestSeverityToEnglish(t *testing.T) {
 		expected      string
 	}{
 		{"en", "ERROR", "ERROR"},
+		{"en", "error", "ERROR"},
 		{"de", "FEHLER", "ERROR"},
 		{"fr", "ERREUR", "ERROR"},
+		{"fr", "PANIQUE", "PANIC"},
+		{"C", "WARNING", "WARNING"},
 		{"de", "WARNUNG", "WARNING"},
 		{"ru", "ОШИБКА", "ERROR"},
 		{"zh", "错误", "ERROR"},
-		{"unknown", "ERROR", "ERROR"},                  // Unknown language, return as-is
-		{"de", "UNKNOWN_SEVERITY", "UNKNOWN_SEVERITY"}, // Unknown severity in known language
+		{"unknown", "ERROR", "ERROR"},                  // Unknown language, return uppercase as-is
+		{"de", "unknown_severity", "UNKNOWN_SEVERITY"}, // Unknown severity in known language
 	}
 
 	for _, tt := range tests {
