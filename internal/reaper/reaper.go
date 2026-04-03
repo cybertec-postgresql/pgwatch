@@ -132,7 +132,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
 				if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 					srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previously above the threshold
 					continue
 				}
 
