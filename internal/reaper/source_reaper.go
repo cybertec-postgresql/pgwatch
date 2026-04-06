@@ -145,6 +145,12 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 			if lf := sr.lastFetch[name]; !lf.IsZero() && now.Sub(lf) < interval {
 				continue
 			}
+
+			metric, ok := metricDefs.GetMetricDef(name)
+			if !ok || sr.isRoleExcluded(metric) {
+				continue
+			}
+
 			switch {
 			case name == specialMetricServerLogEventCounts:
 				if sr.lastFetch[name].IsZero() {
@@ -157,16 +163,8 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 			case IsDirectlyFetchableMetric(sr.md, name):
 				err = sr.fetchOSMetric(ctx, name)
 			case name == specialMetricChangeEvents || name == specialMetricInstanceUp:
-				err = sr.fetchSpecialMetric(ctx, name)
+				err = sr.fetchSpecialMetric(ctx, name, metric.StorageName)
 			default:
-				metric, ok := metricDefs.GetMetricDef(name)
-				if !ok {
-					l.WithField("metric", name).Warning("metric definition not found")
-					continue
-				}
-				if sr.isRoleExcluded(metric) {
-					continue
-				}
 				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) > 0 {
 					l.WithField("metric", name).Info("instance level cache hit")
 					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
@@ -264,14 +262,7 @@ func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error {
 }
 
 // fetchSpecialMetric handles change_events and instance_up metrics.
-func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name string) error {
-	metric, ok := metricDefs.GetMetricDef(name)
-	if !ok {
-		return fmt.Errorf("metric definition not found for %s", name)
-	}
-	if sr.isRoleExcluded(metric) {
-		return nil
-	}
+func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
 	var (
 		data metrics.Measurements
 		err  error
@@ -286,7 +277,7 @@ func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name string) err
 		return fmt.Errorf("failed to fetch special metric: %v", err)
 	}
 	if len(data) > 0 {
-		sr.sendEnvelope(ctx, name, metric.StorageName, data)
+		sr.sendEnvelope(ctx, name, storageName, data)
 	}
 	return err
 }
