@@ -307,52 +307,12 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 		return NewSourceReaper(r, md), md, mock
 	}
 
-	t.Run("metric not found in definitions", func(t *testing.T) {
-		sr, _, mock := newSR(t)
-		defer mock.Close()
-		assert.Error(t, sr.fetchSpecialMetric(ctx, "no_such_special_xyz"))
-		select {
-		case <-sr.reaper.measurementCh:
-			t.Error("expected no measurement")
-		default:
-		}
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("primary-only metric skipped on standby", func(t *testing.T) {
-		sr, md, mock := newSR(t)
-		defer mock.Close()
-		metricDefs.MetricDefs["sp_primary_only"] = metrics.Metric{NodeStatus: "primary"}
-		md.IsInRecovery = true
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, "sp_primary_only"))
-		select {
-		case <-sr.reaper.measurementCh:
-			t.Error("expected no measurement for primary-only on standby")
-		default:
-		}
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("standby-only metric skipped on primary", func(t *testing.T) {
-		sr, md, mock := newSR(t)
-		defer mock.Close()
-		metricDefs.MetricDefs["sp_standby_only"] = metrics.Metric{NodeStatus: "standby"}
-		md.IsInRecovery = false
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, "sp_standby_only"))
-		select {
-		case <-sr.reaper.measurementCh:
-			t.Error("expected no measurement for standby-only on primary")
-		default:
-		}
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
+	sr, _, mock := newSR(t)
+	defer mock.Close()
 
 	t.Run("instance_up dispatches measurement on ping success", func(t *testing.T) {
-		sr, _, mock := newSR(t)
-		defer mock.Close()
-		metricDefs.MetricDefs[specialMetricInstanceUp] = metrics.Metric{}
 		mock.ExpectPing()
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp))
+		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp, ""))
 		select {
 		case msg := <-sr.reaper.measurementCh:
 			assert.Equal(t, specialMetricInstanceUp, msg.MetricName)
@@ -365,11 +325,8 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 	})
 
 	t.Run("instance_up uses storage name when set", func(t *testing.T) {
-		sr, _, mock := newSR(t)
-		defer mock.Close()
-		metricDefs.MetricDefs[specialMetricInstanceUp] = metrics.Metric{StorageName: "infra_up"}
 		mock.ExpectPing()
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp))
+		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp, "infra_up"))
 		select {
 		case msg := <-sr.reaper.measurementCh:
 			assert.Equal(t, "infra_up", msg.MetricName)
@@ -380,13 +337,9 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 	})
 
 	t.Run("change_events dispatches no measurement when no hash defs present", func(t *testing.T) {
-		sr, _, mock := newSR(t)
-		defer mock.Close()
+		// Doesn't contain additional defs for any of {"sproc_hashes", "table_hashes", "index_hashes", "configuration_hashes", "privilege_hashes"}
 		metricDefs.MetricDefs[specialMetricChangeEvents] = metrics.Metric{}
-		for _, name := range []string{"sproc_hashes", "table_hashes", "index_hashes", "configuration_hashes", "privilege_hashes"} {
-			delete(metricDefs.MetricDefs, name)
-		}
-		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricChangeEvents))
+		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricChangeEvents, ""))
 		select {
 		case <-sr.reaper.measurementCh:
 			t.Error("expected no measurement when no changes detected")
