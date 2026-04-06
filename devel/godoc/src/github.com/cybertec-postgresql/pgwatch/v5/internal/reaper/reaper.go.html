@@ -189,7 +189,7 @@
 <span id="L132" class="ln">   132  </span>				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 <span class="comment">// only remove from monitoring when we&#39;re certain it&#39;s under the threshold</span>
 <span id="L133" class="ln">   133  </span>				if DBSizeMB != 0 &amp;&amp; DBSizeMB &lt; r.Sources.MinDbSizeMB {
 <span id="L134" class="ln">   134  </span>					srcL.Infof(&#34;ignored due to the --min-db-size-mb filter, current size %d MB&#34;, DBSizeMB)
-<span id="L135" class="ln">   135  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previosly above the threshold</span>
+<span id="L135" class="ln">   135  </span>					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true <span class="comment">// for the case when DB size was previously above the threshold</span>
 <span id="L136" class="ln">   136  </span>					continue
 <span id="L137" class="ln">   137  </span>				}
 <span id="L138" class="ln">   138  </span>
