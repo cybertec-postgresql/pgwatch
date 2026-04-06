@@ -1294,7 +1294,7 @@ background Write() calls update it
 					
 				</h3>
 				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) Describe(_ chan&lt;- *<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Desc">Desc</a>)</pre>
-				<p>Describe is intentionally empty to makes PrometheusWriter an &quot;unchecked
+				<p>Describe is intentionally empty to make PrometheusWriter an &quot;unchecked
 collector&quot; per the prometheus.Collector contract
 
 				
@@ -1404,7 +1404,7 @@ replace entire envelopes (never mutate them in place).
 				
 			</h2>
 			<p>RPCWriter sends metric measurements to a remote server using gRPC.
-Remote servers should make use the .proto file under api/pb/ to integrate with it.
+Remote servers should make use of the .proto file under api/pb/ to integrate with it.
 It&apos;s up to the implementer to define the behavior of the server.
 It can be a simple logger, external storage, alerting system, or an analytics system.
 
