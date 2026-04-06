@@ -120,7 +120,7 @@ EXPOSE 9187
 # pprof port
 EXPOSE 6060
 
-### Volumes for easier updating to newer to newer pgwatch containers
+### Volumes for easier updating to newer pgwatch containers
 ### Backwards compatibility is not 100% guaranteed so a backup
 ### using traditional means is still recommended before updating - see "Updating to a newer Docker version" from README
 

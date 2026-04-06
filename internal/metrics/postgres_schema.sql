@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS pgwatch.metric (
 	storage_name text
 );
 	
-COMMENT ON COlUMN pgwatch.metric.node_status IS 'currently supports `primary` and `standby`';
-COmment on column pgwatch.metric.gauges IS 'comma separated list of gauge metric columns, * if all columns are gauges';
-COMMENT ON COlUMN pgwatch.metric.is_instance_level IS 'if true, the metric is collected only once per monitored instance';
-COMMENT ON COlUMN pgwatch.metric.storage_name IS 'data is stored in the specified table/file/sink target instead of the default one';
+COMMENT ON COLUMN pgwatch.metric.node_status IS 'currently supports `primary` and `standby`';
+COMMENT ON COLUMN pgwatch.metric.gauges IS 'comma separated list of gauge metric columns, * if all columns are gauges';
+COMMENT ON COLUMN pgwatch.metric.is_instance_level IS 'if true, the metric is collected only once per monitored instance';
+COMMENT ON COLUMN pgwatch.metric.storage_name IS 'data is stored in the specified table/file/sink target instead of the default one';
 
 CREATE TABLE IF NOT EXISTS pgwatch.preset (
 	name text PRIMARY KEY,
