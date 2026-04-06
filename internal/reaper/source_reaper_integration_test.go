@@ -180,3 +180,103 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 	assert.Equal(t, "integration_test", sMsg.DBName)
 	assert.NotEmpty(t, sMsg.Data)
 }
+
+func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
+	md, tearDown := setupIntegrationDB(t)
+	defer tearDown()
+
+	helperSetNodeStatus := func(status string) {
+		metricDefs.MetricDefs["test_metric"] = metrics.Metric{
+			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			NodeStatus: status,
+		}
+		metricDefs.MetricDefs["server_log_event_counts"] = metrics.Metric{
+			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			NodeStatus: status,
+		}
+		metricDefs.MetricDefs["psutil_cpu"] = metrics.Metric{
+			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			NodeStatus: status,
+		}
+		metricDefs.MetricDefs[specialMetricInstanceUp] = metrics.Metric{
+			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			NodeStatus: status,
+		}
+	}
+	
+	r := &Reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+
+	// using psutil_*, server_log_event_counts, instance_up
+	// to ensure specially-handled metrics have the same behaviour
+	md.Metrics = metrics.MetricIntervals{
+		"test_metric": 5,
+		"server_log_event_counts": 5,
+		"psutil_cpu": 5,
+		specialMetricInstanceUp: 5,
+	}
+
+	t.Run("primary-only/standby-only metrics get excluded when node is standby/primary", func(t *testing.T) {
+		states := []string{"primary", "standby"}
+		for _, state := range states {
+			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+
+			md.IsInRecovery = true
+			if state == "standby" {
+				md.IsInRecovery = false
+			}
+
+			helperSetNodeStatus(state)
+
+			sr := NewSourceReaper(r, md)
+			go func() {
+				sr.Run(ctx)
+			}()
+
+			select {
+			case msg := <-r.measurementCh:
+				t.Errorf("Expected no measurement for primary-only metrics on standby, but got: %s", msg.MetricName)
+			case <-time.After(2 * time.Second):
+			}
+
+			cancel()
+		}
+	})
+
+	t.Run("primary-only/standby-only metrics get executed when node is primary/standby", func(t *testing.T) {
+		states := []string{"primary", "standby", ""} // "" => should fetch all as well
+		for _, state := range states {
+			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+
+			md.IsInRecovery = false
+			if state == "standby" {
+				md.IsInRecovery = true
+			}
+
+			helperSetNodeStatus(state)
+
+			sr := NewSourceReaper(r, md)
+			go func() {
+				sr.Run(ctx)
+			}()
+
+			time.Sleep(2 * time.Second)
+			assert.GreaterOrEqual(t, len(r.measurementCh), 3)
+			cancel()
+
+			for range len(r.measurementCh) {
+				// empty channel to ensure correctness in subsequent runs
+				select {
+				case <-r.measurementCh:
+				default:
+				}
+			}
+		}
+	})
+}
