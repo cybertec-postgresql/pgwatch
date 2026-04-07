@@ -48,7 +48,7 @@ func TestCalcTickInterval(t *testing.T) {
 		assert.Equal(t, 30*time.Second, sr.calcTickInterval())
 	})
 
-	t.Run("GCD floors to minimum 5s", func(t *testing.T) {
+	t.Run("GCD floors to minimum 1s", func(t *testing.T) {
 		sr := &SourceReaper{
 			md: &sources.SourceConn{
 				Source: sources.Source{
@@ -56,7 +56,7 @@ func TestCalcTickInterval(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, 5*time.Second, sr.calcTickInterval())
+		assert.Equal(t, time.Second, sr.calcTickInterval())
 	})
 
 	t.Run("single metric", func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestCalcTickInterval(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, 5*time.Second, sr.calcTickInterval())
+		assert.Equal(t, time.Second, sr.calcTickInterval())
 	})
 
 	t.Run("standby metrics when in recovery", func(t *testing.T) {
