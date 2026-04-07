@@ -354,27 +354,24 @@ The content of a file is a array of sources definitions, like this:
 
 ```yaml
 - name: test1       # An arbitrary unique name for the monitored source
-  kind: postgres    # One of the:
+  kind: postgres    # One of:
                       # - postgres
                       # - postgres-continuous-discovery
                       # - pgbouncer
                       # - pgpool
                       # - patroni
-                      # - patroni-continuous-discovery
-                      # - patroni-namespace-discover
-                      # Defaults to postgres if not specified
   conn_str: postgresql://pgwatch:xyz@somehost/mydb
   preset_metrics: exhaustive # from list of presets defined in "metrics.yaml" or in the config DB
-  custom_metrics:    # map of metrics and intervals, if both preset_metrics and custom_metrics are specified, custom wins
-        backends: 300
+  custom_metrics:     # map of metrics and intervals, if both preset_metrics and custom_metrics are specified, preset wins
+        backends: 300 # integral number of seconds
         archiver: 120
   preset_metrics_standby: # optional preset configuration for standby state, same as preset_metrics
   custom_metrics_standby: # optional custom metrics for standby state, same as custom_metrics
   include_pattern: # regex to filter databases to actually monitor for the "continuous" modes
   exclude_pattern:
   is_enabled: true
-  group: default # just for logical grouping of DB hosts or for "sharding", i.e. splitting the workload between many gatherer daemons
-  custom_tags:      # option to add arbitrary tags for every stored data row,
-        aws_instance_id: i-0af01c0123456789a       # for example to fetch data from some other source onto a same Grafana graph
+  group: default # just for logical grouping of DB hosts or for "sharding", i.e. splitting the workload between many gatherer daemons (via --group option)
+  custom_tags:   # option to add arbitrary tags for every stored data row,
+        aws_instance_id: i-0af01c0123456789a # for example to fetch data from some other source onto a same Grafana graph
 ...
 ```
