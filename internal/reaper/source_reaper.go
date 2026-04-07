@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const minTickInterval = 5 // seconds – floor for GCD to prevent excessive wake-ups
+const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negative intervals
 
 // SourceReaper manages metric collection for a single monitored source.
 // Instead of one goroutine per metric it runs a single GCD-based tick loop
