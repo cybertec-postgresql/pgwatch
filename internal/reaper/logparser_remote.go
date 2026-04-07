@@ -96,12 +96,12 @@ func (lp *LogParser) parseLogsRemote() error {
 							offset = 0
 						}
 						logger.Infof("Switching to new logfile: '%s'", fileName)
-						currInterval = 0 // We already slept. It will be resetted.
+						currInterval = 0 // We already slept. It will be reset.
 						break
 					}
 				} else {
 					size = latestSize
-					currInterval = 0 // We already slept. It will be resetted.
+					currInterval = 0 // We already slept. It will be reset.
 					break
 				}
 			}

@@ -689,7 +689,7 @@
           "refId": "D"
         }
       ],
-      "title": "Block bandwith ($agg_interval tot.)",
+      "title": "Block bandwidth ($agg_interval tot.)",
       "type": "timeseries"
     },
     {

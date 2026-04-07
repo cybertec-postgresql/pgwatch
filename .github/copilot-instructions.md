@@ -71,7 +71,7 @@
     - source means where the metrics are collected from, e.g. PostgreSQL.
     - sink means where the metrics are sent, e.g. JSON file, gRPC, PostgreSQL, TimescaleDB, or Prometheus.
     - metric means a single piece of data collected from the source, such as query execution time or connection count.
-    - reaper the main component responsible for manaing the lifecycle of metrics and configurations, ensuring they are up-to-date and relevant.
+    - reaper the main component responsible for managing the lifecycle of metrics and configurations, ensuring they are up-to-date and relevant.
 
 ### Code Organization
 - **`api/`**: Contains Protobuf definitions and generated files.
