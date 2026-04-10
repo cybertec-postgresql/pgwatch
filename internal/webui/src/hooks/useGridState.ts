@@ -37,10 +37,7 @@ export const useGridState = (
         ...defaultVisibility,
         ...(savedState.columnVisibility || {})
       },
-      columnSizing: {
-        ...defaultSizing,
-        ...(savedState.columnSizing || {})
-      }
+      columnSizing: savedState.columnSizing || {}
     };
   });
 
@@ -71,24 +68,26 @@ export const useGridState = (
   }, [saveToStorage]);
 
   const resetColumnSizes = useCallback(() => {
-    const defaultSizing = columns?.reduce((acc, col) => ({
-      ...acc,
-      [col.field]: col.width || 150
-    }), {});
-
-    setGridState(prev => {
-      const newState = { ...prev, columnSizing: defaultSizing };
+    // reset to empty, restores original flex/width definition
+      setGridState(prev => {
+      const newState = { ...prev, columnSizing: {} };
       saveToStorage(newState);
       return newState;
     });
-  }, [columns, saveToStorage]);
+  }, [saveToStorage]);
 
   // Memoize columns with applied widths so objects are stable between renders
-  const columnsWithSizing = useMemo(() => columns?.map(col => ({
-    ...col,
-    width: gridState.columnSizing[col.field] || col.width || 150
-  })), [columns, gridState.columnSizing]);
+  const columnsWithSizing = useMemo(() => columns?.map(col => {
+      const userWidth = gridState.columnSizing[col.field];
 
+      if (userWidth !== undefined) {
+        const { flex, minWidth, ...colWithoutFlex } = col as any;
+        return { ...colWithoutFlex, width: userWidth };
+      }
+      return col;
+    }),
+    [columns, gridState.columnSizing]
+  );
   return {
     columnVisibility: gridState.columnVisibility,
     columnSizing: gridState.columnSizing,
