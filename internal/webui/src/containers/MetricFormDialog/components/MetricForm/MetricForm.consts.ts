@@ -14,5 +14,5 @@ export const metricFormValuesValidationSchema = Yup.object({
   Gauges: Yup.string().optional().nullable(),
   InitSQL: Yup.string().optional().nullable(),
   IsInstanceLevel: Yup.bool().required(),
-  SQLs: Yup.string().trim().required("SQLs is required"),
+  SQLs: Yup.array().of(Yup.object().shape({Version: Yup.string().required("Version is required"),SQL: Yup.string().required("SQL value is required"),})),
 });
