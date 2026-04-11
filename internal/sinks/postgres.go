@@ -45,6 +45,9 @@ var sqlMetricChangeChunkIntervalTimescale string
 //go:embed sql/change_compression_interval.sql
 var sqlMetricChangeCompressionIntervalTimescale string
 
+//go:embed sql/drop_source_partitions.sql
+var sqlMetricDropSourcePartitions string
+
 var (
 	metricSchemaSQLs = []string{
 		sqlMetricAdminSchema,
@@ -53,6 +56,7 @@ var (
 		sqlMetricEnsurePartitionTimescale,
 		sqlMetricChangeChunkIntervalTimescale,
 		sqlMetricChangeCompressionIntervalTimescale,
+		sqlMetricDropSourcePartitions,
 	}
 )
 
