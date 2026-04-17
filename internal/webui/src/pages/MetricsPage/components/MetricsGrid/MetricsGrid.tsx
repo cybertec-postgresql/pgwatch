@@ -21,7 +21,8 @@ export const MetricsGrid = () => {
     columnVisibility, 
     columnsWithSizing, 
     onColumnVisibilityChange, 
-    onColumnWidthChange
+    onColumnWidthChange,
+    resetColumnSizes
   } = useGridState('METRICS_GRID', columns);
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
@@ -59,7 +60,7 @@ export const MetricsGrid = () => {
           rows={rows}
           pageSizeOptions={[]}
           slots={{ 
-            toolbar: () => <MetricsGridToolbar />
+            toolbar: () => <MetricsGridToolbar onResetColumns={resetColumnSizes} />
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
