@@ -162,17 +162,21 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 				}
 			case IsDirectlyFetchableMetric(sr.md, name):
 				err = sr.fetchOSMetric(ctx, name)
+				sr.lastFetch[name] = time.Now()
 			case name == specialMetricChangeEvents || name == specialMetricInstanceUp:
 				err = sr.fetchSpecialMetric(ctx, name, metric.StorageName)
+				sr.lastFetch[name] = time.Now()
 			default:
 				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) > 0 {
 					l.WithField("metric", name).Info("instance level cache hit")
 					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
+					sr.lastFetch[name] = time.Now()
 					break
 				}
 				sql := metric.GetSQL(sr.md.Version)
 				if sql == "" {
 					l.WithField("source", sr.md.Name).WithField("version", sr.md.Version).Warning("no SQL found for metric version")
+					sr.lastFetch[name] = time.Now()
 					break
 				}
 				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
@@ -180,7 +184,6 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 			if err != nil {
 				l.WithError(err).WithField("metric", name).Error("failed to fetch metric")
 			}
-			sr.lastFetch[name] = now
 		}
 
 		if len(batch) > 0 {
@@ -193,6 +196,11 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 			}
 			if err != nil {
 				l.WithError(err).Error("failed to fetch metrics")
+			}
+
+			now := time.Now()
+			for _, e := range batch {
+				sr.lastFetch[e.name] = now
 			}
 		}
 		select {
