@@ -1,4 +1,4 @@
 FROM timescale/timescaledb:latest-pg18
 
 # Install plpython3u
-RUN set -ex && apk add ---virtual .plpython3-deps --no-cache py3-psutil --repository http://nl.alpinelinux.org/alpine/edge/testing postgresql-plpython3
+RUN set -ex && apk add --virtual .plpython3-deps --no-cache py3-psutil --repository http://nl.alpinelinux.org/alpine/edge/testing postgresql-plpython3
