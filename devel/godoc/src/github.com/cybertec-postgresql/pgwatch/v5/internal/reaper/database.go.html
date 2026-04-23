@@ -449,11 +449,11 @@
 <span id="L392" class="ln">   392  </span>		if rows.Scan(&amp;epoch, &amp;objIdent, &amp;objValue) != nil {
 <span id="L393" class="ln">   393  </span>			return changeCounts
 <span id="L394" class="ln">   394  </span>		}
-<span id="L395" class="ln">   395  </span>		prevРash, ok := md.ChangeState[&#34;configuration_hashes&#34;][objIdent]
+<span id="L395" class="ln">   395  </span>		prevHash, ok := md.ChangeState[&#34;configuration_hashes&#34;][objIdent]
 <span id="L396" class="ln">   396  </span>		ll := l.WithField(&#34;setting&#34;, objIdent)
 <span id="L397" class="ln">   397  </span>		if ok { <span class="comment">// we have existing state</span>
-<span id="L398" class="ln">   398  </span>			if prevРash != objValue {
-<span id="L399" class="ln">   399  </span>				ll.Warningf(&#34;settings change detected: %s = %s (prev: %s)&#34;, objIdent, objValue, prevРash)
+<span id="L398" class="ln">   398  </span>			if prevHash != objValue {
+<span id="L399" class="ln">   399  </span>				ll.Warningf(&#34;settings change detected: %s = %s (prev: %s)&#34;, objIdent, objValue, prevHash)
 <span id="L400" class="ln">   400  </span>				detectedChanges = append(detectedChanges, metrics.Measurement{
 <span id="L401" class="ln">   401  </span>					metrics.EpochColumnName: epoch,
 <span id="L402" class="ln">   402  </span>					&#34;tag_setting&#34;:           objIdent,

@@ -129,7 +129,7 @@
 <span id="L72" class="ln">    72  </span>				for i &lt;= linesRead {
 <span id="L73" class="ln">    73  </span>					_, err = reader.ReadString(&#39;\n&#39;)
 <span id="L74" class="ln">    74  </span>					if err == io.EOF &amp;&amp; i &lt; linesRead {
-<span id="L75" class="ln">    75  </span>						logger.Warningf(&#34;Failed to open logfile %s: %s&#34;, latest, err)
+<span id="L75" class="ln">    75  </span>						logger.Warningf(&#34;Unexpected EOF while skipping lines in logfile %s: %s&#34;, latest, err)
 <span id="L76" class="ln">    76  </span>						linesRead = 0
 <span id="L77" class="ln">    77  </span>						break
 <span id="L78" class="ln">    78  </span>					} else if err != nil {

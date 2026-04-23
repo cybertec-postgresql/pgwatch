@@ -134,7 +134,7 @@
 <span id="L77" class="ln">    77  </span>		http.Error(w, err.Error(), http.StatusBadRequest)
 <span id="L78" class="ln">    78  </span>		return
 <span id="L79" class="ln">    79  </span>	}
-<span id="L80" class="ln">    80  </span>	s.WithField(&#34;reguest&#34;, r.URL.String()).Debugf(&#34;established websocket connection&#34;)
+<span id="L80" class="ln">    80  </span>	s.WithField(&#34;request&#34;, r.URL.String()).Debugf(&#34;established websocket connection&#34;)
 <span id="L81" class="ln">    81  </span>	l, _ := s.Logger.(log.LoggerHooker)
 <span id="L82" class="ln">    82  </span>	done := make(chan struct{})
 <span id="L83" class="ln">    83  </span>	go writer(ws, l, done)
