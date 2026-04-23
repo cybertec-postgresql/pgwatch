@@ -77,7 +77,7 @@ func (s *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.WithField("reguest", r.URL.String()).Debugf("established websocket connection")
+	s.WithField("request", r.URL.String()).Debugf("established websocket connection")
 	l, _ := s.Logger.(log.LoggerHooker)
 	done := make(chan struct{})
 	go writer(ws, l, done)

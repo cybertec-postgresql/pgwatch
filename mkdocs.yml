@@ -65,9 +65,9 @@ nav:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
     - Using Managed Services: howto/using_managed_services.md
     - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
-    - Bootstraping the Measurements Database (Sink): howto/metrics_db_bootstrap.md
+    - Bootstrapping the Measurements Database (Sink): howto/metrics_db_bootstrap.md
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
-    - Implement Сustom gRPC Sink: howto/implement_grpc_server.md
+    - Implement Custom gRPC Sink: howto/implement_grpc_server.md
     - Reverse Proxy Setup: howto/reverse_proxy.md
   - Reference:
     - CLI & Environment Variables: reference/cli_env.md

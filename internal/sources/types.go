@@ -81,8 +81,8 @@ func (srcs Sources) Validate() (Sources, error) {
 }
 
 func (s *Source) GetDatabaseName() string {
-	if с, err := pgx.ParseConfig(s.ConnStr); err == nil {
-		return с.Database
+	if c, err := pgx.ParseConfig(s.ConnStr); err == nil {
+		return c.Database
 	}
 	return ""
 }

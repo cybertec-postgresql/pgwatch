@@ -921,7 +921,7 @@
           "type": "hidden"
         },
         {
-          "alias": "Block bandwith",
+          "alias": "Block bandwidth",
           "align": "auto",
           "colorMode": null,
           "colors": [
@@ -1062,7 +1062,7 @@
           ]
         }
       ],
-      "title": "Top by block bandwith (assuming 8K blocks)",
+      "title": "Top by block bandwidth (assuming 8K blocks)",
       "transform": "table",
       "type": "table"
     },
