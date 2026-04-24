@@ -408,19 +408,10 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 		// filter out disabled sources and sources with group not in the list of groups to monitor
 		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !slices.Contains(r.Sources.Groups, s.Group)
 	})
-	newSrcs, err = srcs.ResolveDatabases()
-	if err != nil {
+
+	if newSrcs, err = srcs.ResolveDatabases(r.WriteInstanceDown); err != nil {
+		// discover dtabases for continuous monitoring sources
 		r.logger.WithError(err).Error("could not resolve databases from sources")
-		for _, s := range srcs {
-			if s.Kind != sources.SourcePostgresContinuous && s.Kind != sources.SourcePatroni {
-				continue
-			}
-			if !slices.ContainsFunc(newSrcs, func(sc *sources.SourceConn) bool {
-				return sc.Name == s.Name || strings.HasPrefix(sc.Name, s.Name+"_")
-			}) {
-				r.WriteInstanceDown(s.Name)
-			}
-		}
 	}
 
 	for i, newMD := range newSrcs {

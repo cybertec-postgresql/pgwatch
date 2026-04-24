@@ -99,7 +99,7 @@ func (cmd *SourceResolveCommand) Execute(args []string) error {
 			}
 		}
 	}
-	conns, err := foundSources.ResolveDatabases()
+	conns, err := foundSources.ResolveDatabases(nil)
 	if err != nil {
 		return err
 	}

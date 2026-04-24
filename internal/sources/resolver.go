@@ -28,7 +28,7 @@ import (
 
 // ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
 // Each source is resolved concurrently so that a slow or unreachable source does not block the others.
-func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
+func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err error) {
 	type result struct {
 		dbs SourceConns
 		err error
@@ -45,6 +45,9 @@ func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
 	resolvedDbs := make(SourceConns, 0, len(srcs))
 	for i, res := range results {
 		if res.err != nil {
+			if onError != nil {
+				onError(srcs[i].Name)
+			}
 			logger.WithField("source", srcs[i].Name).WithError(res.err).Error("could not resolve databases from source")
 			err = errors.Join(err, res.err)
 		}
