@@ -101,7 +101,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
-				r.WriteInstanceDown(monitoredSource)
+				r.WriteInstanceDown(monitoredSource.Name)
 				srcL.Warning("could not init connection, retrying on next iteration")
 				continue
 			}
@@ -405,6 +405,7 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 		return err
 	}
 	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
+		// filter out disabled sources and sources with group not in the list of groups to monitor
 		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !slices.Contains(r.Sources.Groups, s.Group)
 	})
 	newSrcs, err = srcs.ResolveDatabases()
@@ -417,7 +418,7 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 			if !slices.ContainsFunc(newSrcs, func(sc *sources.SourceConn) bool {
 				return sc.Name == s.Name || strings.HasPrefix(sc.Name, s.Name+"_")
 			}) {
-				r.WriteInstanceDown(sources.NewSourceConn(s))
+				r.WriteInstanceDown(s.Name)
 			}
 		}
 	}
@@ -443,9 +444,9 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 }
 
 // WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
-func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
+func (r *Reaper) WriteInstanceDown(name string) {
 	r.measurementCh <- metrics.MeasurementEnvelope{
-		DBName:     md.Name,
+		DBName:     name,
 		MetricName: specialMetricInstanceUp,
 		Data: metrics.Measurements{metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
