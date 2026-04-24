@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -25,16 +26,29 @@ import (
 	"go.uber.org/zap"
 )
 
-// ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
+// ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
+// Each source is resolved concurrently so that a slow or unreachable source does not block the others.
 func (srcs Sources) ResolveDatabases() (_ SourceConns, err error) {
+	type result struct {
+		dbs SourceConns
+		err error
+	}
+	results := make([]result, len(srcs))
+	var wg sync.WaitGroup
+	for i, s := range srcs {
+		wg.Go(func() {
+			dbs, e := s.ResolveDatabases()
+			results[i] = result{dbs, e}
+		})
+	}
+	wg.Wait()
 	resolvedDbs := make(SourceConns, 0, len(srcs))
-	for _, s := range srcs {
-		if !s.IsEnabled {
-			continue
+	for i, res := range results {
+		if res.err != nil {
+			logger.WithField("source", srcs[i].Name).WithError(res.err).Error("could not resolve databases from source")
+			err = errors.Join(err, res.err)
 		}
-		dbs, e := s.ResolveDatabases()
-		err = errors.Join(err, e)
-		resolvedDbs = append(resolvedDbs, dbs...)
+		resolvedDbs = append(resolvedDbs, res.dbs...)
 	}
 	return resolvedDbs, err
 }

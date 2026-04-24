@@ -407,8 +407,19 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
 		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !slices.Contains(r.Sources.Groups, s.Group)
 	})
-	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
+	newSrcs, err = srcs.ResolveDatabases()
+	if err != nil {
 		r.logger.WithError(err).Error("could not resolve databases from sources")
+		for _, s := range srcs {
+			if s.Kind != sources.SourcePostgresContinuous && s.Kind != sources.SourcePatroni {
+				continue
+			}
+			if !slices.ContainsFunc(newSrcs, func(sc *sources.SourceConn) bool {
+				return sc.Name == s.Name || strings.HasPrefix(sc.Name, s.Name+"_")
+			}) {
+				r.WriteInstanceDown(sources.NewSourceConn(s))
+			}
+		}
 	}
 
 	for i, newMD := range newSrcs {
