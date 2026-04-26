@@ -3,6 +3,7 @@ package reaper
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
@@ -345,6 +346,190 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 			t.Error("expected no measurement when no changes detected")
 		default:
 		}
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
+	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+
+	metricDefs.MetricDefs["good_metric"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 1 as value, 100::bigint as epoch_ns"},
+	}
+	metricDefs.MetricDefs["bad_metric"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT bad"},
+	}
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := &sources.SourceConn{
+		Source: sources.Source{
+			Name:    "degrade_test",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{"good_metric": 30, "bad_metric": 30},
+		},
+		Conn: mock,
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &Reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewSourceReaper(r, md)
+
+	entries := []batchEntry{
+		{name: "good_metric", metric: metricDefs.MetricDefs["good_metric"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
+		{name: "bad_metric", metric: metricDefs.MetricDefs["bad_metric"], sql: "SELECT bad"},
+	}
+
+	// batch: good_metric succeeds, bad_metric cascades → retry bad_metric individually → still fails
+	rows1 := pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(time.Now().UnixNano(), int64(1))
+	eb := mock.ExpectBatch()
+	eb.ExpectQuery("SELECT 1").WillReturnRows(rows1)
+	eb.ExpectQuery("SELECT bad").WillReturnError(assert.AnError) // cascade
+	// individual retry of bad_metric
+	mock.ExpectQuery("SELECT bad").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+
+	err = sr.executeBatch(ctx, entries)
+	assert.Error(t, err)
+	assert.Contains(t, sr.degradedMetrics, "bad_metric", "bad_metric should be degraded after persistent failure")
+	assert.NotContains(t, sr.degradedMetrics, "good_metric", "good_metric should not be degraded")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
+	// A metric that errors in the batch but succeeds on individual retry must NOT be marked degraded.
+	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+
+	metricDefs.MetricDefs["cascade_victim"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 3 as value, 300::bigint as epoch_ns"},
+	}
+	metricDefs.MetricDefs["cascade_trigger"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT fail"},
+	}
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := &sources.SourceConn{
+		Source: sources.Source{
+			Name:    "cascade_test",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{"cascade_trigger": 30, "cascade_victim": 30},
+		},
+		Conn: mock,
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &Reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewSourceReaper(r, md)
+
+	entries := []batchEntry{
+		{name: "cascade_trigger", metric: metricDefs.MetricDefs["cascade_trigger"], sql: "SELECT fail"},
+		{name: "cascade_victim", metric: metricDefs.MetricDefs["cascade_victim"], sql: "SELECT 3 as value, 300::bigint as epoch_ns"},
+	}
+
+	// batch: trigger fails, victim cascades → both retry individually
+	// trigger fails individually (real error), victim succeeds individually (was only a cascade)
+	eb := mock.ExpectBatch()
+	eb.ExpectQuery("SELECT fail").WillReturnError(assert.AnError)
+	eb.ExpectQuery("SELECT 3").WillReturnError(assert.AnError) // cascade in batch
+	// individual retries
+	mock.ExpectQuery("SELECT fail").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+	mock.ExpectQuery("SELECT 3").WithArgs(pgx.QueryExecModeSimpleProtocol).
+		WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(time.Now().UnixNano(), int64(3)))
+
+	err = sr.executeBatch(ctx, entries)
+	assert.Error(t, err, "cascade_trigger error should propagate")
+	assert.Contains(t, sr.degradedMetrics, "cascade_trigger", "real-failure metric should be degraded")
+	assert.NotContains(t, sr.degradedMetrics, "cascade_victim", "cascade-only victim must not be degraded")
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
+	// Uses the real Run loop (via synctest fake clock) to verify the full degraded→recovered
+	// lifecycle: iteration 1 the degraded metric fails individually (stays degraded),
+	// iteration 2 it succeeds (removed from degradedMetrics).
+	synctest.Test(t, func(t *testing.T) {
+		const (
+			metricName     = "recovering_metric_real"
+			metricInterval = 30
+		)
+
+		metricDefs.MetricDefs[metricName] = metrics.Metric{
+			SQLs: metrics.SQLs{0: "SELECT 7 as value, 700::bigint as epoch_ns"},
+		}
+
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+
+		md := &sources.SourceConn{
+			Source: sources.Source{
+				Name:    "recovery_src",
+				Kind:    sources.SourcePostgres,
+				Metrics: metrics.MetricIntervals{metricName: metricInterval},
+			},
+			Conn: mock,
+			RuntimeInfo: sources.RuntimeInfo{
+				Version:     120000,
+				ChangeState: make(map[string]map[string]string),
+			},
+		}
+		r := &Reaper{
+			Options: &cmdopts.Options{
+				Metrics: metrics.CmdOpts{},
+				Sinks:   sinks.CmdOpts{},
+			},
+			measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+			measurementCache: NewInstanceMetricCache(),
+		}
+		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+		sr := NewSourceReaper(r, md)
+		sr.degradedMetrics[metricName] = struct{}{} // pre-seed: metric already degraded
+
+		// Iteration 1: FetchRuntimeInfo + degraded individual fetch → fails → stays degraded
+		mock.ExpectQuery("select /\\* pgwatch_generated \\*/").WillReturnError(assert.AnError)
+		mock.ExpectQuery("SELECT 7").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+
+		// Iteration 2: FetchRuntimeInfo + degraded individual fetch → succeeds → recovered
+		mock.ExpectQuery("select /\\* pgwatch_generated \\*/").WillReturnError(assert.AnError)
+		mock.ExpectQuery("SELECT 7").WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(int64(700_000_000_000), int64(7)))
+
+		go sr.Run(ctx)
+
+		// Run goroutine completes iteration 1 (pgxmock is in-memory, no real I/O) then
+		// blocks on time.After — the only durably-blocking operation in the loop.
+		synctest.Wait()
+		assert.Contains(t, sr.degradedMetrics, metricName, "should still be degraded after first failure")
+
+		// Advance the fake clock past the interval to trigger iteration 2.
+		// The Run goroutine's time.After(30s) fires first; it runs iteration 2 and
+		// blocks again before the test goroutine's sleep finishes.
+		time.Sleep(time.Duration(metricInterval)*time.Second + time.Millisecond)
+		synctest.Wait()
+		assert.NotContains(t, sr.degradedMetrics, metricName, "should recover after successful fetchMetric")
+
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
