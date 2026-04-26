@@ -20,18 +20,20 @@ const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negativ
 // and batches SQL queries via pgx.Batch when the source is a real Postgres
 // connection (non-pgbouncer, non-pgpool).
 type SourceReaper struct {
-	reaper      *Reaper
-	md          *sources.SourceConn
-	lastFetch   map[string]time.Time
-	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
+	reaper          *Reaper
+	md              *sources.SourceConn
+	lastFetch       map[string]time.Time
+	lastUptimeS     int64               // last seen postmaster_uptime_s for restart detection
+	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
 }
 
 // NewSourceReaper creates a SourceReaper for the given source connection.
 func NewSourceReaper(r *Reaper, md *sources.SourceConn) *SourceReaper {
 	sr := &SourceReaper{
-		reaper:    r,
-		md:        md,
-		lastFetch: make(map[string]time.Time),
+		reaper:          r,
+		md:              md,
+		lastFetch:       make(map[string]time.Time),
+		degradedMetrics: make(map[string]struct{}),
 	}
 	return sr
 }
@@ -179,6 +181,16 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 					sr.lastFetch[name] = time.Now()
 					break
 				}
+				if _, degraded := sr.degradedMetrics[name]; degraded {
+					if err = sr.fetchMetric(ctx, batchEntry{name: name, metric: metric, sql: sql}); err != nil {
+						l.WithError(err).WithField("metric", name).Error("degraded metric fetch failed")
+					} else {
+						l.WithField("metric", name).Info("degraded metric recovered, returning to batch execution")
+						delete(sr.degradedMetrics, name)
+					}
+					sr.lastFetch[name] = time.Now()
+					break
+				}
 				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
 			}
 			if err != nil {
@@ -212,8 +224,12 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 }
 
 // executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching
-// each result immediately as it arrives. Individual query failures produce nil
-// data and are aggregated into the returned error.
+// each result immediately as it arrives. If any query fails, PostgreSQL's
+// extended protocol aborts all subsequent queries in the same sync boundary
+// (cascade failure). Any entry that returns an error from the batch is retried
+// individually via fetchMetric to isolate real failures from cascade failures.
+// Entries that fail even after the individual retry are marked as degraded
+// so that subsequent runs use fetchMetric for them until they recover.
 func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
 	batch := &pgx.Batch{}
 	for _, e := range entries {
@@ -223,14 +239,26 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 	br := sr.md.Conn.SendBatch(ctx, batch)
 	defer func() { _ = br.Close() }()
 
-	var errs []error
+	var (
+		errs    []error
+		retries []batchEntry
+	)
 	for _, e := range entries {
 		rows, err := br.Query()
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.name, err))
+			// May be a real error or a cascade from an earlier failure; retry individually.
+			retries = append(retries, e)
 			continue
 		}
 		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+	}
+
+	for _, e := range retries {
+		if err := sr.fetchMetric(ctx, e); err != nil {
+			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.name, err))
+			log.GetLogger(ctx).WithField("metric", e.name).Warning("metric degraded after repeated failures, switching to individual fetch")
+			sr.degradedMetrics[e.name] = struct{}{}
+		}
 	}
 	return errors.Join(errs...)
 }
