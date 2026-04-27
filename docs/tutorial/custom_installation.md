@@ -38,7 +38,7 @@ Choose how you want to manage your monitoring configurations:
 
 - **Using apt (Debian/Ubuntu)**
     ```bash
-    # Follow instructions from: https://wiki.postgresql.org/wiki/Apt#Quickstart to add the official PostgreSQL apt repoistory 
+    # Follow instructions from: https://wiki.postgresql.org/wiki/Apt#Quickstart to add the official PostgreSQL apt repository 
     sudo apt update && sudo apt install pgwatch
     ```
 
