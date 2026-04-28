@@ -392,11 +392,11 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 		if rows.Scan(&epoch, &objIdent, &objValue) != nil {
 			return changeCounts
 		}
-		prevHash, ok := md.ChangeState["configuration_hashes"][objIdent]
+		prevРash, ok := md.ChangeState["configuration_hashes"][objIdent]
 		ll := l.WithField("setting", objIdent)
 		if ok { // we have existing state
-			if prevHash != objValue {
-				ll.Warningf("settings change detected: %s = %s (prev: %s)", objIdent, objValue, prevHash)
+			if prevРash != objValue {
+				ll.Warningf("settings change detected: %s = %s (prev: %s)", objIdent, objValue, prevРash)
 				detectedChanges = append(detectedChanges, metrics.Measurement{
 					metrics.EpochColumnName: epoch,
 					"tag_setting":           objIdent,

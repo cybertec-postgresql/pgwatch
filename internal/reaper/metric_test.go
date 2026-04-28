@@ -48,7 +48,7 @@ var (
 
 func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 	a := assert.New(t)
-	r := &Reaper{}
+	r := &Reaper{Options: &cmdopts.Options{}}
 	t.Run("metrics directly fetchable when on same host", func(*testing.T) {
 		conn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 		expq := conn.ExpectQuery("SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL")

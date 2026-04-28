@@ -115,8 +115,8 @@ only floats can be stored!
  extra attributes, if any (see below for options). Hit the "ADD METRIC"
  button to store.
 1. Activate the newly added metric by including it in some existing
-    *Preset Config* in the "PRESETS" page or add it directly to the monitored DB,
- together with an interval, into the "METRICS" tab when editing a source on the "SOURCES" page.
+ *Preset Config* in the "PRESETS" page or add it directly to the monitored DB,
+ together with a fetching interval - integral number of seconds - into the "METRICS" tab when editing a source on the "SOURCES" page.
 
 ### For *YAML* based setups
 
