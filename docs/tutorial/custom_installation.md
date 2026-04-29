@@ -10,9 +10,13 @@ pgwatch consists of four main components:
 
 1. **Metrics collector** - The pgwatch daemon that gathers metrics from your databases
 2. **Configuration store** - Where you define which databases to monitor and their settings  
-    - PostgreSQL database or YAML file
+    - PostgreSQL database or
+    - YAML file.
 3. **Metrics storage** - Where collected metrics are stored  
-    - PostgreSQL, Prometheus, custom gRPC server, or JSON
+    - PostgreSQL,
+    - Prometheus,
+    - custom gRPC server,
+    - JSON file.
 4. **Visualization** - Grafana dashboards for analyzing metrics
 
 ## Requirements
