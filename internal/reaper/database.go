@@ -438,7 +438,7 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
-			"instance_up": func() int {
+			specialMetricInstanceUp: func() int {
 				if md.Conn.Ping(ctx) == nil {
 					return 1
 				}
