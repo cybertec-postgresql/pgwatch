@@ -288,7 +288,7 @@ At the moment, sources definitions support two storages:
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases() (_ SourceConns, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Sources.Validate">func (srcs Sources) Validate() (Sources, error)</a></dd>
@@ -465,7 +465,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L92">getTransport</a>
+			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L109">getTransport</a>
 				<a class="permalink" href="#getTransport">&#xb6;</a>
 				
 				
@@ -478,7 +478,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L77">jsonTextToStringMap</a>
+			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L94">jsonTextToStringMap</a>
 				<a class="permalink" href="#jsonTextToStringMap">&#xb6;</a>
 				
 				
@@ -524,7 +524,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L198">HostConfig</a>
+			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L215">HostConfig</a>
 				<a class="permalink" href="#HostConfig">&#xb6;</a>
 				
 				
@@ -552,7 +552,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 
 			
 				
-				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L215">NewHostConfig</a>
+				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L232">NewHostConfig</a>
 					<a class="permalink" href="#NewHostConfig">&#xb6;</a>
 					
 					
@@ -565,7 +565,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 
 			
 				
-				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L209">IsScopeSpecified</a>
+				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L226">IsScopeSpecified</a>
 					<a class="permalink" href="#HostConfig.IsScopeSpecified">&#xb6;</a>
 					
 					
@@ -622,7 +622,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L53">PatroniClusterMember</a>
+			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L70">PatroniClusterMember</a>
 				<a class="permalink" href="#PatroniClusterMember">&#xb6;</a>
 				
 				
@@ -646,7 +646,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 
 			
 				
-				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L69">getConsulClusterMembers</a>
+				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L86">getConsulClusterMembers</a>
 					<a class="permalink" href="#getConsulClusterMembers">&#xb6;</a>
 					
 					
@@ -657,7 +657,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			
 				
-				<h3 id="getEtcdClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L130">getEtcdClusterMembers</a>
+				<h3 id="getEtcdClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L147">getEtcdClusterMembers</a>
 					<a class="permalink" href="#getEtcdClusterMembers">&#xb6;</a>
 					
 					
@@ -668,7 +668,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 				
 			
 				
-				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L73">getZookeeperClusterMembers</a>
+				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L90">getZookeeperClusterMembers</a>
 					<a class="permalink" href="#getZookeeperClusterMembers">&#xb6;</a>
 					
 					
@@ -681,7 +681,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 
 			
 				
-				<h3 id="PatroniClusterMember.IsPrimary">func (PatroniClusterMember) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L60">IsPrimary</a>
+				<h3 id="PatroniClusterMember.IsPrimary">func (PatroniClusterMember) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L77">IsPrimary</a>
 					<a class="permalink" href="#PatroniClusterMember.IsPrimary">&#xb6;</a>
 					
 					
@@ -888,7 +888,7 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L43">ResolveDatabases</a>
+				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L60">ResolveDatabases</a>
 					<a class="permalink" href="#Source.ResolveDatabases">&#xb6;</a>
 					
 					
@@ -1177,7 +1177,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPatroni">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L284">ResolveDatabasesFromPatroni</a>
+				<h3 id="ResolveDatabasesFromPatroni">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L301">ResolveDatabasesFromPatroni</a>
 					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
 					
 					
@@ -1188,7 +1188,7 @@ will produce multiple monitored databases structs based on the discovered databa
 				
 			
 				
-				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L343">ResolveDatabasesFromPostgres</a>
+				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L360">ResolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
@@ -1237,13 +1237,14 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L29">ResolveDatabases</a>
+				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L31">ResolveDatabases</a>
 					<a class="permalink" href="#Sources.ResolveDatabases">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases() (_ <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni
+				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases(onError func(<a href="https://pkg.go.dev/builtin/#string">string</a>)) (_ <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
+Each source is resolved concurrently so that a slow or unreachable source does not block the others.
 
 				
 				

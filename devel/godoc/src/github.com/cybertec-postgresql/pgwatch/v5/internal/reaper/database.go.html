@@ -495,7 +495,7 @@
 <span id="L438" class="ln">   438  </span>	return metrics.Measurements{
 <span id="L439" class="ln">   439  </span>		metrics.Measurement{
 <span id="L440" class="ln">   440  </span>			metrics.EpochColumnName: time.Now().UnixNano(),
-<span id="L441" class="ln">   441  </span>			&#34;instance_up&#34;: func() int {
+<span id="L441" class="ln">   441  </span>			specialMetricInstanceUp: func() int {
 <span id="L442" class="ln">   442  </span>				if md.Conn.Ping(ctx) == nil {
 <span id="L443" class="ln">   443  </span>					return 1
 <span id="L444" class="ln">   444  </span>				}
