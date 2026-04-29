@@ -108,7 +108,7 @@ Create `/etc/pgwatch/sources.yaml`:
 |--------|-------------|---------|
 | `name` | Unique name for this source | `mydb` |
 | `kind` | Source type: `postgres`, `postgres-continuous-discovery`, `pgbouncer`, `pgpool`, `patroni` | `postgres` |
-| `conn_str` | PostgreSQL, etcd, Consul, or ZooKeepr connection string | `postgresql://user:pass@host/db` or `etcd://host1:1234,host2:1344/scope/member` |
+| `conn_str` | PostgreSQL or etcd connection string | `postgresql://user:pass@host/db` or `etcd://host1:1234,host2:1344/scope/member` |
 | `preset_metrics` | Preset to use: `minimal`, `basic`, `exhaustive`, `unprivileged`, etc. | `exhaustive` |
 | `custom_metrics` | Custom metrics with intervals (seconds) | `{ backends: 300 }` |
 | `include_pattern` | Regex to filter databases (for continuous discovery) | `^mydb_` |
