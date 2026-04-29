@@ -189,12 +189,12 @@ sudo systemctl enable pgwatch
 
 ### 6. Configure monitored sources
 
-Add databases to monitor via the pgwatch web UI (port 8080 by default) or direct SQL:
+Add databases to monitor via one of the methods:
 
-```sql
-INSERT INTO pgwatch.source (name, conn_str, preset_metrics, is_enabled)
-VALUES ('mydb', 'postgresql://pgwatch:your_password@localhost:5432/mydb', 'exhaustive', true);
-```
+  - [web UI](../concept/web_ui.md) (port 8080 by default),
+  - [REST API](../reference/rest.md),
+  - directly with sql for PostgreSQL config store,
+  - editing the YAML file for YAML config store.
 
 !!! note
     Allow up to 2 minutes - can be adjusted via `--refresh` - for new sources to appear in metrics collection.
