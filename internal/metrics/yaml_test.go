@@ -222,9 +222,9 @@ func TestErrorHandlingToFile(t *testing.T) {
 	err = fmr.WriteMetrics(&metrics.Metrics{})
 	assert.Error(t, err)
 
-	// Test GetMetrics
+	// Test GetMetrics - root dir has no yaml files, returns empty metrics without error
 	_, err = fmr.GetMetrics()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	// Test DeleteMetric
 	err = fmr.DeleteMetric("test")
