@@ -593,5 +593,5 @@ func TestWriteMeasurements(t *testing.T) {
 		SinksWriter: err,
 	})
 	go r.WriteMeasurements(ctx)
-	r.WriteInstanceDown(&sources.SourceConn{})
+	r.WriteInstanceDown("foo")
 }
