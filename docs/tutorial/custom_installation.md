@@ -6,10 +6,10 @@ This chapter describes how to set up pgwatch manually, giving you full control o
 
 ## Overview
 
-pgwatch consists of three main components:
+pgwatch consists of four main components:
 
 1. **Metrics collector** - The pgwatch daemon that gathers metrics from your databases
-2. **Configuration store**: - Where you define which databases to monitor and their settings  
+2. **Configuration store** - Where you define which databases to monitor and their settings  
     - PostgreSQL database or YAML file
 3. **Metrics storage** - Where collected metrics are stored  
     - PostgreSQL, Prometheus, custom gRPC server, or JSON
@@ -26,11 +26,13 @@ pgwatch consists of three main components:
 Choose how you want to manage your monitoring configurations:
 
 1. **PostgreSQL Database**  
-    - store monitored databases and metrics configs in a PostgreSQL database.  
-    - Use the pgwatch web UI or REST API to manage it.
+    - Store monitored databases and metrics configs in a PostgreSQL database.  
 
 2. **YAML File**
-    - store monitored databases and metrics configs in a YAML file.
+    - Store monitored databases and metrics configs in a YAML file.
+  
+!!! info
+    You can use pgwatch's built-in web UI or REST API to manage both configuration stores.
 
 ## Installation Steps
 
@@ -96,18 +98,18 @@ Create `/etc/pgwatch/sources.yaml`:
   is_enabled: true
   group: default
 
-- name: the_second_monitored_database
-  ....
+# - name: the_second_monitored_database
+# ...
 ```
 
-**sources configuration options**:
+**Sources configuration options**:
 
 | Option | Description | Example |
 |--------|-------------|---------|
 | `name` | Unique name for this source | `mydb` |
-| `kind` | Database type: `postgres`, `postgres-continuous-discovery`, `pgbouncer`, `pgpool`, `patroni` | `postgres` |
-| `conn_str` | PostgreSQL connection string | `postgresql://user:pass@host/db` |
-| `preset_metrics` | Preset to use: `minimal`, `basic`, `exhaustive`, `unprivileged` | `exhaustive` |
+| `kind` | Source type: `postgres`, `postgres-continuous-discovery`, `pgbouncer`, `pgpool`, `patroni` | `postgres` |
+| `conn_str` | PostgreSQL, etcd, Consul, or ZooKeepr connection string | `postgresql://user:pass@host/db` or `etcd://host1:1234,host2:1344/scope/member` |
+| `preset_metrics` | Preset to use: `minimal`, `basic`, `exhaustive`, `unprivileged`, etc. | `exhaustive` |
 | `custom_metrics` | Custom metrics with intervals (seconds) | `{ backends: 300 }` |
 | `include_pattern` | Regex to filter databases (for continuous discovery) | `^mydb_` |
 | `exclude_pattern` | Regex to exclude databases (for continuous discovery) | `^test_` |
@@ -147,8 +149,8 @@ GRANT pg_monitor TO pgwatch;
 ```bash
 pgwatch \
     --sources=postgresql://pgwatch:your_password@localhost:5432/pgwatch \
-    # or --sources=/etc/pgwatch/sources.yaml \
     --sink=postgresql://pgwatch:your_password@localhost:5432/pgwatch_metrics
+    # or use --sources=/etc/pgwatch/sources.yaml
 ```
 
 Wait a few seconds to see the success of initial metrics fetches.
@@ -199,7 +201,7 @@ VALUES ('mydb', 'postgresql://pgwatch:your_password@localhost:5432/mydb', 'exhau
 2. Import the default postgres and/or prometheus dashboards from the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder into your Grafana instance.
 
 !!! note
-    The default builtin dashboards expect `postgres/prometheus` data sources with uids `pgwatch-metrics/pgwatch-prometheus` by default.
+    The default built-in dashboards expect `postgres/prometheus` data sources with uids `pgwatch-metrics/pgwatch-prometheus` by default.
 
 ## Next Steps
 
