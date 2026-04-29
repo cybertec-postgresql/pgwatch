@@ -3,11 +3,9 @@ package metrics
 import (
 	"context"
 	_ "embed"
-	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -66,21 +64,18 @@ func (fmr *fileMetricReader) getMetrics() (metrics *Metrics, err error) {
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		err = filepath.WalkDir(fmr.path, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			ext := strings.ToLower(filepath.Ext(d.Name()))
-			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
-				return nil
-			}
+		var matches []string
+		if matches, err = filepath.Glob(filepath.Join(fmr.path, "*.y*ml")); err != nil {
+			return nil, err
+		}
+		for _, path := range matches {
 			var m *Metrics
-			if m, err = fmr.loadMetricsFromFile(path); err == nil {
-				maps.Copy(metrics.PresetDefs, m.PresetDefs)
-				maps.Copy(metrics.MetricDefs, m.MetricDefs)
+			if m, err = fmr.loadMetricsFromFile(path); err != nil {
+				return nil, err
 			}
-			return err
-		})
+			maps.Copy(metrics.PresetDefs, m.PresetDefs)
+			maps.Copy(metrics.MetricDefs, m.MetricDefs)
+		}
 	case mode.IsRegular():
 		metrics, err = fmr.loadMetricsFromFile(fmr.path)
 	}

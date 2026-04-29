@@ -99,6 +99,27 @@ func TestYAMLGetMonitoredDatabases(t *testing.T) {
 		a.Error(err)
 		a.Nil(dbs)
 	})
+
+	t.Run("directory with yaml and yml files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		yamlContent1 := `
+- name: dir_test1
+  conn_str: postgresql://localhost/test1
+`
+		yamlContent2 := `
+- name: dir_test2
+  conn_str: postgresql://localhost/test2
+`
+		err := os.WriteFile(filepath.Join(tmpDir, "sources.yaml"), []byte(yamlContent1), 0644)
+		a.NoError(err)
+		err = os.WriteFile(filepath.Join(tmpDir, "sources.yml"), []byte(yamlContent2), 0644)
+		a.NoError(err)
+		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpDir)
+		a.NoError(err)
+		dbs, err := yamlrw.GetSources()
+		a.NoError(err)
+		a.Len(dbs, 2)
+	})
 }
 
 func TestYAMLDeleteDatabase(t *testing.T) {

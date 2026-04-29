@@ -375,11 +375,11 @@ func TestMetricsDir(t *testing.T) {
 	metrics2File, err := yaml.Marshal(metrics2)
 	a.NoError(err)
 
-	// write data to different files in a folder
+	// write data to different files in a folder: one .yaml and one .yml
 	tempDir := t.TempDir()
 	err = os.WriteFile(filepath.Join(tempDir, "metrics1.yaml"), metrics1File, 0644)
 	a.NoError(err)
-	err = os.WriteFile(filepath.Join(tempDir, "metrics2.yaml"), metrics2File, 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "metrics2.yml"), metrics2File, 0644)
 	a.NoError(err)
 
 	// use folder of yaml files for metrics configs

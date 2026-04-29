@@ -103,20 +103,17 @@ func (fcr *fileSourcesReaderWriter) getSources() (dbs Sources, err error) {
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		err = filepath.WalkDir(fcr.path, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			ext := strings.ToLower(filepath.Ext(d.Name()))
-			if d.IsDir() || ext != ".yaml" && ext != ".yml" {
-				return nil
-			}
+		var matches []string
+		if matches, err = filepath.Glob(filepath.Join(fcr.path, "*.y*ml")); err != nil {
+			return
+		}
+		for _, path := range matches {
 			var mdbs Sources
-			if mdbs, err = fcr.loadSourcesFromFile(path); err == nil {
-				dbs = append(dbs, mdbs...)
+			if mdbs, err = fcr.loadSourcesFromFile(path); err != nil {
+				return
 			}
-			return err
-		})
+			dbs = append(dbs, mdbs...)
+		}
 	case mode.IsRegular():
 		dbs, err = fcr.loadSourcesFromFile(fcr.path)
 	}
