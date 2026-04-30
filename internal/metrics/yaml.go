@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -64,13 +65,16 @@ func (fmr *fileMetricReader) getMetrics() (metrics *Metrics, err error) {
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		var matches []string
-		if matches, err = filepath.Glob(filepath.Join(fmr.path, "*.y*ml")); err != nil {
+		var entries []os.DirEntry
+		if entries, err = os.ReadDir(fmr.path); err != nil {
 			return nil, err
 		}
-		for _, path := range matches {
+		for _, entry := range entries {
+			if ext := strings.ToLower(filepath.Ext(entry.Name())); ext != ".yaml" && ext != ".yml" {
+				continue
+			}
 			var m *Metrics
-			if m, err = fmr.loadMetricsFromFile(path); err != nil {
+			if m, err = fmr.loadMetricsFromFile(filepath.Join(fmr.path, entry.Name())); err != nil {
 				return nil, err
 			}
 			maps.Copy(metrics.PresetDefs, m.PresetDefs)
