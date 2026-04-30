@@ -160,20 +160,20 @@
 <span id="L103" class="ln">   103  </span>	}
 <span id="L104" class="ln">   104  </span>	switch mode := fi.Mode(); {
 <span id="L105" class="ln">   105  </span>	case mode.IsDir():
-<span id="L106" class="ln">   106  </span>		err = filepath.WalkDir(fcr.path, func(path string, d fs.DirEntry, err error) error {
-<span id="L107" class="ln">   107  </span>			if err != nil {
-<span id="L108" class="ln">   108  </span>				return err
-<span id="L109" class="ln">   109  </span>			}
-<span id="L110" class="ln">   110  </span>			ext := strings.ToLower(filepath.Ext(d.Name()))
-<span id="L111" class="ln">   111  </span>			if d.IsDir() || ext != &#34;.yaml&#34; &amp;&amp; ext != &#34;.yml&#34; {
-<span id="L112" class="ln">   112  </span>				return nil
+<span id="L106" class="ln">   106  </span>		var entries []os.DirEntry
+<span id="L107" class="ln">   107  </span>		if entries, err = os.ReadDir(fcr.path); err != nil {
+<span id="L108" class="ln">   108  </span>			return nil, err
+<span id="L109" class="ln">   109  </span>		}
+<span id="L110" class="ln">   110  </span>		for _, entry := range entries {
+<span id="L111" class="ln">   111  </span>			if ext := strings.ToLower(filepath.Ext(entry.Name())); ext != &#34;.yaml&#34; &amp;&amp; ext != &#34;.yml&#34; {
+<span id="L112" class="ln">   112  </span>				continue
 <span id="L113" class="ln">   113  </span>			}
 <span id="L114" class="ln">   114  </span>			var mdbs Sources
-<span id="L115" class="ln">   115  </span>			if mdbs, err = fcr.loadSourcesFromFile(path); err == nil {
-<span id="L116" class="ln">   116  </span>				dbs = append(dbs, mdbs...)
+<span id="L115" class="ln">   115  </span>			if mdbs, err = fcr.loadSourcesFromFile(filepath.Join(fcr.path, entry.Name())); err != nil {
+<span id="L116" class="ln">   116  </span>				return
 <span id="L117" class="ln">   117  </span>			}
-<span id="L118" class="ln">   118  </span>			return err
-<span id="L119" class="ln">   119  </span>		})
+<span id="L118" class="ln">   118  </span>			dbs = append(dbs, mdbs...)
+<span id="L119" class="ln">   119  </span>		}
 <span id="L120" class="ln">   120  </span>	case mode.IsRegular():
 <span id="L121" class="ln">   121  </span>		dbs, err = fcr.loadSourcesFromFile(fcr.path)
 <span id="L122" class="ln">   122  </span>	}
