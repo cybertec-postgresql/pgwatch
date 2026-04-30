@@ -250,9 +250,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 		var md *sources.SourceConn
 		var dbRemovedFromConfig bool
 		var metricRemovedFromPreset bool
-		splits := strings.Split(dbMetric, dbMetricJoinStr)
-		db := splits[0]
-		metric := splits[1]
+		db, metric, _ := strings.Cut(dbMetric, dbMetricJoinStr)
 
 		_, wholeDbShutDown := hostsToShutDown[db]
 		if !wholeDbShutDown {
