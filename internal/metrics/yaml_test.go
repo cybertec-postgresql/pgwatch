@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -473,4 +474,51 @@ func TestConcurrentPresetUpdates(t *testing.T) {
 	finalMetrics, err := yamlrw.GetMetrics()
 	a.NoError(err)
 	a.Equal(numGoroutines, len(finalMetrics.PresetDefs), "Some updates were lost due to race condition!")
+}
+
+func TestGetMetricsNonExistentPath(t *testing.T) {
+	nonExistent := filepath.Join(t.TempDir(), "does_not_exist", "metrics.yaml")
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, nonExistent)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
+
+func TestGetMetricsDirWithInvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	err := os.WriteFile(filepath.Join(dir, "bad.yaml"), []byte("invalid: yaml: {unclosed"), 0644)
+	assert.NoError(t, err)
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, dir)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
+
+func TestMutationsGetMetricsError(t *testing.T) {
+	nonExistent := filepath.Join(t.TempDir(), "does_not_exist", "metrics.yaml")
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, nonExistent)
+	assert.NoError(t, err)
+
+	assert.Error(t, fmr.DeleteMetric("x"))
+	assert.Error(t, fmr.UpdateMetric("x", metrics.Metric{}))
+	assert.Error(t, fmr.CreateMetric("x", metrics.Metric{}))
+	assert.Error(t, fmr.DeletePreset("x"))
+	assert.Error(t, fmr.UpdatePreset("x", metrics.Preset{}))
+	assert.Error(t, fmr.CreatePreset("x", metrics.Preset{}))
+}
+
+func TestLoadMetricsUnreadableFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("cannot reliably test file permissions on Windows")
+	}
+	if os.Getuid() == 0 {
+		t.Skip("running as root, permission checks do not apply")
+	}
+	f := filepath.Join(t.TempDir(), "metrics.yaml")
+	err := os.WriteFile(f, []byte(""), 0000)
+	assert.NoError(t, err)
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, f)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
 }

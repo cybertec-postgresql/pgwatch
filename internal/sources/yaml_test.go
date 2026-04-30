@@ -385,3 +385,34 @@ func TestConcurrentSourceUpdates(t *testing.T) {
 	a.NoError(err)
 	a.Equal(numGoroutines, len(finalSources), "Some updates were lost due to race condition!")
 }
+
+func TestGetSourcesDirWithInvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	err := os.WriteFile(filepath.Join(dir, "bad.yaml"), []byte("invalid: yaml: {unclosed"), 0644)
+	assert.NoError(t, err)
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, dir)
+	assert.NoError(t, err)
+	_, err = yamlrw.GetSources()
+	assert.Error(t, err)
+}
+
+func TestCreateSourceGetSourcesError(t *testing.T) {
+	nonExistent := filepath.Join(t.TempDir(), "does_not_exist", "sources.yaml")
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, nonExistent)
+	assert.NoError(t, err)
+	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: "x"}))
+}
+
+// TestMutationsWriteError verifies that UpdateSource, DeleteSource, and CreateSource
+// propagate write errors when the path is a directory (cannot be overwritten as a file).
+func TestMutationsWriteError(t *testing.T) {
+	// Using a dir as the file path: getSources succeeds (reads empty dir),
+	// but writeSources fails because os.WriteFile cannot write to a directory.
+	dir := t.TempDir()
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, dir)
+	assert.NoError(t, err)
+
+	assert.Error(t, yamlrw.UpdateSource(sources.Source{Name: "x"}))
+	assert.Error(t, yamlrw.DeleteSource("x"))
+	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: "x"}))
+}
