@@ -778,7 +778,7 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 func TestReaper_CreateSourceHelpers(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
-	t.Run("skips already initialized source", func(t *testing.T) {
+	t.Run("skips already initialized source", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
 		md := &sources.SourceConn{Source: sources.Source{Name: "existing"}}
 		r.prevLoopMonitoredDBs = sources.SourceConns{md}
@@ -786,13 +786,13 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 		r.CreateSourceHelpers(ctx, r.logger, md)
 	})
 
-	t.Run("skips non-postgres source", func(t *testing.T) {
+	t.Run("skips non-postgres source", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
 		md := &sources.SourceConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
 		r.CreateSourceHelpers(ctx, r.logger, md)
 	})
 
-	t.Run("skips source in recovery", func(t *testing.T) {
+	t.Run("skips source in recovery", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
 		md := &sources.SourceConn{
 			Source:      sources.Source{Name: "standby"},
