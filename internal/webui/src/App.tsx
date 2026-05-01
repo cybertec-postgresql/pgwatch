@@ -13,6 +13,9 @@ import { privateRoutes, publicRoutes } from "layout/Routes";
 
 import { AppBar } from "./layout/AppBar";
 
+import "prismjs/components/prism-sql";
+import "prismjs/themes/prism.css";
+
 const mdTheme = createTheme();
 
 export default function App() {
