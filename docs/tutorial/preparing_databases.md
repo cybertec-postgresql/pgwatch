@@ -72,7 +72,7 @@ setting should be enabled.
 
 ## Metrics initialization
 
-Some **rare** metrics are not runable out-of-the-box on Postgres and
+Some **rare** metrics are not runnable out-of-the-box on Postgres and
 need some installed helper functions, extensions or database objects
 before they can be used.
 For example, it is impossible to obtain the CPU usage statistics

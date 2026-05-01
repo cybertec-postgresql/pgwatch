@@ -168,6 +168,53 @@ END;
 $SQL$ LANGUAGE plpgsql;
 
 /*
+drop_source_partitions removes all metric data for a decommissioned source
+    p_source_name - the dbname (source) whose partitions should be dropped
+Returns the number of patritions dropped
+*/
+CREATE OR REPLACE FUNCTION admin.drop_source_partitions(p_source_name text)
+RETURNS int AS
+$SQL$
+DECLARE
+  r record;
+  v_dropped_count int := 0;
+BEGIN
+  FOR r IN
+    SELECT
+      c.oid::regclass::text      AS partition_name,
+      parent.oid::regclass::text AS metric_table,
+      parent.relname             AS metric_name
+    FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_inherits i      ON c.oid = i.inhrelid
+    JOIN pg_catalog.pg_class parent    ON parent.oid = i.inhparent
+    WHERE c.relnamespace = 'subpartitions'::regnamespace
+      AND pg_catalog.obj_description(parent.oid, 'pg_class') = 'pgwatch-generated-metric-lvl'
+      AND (regexp_match(
+             pg_catalog.pg_get_expr(c.relpartbound, c.oid),
+             E'FOR VALUES IN \\(''(.+?)''\\)'
+           ))[1] = p_source_name
+  LOOP
+    -- advisory lock matching ensure_partition_metric_dbname_time
+    PERFORM pg_advisory_xact_lock(
+      regexp_replace(md5(r.metric_name), E'\\D', '', 'g')::varchar(10)::int8
+    );
+
+    RAISE NOTICE 'detaching partition: % from %', r.partition_name, r.metric_table;
+    EXECUTE 'ALTER TABLE ' || r.metric_table || ' DETACH PARTITION ' || r.partition_name;
+
+    RAISE NOTICE 'dropping partition:  %', r.partition_name;
+    EXECUTE 'DROP TABLE IF EXISTS ' || r.partition_name;
+
+    v_dropped_count := v_dropped_count + 1;
+  END LOOP;
+
+  DELETE FROM admin.all_distinct_dbname_metrics WHERE dbname = p_source_name;
+
+  RETURN v_dropped_count;
+END;
+$SQL$ LANGUAGE plpgsql;
+
+/*
 maintain_unique_sources() maintains a mapping of unique sources in each metric table 
 in admin.all_distinct_dbname_metrics. This is used to avoid listing the same source 
 multiple times in Grafana dropdowns.

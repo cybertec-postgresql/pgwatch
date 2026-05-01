@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 42,
+  "id": 6,
   "links": [],
   "panels": [
     {
@@ -40,7 +40,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Comprehensive query performance analysis from pg_stat_statements.\n\n**Column Guide:**\n- **Query ID** - Internal PostgreSQL query identifier (click to drill down)\n- **Total Runtime** - Total cumulative execution time\n- **% DB Total** - Percentage of total database execution time\n- **JIT %** - Percentage of total query execution time spent in JIT\n- **Avg Runtime** - Average execution time per call\n- **Plan Time** - Total time spent planning queries\n- **Avg Plan Time** - Average planning time per call\n- **Calls** - Number of times executed\n- **Rows** - Total rows retrieved/affected\n- **Avg Rows** - Average rows per execution\n- **Shared Hit (MB)** - Buffer cache hits - data found in memory (higher is better)\n- **Shared Read (MB)** - Data read from disk into shared buffers (cache misses)\n- **Shared Written (MB)** - Data written from shared buffers to disk\n- **Temp Read (MB)** - Data read from temporary files (indicates memory pressure)\n- **Temp Written (MB)** - Data written to temporary files during large operations\n- **IO Time** - Time spent on disk I/O operations (requires track_io_timing)\n- **Users** - Database roles that executed this query\n- **Query** - Normalized SQL text with constants replaced by placeholders",
+      "description": "Comprehensive query performance analysis from pg_stat_statements.\n\n**Column Guide:**\n- **Query ID** - Internal PostgreSQL query identifier (click to drill down)\n- **Total Runtime** - Total cumulative execution time\n- **% DB Total** - Percentage of total database execution time\n- **Avg Runtime** - Average execution time per call\n- **Plan Time** - Total time spent planning queries\n- **Avg Plan Time** - Average planning time per call\n- **Calls** - Number of times executed\n- **Rows** - Total rows retrieved/affected\n- **Avg Rows** - Average rows per execution\n- **Shared Hit (MB)** - Buffer cache hits - data found in memory (higher is better)\n- **Shared Read (MB)** - Data read from disk into shared buffers (cache misses)\n- **Shared Written (MB)** - Data written from shared buffers to disk\n- **Temp Read (MB)** - Data read from temporary files (indicates memory pressure)\n- **Temp Written (MB)** - Data written to temporary files during large operations\n- **JIT %** - Percentage of total query execution time spent in JIT\n- **IO Time** - Time spent on disk I/O operations (requires track_io_timing)\n- **Users** - Database roles that executed this query\n- **Query** - Normalized SQL text with constants replaced by placeholders",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -395,6 +395,18 @@
                 "value": 0
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Query"
+            },
+            "properties": [
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
           }
         ]
       },
@@ -408,9 +420,14 @@
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Total Runtime"
+          }
+        ]
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -419,7 +436,7 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    (max((data->>'jit_generation_time')::numeric) - min((data->>'jit_generation_time')::numeric)) as jit_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and tag_data->>'query' ~* '$query_filter_regex'\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::numeric as \"Total Runtime\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  case when total_runtime::int8 = 0 then 0 else jit_time::numeric(10, 2) / total_runtime::int8 end as \"JIT %\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime\",\n  plan_time::numeric as \"Plan Time\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit\",\n  shared_read_mb::numeric(10,1) as \"Shared Read\",\n  shared_written_mb::numeric(10,1) as \"Shared Written\",\n  temp_read_mb::numeric(10,1) as \"Temp Read\",\n  temp_written_mb::numeric(10,1) as \"Temp Written\",\n  io_time::numeric(10,1) as \"IO Time\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
+          "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    (max((data->>'jit_generation_time')::numeric) - min((data->>'jit_generation_time')::numeric)) as jit_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and tag_data->>'query' ~* '$query_filter_regex'\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::numeric as \"Total Runtime\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime\",\n  plan_time::numeric as \"Plan Time\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit\",\n  shared_read_mb::numeric(10,1) as \"Shared Read\",\n  shared_written_mb::numeric(10,1) as \"Shared Written\",\n  temp_read_mb::numeric(10,1) as \"Temp Read\",\n  temp_written_mb::numeric(10,1) as \"Temp Written\",\n  case when total_runtime::int8 = 0 then 0 else jit_time::numeric(10, 2) / total_runtime::int8 end as \"JIT %\",\n  io_time::numeric(10,1) as \"IO Time\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
           "refId": "A",
           "sql": {
             "columns": [
@@ -475,7 +492,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 100,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -491,10 +508,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -503,7 +521,7 @@
           "links": [
             {
               "title": "View Query Details",
-              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -520,7 +538,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "calls/s"
         },
         "overrides": []
       },
@@ -550,20 +568,38 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by calls over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n    order by max((data->>'calls')::int8) - min((data->>'calls')::int8) desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  calls_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by calls_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(c - c_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as calls_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and calls_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by calls over time",
+      "title": "Top $top statements by calls per second",
       "type": "timeseries"
     },
     {
@@ -585,7 +621,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 100,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -601,10 +637,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -613,7 +650,7 @@
           "links": [
             {
               "title": "View Query Details",
-              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -660,7 +697,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -669,11 +706,28 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by total execution time over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_time,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) > 0\n    order by max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  time_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by time_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(t - t_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as time_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'total_time')::float8 as t, lag((data->>'total_time')::float8) over w as t_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and time_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by execution time",
+      "title": "Top $top statements by execution time per second",
       "type": "timeseries"
     },
     {
@@ -695,7 +749,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -711,6 +765,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -723,7 +778,7 @@
           "links": [
             {
               "title": "View Query Details",
-              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -740,7 +795,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -750,7 +805,7 @@
         "x": 12,
         "y": 22
       },
-      "id": 6,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [
@@ -770,20 +825,38 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "pgwatch-metrics"
           },
+          "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by rows over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'rows')::int8) - min((data->>'rows')::int8) > 0\n    order by max((data->>'rows')::int8) - min((data->>'rows')::int8) desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  time_per_call\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by time_per_call desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(t - t_lag) / nullif(sum(c - c_lag), 0) as time_per_call\n    from (\n      select\n        time,\n        tag_data->>'queryid' as queryid,\n        (data->>'total_time')::float8 as t, lag((data->>'total_time')::float8) over w as t_lag,\n        (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where c_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and time_per_call is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by rows",
+      "title": "Top $top statements by execution time per call",
       "type": "timeseries"
     },
     {
@@ -791,6 +864,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -805,7 +879,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 98,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -821,10 +895,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -833,7 +908,7 @@
           "links": [
             {
               "title": "View Query Details",
-              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -850,7 +925,7 @@
               }
             ]
           },
-          "unit": "decmbytes"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -870,7 +945,9 @@
           ],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -878,7 +955,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -887,11 +964,28 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by shared blocks hit over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_blks_hit,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8) > 0\n    order by (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  blks_hit_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by blks_hit_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(blks_hit - blks_hit_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as blks_hit_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'shared_blks_hit')::int8 as blks_hit, lag((data->>'shared_blks_hit')::int8) over w as blks_hit_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and blks_hit_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by shared_blks_hit",
+      "title": "Top $top statements by shared_blks_hit per second (in bytes)",
       "type": "timeseries"
     },
     {
@@ -913,7 +1007,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 100,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -929,10 +1023,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -941,7 +1036,7 @@
           "links": [
             {
               "title": "View Query Details",
-              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -958,7 +1053,7 @@
               }
             ]
           },
-          "unit": "decmbytes"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -988,7 +1083,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -997,11 +1092,28 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by shared blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_blks_read,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8) > 0\n    order by (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  blks_read_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by blks_read_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(blks_read - blks_read_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as blks_read_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'shared_blks_read')::int8 as blks_read, lag((data->>'shared_blks_read')::int8) over w as blks_read_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and blks_read_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by shared_blks_read",
+      "title": "Top $top statements by shared_blks_read per second (in bytes)",
       "type": "timeseries"
     },
     {
@@ -1023,7 +1135,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 98,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -1039,10 +1151,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -1068,7 +1181,7 @@
               }
             ]
           },
-          "unit": "decmbytes"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -1098,7 +1211,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -1108,11 +1221,28 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by temp blocks read over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_blks_read,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8) > 0\n    order by (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  temp_blks_read_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by temp_blks_read_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(temp_blks_read - temp_blks_read_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as temp_blks_read_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'temp_blks_read')::int8 as temp_blks_read, lag((data->>'temp_blks_read')::int8) over w as temp_blks_read_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and temp_blks_read_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by temp bytes read",
+      "title": "Top $top statements by temp_blks_read per second (in bytes)",
       "type": "timeseries"
     },
     {
@@ -1134,7 +1264,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 97,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -1150,10 +1280,11 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -1179,7 +1310,7 @@
               }
             ]
           },
-          "unit": "decmbytes"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -1209,7 +1340,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "targets": [
         {
           "datasource": {
@@ -1218,11 +1349,156 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "-- Top queries by temp blocks written over time\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_blks_written,\n  tag_data->>'queryid' as queryid\nFROM\n  stat_statements\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data->>'query' ~* '$query_filter_regex'\n  AND tag_data->>'queryid' IN (\n    select tag_data->>'queryid'\n    from stat_statements\n    where $__timeFilter(time) and dbname = '$dbname'\n      and tag_data->>'query' ~* '$query_filter_regex'\n    group by tag_data->>'queryid'\n    having max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8) > 0\n    order by (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 desc\n    limit $top\n  )\nGROUP BY 1, 3\nORDER BY 1",
-          "refId": "A"
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  temp_blks_written_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by temp_blks_written_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(temp_blks_written - temp_blks_written_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as temp_blks_written_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'temp_blks_written')::int8 as temp_blks_written, lag((data->>'temp_blks_written')::int8) over w as temp_blks_written_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and temp_blks_written_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Top $top statements by temp bytes written",
+      "title": "Top $top statements by temp_blks_written per second (in bytes)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "links": [
+            {
+              "title": "View Query Details",
+              "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "rowsps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  rows_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by rows_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(rows - rows_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as rows_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'rows')::int8 as rows, lag((data->>'rows')::int8) over w as rows_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and rows_per_sec is not null\norder by time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top $top statements by rows retrieved/affected per second",
       "type": "timeseries"
     },
     {
@@ -1231,9 +1507,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 12,
-        "x": 0,
+        "x": 12,
         "y": 46
       },
       "id": 12,
@@ -1246,7 +1522,7 @@
         "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"400\" />\n</a>",
         "mode": "markdown"
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.4",
       "title": "",
       "transparent": true,
       "type": "text"
@@ -1254,7 +1530,7 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [
     "pgwatch"
   ],
@@ -1267,7 +1543,7 @@
         },
         "definition": "",
         "includeAll": false,
-        "label": "Monitored Source",
+        "label": "Database",
         "name": "dbname",
         "options": [],
         "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;",
@@ -1277,8 +1553,8 @@
       },
       {
         "current": {
-          "text": "20",
-          "value": "20"
+          "text": "10",
+          "value": "10"
         },
         "description": "Limit output to top N entries",
         "includeAll": false,
@@ -1291,7 +1567,7 @@
             "value": "5"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "10",
             "value": "10"
           },
@@ -1301,7 +1577,7 @@
             "value": "15"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "20",
             "value": "20"
           },
@@ -1363,21 +1639,31 @@
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "text": "5m",
-          "value": "5m"
+          "text": "6m",
+          "value": "6m"
         },
         "label": "Aggregate Interval",
         "name": "agg_interval",
         "options": [
           {
+            "selected": false,
+            "text": "3m",
+            "value": "3m"
+          },
+          {
             "selected": true,
-            "text": "5m",
-            "value": "5m"
+            "text": "6m",
+            "value": "6m"
           },
           {
             "selected": false,
-            "text": "10m",
-            "value": "10m"
+            "text": "9m",
+            "value": "9m"
+          },
+          {
+            "selected": false,
+            "text": "12m",
+            "value": "12m"
           },
           {
             "selected": false,
@@ -1388,41 +1674,21 @@
             "selected": false,
             "text": "30m",
             "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
           }
         ],
-        "query": "5m,10m,15m,30m,1h,6h,12h,1d",
+        "query": "3m,6m,9m,12m,15m,30m",
         "refresh": 2,
         "type": "interval"
       }
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "3. Query Performance Analysis",
   "uid": "query-performance-analysis",
-  "version": 49
+  "version": 34
 }

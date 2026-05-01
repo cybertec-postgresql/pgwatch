@@ -72,7 +72,7 @@ func (lp *LogParser) parseLogsLocal() error {
 				for i <= linesRead {
 					_, err = reader.ReadString('\n')
 					if err == io.EOF && i < linesRead {
-						logger.Warningf("Failed to open logfile %s: %s", latest, err)
+						logger.Warningf("Unexpected EOF while skipping lines in logfile %s: %s", latest, err)
 						linesRead = 0
 						break
 					} else if err != nil {

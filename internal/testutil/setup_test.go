@@ -2,6 +2,7 @@ package testutil_test
 
 import (
 	"context"
+	"net"
 	"os"
 	"testing"
 
@@ -156,4 +157,25 @@ func TestSetupEtcdContainer(t *testing.T) {
 	state, err := etcdContainer.State(context.Background())
 	require.NoError(t, err)
 	assert.True(t, state.Running)
+}
+
+func TestSetupRPCServers(t *testing.T) {
+	teardown, err := testutil.SetupRPCServers()
+	require.NoError(t, err)
+	require.NotNil(t, teardown)
+	defer teardown()
+
+	// CA file should be written to disk during setup
+	_, statErr := os.Stat(testutil.CAFile)
+	assert.NoError(t, statErr, "CA file should exist after SetupRPCServers")
+
+	// Plain gRPC server should be listening
+	conn, dialErr := net.Dial("tcp", testutil.PlainServerAddress)
+	require.NoError(t, dialErr, "plain gRPC server should be listening on %s", testutil.PlainServerAddress)
+	conn.Close()
+
+	// TLS gRPC server should be listening
+	conn, dialErr = net.Dial("tcp", testutil.TLSServerAddress)
+	require.NoError(t, dialErr, "TLS gRPC server should be listening on %s", testutil.TLSServerAddress)
+	conn.Close()
 }
