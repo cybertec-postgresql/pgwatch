@@ -500,7 +500,7 @@
           "refId": "B"
         }
       ],
-      "title": "Heap / idx block read bandwith",
+      "title": "Heap / idx block read bandwidth",
       "transformations": [
         {
           "id": "organize",
@@ -599,7 +599,7 @@
           "refId": "B"
         }
       ],
-      "title": "Toast / Tidx block read bandwith",
+      "title": "Toast / Tidx block read bandwidth",
       "transformations": [
         {
           "id": "organize",

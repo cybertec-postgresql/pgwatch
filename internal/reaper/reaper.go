@@ -101,7 +101,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
-				r.WriteInstanceDown(monitoredSource)
+				r.WriteInstanceDown(monitoredSource.Name)
 				srcL.Warning("could not init connection, retrying on next iteration")
 				continue
 			}
@@ -132,7 +132,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 				DBSizeMB := monitoredSource.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
 				if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 					srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previosly above the threshold
+					hostsToShutDownDueToRoleChange[monitoredSource.Name] = true // for the case when DB size was previously above the threshold
 					continue
 				}
 
@@ -250,9 +250,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 		var md *sources.SourceConn
 		var dbRemovedFromConfig bool
 		var metricRemovedFromPreset bool
-		splits := strings.Split(dbMetric, dbMetricJoinStr)
-		db := splits[0]
-		metric := splits[1]
+		db, metric, _ := strings.Cut(dbMetric, dbMetricJoinStr)
 
 		_, wholeDbShutDown := hostsToShutDown[db]
 		if !wholeDbShutDown {
@@ -405,9 +403,12 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 		return err
 	}
 	srcs = slices.DeleteFunc(srcs, func(s sources.Source) bool {
+		// filter out disabled sources and sources with group not in the list of groups to monitor
 		return !s.IsEnabled || len(r.Sources.Groups) > 0 && !slices.Contains(r.Sources.Groups, s.Group)
 	})
-	if newSrcs, err = srcs.ResolveDatabases(); err != nil {
+
+	if newSrcs, err = srcs.ResolveDatabases(r.WriteInstanceDown); err != nil {
+		// discover dtabases for continuous monitoring sources
 		r.logger.WithError(err).Error("could not resolve databases from sources")
 	}
 
@@ -432,9 +433,9 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 }
 
 // WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
-func (r *Reaper) WriteInstanceDown(md *sources.SourceConn) {
+func (r *Reaper) WriteInstanceDown(name string) {
 	r.measurementCh <- metrics.MeasurementEnvelope{
-		DBName:     md.Name,
+		DBName:     name,
 		MetricName: specialMetricInstanceUp,
 		Data: metrics.Measurements{metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),

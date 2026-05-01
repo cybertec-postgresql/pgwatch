@@ -1063,7 +1063,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Block bandwith"
+                "value": "Block bandwidth"
               },
               {
                 "id": "unit",
@@ -1181,7 +1181,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Block bandwith"
+            "displayName": "Block bandwidth"
           }
         ]
       },
@@ -1241,7 +1241,7 @@
           ]
         }
       ],
-      "title": "Top by block bandwith (assuming 8K blocks)",
+      "title": "Top by block bandwidth (assuming 8K blocks)",
       "type": "table"
     },
     {

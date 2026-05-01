@@ -191,7 +191,7 @@ func (promw *PrometheusWriter) PurgeCacheEntry(dbUnique, metric string) {
 	delete(promw.Cache[dbUnique], metric)
 }
 
-// Describe is intentionally empty to makes PrometheusWriter an "unchecked
+// Describe is intentionally empty to make PrometheusWriter an "unchecked
 // collector" per the prometheus.Collector contract
 func (promw *PrometheusWriter) Describe(_ chan<- *prometheus.Desc) {
 }
