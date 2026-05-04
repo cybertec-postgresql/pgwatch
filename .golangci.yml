@@ -26,13 +26,9 @@ linters:
           - revive
         text: "var-naming: avoid"
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - "internal/webui/node_modules"
 formatters:
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - "internal/webui/node_modules"
