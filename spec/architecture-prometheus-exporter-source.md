@@ -1,6 +1,6 @@
 ---
 title: Prometheus Exporter as a pgwatch Source
-version: 1.2
+version: 1.3
 date_created: 2026-04-26
 date_updated: 2026-05-08
 tags: [architecture, design, prometheus, sources, metrics, sinks]
@@ -29,7 +29,7 @@ proxy when the sink is a Prometheus endpoint.
 **In scope**:
 - New source `Kind` value `prometheus`.
 - Use of `custom_metrics` / `preset_metrics` to specify Prometheus family names and their emit intervals.
-- Single-goroutine-per-source scrape lifecycle: one HTTP GET per tick, per-family emit cadence gated by `lastEmitted` state.
+- `PromSourceReaper`: a dedicated runner type implementing the same `SourceRunner` interface as `SourceReaper` (DB sources), with a GCD-based tick loop, one HTTP GET per tick, and per-family emit cadence gated by `lastEmitted` state.
 - Measurement row structure for Prometheus samples.
 - Prometheus-to-Prometheus (Prom→Prom) proxy optimisation in `PrometheusWriter`.
 - Authentication and TLS configuration.
@@ -114,9 +114,9 @@ consumed directly by AI coding assistants.
 - **REQ-013**: `SourceConn.Ping()` for a `prometheus` source MUST issue a HEAD request to the scrape URL and return an error if the status code is not 2xx.
 - **REQ-014**: `SourceConn.IsPostgresSource()` MUST return `false` for `Kind == "prometheus"`.
 - **REQ-015**: `SourceConn.FetchRuntimeInfo()` for `prometheus` sources MUST be a no-op that sets `RuntimeInfo.VersionStr = "prometheus"` and `RuntimeInfo.Version = 0` without error.
-- **REQ-016**: The reaper MUST launch **one goroutine per `prometheus` source** (not one per family). The goroutine MUST NOT be shared with postgres-style per-metric goroutines.
-- **REQ-017**: The goroutine MUST compute the **scrape interval** as `min` of all emit interval values in the resolved `MetricIntervals` map. In scrape-all mode the scrape interval MUST default to 60 seconds.
-- **REQ-018**: On every scrape tick the goroutine MUST issue a single HTTP GET to the exporter (via `ScrapeAll`) and receive measurements for all available families in one response.
+- **REQ-016**: The reaper MUST instantiate a `PromSourceReaper` for each `prometheus` source (not one per family) and start it via `go psr.Run(sourceCtx)`, mirroring the `NewSourceReaper` / `go sr.Run(sourceCtx)` pattern used for DB sources. `PromSourceReaper` MUST implement a `Run(ctx context.Context)` method satisfying the `SourceRunner` interface (see `refactor-sourceconn-interface.md` §4.6).
+- **REQ-017**: `PromSourceReaper.Run` MUST compute the **scrape interval** using the same `GCDSlice` helper as `SourceReaper.calcTickInterval`: `min` of all emit interval values in the resolved `MetricIntervals` map, floored at `minTickInterval`. In scrape-all mode the scrape interval MUST default to 60 seconds.
+- **REQ-018**: On every scrape tick `PromSourceReaper.Run` MUST issue a single HTTP GET to the exporter (via `ScrapeAll`) and receive measurements for all available families in one response.
 - **REQ-019**: The goroutine MUST maintain a `lastEmitted map[string]time.Time` keyed by family name, initialised empty. After a successful scrape, for each family present in the response:
   - In **filtered mode**: skip families not present in the resolved `MetricIntervals` map.
   - Emit a `MeasurementEnvelope` to the sink for family `f` only when `time.Since(lastEmitted[f]) >= emitInterval[f]`. On first scrape (zero `lastEmitted` value) the family MUST always be emitted.
@@ -133,7 +133,7 @@ consumed directly by AI coding assistants.
 
   // ScrapeAll fetches the exporter's /metrics endpoint and returns one
   // Measurements slice per discovered metric family, keyed by family name.
-  func ScrapeAll(ctx context.Context, sc *sources.SourceConn) (map[string]metrics.Measurements, error)
+  func ScrapeAll(ctx context.Context, sc *sources.PromConn) (map[string]metrics.Measurements, error)
   ```
 - **REQ-023**: The parser MUST use `github.com/prometheus/common/expfmt` (already an indirect dependency via the Prometheus client library). No new major dependencies are permitted.
 - **REQ-024**: Each sample from a metric family becomes **one measurement row**:
@@ -269,37 +269,84 @@ type SourceConn struct {
 // Measurements slice per discovered metric family, keyed by family name.
 // It is the only HTTP call made per scrape tick; family filtering and
 // per-family emit gating are performed by the caller.
-func ScrapeAll(ctx context.Context, sc *sources.SourceConn) (map[string]metrics.Measurements, error)
+func ScrapeAll(ctx context.Context, sc *sources.PromConn) (map[string]metrics.Measurements, error)
 ```
 
-### 4.6 Scrape goroutine pseudo-code
+### 4.6 `PromSourceReaper` struct and `Run` pseudo-code
 
 ```go
-// One goroutine per prometheus source, started by the reaper.
-func runPrometheusSource(ctx context.Context, sc *sources.SourceConn, intervals metrics.MetricIntervals) {
-    scrapeInterval := minInterval(intervals) // 60 s when intervals is empty (scrape-all)
-    lastEmitted := map[string]time.Time{}
+// internal/reaper/prom_source_reaper.go
+
+// PromSourceReaper manages metric collection for a single prometheus source.
+// It mirrors the structure of SourceReaper (DB sources) but issues HTTP scrapes
+// instead of SQL queries, using per-family emit gating via lastEmitted.
+type PromSourceReaper struct {
+    reaper      *Reaper
+    md          *sources.PromConn
+    lastEmitted map[string]time.Time
+}
+
+func NewPromSourceReaper(r *Reaper, md *sources.PromConn) *PromSourceReaper {
+    return &PromSourceReaper{
+        reaper:      r,
+        md:          md,
+        lastEmitted: make(map[string]time.Time),
+    }
+}
+
+// calcScrapeInterval computes GCD of all emit intervals using the same
+// GCDSlice helper as SourceReaper.calcTickInterval.
+func (psr *PromSourceReaper) calcScrapeInterval() time.Duration {
+    intervals := make([]int, 0, len(psr.md.Metrics))
+    for _, v := range psr.md.Metrics {
+        intervals = append(intervals, max(v, minTickInterval))
+    }
+    return time.Duration(max(GCDSlice(intervals), minTickInterval)) * time.Second
+}
+
+// Run is the main loop for a single prometheus source. Satisfies SourceRunner.
+func (psr *PromSourceReaper) Run(ctx context.Context) {
+    l := log.GetLogger(ctx).WithField("source", psr.md.Name)
+    ctx = log.WithLogger(ctx, l)
+
+    intervals := psr.md.Metrics // family name → emit interval in seconds
+    if len(intervals) == 0 {
+        l.Warning("no metrics configured for prometheus source, activating scrape-all mode at 60s")
+    }
+
+    scrapeInterval := psr.calcScrapeInterval()
     ticker := time.NewTicker(scrapeInterval)
     defer ticker.Stop()
+
     for {
         select {
         case <-ctx.Done():
             return
         case now := <-ticker.C:
-            allFamilies, err := ScrapeAll(ctx, sc)
+            allFamilies, err := ScrapeAll(ctx, psr.md)
             if err != nil {
-                log.Warn("scrape failed", "source", sc.Name, "err", err)
+                l.WithError(err).Warning("scrape failed")
                 continue
             }
             for family, measurements := range allFamilies {
-                emitInterval := intervals[family] // zero duration when scrape-all
+                emitSecs := intervals[family]
+                emitInterval := time.Duration(emitSecs) * time.Second
+                if emitInterval == 0 && len(intervals) > 0 {
+                    continue // family not in configured list; discard
+                }
                 if emitInterval == 0 {
                     emitInterval = scrapeInterval // scrape-all: emit every tick
-                } else if last, ok := lastEmitted[family]; ok && now.Sub(last) < emitInterval {
+                } else if last, ok := psr.lastEmitted[family]; ok && now.Sub(last) < emitInterval {
                     continue // not yet due
                 }
-                sink.Write(buildEnvelope(sc, family, measurements))
-                lastEmitted[family] = now
+                psr.reaper.measurementCh <- metrics.MeasurementEnvelope{
+                    DBName:     psr.md.Name,
+                    MetricName: family,
+                    Data:       measurements,
+                    CustomTags: psr.md.CustomTags,
+                    SourceKind: string(sources.SourcePrometheus),
+                }
+                psr.lastEmitted[family] = now
             }
         }
     }
@@ -376,9 +423,9 @@ func isPromSourcedEnvelope(envelope metrics.MeasurementEnvelope) bool {
 - **Test Levels**: Unit, Integration.
 - **Unit Tests**:
   - `ScrapeAll` with a table-driven test using a mock HTTP server (`httptest.NewServer`) serving pre-recorded Prometheus exposition text. Cover: normal gauges, counters, histograms (verify `le` → `tag_le`), non-finite values, missing timestamp (defaults to `time.Now()`), all families returned in the map.
-  - Scrape goroutine emit-gating logic: mock `ScrapeAll` to return two families with intervals `{A: 30s, B: 60s}`; advance a fake clock and assert that after 30 s only A is emitted, after 60 s both are emitted, and only one `ScrapeAll` call is made per 30 s tick.
+  - `PromSourceReaper` emit-gating logic: mock `ScrapeAll` to return two families with intervals `{A: 30s, B: 60s}`; advance a fake clock and assert that after 30 s only A is emitted, after 60 s both are emitted, and only one `ScrapeAll` call is made per 30 s tick.
   - Filtered mode: assert families not in `MetricIntervals` are discarded after `ScrapeAll`.
-  - `SourceConn.Connect()` with mock TLS server: Basic Auth redaction in logs, `tlsskipverify` warning.
+  - `PromConn.Connect()` with mock TLS server: Basic Auth redaction in logs, `tlsskipverify` warning.
   - `PrometheusWriter.Write()` with Prom-sourced envelopes: verify emitted metric names match family names and the pgwatch namespace prefix is absent.
 - **Integration Tests**:
   - Start a minimal Prometheus text-format HTTP server in the test, register a `prometheus` source with two families at different intervals, run the reaper loop, and assert the correct per-family emit cadence in the JSON sink file with a single HTTP call per tick.
@@ -410,6 +457,21 @@ stale by more than the operator intended. Scraping at `min(intervals)` guarantee
 family can be forwarded to the sink as soon as its emit interval elapses. Families with longer
 intervals are simply filtered at sink-write time using `lastEmitted` state; the extra scrape
 response data they produce is discarded in memory at negligible cost.
+
+### Why `PromSourceReaper` instead of a standalone goroutine function?
+
+The existing `SourceReaper` consolidates N per-metric goroutines into a single per-source
+goroutine with a GCD-based tick loop and `pgx.Batch` SQL execution. Introducing a parallel
+`PromSourceReaper` type follows the same pattern for HTTP sources: one goroutine per source,
+GCD-based cadence, per-family emit gating. Keeping the same structural shape means:
+
+1. **Uniform dispatch**: `Reaper.sourceReapers` holds `SourceRunner` values regardless of
+   kind. Start/stop lifecycle management in `ShutdownOldWorkers` requires zero kind-specific
+   branching.
+2. **Shared helpers**: `GCDSlice`, `minTickInterval`, and the cancel-func map are reused
+   without duplication.
+3. **Testability**: `PromSourceReaper` can be unit-tested in isolation via a mock `Reaper`
+   and mock HTTP server, exactly as `SourceReaper` is tested with a mock DB.
 
 ### Why use `custom_metrics` keys as family names instead of a dedicated selector field?
 
