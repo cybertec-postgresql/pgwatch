@@ -13,11 +13,11 @@ import (
 )
 
 // Helper function to create a test SourceConn with pgxmock
-func createTestSourceConn(t *testing.T) (*sources.SourceConn, pgxmock.PgxPoolIface) {
+func createTestSourceConn(t *testing.T) (*sources.DbConn, pgxmock.PgxPoolIface) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Conn:   mock,
 		Source: sources.Source{Name: "testdb"},
 		RuntimeInfo: sources.RuntimeInfo{
@@ -349,7 +349,7 @@ func TestDetectConfigurationChanges(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Conn:   mock,
 		Source: sources.Source{Name: "testdb"},
 		RuntimeInfo: sources.RuntimeInfo{

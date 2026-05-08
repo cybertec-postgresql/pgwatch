@@ -21,14 +21,14 @@ const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negativ
 // connection (non-pgbouncer, non-pgpool).
 type SourceReaper struct {
 	reaper          *Reaper
-	md              *sources.SourceConn
+	md              *sources.DbConn
 	lastFetch       map[string]time.Time
 	lastUptimeS     int64               // last seen postmaster_uptime_s for restart detection
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
 }
 
 // NewSourceReaper creates a SourceReaper for the given source connection.
-func NewSourceReaper(r *Reaper, md *sources.SourceConn) *SourceReaper {
+func NewSourceReaper(r *Reaper, md *sources.DbConn) *SourceReaper {
 	sr := &SourceReaper{
 		reaper:          r,
 		md:              md,

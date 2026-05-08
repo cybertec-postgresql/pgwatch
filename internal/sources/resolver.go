@@ -64,7 +64,7 @@ func (s Source) ResolveDatabases() (SourceConns, error) {
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
 	}
-	return SourceConns{NewSourceConn(s)}, nil
+	return SourceConns{NewDbConn(s)}, nil
 }
 
 type PatroniClusterMember struct {
@@ -299,7 +299,7 @@ func NewHostConfig(URI string) (hc HostConfig, err error) {
 }
 
 func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
-	var mds []*SourceConn
+	var mds SourceConns
 	var clusterMembers []PatroniClusterMember
 	var err error
 	var ok bool
@@ -385,7 +385,7 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 		if err = rows.Scan(&dbname); err != nil {
 			return nil, err
 		}
-		rdb := NewSourceConn(*s.Clone())
+		rdb := NewDbConn(*s.Clone())
 		rdb.Name += "_" + dbname
 		rdb.SetDatabaseName(dbname)
 		resolvedDbs = append(resolvedDbs, rdb)

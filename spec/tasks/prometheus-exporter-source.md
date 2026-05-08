@@ -43,27 +43,27 @@ can begin until this phase is complete and the full test suite is green.
 
 > **Write these tests FIRST; ensure they FAIL before implementation.**
 
-- [ ] T003 [P] Write compile-time interface checks (these will fail until T008–T011 are done):
+- [x] T003 [P] Write compile-time interface checks (these will fail until T008–T011 are done):
   - `var _ sources.SourceConn = (*sources.DbConn)(nil)` in `internal/sources/conn_test.go`
   - `var _ sources.SourceConn = (*sources.PromConn)(nil)` in `internal/sources/conn_test.go`
   - `var _ SourceRunner = (*SourceReaper)(nil)` in `internal/reaper/source_reaper_test.go`
-- [ ] T004 [P] Table-driven test for `DbConn.IsPostgresSource()` returns `true` for all DB kinds in `internal/sources/conn_test.go`
-- [ ] T005 [P] Table-driven test for `PromConn.IsPostgresSource()` returns `false` in `internal/sources/conn_test.go`
-- [ ] T006 [P] Test that `PromConn.FetchRuntimeInfo()` sets `VersionStr = "prometheus"` and `Version = 0` in `internal/sources/conn_test.go`
+- [x] T004 [P] Table-driven test for `DbConn.IsPostgresSource()` returns `true` for all DB kinds in `internal/sources/conn_test.go`
+- [x] T005 [P] Table-driven test for `PromConn.IsPostgresSource()` returns `false` in `internal/sources/conn_test.go`
+- [x] T006 [P] Test that `PromConn.FetchRuntimeInfo()` sets `VersionStr = "prometheus"` and `Version = 0` in `internal/sources/conn_test.go`
 
 ### Implementation for Phase 2
 
-- [ ] T007 Define `SourceConn` interface in `internal/sources/conn.go` with methods: `Connect`, `Ping`, `IsPostgresSource`, `GetSource`, `GetMetricInterval` (REQ-001 from refactor spec)
-- [ ] T008 Rename existing `SourceConn` struct → `DbConn` in `internal/sources/conn.go`; preserve all DB-specific fields and methods unchanged (REQ-002)
-- [ ] T009 [P] Create `PromConn` struct in `internal/sources/conn.go` with `Source`, `HTTPClient *http.Client`, `sync.RWMutex`; add `NewPromConn` constructor (REQ-003)
-- [ ] T010 [P] Add `NewDbConn` constructor aliasing the existing `NewSourceConn`; update `SourceConns` to `[]SourceConn` (interface slice) (REQ-004/REQ-005)
-- [ ] T011 Update all call sites in `internal/reaper/`, `internal/sources/`, and other packages that hold `*sources.SourceConn` to use the interface or concrete type as required
-- [ ] T012 Define `SourceRunner` interface in `internal/reaper/runner.go`:
+- [x] T007 Define `SourceConn` interface in `internal/sources/conn.go` with methods: `Connect`, `Ping`, `IsPostgresSource`, `GetSource`, `GetMetricInterval` (REQ-001 from refactor spec)
+- [x] T008 Rename existing `SourceConn` struct → `DbConn` in `internal/sources/conn.go`; preserve all DB-specific fields and methods unchanged (REQ-002)
+- [x] T009 [P] Create `PromConn` struct in `internal/sources/conn.go` with `Source`, `HTTPClient *http.Client`, `sync.RWMutex`; add `NewPromConn` constructor (REQ-003)
+- [x] T010 [P] Add `NewDbConn` constructor aliasing the existing `NewSourceConn`; update `SourceConns` to `[]SourceConn` (interface slice) (REQ-004/REQ-005)
+- [x] T011 Update all call sites in `internal/reaper/`, `internal/sources/`, and other packages that hold `*sources.SourceConn` to use the interface or concrete type as required
+- [x] T012 Define `SourceRunner` interface in `internal/reaper/runner.go`:
   ```go
   type SourceRunner interface { Run(ctx context.Context) }
   var _ SourceRunner = (*SourceReaper)(nil)
   ```
-- [ ] T013 Change `Reaper.sourceReapers` field type from `map[string]*SourceReaper` to `map[string]SourceRunner` in `internal/reaper/reaper.go`
+- [x] T013 Change `Reaper.sourceReapers` field type from `map[string]*SourceReaper` to `map[string]SourceRunner` in `internal/reaper/reaper.go`
 
 **Checkpoint**: `go test ./...` is green; interface checks in T003 compile and pass.
 

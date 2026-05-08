@@ -25,7 +25,7 @@ func TestNewLogParser(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	sourceConn := &sources.SourceConn{
+	sourceConn := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "test-source",
 			Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60.0},
@@ -191,7 +191,7 @@ func TestCheckHasPrivileges(t *testing.T) {
 					WillReturnError(assert.AnError)
 			}
 
-			sourceConn := &sources.SourceConn{
+			sourceConn := &sources.DbConn{
 				Source: sources.Source{
 					Name: "test-source",
 				},
@@ -221,7 +221,7 @@ func TestCheckHasPrivileges(t *testing.T) {
 }
 
 func TestEventCountsToMetricStoreMessages(t *testing.T) {
-	mdb := &sources.SourceConn{
+	mdb := &sources.DbConn{
 		Source: sources.Source{
 			Name:       "test-db",
 			Kind:       sources.SourcePostgres,
@@ -416,7 +416,7 @@ func TestLogParseLocal(t *testing.T) {
 		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
 
 	// Create a SourceConn for testing
-	sourceConn := &sources.SourceConn{
+	sourceConn := &sources.DbConn{
 		Source: sources.Source{
 			Name: "test-source",
 		},
@@ -593,7 +593,7 @@ func TestLogParseRemote(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
 				AddRow(logFileName, int32(len(logContent)), time.Now()))
 
-		sourceConn := &sources.SourceConn{
+		sourceConn := &sources.DbConn{
 			Source: sources.Source{
 				Name:    "test-source",
 				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, // 60s interval - won't trigger during test
@@ -654,7 +654,7 @@ func TestLogParseRemote(t *testing.T) {
 		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
 			WillReturnError(assert.AnError)
 
-		sourceConn := &sources.SourceConn{
+		sourceConn := &sources.DbConn{
 			Source: sources.Source{
 				Name:    "test-source",
 				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
@@ -718,7 +718,7 @@ incomplete line without proper fields
 			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
 				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
 
-		sourceConn := &sources.SourceConn{
+		sourceConn := &sources.DbConn{
 			Source: sources.Source{
 				Name:    "test-source",
 				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, // Long interval
@@ -787,7 +787,7 @@ incomplete line without proper fields
 			WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
 			WillReturnError(assert.AnError)
 
-		sourceConn := &sources.SourceConn{
+		sourceConn := &sources.DbConn{
 			Source: sources.Source{
 				Name:    "test-source",
 				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},

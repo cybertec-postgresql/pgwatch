@@ -21,14 +21,14 @@ import (
 func TestSourceConn_Connect(t *testing.T) {
 
 	t.Run("failed config parsing", func(t *testing.T) {
-		md := &sources.SourceConn{}
+		md := &sources.DbConn{}
 		md.ConnStr = "invalid connection string"
 		err := md.Connect(ctx, sources.CmdOpts{})
 		assert.Error(t, err)
 	})
 
 	t.Run("failed connection", func(t *testing.T) {
-		md := &sources.SourceConn{}
+		md := &sources.DbConn{}
 		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 			return nil, assert.AnError
 		}
@@ -43,7 +43,7 @@ func TestSourceConn_Connect(t *testing.T) {
 			return mock, nil
 		}
 
-		md := &sources.SourceConn{}
+		md := &sources.DbConn{}
 		md.Kind = sources.SourcePgBouncer
 
 		opts := sources.CmdOpts{}
@@ -59,14 +59,14 @@ func TestSourceConn_Connect(t *testing.T) {
 }
 
 func TestSourceConn_ParseConfig(t *testing.T) {
-	md := &sources.SourceConn{}
+	md := &sources.DbConn{}
 	assert.NoError(t, md.ParseConfig())
 	//cached config
 	assert.NoError(t, md.ParseConfig())
 }
 
 func TestSourceConn_GetDatabaseName(t *testing.T) {
-	md := &sources.SourceConn{}
+	md := &sources.DbConn{}
 	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
 	expected := "mydatabase"
 	// check pgx.ConnConfig related code
@@ -76,7 +76,7 @@ func TestSourceConn_GetDatabaseName(t *testing.T) {
 	got = md.Source.GetDatabaseName()
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 
-	md = &sources.SourceConn{}
+	md = &sources.DbConn{}
 	md.ConnStr = "foo boo"
 	expected = ""
 	got = md.GetDatabaseName()
@@ -84,7 +84,7 @@ func TestSourceConn_GetDatabaseName(t *testing.T) {
 }
 
 func TestSourceConn_SetDatabaseName(t *testing.T) {
-	md := &sources.SourceConn{}
+	md := &sources.DbConn{}
 	md.ConnStr = "postgres://user:password@localhost:5432/mydatabase"
 	expected := "mydatabase"
 	// check ConnStr parsing
@@ -97,7 +97,7 @@ func TestSourceConn_SetDatabaseName(t *testing.T) {
 	got = md.GetDatabaseName()
 	assert.Equal(t, expected, got, "GetDatabaseName() = %v, want %v", got, expected)
 
-	md = &sources.SourceConn{}
+	md = &sources.DbConn{}
 	md.ConnStr = "foo boo"
 	expected = ""
 	md.SetDatabaseName("ingored due to invalid ConnStr")
@@ -109,7 +109,7 @@ func TestSourceConn_DiscoverPlatform(t *testing.T) {
 	ctx := context.Background()
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
-	md := &sources.SourceConn{Conn: mock}
+	md := &sources.DbConn{Conn: mock}
 
 	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"exec_env"}).AddRow("AZURE_SINGLE"))
 	md.ExecEnv = md.DiscoverPlatform(ctx)
@@ -121,7 +121,7 @@ func TestSourceConn_DiscoverPlatform(t *testing.T) {
 func TestSourceConn_GetApproxSize(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
-	md := &sources.SourceConn{Conn: mock}
+	md := &sources.DbConn{Conn: mock}
 
 	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"size"}).AddRow(42))
 
@@ -133,7 +133,7 @@ func TestSourceConn_GetApproxSize(t *testing.T) {
 func TestSourceConn_FunctionExists(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	require.NoError(t, err)
-	md := &sources.SourceConn{Conn: mock}
+	md := &sources.DbConn{Conn: mock}
 
 	mock.ExpectQuery("select").WithArgs("get_foo").WillReturnRows(pgxmock.NewRows([]string{"exists"}))
 
@@ -142,7 +142,7 @@ func TestSourceConn_FunctionExists(t *testing.T) {
 }
 
 func TestSourceConn_IsPostgresSource(t *testing.T) {
-	md := &sources.SourceConn{}
+	md := &sources.DbConn{}
 	md.Kind = sources.SourcePostgres
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
 
@@ -159,7 +159,7 @@ func TestSourceConn_IsPostgresSource(t *testing.T) {
 func TestSourceConn_Ping(t *testing.T) {
 	db, err := pgxmock.NewPool()
 	require.NoError(t, err)
-	md := &sources.SourceConn{Conn: db}
+	md := &sources.DbConn{Conn: db}
 
 	db.ExpectPing()
 	md.Kind = sources.SourcePostgres
@@ -172,7 +172,7 @@ func TestSourceConn_Ping(t *testing.T) {
 }
 
 func TestSourceConn_GetMetricInterval(t *testing.T) {
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Metrics:        metrics.MetricIntervals{"foo": 15, "bar": 25},
 			MetricsStandby: metrics.MetricIntervals{"foo": 35},
@@ -223,12 +223,12 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("cancelled context", func(t *testing.T) {
 		ctxNew, cancel := context.WithCancel(ctx)
 		cancel()
-		err := (&sources.SourceConn{}).FetchRuntimeInfo(ctxNew, true)
+		err := (&sources.DbConn{}).FetchRuntimeInfo(ctxNew, true)
 		assert.Error(t, err)
 	})
 
 	t.Run("cached version", func(t *testing.T) {
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				LastCheckedOn: time.Now().Add(-time.Minute),
 				Version:       42,
@@ -242,7 +242,7 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("pgbouncer version fetch", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgBouncer})
+		md := sources.NewDbConn(sources.Source{Kind: sources.SourcePgBouncer})
 		md.Conn = mock
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
@@ -257,7 +257,7 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("pgpool version fetch", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgPool})
+		md := sources.NewDbConn(sources.Source{Kind: sources.SourcePgPool})
 		md.Conn = mock
 		mock.ExpectQuery("SHOW POOL_VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
@@ -272,7 +272,7 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("postgres version and extensions", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePostgres})
+		md := sources.NewDbConn(sources.Source{Kind: sources.SourcePostgres})
 		md.Conn = mock
 		mock.ExpectQuery("select").WillReturnRows(
 			pgxmock.NewRows([]string{"ver", "version", "pg_is_in_recovery", "current_database", "system_identifier", "is_superuser"}).
@@ -299,7 +299,7 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	t.Run("query error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := sources.NewSourceConn(sources.Source{Kind: sources.SourcePgBouncer})
+		md := sources.NewDbConn(sources.Source{Kind: sources.SourcePgBouncer})
 		md.Conn = mock
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
@@ -316,7 +316,7 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 	t.Run("valid version string", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("FooBar 1.12.0"))
@@ -330,7 +330,7 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 	t.Run("invalid version string", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("invalid version"))
@@ -343,7 +343,7 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 	t.Run("query error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.SourceConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnError(assert.AnError)
@@ -354,7 +354,7 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 }
 
 func TestSourceConn_GetClusterIdentifier(t *testing.T) {
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "test",
 			Kind:    sources.SourcePostgres,
@@ -366,7 +366,7 @@ func TestSourceConn_GetClusterIdentifier(t *testing.T) {
 	}
 	assert.Equal(t, "42424242:localhost:5432", md.GetClusterIdentifier())
 
-	md = &sources.SourceConn{
+	md = &sources.DbConn{
 		Source: sources.Source{
 			Name:    "test",
 			Kind:    sources.SourcePostgres,
@@ -389,7 +389,7 @@ func TestTryCreateMetricsFetchingHelpers(t *testing.T) {
 		return ""
 	}
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Conn: mock,
 		Source: sources.Source{
 			Name:           "testdb",
@@ -430,7 +430,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn: mock,
 			RuntimeInfo: sources.RuntimeInfo{
 				Extensions: map[string]int{"pg_stat_statements": 10800},
@@ -450,7 +450,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn:        mock,
 			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
 		}
@@ -468,7 +468,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn:        mock,
 			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
 		}
@@ -487,7 +487,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn:        mock,
 			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
 		}
@@ -506,7 +506,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn:        mock,
 			RuntimeInfo: sources.RuntimeInfo{Extensions: map[string]int{}},
 		}
@@ -524,7 +524,7 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Conn: mock,
 			RuntimeInfo: sources.RuntimeInfo{
 				Extensions: map[string]int{"pg_trgm": 10000},
@@ -539,4 +539,28 @@ func TestTryCreateMissingExtensions(t *testing.T) {
 		assert.Equal(t, "pg_stat_statements", created)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
+}
+
+// DbConn.IsPostgresSource returns true for Postgres-family kinds, false for pgbouncer/pgpool.
+func TestDbConn_IsPostgresSource(t *testing.T) {
+	tests := []struct {
+		kind sources.Kind
+		want bool
+	}{
+		{sources.SourcePostgres, true},
+		{sources.SourcePatroni, true},
+		{sources.SourcePostgresContinuous, true},
+		{sources.SourcePgBouncer, false},
+		{sources.SourcePgPool, false},
+	}
+	for _, tt := range tests {
+		md := &sources.DbConn{Source: sources.Source{Kind: tt.kind}}
+		assert.Equal(t, tt.want, md.IsPostgresSource(), "kind=%v", tt.kind)
+	}
+}
+
+// PromConn.IsPostgresSource always returns false.
+func TestPromConn_IsPostgresSource(t *testing.T) {
+	pc := &sources.PromConn{}
+	assert.False(t, pc.IsPostgresSource())
 }
