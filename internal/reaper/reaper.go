@@ -235,8 +235,6 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 	logger.Debug("checking if any workers need to be shut down...")
 	for sourceName, cancelFunc := range r.cancelFuncs {
 		var dbRemovedFromConfig bool
-		var metricRemovedFromPreset bool
-		db, metric, _ := strings.Cut(dbMetric, dbMetricJoinStr)
 
 		_, wholeDbShutDown := hostsToShutDown[sourceName]
 		if !wholeDbShutDown {
