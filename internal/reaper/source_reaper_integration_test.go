@@ -18,7 +18,7 @@ import (
 
 // setupIntegrationDB starts a real Postgres container and returns a SourceConn
 // with a live pgxpool connection. The caller must call tearDown when done.
-func setupIntegrationDB(t *testing.T) (*sources.SourceConn, func()) {
+func setupIntegrationDB(t *testing.T) (*sources.DbConn, func()) {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -33,7 +33,7 @@ func setupIntegrationDB(t *testing.T) (*sources.SourceConn, func()) {
 	pool, err := db.New(testutil.TestContext, connStr)
 	require.NoError(t, err, "failed to create connection pool")
 
-	md := sources.NewSourceConn(sources.Source{
+	md := sources.NewDbConn(sources.Source{
 		Name: "integration_test",
 		Kind: sources.SourcePostgres,
 	})

@@ -43,7 +43,7 @@ func TestGCDSlice(t *testing.T) {
 func TestCalcTickInterval(t *testing.T) {
 	t.Run("exhaustive preset GCD is 30s", func(t *testing.T) {
 		sr := &SourceReaper{
-			md: &sources.SourceConn{
+			md: &sources.DbConn{
 				Source: sources.Source{
 					Metrics: metrics.MetricIntervals{"m1": 30, "m2": 60, "m3": 120, "m4": 300},
 				},
@@ -54,7 +54,7 @@ func TestCalcTickInterval(t *testing.T) {
 
 	t.Run("GCD floors to minimum 1s", func(t *testing.T) {
 		sr := &SourceReaper{
-			md: &sources.SourceConn{
+			md: &sources.DbConn{
 				Source: sources.Source{
 					Metrics: metrics.MetricIntervals{"m1": 3, "m2": 7},
 				},
@@ -65,7 +65,7 @@ func TestCalcTickInterval(t *testing.T) {
 
 	t.Run("single metric", func(t *testing.T) {
 		sr := &SourceReaper{
-			md: &sources.SourceConn{
+			md: &sources.DbConn{
 				Source: sources.Source{
 					Metrics: metrics.MetricIntervals{"m1": 60},
 				},
@@ -76,7 +76,7 @@ func TestCalcTickInterval(t *testing.T) {
 
 	t.Run("empty metrics", func(t *testing.T) {
 		sr := &SourceReaper{
-			md: &sources.SourceConn{
+			md: &sources.DbConn{
 				Source: sources.Source{
 					Metrics: metrics.MetricIntervals{},
 				},
@@ -87,7 +87,7 @@ func TestCalcTickInterval(t *testing.T) {
 
 	t.Run("standby metrics when in recovery", func(t *testing.T) {
 		sr := &SourceReaper{
-			md: &sources.SourceConn{
+			md: &sources.DbConn{
 				Source: sources.Source{
 					Metrics:        metrics.MetricIntervals{"m1": 30, "m2": 60},
 					MetricsStandby: metrics.MetricIntervals{"m1": 120},
@@ -104,7 +104,7 @@ func TestNewSourceReaper(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "testdb",
 			Kind:    sources.SourcePostgres,
@@ -133,7 +133,7 @@ func TestSourceReaper_ExecuteBatch(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "test_source",
 			Kind:    sources.SourcePostgres,
@@ -196,7 +196,7 @@ func TestSourceReaper_RunOneIteration(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "run_source",
 			Kind:    sources.SourcePostgres,
@@ -249,7 +249,7 @@ func TestSourceReaper_DetectServerRestart(t *testing.T) {
 		reaper: &Reaper{
 			measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 		},
-		md: &sources.SourceConn{
+		md: &sources.DbConn{
 			Source: sources.Source{Name: "restart_test"},
 		},
 	}
@@ -296,7 +296,7 @@ func TestSourceReaper_DetectServerRestart(t *testing.T) {
 func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
 
-	newSR := func(t *testing.T) (*SourceReaper, *sources.SourceConn, pgxmock.PgxPoolIface) {
+	newSR := func(t *testing.T) (*SourceReaper, *sources.DbConn, pgxmock.PgxPoolIface) {
 		t.Helper()
 		md, mock := createTestSourceConn(t)
 		r := &Reaper{
@@ -366,7 +366,7 @@ func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "degrade_test",
 			Kind:    sources.SourcePostgres,
@@ -422,7 +422,7 @@ func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "cascade_test",
 			Kind:    sources.SourcePostgres,
@@ -483,7 +483,7 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		require.NoError(t, err)
 		defer mock.Close()
 
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Source: sources.Source{
 				Name:    "recovery_src",
 				Kind:    sources.SourcePostgres,
@@ -655,7 +655,7 @@ func TestSourceReaper_NonPostgresSequential(t *testing.T) {
 	require.NoError(t, err)
 	defer mock.Close()
 
-	md := &sources.SourceConn{
+	md := &sources.DbConn{
 		Source: sources.Source{
 			Name:    "seq_test_src",
 			Kind:    sources.SourcePostgres,

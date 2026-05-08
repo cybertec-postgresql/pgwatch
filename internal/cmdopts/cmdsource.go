@@ -105,14 +105,19 @@ func (cmd *SourceResolveCommand) Execute(args []string) error {
 	}
 	var connstr url.URL
 	connstr.Scheme = "postgresql"
-	for _, s := range conns {
-		if s.ConnStr > "" {
-			fmt.Printf("%s=%s\n", s.Name, s.ConnStr)
+	for _, conn := range conns {
+		s, ok := conn.(*sources.DbConn)
+		if !ok {
+			continue
+		}
+		src := s.GetSource()
+		if src.ConnStr > "" {
+			fmt.Printf("%s=%s\n", src.Name, src.ConnStr)
 		} else {
 			connstr.Host = fmt.Sprintf("%s:%d", s.ConnConfig.ConnConfig.Host, s.ConnConfig.ConnConfig.Port)
 			connstr.User = url.UserPassword(s.ConnConfig.ConnConfig.User, s.ConnConfig.ConnConfig.Password)
 			connstr.Path = s.ConnConfig.ConnConfig.Database
-			fmt.Printf("%s=%s\n", s.Name, connstr.String())
+			fmt.Printf("%s=%s\n", src.Name, connstr.String())
 		}
 	}
 	cmd.owner.CompleteCommand(ExitCodeOK)

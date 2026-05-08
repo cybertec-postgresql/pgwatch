@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error) {
+func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error) {
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
@@ -30,7 +30,7 @@ func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, 
 	return nil, err
 }
 
-func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn) (changeCounts ChangeDetectionResults) {
+func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	l := log.GetLogger(ctx)
@@ -106,7 +106,7 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -185,7 +185,7 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -264,7 +264,7 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -341,7 +341,7 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 	return changeCounts
 }
 
-func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -412,7 +412,7 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 
 // GetInstanceUpMeasurement returns a single measurement with "instance_up" metric
 // used to detect if the instance is up or down
-func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
@@ -426,7 +426,7 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	}, nil // always return nil error for the status metric
 }
 
-func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	md.Lock()
 	defer md.Unlock()
 	spN := r.DetectSprocChanges(ctx, md)
@@ -443,14 +443,14 @@ func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.So
 }
 func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
 	for _, prevDB := range r.prevLoopMonitoredDBs {
-		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { // removed from config
-			prevDB.Conn.Close()
-			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", sinks.DeleteOp)
+		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil { // removed from config
+			prevDB.Close()
+			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
 		}
 	}
 	for toShutDownDB := range hostsToShutDown {
 		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
-			db.Conn.Close()
+			db.Close()
 		}
 		_ = r.SinksWriter.SyncMetric(toShutDownDB, "", sinks.DeleteOp)
 	}

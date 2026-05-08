@@ -241,7 +241,7 @@ func TestReaper_LoadSources(t *testing.T) {
 				mockConn, err := pgxmock.NewPool()
 				require.NoError(t, err)
 				mockConn.ExpectClose()
-				r.monitoredSources[0].Conn = mockConn
+				r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
 
 				// Add a mock cancel function for the source reaper
 				cancelCalled := make(map[string]bool)
@@ -264,7 +264,7 @@ func TestReaper_LoadSources(t *testing.T) {
 				// Reload sources
 				a.NoError(r.LoadSources(ctx))
 				a.Equal(1, len(r.monitoredSources), "Expected one monitored source after reload")
-				a.Equal(modifiedSource, r.monitoredSources[0].Source)
+				a.Equal(modifiedSource, r.monitoredSources[0].GetSource())
 
 				assert.Equal(t, tc.expectCancel, cancelCalled[initialSource.Name])
 				if tc.expectCancel {
@@ -309,7 +309,7 @@ func TestReaper_LoadSources(t *testing.T) {
 		mockConn1, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		mockConn1.ExpectClose()
-		r.monitoredSources[0].Conn = mockConn1
+		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn1
 
 		source1Cancelled := false
 		source2Cancelled := false
@@ -394,7 +394,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 				},
 			},
 		}
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				RealDbname:       "realdb",
 				SystemIdentifier: "12345",
@@ -409,7 +409,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 	t.Run("skips fields when config field names are empty", func(t *testing.T) {
 		a := assert.New(t)
 		r := &Reaper{Options: &cmdopts.Options{}}
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				RealDbname:       "realdb",
 				SystemIdentifier: "12345",
@@ -431,7 +431,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 				},
 			},
 		}
-		md := &sources.SourceConn{}
+		md := &sources.DbConn{}
 		data := metrics.Measurements{metrics.Measurement{}}
 		r.AddSysinfoToMeasurements(data, md)
 		a.NotContains(data[0], "real_dbname")
@@ -475,7 +475,7 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
-			{Source: sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}},
+			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{})
@@ -493,7 +493,7 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
-			{Source: sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}},
+			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
 		r.ShutdownOldWorkers(cancelledCtx, map[string]bool{})
@@ -507,7 +507,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 
 	t.Run("skips already initialized source", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{Source: sources.Source{Name: "existing"}}
+		md := &sources.DbConn{Source: sources.Source{Name: "existing"}}
 		r.prevLoopMonitoredDBs = sources.SourceConns{md}
 		// Conn is nil — would panic if used, proving early return
 		r.CreateSourceHelpers(ctx, r.logger, md)
@@ -515,13 +515,13 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 
 	t.Run("skips non-postgres source", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
+		md := &sources.DbConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
 		r.CreateSourceHelpers(ctx, r.logger, md)
 	})
 
 	t.Run("skips source in recovery", func(*testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			Source:      sources.Source{Name: "standby"},
 			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
 		}

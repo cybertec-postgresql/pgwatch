@@ -53,7 +53,7 @@ func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 		conn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 		expq := conn.ExpectQuery("SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL")
 		expq.Times(uint(len(directlyFetchableOSMetrics)))
-		md := &sources.SourceConn{Conn: conn}
+		md := &sources.DbConn{Conn: conn}
 		for _, m := range directlyFetchableOSMetrics {
 			expq.WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
 			a.True(IsDirectlyFetchableMetric(md, m), "Expected %s to be directly fetchable", m)
@@ -67,7 +67,7 @@ func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 		remoteConn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 		remoteConn.ExpectQuery("SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL").
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
-		remoteMd := &sources.SourceConn{Conn: remoteConn}
+		remoteMd := &sources.DbConn{Conn: remoteConn}
 		a.False(IsDirectlyFetchableMetric(remoteMd, metricCPULoad),
 			"cpu_load should not be directly fetchable when pgwatch is not on the same host as PostgreSQL")
 	})
@@ -207,7 +207,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			},
 		})
 		r.monitoredSources = sources.SourceConns{
-			sources.NewSourceConn(sources.Source{
+			sources.NewDbConn(sources.Source{
 				Name:                 "src1",
 				PresetMetrics:        "preset1",
 				PresetMetricsStandby: "standby1",
@@ -215,7 +215,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		}
 		assert.NoError(t, r.LoadMetrics())
 
-		sc := r.monitoredSources[0]
+		sc := r.monitoredSources[0].(*sources.DbConn)
 		assert.Equal(t, metrics.MetricIntervals{"m1": 10.0}, sc.Metrics)
 		assert.Equal(t, metrics.MetricIntervals{"m2": 20.0}, sc.MetricsStandby)
 	})
@@ -232,13 +232,13 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			},
 		})
 		r.monitoredSources = sources.SourceConns{
-			sources.NewSourceConn(sources.Source{
+			sources.NewDbConn(sources.Source{
 				Name:    "src2",
 				Metrics: customMetrics,
 			}),
 		}
 		assert.NoError(t, r.LoadMetrics())
-		assert.Equal(t, customMetrics, r.monitoredSources[0].Metrics, "custom metrics should be unchanged")
+		assert.Equal(t, customMetrics, r.monitoredSources[0].(*sources.DbConn).Metrics, "custom metrics should be unchanged")
 	})
 
 	// Regression test for https://github.com/cybertec-postgresql/pgwatch/issues/1091
@@ -272,14 +272,14 @@ func TestReaper_LoadMetrics(t *testing.T) {
 		})
 		require.NoError(t, r.LoadSources(ctx))
 		require.NoError(t, r.LoadMetrics())
-		assert.Equal(t, metrics.MetricIntervals{"test_metric": 1}, r.monitoredSources[0].Metrics)
+		assert.Equal(t, metrics.MetricIntervals{"test_metric": 1}, r.monitoredSources[0].(*sources.DbConn).Metrics)
 
 		// Attach a mock connection so CloseResourcesForRemovedMonitoredDBs doesn't panic
 		// when the custom_tags change triggers a full source restart.
 		mockConn, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		mockConn.ExpectClose()
-		r.monitoredSources[0].Conn = mockConn
+		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
 
 		// Simulate what happens between two Reap iterations:
 		// 1. source custom_tags change triggers restart
@@ -295,7 +295,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 
 		require.NoError(t, r.LoadSources(ctx))
 		require.NoError(t, r.LoadMetrics())
-		assert.Equal(t, metrics.MetricIntervals{"test_metric": 2}, r.monitoredSources[0].Metrics,
+		assert.Equal(t, metrics.MetricIntervals{"test_metric": 2}, r.monitoredSources[0].(*sources.DbConn).Metrics,
 			"preset interval should be updated after source config change triggered a restart")
 	})
 }
