@@ -44,6 +44,31 @@ metrics:
             - is_failing_int
             - seconds_since_last_failure
         is_instance_level: true
+    autovacuum_scores:
+        description: >
+            This metric retrieves vacuum scores for each table in the current database from the PostgreSQL pg_stat_autovacuum_scores view, it also shows whether autovacuum would vacuum or analyze the table.
+        sqls: 
+            19: |
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  schemaname::text as tag_schema,
+                  relname::text as tag_table_name,
+                  quote_ident(schemaname)||'.'||quote_ident(relname) as tag_table_full_name,
+                  score,
+                  xid_score,
+                  mxid_score,
+                  vacuum_score,
+                  vacuum_insert_score,
+                  analyze_score,
+                  case when do_vacuum then 1 else 0 end as do_vacuum_int,
+                  case when do_analyze then 1 else 0 end as do_analyze_int,
+                  case when for_wraparound then 1 else 0 end as for_wraparound_int
+                from
+                  pg_stat_autovacuum_scores 
+                where
+                  schemaname not like any (array[E'pg\\_%', 'information_schema', E'\\_timescaledb%']) 
+        gauges:
+            - '*'
     backends:
         description: >
             This metric gathers detailed information from the PostgreSQL pg_stat_activity view, providing an overview of the database's current session
@@ -4285,6 +4310,7 @@ presets:
         metrics:
             archiver: 60
             archiver_pending_count: 120
+            autovacuum_scores: 60
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4317,6 +4343,7 @@ presets:
         metrics:
             archiver: 60
             archiver_pending_count: 120
+            autovacuum_scores: 60
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4441,6 +4468,7 @@ presets:
     standard:
         description: basic level + table, index, stat_statements stats
         metrics:
+            autovacuum_scores: 60
             cpu_load: 60
             db_size: 300
             db_stats: 60
@@ -4487,6 +4515,7 @@ presets:
         metrics:
             archiver: 30
             archiver_pending_count: 30
+            autovacuum_scores: 30
             backends: 30
             backup_age_pgbackrest: 30
             backup_age_walg: 30
