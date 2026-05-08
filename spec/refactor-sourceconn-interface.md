@@ -1,7 +1,8 @@
 ---
 title: Refactor SourceConn from Concrete Struct to Interface Hierarchy
-version: 1.0
+version: 1.1
 date_created: 2026-05-08
+date_updated: 2026-05-08
 tags: [architecture, refactoring, sources, interfaces]
 ---
 
@@ -163,23 +164,43 @@ support — with a clean interface and two focused implementations.
 
 ### Call-Site Updates
 
-- **REQ-018**: Every function in `internal/reaper/` that currently accepts `*sources.SourceConn`
-  MUST be updated to the most specific type it actually needs:
-  - Functions that only issue SQL queries (`QueryMeasurements`, `DetectSprocChanges`,
-    `DetectTableChanges`, `DetectIndexChanges`, `DetectPrivilegeChanges`,
-    `DetectConfigurationChanges`, `GetInstanceUpMeasurement`, `GetObjectChangesMeasurement`,
-    `AddSysinfoToMeasurements`, `CreateSourceHelpers`, `FetchStatsDirectlyFromOS`,
-    `NewLogParser`, `checkHasRemotePrivileges`) MUST accept `*sources.DbConn`.
+- **REQ-018**: Every function and struct field in `internal/reaper/` that currently references
+  `*sources.SourceConn` MUST be updated to the most specific type it actually needs:
+  - `SourceReaper.md` struct field and `NewSourceReaper` constructor parameter MUST be typed
+    as `*sources.DbConn`. `SourceReaper` is exclusively a DB-source runner; all its field
+    accesses (`Conn`, `RuntimeInfo`, `RLock`/`RUnlock`) are valid on `*DbConn` without any
+    type assertion.
+  - Functions that only issue SQL queries or access DB-specific runtime info
+    (`QueryMeasurements`, `DetectSprocChanges`, `DetectTableChanges`, `DetectIndexChanges`,
+    `DetectPrivilegeChanges`, `DetectConfigurationChanges`, `GetInstanceUpMeasurement`,
+    `GetObjectChangesMeasurement`, `AddSysinfoToMeasurements`, `CreateSourceHelpers`,
+    `FetchStatsDirectlyFromOS`, `NewLogParser`, `checkHasRemotePrivileges`) MUST accept
+    `*sources.DbConn`.
   - The new `ScrapeAll` function (prometheus spec) MUST accept `*sources.PromConn`.
-  - Functions that handle both kinds at the dispatch level (`reapMetricMeasurements`,
-    `FetchMetric`) MUST accept `sources.SourceConn` (the interface).
 
 - **REQ-019**: `SourceConns.GetMonitoredDatabase` MUST continue to accept a name string and
   return `SourceConn` (interface), searching by `sc.GetSource().Name`.
 
-- **REQ-020**: Any type assertion or type switch on `sources.SourceConn` in the reaper (e.g.,
-  to obtain `*DbConn` for DB-specific operations) MUST be contained within the dispatch
-  functions identified in REQ-018, not scattered across helper functions.
+- **REQ-020**: Any type assertion from `sources.SourceConn` (interface) to `*sources.DbConn`
+  or `*sources.PromConn` MUST only appear in the reaper dispatch block (REQ-023), not
+  scattered across helper functions or within `SourceReaper` methods.
+
+### Reaper Dispatch Structure
+
+- **REQ-021**: A `SourceRunner` interface MUST be defined in `internal/reaper/` with a single
+  method `Run(ctx context.Context)`. Compile-time assertions
+  (`var _ SourceRunner = (*SourceReaper)(nil)` and
+  `var _ SourceRunner = (*PromSourceReaper)(nil)`) MUST be present.
+
+- **REQ-022**: `Reaper.sourceReapers` MUST be retyped from `map[string]*SourceReaper` to
+  `map[string]SourceRunner`.
+
+- **REQ-023**: In `Reaper.Reap()`, the runner creation block MUST dispatch to
+  `NewSourceReaper(*DbConn)` for DB sources and `NewPromSourceReaper(*PromConn)` for
+  prometheus sources, selected via a `switch` on `source.Kind`.
+
+- **REQ-024**: Type assertions from `sources.SourceConn` (interface) to concrete types MUST
+  only appear in the dispatch block described in REQ-023.
 
 ---
 
@@ -285,26 +306,66 @@ func (mds SourceConns) GetMonitoredDatabase(name string) SourceConn {
 }
 ```
 
-### 4.6 Reaper call-site summary
+### 4.6 `SourceRunner` interface
 
-| Function | Old parameter type | New parameter type |
-|---|---|---|
-| `QueryMeasurements` | `*sources.SourceConn` | `*sources.DbConn` |
-| `DetectSprocChanges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `DetectTableChanges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `DetectIndexChanges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `DetectPrivilegeChanges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `DetectConfigurationChanges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `GetInstanceUpMeasurement` | `*sources.SourceConn` | `*sources.DbConn` |
-| `GetObjectChangesMeasurement` | `*sources.SourceConn` | `*sources.DbConn` |
-| `AddSysinfoToMeasurements` | `*sources.SourceConn` | `*sources.DbConn` |
-| `CreateSourceHelpers` | `*sources.SourceConn` | `*sources.DbConn` |
-| `FetchStatsDirectlyFromOS` | `*sources.SourceConn` | `*sources.DbConn` |
-| `NewLogParser` | `*sources.SourceConn` | `*sources.DbConn` |
-| `checkHasRemotePrivileges` | `*sources.SourceConn` | `*sources.DbConn` |
-| `ScrapeAll` (new) | — | `*sources.PromConn` |
-| `reapMetricMeasurements` | `*sources.SourceConn` | `sources.SourceConn` |
-| `FetchMetric` | `*sources.SourceConn` | `sources.SourceConn` |
+```go
+// internal/reaper/source_runner.go
+
+// SourceRunner is the common interface for per-source collection goroutines.
+// It allows Reaper to manage SourceReaper (DB sources) and PromSourceReaper
+// (prometheus sources) through a single map without kind-specific branching.
+type SourceRunner interface {
+    Run(ctx context.Context)
+}
+
+// compile-time assertions
+var _ SourceRunner = (*SourceReaper)(nil)
+var _ SourceRunner = (*PromSourceReaper)(nil)
+```
+
+`Reaper.sourceReapers` MUST be declared as `map[string]SourceRunner`. The runner creation
+block in `Reaper.Reap()` type-asserts the `SourceConn` interface value to the correct concrete
+type and passes it to the appropriate constructor:
+
+```go
+if _, exists := r.sourceReapers[source.Name]; !exists {
+    var runner SourceRunner
+    switch source.Kind {
+    case sources.SourcePrometheus:
+        runner = NewPromSourceReaper(r, monitoredSource.(*sources.PromConn))
+    default:
+        runner = NewSourceReaper(r, monitoredSource.(*sources.DbConn))
+    }
+    sourceCtx, cancel := context.WithCancel(ctx)
+    r.cancelFuncs[source.Name] = cancel
+    r.sourceReapers[source.Name] = runner
+    go runner.Run(sourceCtx)
+}
+```
+
+### 4.7 Reaper call-site summary
+
+The following functions and struct fields change type.
+
+| Symbol | Kind | Old type | New type |
+|---|---|---|---|
+| `SourceReaper.md` | struct field | `*sources.SourceConn` | `*sources.DbConn` |
+| `NewSourceReaper` | constructor param | `*sources.SourceConn` | `*sources.DbConn` |
+| `Reaper.sourceReapers` | struct field | `map[string]*SourceReaper` | `map[string]SourceRunner` |
+| `QueryMeasurements` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `DetectSprocChanges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `DetectTableChanges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `DetectIndexChanges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `DetectPrivilegeChanges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `DetectConfigurationChanges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `GetInstanceUpMeasurement` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `GetObjectChangesMeasurement` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `AddSysinfoToMeasurements` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `CreateSourceHelpers` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `FetchStatsDirectlyFromOS` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `NewLogParser` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `checkHasRemotePrivileges` | function param | `*sources.SourceConn` | `*sources.DbConn` |
+| `ScrapeAll` (new) | function param | — | `*sources.PromConn` |
 
 ---
 
@@ -326,6 +387,10 @@ func (mds SourceConns) GetMonitoredDatabase(name string) SourceConn {
 - **AC-010**: `go vet ./...` and `golangci-lint run` produce no new errors after the refactor.
 - **AC-011**: `SourceConns.GetMonitoredDatabase` returns `nil` (not panics) when the name is
   not found.
+- **AC-012**: `var _ SourceRunner = (*SourceReaper)(nil)` compiles without error.
+- **AC-013**: `var _ SourceRunner = (*PromSourceReaper)(nil)` compiles without error.
+- **AC-014**: `Reaper.sourceReapers` is declared as `map[string]SourceRunner`; assigning a
+  `*PromSourceReaper` value to it compiles without error.
 
 ---
 
@@ -392,6 +457,16 @@ All affected call sites are within two packages: `internal/sources` and `interna
 external packages (sinks, webserver, cmd) hold `*SourceConn` directly — they receive
 `SourceConns` or interact via higher-level reaper APIs. The change is therefore contained and
 can be reviewed in a single PR.
+
+### Why a `SourceRunner` interface in the reaper instead of a type switch?
+
+`Reaper.sourceReapers` previously held `map[string]*SourceReaper`. Adding prometheus support
+requires storing runners of different concrete types. Two alternatives: (a) `map[string]any`
+with runtime type switches at every call site — fragile and error-prone; (b) two separate
+maps — duplicates lifecycle management code. The `SourceRunner` interface with a single
+`Run(ctx)` method eliminates both problems: the map stays strongly typed, start/stop
+lifecycle code in `ShutdownOldWorkers` requires zero kind-specific branching, and future
+source kinds (REST, etc.) plug in by implementing only `Run`.
 
 ---
 
