@@ -665,7 +665,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L33">QueryMeasurements</a>
+			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L17">QueryMeasurements</a>
 				<a class="permalink" href="#QueryMeasurements">&#xb6;</a>
 				
 				
@@ -1238,7 +1238,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L939">CloseResourcesForRemovedMonitoredDBs</a>
+				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L444">CloseResourcesForRemovedMonitoredDBs</a>
 					<a class="permalink" href="#Reaper.CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
 					
 					
@@ -1263,7 +1263,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.DetectConfigurationChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L725">DetectConfigurationChanges</a>
+				<h3 id="Reaper.DetectConfigurationChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L344">DetectConfigurationChanges</a>
 					<a class="permalink" href="#Reaper.DetectConfigurationChanges">&#xb6;</a>
 					
 					
@@ -1275,7 +1275,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.DetectIndexChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L395">DetectIndexChanges</a>
+				<h3 id="Reaper.DetectIndexChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L188">DetectIndexChanges</a>
 					<a class="permalink" href="#Reaper.DetectIndexChanges">&#xb6;</a>
 					
 					
@@ -1287,7 +1287,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.DetectPrivilegeChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L561">DetectPrivilegeChanges</a>
+				<h3 id="Reaper.DetectPrivilegeChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L267">DetectPrivilegeChanges</a>
 					<a class="permalink" href="#Reaper.DetectPrivilegeChanges">&#xb6;</a>
 					
 					
@@ -1299,7 +1299,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.DetectSprocChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L67">DetectSprocChanges</a>
+				<h3 id="Reaper.DetectSprocChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L33">DetectSprocChanges</a>
 					<a class="permalink" href="#Reaper.DetectSprocChanges">&#xb6;</a>
 					
 					
@@ -1311,7 +1311,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.DetectTableChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L227">DetectTableChanges</a>
+				<h3 id="Reaper.DetectTableChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L109">DetectTableChanges</a>
 					<a class="permalink" href="#Reaper.DetectTableChanges">&#xb6;</a>
 					
 					
@@ -1335,13 +1335,15 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.GetInstanceUpMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L873">GetInstanceUpMeasurement</a>
+				<h3 id="Reaper.GetInstanceUpMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L415">GetInstanceUpMeasurement</a>
 					<a class="permalink" href="#Reaper.GetInstanceUpMeasurement">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (r *<a href="#Reaper">Reaper</a>) GetInstanceUpMeasurement(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
+				<p>GetInstanceUpMeasurement returns a single measurement with &quot;instance_up&quot; metric
+used to detect if the instance is up or down
+
 				
 				
 				
@@ -1360,7 +1362,7 @@ so including them would double-count and skew percentage calculations.
 				
 			
 				
-				<h3 id="Reaper.GetObjectChangesMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L901">GetObjectChangesMeasurement</a>
+				<h3 id="Reaper.GetObjectChangesMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L429">GetObjectChangesMeasurement</a>
 					<a class="permalink" href="#Reaper.GetObjectChangesMeasurement">&#xb6;</a>
 					
 					
