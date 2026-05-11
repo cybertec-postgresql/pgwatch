@@ -126,7 +126,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
 	t.Run("returns error from GetMetrics", func(t *testing.T) {
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) {
 					return nil, assert.AnError
@@ -141,7 +141,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			MetricDefs: metrics.MetricDefs{"m1": {Description: "M1"}},
 			PresetDefs: metrics.PresetDefs{"p1": {Description: "P1", Metrics: metrics.MetricIntervals{"m1": 1.0}}},
 		}
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 			},
@@ -163,7 +163,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			PresetDefs: metrics.PresetDefs{},
 		}
 		mock := &mockDefinerWriter{}
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 			},
@@ -180,7 +180,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			PresetDefs: metrics.PresetDefs{},
 		}
 		mock := &mockDefinerWriter{defineErr: assert.AnError}
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 			},
@@ -201,7 +201,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 				"standby1": {Metrics: metrics.MetricIntervals{"m2": 20.0}},
 			},
 		}
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 			},
@@ -226,7 +226,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			MetricDefs: metrics.MetricDefs{"cpu": {Description: "CPU"}},
 			PresetDefs: metrics.PresetDefs{},
 		}
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
 				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 			},
@@ -261,7 +261,7 @@ func TestReaper_LoadMetrics(t *testing.T) {
 			PresetMetrics: "test_preset",
 		}
 		getMetricsFn := func() (*metrics.Metrics, error) { return initialDefs, nil }
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			SourcesReaderWriter: &testutil.MockSourcesReaderWriter{
 				GetSourcesFunc: func() (sources.Sources, error) { return sources.Sources{src}, nil },
 			},
