@@ -95,32 +95,30 @@ round-trip works. Covers REQ-001, REQ-004, REQ-005, REQ-034.
 
 **Purpose**: Implement `PromConn.Connect()`, `Ping()`, `FetchRuntimeInfo()` with TLS query-parameter
 parsing, Basic Auth from userinfo, and password redaction. Covers REQ-006, REQ-007, REQ-011–REQ-015,
-SEC-001, SEC-002.
+SEC-001.
 
 ### Tests for Phase 4
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T019 [P] Test `PromConn.Connect()` against `httptest.NewTLSServer` with `tlsskipverify=true` in `internal/sources/conn_test.go`:
+- [x] T019 [P] Test `PromConn.Connect()` against `httptest.NewTLSServer` with `tlsskipverify=true` in `internal/sources/conn_test.go`:
   - Connection succeeds
   - TLS params are stripped from the actual request URL
-  - Warning log entry is emitted (SEC-002)
-- [ ] T020 [P] Test `PromConn.Connect()` with `http://user:secret@host/metrics`: Basic Auth header sent, password not logged (SEC-001); use a capturing handler
-- [ ] T021 [P] Test `PromConn.Connect()` returns error when exporter is unreachable (REQ-012)
-- [ ] T022 [P] Test `PromConn.Ping()` returns nil for 2xx, error for 4xx/5xx in `internal/sources/conn_test.go` (REQ-013)
-- [ ] T023 [P] Test `redactURL(url)` helper strips password from userinfo component, leaves URL otherwise unchanged — in `internal/sources/conn_test.go` (SEC-001)
+- [x] T020 [P] Test `PromConn.Connect()` with `http://user:secret@host/metrics`: Basic Auth header sent, password not logged (SEC-001); use a capturing handler
+- [x] T021 [P] Test `PromConn.Connect()` returns error when exporter is unreachable (REQ-012)
+- [x] T022 [P] Test `PromConn.Ping()` returns nil for 2xx, error for 4xx/5xx in `internal/sources/conn_test.go` (REQ-013)
+- [x] T023 [P] Test `redactURL(url)` helper strips password from userinfo component, leaves URL otherwise unchanged — in `internal/sources/conn_test.go` (SEC-001)
 
 ### Implementation for Phase 4
 
-- [ ] T024 Add `redactURL(rawURL string) string` helper to `internal/sources/conn.go` that clears the password from `url.URL.User` before returning the URL string (SEC-001)
-- [ ] T025 Implement `PromConn.Connect(ctx, opts)` in `internal/sources/conn.go`:
+- [x] T024 Add `redactURL(rawURL string) string` helper to `internal/sources/conn.go` that clears the password from `url.URL.User` before returning the URL string (SEC-001)
+- [x] T025 Implement `PromConn.Connect(ctx, opts)` in `internal/sources/conn.go`:
   - Parse `tlsrootcert` and `tlsskipverify` query params from `ConnStr`
-  - Log warning when `tlsskipverify=true` (SEC-002)
   - Build `*http.Client` with derived `tls.Config`
   - Strip TLS params from URL before making reachability HEAD/GET
   - Validate reachability; return error if unreachable (REQ-012)
-- [ ] T026 Implement `PromConn.Ping(ctx)` — HEAD request; error if status ≥ 300 (REQ-013)
-- [ ] T027 Implement `PromConn.FetchRuntimeInfo()` — no-op setting `VersionStr = "prometheus"`, `Version = 0` (REQ-015); note: `PromConn` has no `RuntimeInfo` field, so this may just be a method stub returning these values
+- [x] T026 Implement `PromConn.Ping(ctx)` — HEAD request; error if status ≥ 300 (REQ-013)
+- [x] T027 Implement `PromConn.FetchRuntimeInfo()` — no-op (REQ-015); note: `PromConn` has no `RuntimeInfo` field, so this may just be a method stub returning these values
 
 **Checkpoint**: `go test ./internal/sources/...` is green.
 

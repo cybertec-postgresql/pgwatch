@@ -3,6 +3,10 @@ package sources_test
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,12 +14,14 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pashagolub/pgxmock/v4"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 )
 
 func TestSourceConn_Connect(t *testing.T) {
@@ -563,4 +569,128 @@ func TestDbConn_IsPostgresSource(t *testing.T) {
 func TestPromConn_IsPostgresSource(t *testing.T) {
 	pc := &sources.PromConn{}
 	assert.False(t, pc.IsPostgresSource())
+}
+
+func TestPromConn_Connect_TLSSkipVerify(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Empty(t, r.URL.Query().Get("tlsskipverify"), "tlsskipverify param should be stripped")
+		assert.Empty(t, r.URL.Query().Get("tlsrootcert"), "tlsrootcert param should be stripped")
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+
+	ctx := testutil.TestContext
+
+	connStr := srv.URL + "/metrics?tlsskipverify=true"
+	pc := sources.NewPromConn(sources.Source{ConnStr: connStr})
+
+	err := pc.Connect(ctx, sources.CmdOpts{})
+	assert.NoError(t, err, "Connect should succeed with tlsskipverify=true")
+	assert.NotNil(t, pc.HTTPClient, "HTTPClient should be set after Connect")
+}
+
+func TestPromConn_Connect_BasicAuth(t *testing.T) {
+	var capturedAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+
+	u, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+	u.Path = "/metrics"
+	u.User = url.UserPassword("pgwatch", "supersecret")
+
+	ctx, logOutput := testutil.NewTestLogger(t, logrus.DebugLevel)
+
+	pc := sources.NewPromConn(sources.Source{ConnStr: u.String()})
+	err = pc.Connect(ctx, sources.CmdOpts{})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, capturedAuth, "Authorization header should be sent")
+	assert.True(t, strings.HasPrefix(capturedAuth, "Basic "), "should be Basic auth")
+	assert.NotContains(t, logOutput.String(), "supersecret", "password must not be logged (SEC-001)")
+}
+
+func TestPromConn_Connect_Unreachable(t *testing.T) {
+	ctx := t.Context()
+	pc := sources.NewPromConn(sources.Source{
+		ConnStr: "http://127.0.0.1:1/metrics",
+	})
+	assert.Error(t, pc.Connect(ctx, sources.CmdOpts{}))
+}
+
+func TestPromConn_Ping(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		wantErr    bool
+	}{
+		{"200 OK", http.StatusOK, false},
+		{"204 No Content", http.StatusNoContent, false},
+		{"400 Bad Request", http.StatusBadRequest, true},
+		{"500 Internal Server Error", http.StatusInternalServerError, true},
+		{"301 Redirect", http.StatusMovedPermanently, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.statusCode)
+			}))
+			t.Cleanup(srv.Close)
+
+			pc := sources.NewPromConn(sources.Source{ConnStr: srv.URL + "/metrics"})
+			pc.HTTPClient = srv.Client()
+			require.NoError(t, pc.ParseConfig())
+			err := pc.Ping(t.Context())
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPromConn_FetchRuntimeInfo(t *testing.T) {
+	pc := sources.NewPromConn(sources.Source{})
+	err := pc.FetchRuntimeInfo(t.Context(), false)
+	assert.NoError(t, err)
+}
+
+func TestRedactURL(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "password is redacted",
+			input: "http://user:secret@localhost:9187/metrics",
+			want:  "http://user:xxxxx@localhost:9187/metrics",
+		},
+		{
+			name:  "no userinfo unchanged",
+			input: "http://localhost:9187/metrics",
+			want:  "http://localhost:9187/metrics",
+		},
+		{
+			name:  "username only (no password) unchanged",
+			input: "http://user@localhost:9187/metrics",
+			want:  "http://user@localhost:9187/metrics",
+		},
+		{
+			name:  "query params preserved",
+			input: "http://user:pass@localhost:9187/metrics?tlsskipverify=true",
+			want:  "http://user:xxxxx@localhost:9187/metrics?tlsskipverify=true",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sources.RedactURL(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

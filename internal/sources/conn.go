@@ -2,11 +2,15 @@ package sources
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"maps"
 	"math"
 	"net/http"
+	"net/url"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -385,9 +389,35 @@ func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) SourceConn {
 	return nil
 }
 
-// PromConn represents a Prometheus source connection (stub for future use).
+// RedactURL replaces the password in URL userinfo with "xxxxx".
+// If rawURL cannot be parsed or has no password, it is returned unchanged.
+func RedactURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	if u.User == nil {
+		return rawURL
+	}
+	if _, hasPass := u.User.Password(); !hasPass {
+		return rawURL
+	}
+	u.User = url.UserPassword(u.User.Username(), "xxxxx")
+	return u.String()
+}
+
+// promConnConfig holds the parsed Prometheus source connection parameters.
+// It is populated once by ParseConfig and reused by Connect and Ping.
+type promConnConfig struct {
+	URL       string
+	Userinfo  *url.Userinfo
+	TLSConfig *tls.Config
+}
+
+// PromConn represents a Prometheus source connection.
 type PromConn struct {
 	Source
+	connConfig *promConnConfig
 	HTTPClient *http.Client
 	sync.RWMutex
 }
@@ -398,8 +428,95 @@ func NewPromConn(s Source) *PromConn {
 	}
 }
 
-func (pc *PromConn) Connect(_ context.Context, _ CmdOpts) error       { return nil }
-func (pc *PromConn) Ping(_ context.Context) error                     { return nil }
+// ParseConfig parses pc.ConnStr once and caches the result in pc.connConfig.
+// Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.
+func (pc *PromConn) ParseConfig() error {
+	if pc.connConfig != nil {
+		return nil
+	}
+	u, err := url.Parse(pc.ConnStr)
+	if err != nil {
+		return fmt.Errorf("parsing prometheus source URL: %w", err)
+	}
+	userinfo := u.User
+	u.User = nil
+
+	q := u.Query()
+	tlsRootCert := q.Get("tlsrootcert")
+	tlsSkipVerify := q.Get("tlsskipverify") == "true"
+	q.Del("tlsrootcert")
+	q.Del("tlsskipverify")
+	u.RawQuery = q.Encode()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: tlsSkipVerify} //nolint:gosec // intentional per config
+	if tlsRootCert != "" {
+		caCert, readErr := os.ReadFile(tlsRootCert)
+		if readErr != nil {
+			return fmt.Errorf("reading tlsrootcert %q: %w", tlsRootCert, readErr)
+		}
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(caCert)
+		tlsConfig.RootCAs = pool
+	}
+
+	pc.connConfig = &promConnConfig{
+		URL:       u.String(),
+		Userinfo:  userinfo,
+		TLSConfig: tlsConfig,
+	}
+	return nil
+}
+
+func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
+	pc.Lock()
+	if pc.HTTPClient == nil {
+		if err := pc.ParseConfig(); err != nil {
+			pc.Unlock()
+			return err
+		}
+		pc.HTTPClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: pc.connConfig.TLSConfig},
+			Timeout:   30 * time.Second,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	}
+	pc.Unlock()
+	return pc.Ping(ctx)
+}
+
+func (pc *PromConn) Ping(ctx context.Context) error {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, cfg.URL, nil)
+	if err != nil {
+		return err
+	}
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	_ = resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("prometheus ping: unexpected status %s", resp.Status)
+	}
+	return nil
+}
+
 func (pc *PromConn) IsPostgresSource() bool                           { return false }
 func (pc *PromConn) GetSource() Source                                { return pc.Source }
 func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
