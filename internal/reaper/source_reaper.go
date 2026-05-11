@@ -15,13 +15,13 @@ import (
 
 const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negative intervals
 
-var _ Reaper = (*SourceReaper)(nil)
+var _ Reaper = (*DbConnReaper)(nil)
 
-// SourceReaper manages metric collection for a single monitored source.
+// DbConnReaper manages metric collection for a single monitored database source.
 // Instead of one goroutine per metric it runs a single GCD-based tick loop
 // and batches SQL queries via pgx.Batch when the source is a real Postgres
 // connection (non-pgbouncer, non-pgpool).
-type SourceReaper struct {
+type DbConnReaper struct {
 	reaper          *reaper
 	md              *sources.DbConn
 	lastFetch       map[string]time.Time
@@ -30,20 +30,24 @@ type SourceReaper struct {
 }
 
 // NewSourceReaper creates a SourceReaper for the given source connection.
-func NewSourceReaper(r *reaper, md *sources.DbConn) *SourceReaper {
-	sr := &SourceReaper{
-		reaper:          r,
-		md:              md,
-		lastFetch:       make(map[string]time.Time),
-		degradedMetrics: make(map[string]struct{}),
+func NewSourceReaper(r *reaper, s sources.SourceConn) *DbConnReaper {
+	switch s.GetSource().Kind {
+	case sources.SourcePrometheus: //todo
+	default:
+		return &DbConnReaper{
+			reaper:          r,
+			md:              s.(*sources.DbConn),
+			lastFetch:       make(map[string]time.Time),
+			degradedMetrics: make(map[string]struct{}),
+		}
 	}
-	return sr
+	return nil
 }
 
 // activeMetrics returns a snapshot copy of the currently active metric intervals
 // based on the source's recovery state. Copying under the lock prevents data
 // races when the caller iterates after the lock is released.
-func (sr *SourceReaper) activeMetrics() map[string]time.Duration {
+func (sr *DbConnReaper) activeMetrics() map[string]time.Duration {
 	sr.md.RLock()
 	defer sr.md.RUnlock()
 	am := sr.md.Metrics
@@ -72,7 +76,7 @@ func GCDSlice(vals []int) int {
 }
 
 // calcTickInterval computes GCD of all metric intervals with a minimum floor.
-func (sr *SourceReaper) calcTickInterval() time.Duration {
+func (sr *DbConnReaper) calcTickInterval() time.Duration {
 	am := sr.activeMetrics()
 	intervals := make([]int, 0, len(am))
 	for _, d := range am {
@@ -82,7 +86,7 @@ func (sr *SourceReaper) calcTickInterval() time.Duration {
 }
 
 // cacheKey returns the instance-level cache key for the given metric.
-func (sr *SourceReaper) cacheKey(m metrics.Metric, name string) string {
+func (sr *DbConnReaper) cacheKey(m metrics.Metric, name string) string {
 	age := sr.reaper.Metrics.CacheAge()
 	if m.IsInstanceLevel && age > 0 && sr.md.GetMetricInterval(name) < age {
 		return fmt.Sprintf("%s:%s", sr.md.GetClusterIdentifier(), name)
@@ -92,7 +96,7 @@ func (sr *SourceReaper) cacheKey(m metrics.Metric, name string) string {
 
 // isRoleExcluded returns true if the metric should be skipped based on the
 // source's recovery state (e.g. primary-only metric on a standby).
-func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool {
+func (sr *DbConnReaper) isRoleExcluded(m metrics.Metric) bool {
 	sr.md.RLock()
 	defer sr.md.RUnlock()
 	return (m.PrimaryOnly() && sr.md.IsInRecovery) || (m.StandbyOnly() && !sr.md.IsInRecovery)
@@ -100,7 +104,7 @@ func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool {
 
 // sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the
 // measurement channel.
-func (sr *SourceReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements) {
+func (sr *DbConnReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements) {
 	log.GetLogger(ctx).WithField("metric", name).WithField("rows", len(data)).Info("measurements fetched")
 	sr.reaper.AddSysinfoToMeasurements(data, sr.md)
 	sr.reaper.measurementCh <- metrics.MeasurementEnvelope{
@@ -113,7 +117,7 @@ func (sr *SourceReaper) sendEnvelope(ctx context.Context, name, storageName stri
 
 // dispatchMetricData handles the post-fetch workflow for a collected metric:
 // caching, sysinfo enrichment, sending, and restart detection.
-func (sr *SourceReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements) {
+func (sr *DbConnReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements) {
 	if key := sr.cacheKey(metric, name); key != "" {
 		sr.reaper.measurementCache.Put(key, data)
 	}
@@ -132,7 +136,7 @@ type batchEntry struct {
 
 // Run is the main loop for a single source. It replaces N per-metric goroutines
 // with one goroutine that batches SQL queries at GCD-aligned ticks.
-func (sr *SourceReaper) Reap(ctx context.Context) {
+func (sr *DbConnReaper) Reap(ctx context.Context) {
 	l := log.GetLogger(ctx).WithField("source", sr.md.Name)
 	ctx = log.WithLogger(ctx, l)
 	var err error
@@ -237,7 +241,7 @@ func (sr *SourceReaper) Reap(ctx context.Context) {
 // individually via fetchMetric to isolate real failures from cascade failures.
 // Entries that fail even after the individual retry are marked as degraded
 // so that subsequent runs use fetchMetric for them until they recover.
-func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
+func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
 	batch := &pgx.Batch{}
 	for _, e := range entries {
 		batch.Queue(e.sql)
@@ -271,7 +275,7 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 }
 
 // fetchMetric executes a single SQL query and returns the resulting measurements.
-func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
+func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
 	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
 	if err != nil {
 		return err
@@ -280,7 +284,7 @@ func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error
 }
 
 // CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.
-func (sr *SourceReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
+func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
 	data, err := pgx.CollectRows(rows, metrics.RowToMeasurement)
 	if err != nil {
 		return err
@@ -292,7 +296,7 @@ func (sr *SourceReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, n
 }
 
 // fetchOSMetric handles gopsutil-based OS metrics.
-func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error {
+func (sr *DbConnReaper) fetchOSMetric(ctx context.Context, name string) error {
 	msg, err := sr.reaper.FetchStatsDirectlyFromOS(ctx, sr.md, name)
 	if err != nil {
 		return fmt.Errorf("could not read metric from OS: %v", err)
@@ -305,7 +309,7 @@ func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error {
 }
 
 // fetchSpecialMetric handles change_events and instance_up metrics.
-func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
+func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
 	var (
 		data metrics.Measurements
 		err  error
@@ -326,7 +330,7 @@ func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name, storageNam
 }
 
 // runLogParser launches the server log event counts parser.
-func (sr *SourceReaper) runLogParser(ctx context.Context) error {
+func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
 	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
 	if err != nil {
 		return fmt.Errorf("failed to initialize log parser: %v", err)
@@ -339,7 +343,7 @@ func (sr *SourceReaper) runLogParser(ctx context.Context) error {
 
 // detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s
 // in db_stats metric data and emits an object_changes measurement if detected.
-func (sr *SourceReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
+func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
 	if len(data) == 0 {
 		return
 	}
