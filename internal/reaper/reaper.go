@@ -42,7 +42,6 @@ type reaper struct {
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
-	sourceReapers        map[string]Reaper             // [sourceName] — active SourceRunner instances
 }
 
 // NewReaper creates a new Reaper instance
@@ -55,7 +54,6 @@ func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
-		sourceReapers:        make(map[string]Reaper),
 	}
 }
 
@@ -178,12 +176,11 @@ func (r *reaper) Reap(ctx context.Context) {
 				}
 
 				// Start SourceReaper for this source if not already running
-				if _, exists := r.sourceReapers[src.Name]; !exists {
+				if _, exists := r.cancelFuncs[src.Name]; !exists {
 					srcL.Info("starting source reaper")
 					sr := NewSourceReaper(r, md)
 					sourceCtx, cancelFunc := context.WithCancel(ctx)
 					r.cancelFuncs[src.Name] = cancelFunc
-					r.sourceReapers[src.Name] = sr
 					go sr.Reap(sourceCtx)
 				}
 			case *sources.PromConn:
@@ -259,7 +256,6 @@ func (r *reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 			logger.WithField("source", sourceName).Info("stopping source reaper...")
 			cancelFunc()
 			delete(r.cancelFuncs, sourceName)
-			delete(r.sourceReapers, sourceName)
 			if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
 				logger.Error(err)
 			}
