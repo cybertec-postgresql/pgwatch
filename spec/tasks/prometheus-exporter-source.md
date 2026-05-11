@@ -46,7 +46,7 @@ can begin until this phase is complete and the full test suite is green.
 - [x] T003 [P] Write compile-time interface checks (these will fail until T008–T011 are done):
   - `var _ sources.SourceConn = (*sources.DbConn)(nil)` in `internal/sources/conn_test.go`
   - `var _ sources.SourceConn = (*sources.PromConn)(nil)` in `internal/sources/conn_test.go`
-  - `var _ Reaper = (*SourceReaper)(nil)` in `internal/reaper/source_reaper_test.go`
+  - `var _ Reaper = (*DbConnReaper)(nil)` in `internal/reaper/source_reaper_test.go`
 - [x] T004 [P] Table-driven test for `DbConn.IsPostgresSource()` returns `true` for all DB kinds in `internal/sources/conn_test.go`
 - [x] T005 [P] Table-driven test for `PromConn.IsPostgresSource()` returns `false` in `internal/sources/conn_test.go`
 - [x] T006 [P] Test that `PromConn.FetchRuntimeInfo()` sets `VersionStr = "prometheus"` and `Version = 0` in `internal/sources/conn_test.go`
@@ -61,9 +61,9 @@ can begin until this phase is complete and the full test suite is green.
 - [x] T012 Define `Reaper` interface in `internal/reaper/reaper.go`:
   ```go
   type Reaper interface { Reap(ctx context.Context) }
-  var _ Reaper = (*SourceReaper)(nil)
+  var _ Reaper = (*DbConnReaper)(nil)
   ```
-- [x] T013 Change `Reaper.sourceReapers` field type from `map[string]*SourceReaper` to `map[string]Reaper` in `internal/reaper/reaper.go`
+- [x] T013 Change `Reaper.sourceReapers` field type from `map[string]*DbConnReaper` to `map[string]Reaper` in `internal/reaper/reaper.go`
 
 **Checkpoint**: `go test ./...` is green; interface checks in T003 compile and pass.
 
