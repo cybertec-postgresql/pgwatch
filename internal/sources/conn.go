@@ -93,7 +93,12 @@ func NewDbConn(s Source) *DbConn {
 
 // NewSourceConn is a factory dispatcher that returns a SourceConn interface.
 func NewSourceConn(s Source) SourceConn {
-	return NewDbConn(s)
+	switch s.Kind {
+	case SourcePrometheus:
+		return NewPromConn(s)
+	default:
+		return NewDbConn(s)
+	}
 }
 
 // GetSource returns a copy of the embedded Source.
@@ -484,6 +489,32 @@ func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
 	}
 	pc.Unlock()
 	return pc.Ping(ctx)
+}
+
+// Scrape executes a single GET request to the source's metrics endpoint with
+// Accept: text/plain and optional Basic Auth from the cached config.
+// The caller is responsible for closing resp.Body.
+// Connect must be called before Scrape.
+func (pc *PromConn) Scrape(ctx context.Context) (*http.Response, error) {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return nil, errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "text/plain")
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+	return client.Do(req)
 }
 
 func (pc *PromConn) Ping(ctx context.Context) error {

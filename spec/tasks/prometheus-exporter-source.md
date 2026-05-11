@@ -133,20 +133,20 @@ SEC-001.
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T028 [P] Table-driven test `TestScrapeAll` in `internal/reaper/prometheus_test.go`:
+- [x] T028 [P] Table-driven test `TestScrapeAll` in `internal/reaper/prometheus_test.go`:
   - Serve fixture exposition text via `httptest.NewServer`
   - Assert each sample maps to one `Measurement` with `tag_<label>` columns and value column named after the family
   - Assert `epoch_ns` uses sample timestamp when present
   - Assert `epoch_ns` falls back to `time.Now()` when timestamp absent (approximate check)
   - Assert `__name__` label is NOT present as a column (REQ-024)
-- [ ] T029 [P] Test non-finite values (`+Inf`, `-Inf`, `NaN`) are preserved as-is in the value column (REQ-025)
-- [ ] T030 [P] Test that `ScrapeAll` sends `Accept: text/plain` in the request header (CON-003)
-- [ ] T031 [P] Test that `MeasurementEnvelope.SourceKind` field exists and is correctly marshalled/used — in `internal/metrics/types_test.go` (REQ-026)
+- [x] T029 [P] Test non-finite values (`+Inf`, `-Inf`, `NaN`) are preserved as-is in the value column (REQ-025)
+- [x] T030 [P] Test that `ScrapeAll` sends `Accept: text/plain` in the request header (CON-003)
+- [x] T031 [P] Test that `MeasurementEnvelope.SourceKind` field exists and is correctly marshalled/used — in `internal/metrics/types_test.go` (REQ-026)
 
 ### Implementation for Phase 5
 
-- [ ] T032 Add `SourceKind string` field to `MeasurementEnvelope` in `internal/metrics/types.go` (REQ-026)
-- [ ] T033 Implement `ScrapeAll(ctx context.Context, sc *sources.PromConn) (map[string]metrics.Measurements, error)` in `internal/reaper/prometheus.go` using `github.com/prometheus/common/expfmt` (REQ-021–REQ-025):
+- [x] T032 Add `SourceKind string` field to `MeasurementEnvelope` in `internal/metrics/types.go` (REQ-026)
+- [x] T033 Implement `ScrapeAll(ctx context.Context, sc *sources.PromConn) (map[string]metrics.Measurements, error)` in `internal/reaper/prometheus.go` using `github.com/prometheus/common/expfmt` (REQ-021–REQ-025):
   - Single GET with `Accept: text/plain`
   - For each family and each sample: build `Measurement` with `tag_<label>`, value column, `epoch_ns`
   - Skip `__name__` label
