@@ -15,12 +15,14 @@ import (
 
 const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negative intervals
 
+var _ Reaper = (*SourceReaper)(nil)
+
 // SourceReaper manages metric collection for a single monitored source.
 // Instead of one goroutine per metric it runs a single GCD-based tick loop
 // and batches SQL queries via pgx.Batch when the source is a real Postgres
 // connection (non-pgbouncer, non-pgpool).
 type SourceReaper struct {
-	reaper          *Reaper
+	reaper          *reaper
 	md              *sources.DbConn
 	lastFetch       map[string]time.Time
 	lastUptimeS     int64               // last seen postmaster_uptime_s for restart detection
@@ -28,7 +30,7 @@ type SourceReaper struct {
 }
 
 // NewSourceReaper creates a SourceReaper for the given source connection.
-func NewSourceReaper(r *Reaper, md *sources.DbConn) *SourceReaper {
+func NewSourceReaper(r *reaper, md *sources.DbConn) *SourceReaper {
 	sr := &SourceReaper{
 		reaper:          r,
 		md:              md,
@@ -130,7 +132,7 @@ type batchEntry struct {
 
 // Run is the main loop for a single source. It replaces N per-metric goroutines
 // with one goroutine that batches SQL queries at GCD-aligned ticks.
-func (sr *SourceReaper) Run(ctx context.Context) {
+func (sr *SourceReaper) Reap(ctx context.Context) {
 	l := log.GetLogger(ctx).WithField("source", sr.md.Name)
 	ctx = log.WithLogger(ctx, l)
 	var err error

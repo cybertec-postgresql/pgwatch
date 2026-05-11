@@ -97,7 +97,7 @@ func TestCalcTickInterval(t *testing.T) {
 }
 
 func TestNewSourceReaper(t *testing.T) {
-	r := &Reaper{
+	r := &reaper{
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
@@ -143,7 +143,7 @@ func TestSourceReaper_ExecuteBatch(t *testing.T) {
 		},
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -207,7 +207,7 @@ func TestSourceReaper_RunOneIteration(t *testing.T) {
 		},
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -231,7 +231,7 @@ func TestSourceReaper_RunOneIteration(t *testing.T) {
 		cancel()
 	}()
 
-	sr.Run(ctx)
+	sr.Reap(ctx)
 
 	select {
 	case msg := <-r.measurementCh:
@@ -244,7 +244,7 @@ func TestSourceReaper_RunOneIteration(t *testing.T) {
 
 func TestSourceReaper_DetectServerRestart(t *testing.T) {
 	sr := &SourceReaper{
-		reaper: &Reaper{
+		reaper: &reaper{
 			measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 		},
 		md: &sources.DbConn{
@@ -297,7 +297,7 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 	newSR := func(t *testing.T) (*SourceReaper, *sources.DbConn, pgxmock.PgxPoolIface) {
 		t.Helper()
 		md, mock := createTestSourceConn(t)
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Metrics: metrics.CmdOpts{},
 				Sinks:   sinks.CmdOpts{},
@@ -376,7 +376,7 @@ func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
 			ChangeState: make(map[string]map[string]string),
 		},
 	}
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -433,7 +433,7 @@ func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
 			ChangeState: make(map[string]map[string]string),
 		},
 	}
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -495,7 +495,7 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 				ChangeState: make(map[string]map[string]string),
 			},
 		}
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Metrics: metrics.CmdOpts{},
 				Sinks:   sinks.CmdOpts{},
@@ -516,7 +516,7 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		mock.ExpectQuery("SELECT 7").WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(int64(700_000_000_000), int64(7)))
 
-		go sr.Run(ctx)
+		go sr.Reap(ctx)
 
 		// Run goroutine completes iteration 1 (pgxmock is in-memory, no real I/O) then
 		// blocks on time.After — the only durably-blocking operation in the loop.
@@ -558,7 +558,7 @@ func TestSourceReaper_NonPostgresSequential(t *testing.T) {
 		},
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},

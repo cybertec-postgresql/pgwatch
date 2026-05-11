@@ -75,7 +75,7 @@ type ExistingPartitionInfo struct {
 }
 
 // LoadMetrics loads metric definitions from the reader
-func (r *Reaper) LoadMetrics() (err error) {
+func (r *reaper) LoadMetrics() (err error) {
 	var newDefs *metrics.Metrics
 	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
 		return

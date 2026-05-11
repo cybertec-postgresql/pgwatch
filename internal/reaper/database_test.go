@@ -42,7 +42,7 @@ func TestDetectSprocChanges(t *testing.T) {
 	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
-	reaper := &Reaper{
+	reaper := &reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 	}
 
@@ -119,7 +119,7 @@ func TestDetectTableChanges(t *testing.T) {
 	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
-	reaper := &Reaper{
+	reaper := &reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 	}
 
@@ -199,7 +199,7 @@ func TestDetectIndexChanges(t *testing.T) {
 	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
-	reaper := &Reaper{
+	reaper := &reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 	}
 
@@ -279,7 +279,7 @@ func TestDetectPrivilegeChanges(t *testing.T) {
 	md, mock := createTestSourceConn(t)
 	defer mock.Close()
 
-	reaper := &Reaper{
+	reaper := &reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 	}
 
@@ -358,7 +358,7 @@ func TestDetectConfigurationChanges(t *testing.T) {
 		},
 	}
 
-	reaper := &Reaper{
+	reaper := &reaper{
 		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
 	}
 
@@ -416,7 +416,7 @@ func TestDetectConfigurationChanges(t *testing.T) {
 
 func TestGetInstanceUpMeasurement(t *testing.T) {
 	ctx := context.Background()
-	reaper := &Reaper{}
+	reaper := &reaper{}
 
 	testCases := []struct {
 		name            string
