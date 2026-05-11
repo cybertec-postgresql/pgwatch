@@ -559,7 +559,7 @@ func (pc *PromConn) GetMetricInterval(name string) time.Duration {
 	return time.Duration(pc.Metrics[name]) * time.Second
 }
 
-func (pc *PromConn) SetMetricIntervals(main, standby metrics.MetricIntervals) {
+func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
 	pc.Lock()
 	defer pc.Unlock()
 	if main != nil {

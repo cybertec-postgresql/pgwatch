@@ -316,7 +316,7 @@ func TestPromReaper_ScrapeAllMode(t *testing.T) {
 
 		ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
 
-		md := fakePromConn(t, sources.Source{Name: "prom_scrapeall", Kind: sources.SourcePrometheus}, func(r *http.Request) (*http.Response, error) {
+		md := fakePromConn(t, sources.Source{Name: "prom_scrapeall", Kind: sources.SourcePrometheus}, func(*http.Request) (*http.Response, error) {
 			scrapeCount.Add(1)
 			return fakeResponse("# HELP up Up\n# TYPE up gauge\nup 1\n"), nil
 		})
@@ -350,7 +350,7 @@ func TestPromReaper_EmitGating(t *testing.T) {
 			Name:    "gating_test",
 			Kind:    sources.SourcePrometheus,
 			Metrics: metrics.MetricIntervals{"fast": 30, "slow": 60},
-		}, func(r *http.Request) (*http.Response, error) {
+		}, func(*http.Request) (*http.Response, error) {
 			return fakeResponse(gatingBody), nil
 		})
 
@@ -397,7 +397,7 @@ func TestPromReaper_ScrapeError(t *testing.T) {
 			Name:    "error_test",
 			Kind:    sources.SourcePrometheus,
 			Metrics: metrics.MetricIntervals{"some_metric": 30},
-		}, func(r *http.Request) (*http.Response, error) {
+		}, func(*http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusInternalServerError,
 				Status:     "500 Internal Server Error",

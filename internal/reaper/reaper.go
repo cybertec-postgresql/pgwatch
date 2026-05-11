@@ -32,6 +32,15 @@ type Reaper interface {
 	Reap(ctx context.Context)
 }
 
+type Readier interface {
+	Ready() bool
+}
+
+type ReadierReaper interface {
+	Reaper
+	Readier
+}
+
 // reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
 type reaper struct {
 	*cmdopts.Options
@@ -44,8 +53,11 @@ type reaper struct {
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
-// NewReaper creates a new Reaper instance
-func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
+func NewReaper(ctx context.Context, opts *cmdopts.Options) ReadierReaper {
+	return newReaper(ctx, opts)
+}
+
+func newReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
 	return &reaper{
 		Options:              opts,
 		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),

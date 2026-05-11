@@ -32,7 +32,7 @@ func init() {
 	uiFS, _ = fs.Sub(buildFS, "build")
 }
 
-type ReadyChecker interface {
+type Readier interface {
 	Ready() bool
 }
 
@@ -45,10 +45,10 @@ type WebUIServer struct {
 	indexHTML           []byte // pre-rendered index.html content
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
-	readyChecker        ReadyChecker
+	readyChecker        Readier
 }
 
-func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (_ *WebUIServer, err error) {
+func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc Readier) (_ *WebUIServer, err error) {
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
