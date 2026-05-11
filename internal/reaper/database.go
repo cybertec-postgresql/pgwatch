@@ -18,7 +18,6 @@ func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, 
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
-
 	// For non-postgres connections (e.g. pgbouncer, pgpool), use simple protocol
 	if !md.IsPostgresSource() {
 		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
@@ -41,19 +40,16 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn)
 		firstRun = true
 		md.ChangeState["sproc_hashes"] = make(map[string]string)
 	}
-
 	mvp, ok := metricDefs.GetMetricDef("sproc_hashes")
 	if !ok {
 		l.Error("could not get sproc_hashes sql")
 		return
 	}
-
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		l.Error(err)
 		return
 	}
-
 	for _, dr := range data {
 		objIdent := dr["tag_sproc"].(string) + dbMetricJoinStr + dr["tag_oid"].(string)
 		prevHash, ok := md.ChangeState["sproc_hashes"][objIdent]
@@ -107,7 +103,6 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn)
 			CustomTags: md.CustomTags,
 		}
 	}
-
 	return changeCounts
 }
 
@@ -122,19 +117,16 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 		firstRun = true
 		md.ChangeState["table_hashes"] = make(map[string]string)
 	}
-
 	mvp, ok := metricDefs.GetMetricDef("table_hashes")
 	if !ok {
 		l.Error("could not get table_hashes sql")
 		return changeCounts
 	}
-
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		l.Error(err)
 		return changeCounts
 	}
-
 	for _, dr := range data {
 		objIdent := dr["tag_table"].(string)
 		prevHash, ok := md.ChangeState["table_hashes"][objIdent]
@@ -181,7 +173,6 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 			delete(md.ChangeState["table_hashes"], deletedTable)
 		}
 	}
-
 	l.Debugf("table changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		r.measurementCh <- metrics.MeasurementEnvelope{
@@ -191,7 +182,6 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 			CustomTags: md.CustomTags,
 		}
 	}
-
 	return changeCounts
 }
 
@@ -206,19 +196,16 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn)
 		firstRun = true
 		md.ChangeState["index_hashes"] = make(map[string]string)
 	}
-
 	mvp, ok := metricDefs.GetMetricDef("index_hashes")
 	if !ok {
 		l.Error("could not get index_hashes sql")
 		return changeCounts
 	}
-
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		l.Error(err)
 		return changeCounts
 	}
-
 	for _, dr := range data {
 		objIdent := dr["tag_index"].(string)
 		prevHash, ok := md.ChangeState["index_hashes"][objIdent]
@@ -274,7 +261,6 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn)
 			CustomTags: md.CustomTags,
 		}
 	}
-
 	return changeCounts
 }
 
@@ -289,20 +275,17 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 		firstRun = true
 		md.ChangeState["object_privileges"] = make(map[string]string)
 	}
-
 	mvp, ok := metricDefs.GetMetricDef("privilege_changes")
 	if !ok || mvp.GetSQL(int(md.Version)) == "" {
 		l.Warning("could not get SQL for 'privilege_changes'. cannot detect privilege changes")
 		return changeCounts
 	}
-
 	// returns rows of: object_type, tag_role, tag_object, privilege_type
 	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
 	if err != nil {
 		l.Error(err)
 		return changeCounts
 	}
-
 	currentState := make(map[string]bool)
 	for _, dr := range data {
 		objIdent := fmt.Sprintf("%s#:#%s#:#%s#:#%s", dr["object_type"], dr["tag_role"], dr["tag_object"], dr["privilege_type"])
@@ -346,7 +329,6 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 			}
 		}
 	}
-
 	l.Debugf("object privilege changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		r.measurementCh <- metrics.MeasurementEnvelope{
@@ -356,7 +338,6 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 			CustomTags: md.CustomTags,
 		}
 	}
-
 	return changeCounts
 }
 
@@ -371,13 +352,11 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 		firstRun = true
 		md.ChangeState["configuration_hashes"] = make(map[string]string)
 	}
-
 	mvp, ok := metricDefs.GetMetricDef("configuration_hashes")
 	if !ok {
 		l.Error("could not get configuration_hashes sql")
 		return changeCounts
 	}
-
 	rows, err := md.Conn.Query(ctx, mvp.GetSQL(md.Version))
 	if err != nil {
 		l.Error(err)
@@ -392,11 +371,11 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 		if rows.Scan(&epoch, &objIdent, &objValue) != nil {
 			return changeCounts
 		}
-		prevHash, ok := md.ChangeState["configuration_hashes"][objIdent]
+		prevРash, ok := md.ChangeState["configuration_hashes"][objIdent]
 		ll := l.WithField("setting", objIdent)
 		if ok { // we have existing state
-			if prevHash != objValue {
-				ll.Warningf("settings change detected: %s = %s (prev: %s)", objIdent, objValue, prevHash)
+			if prevРash != objValue {
+				ll.Warningf("settings change detected: %s = %s (prev: %s)", objIdent, objValue, prevРash)
 				detectedChanges = append(detectedChanges, metrics.Measurement{
 					metrics.EpochColumnName: epoch,
 					"tag_setting":           objIdent,
@@ -419,7 +398,6 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 			changeCounts.Created++
 		}
 	}
-
 	l.Debugf("configuration changes detected: %d", len(detectedChanges))
 	if len(detectedChanges) > 0 {
 		r.measurementCh <- metrics.MeasurementEnvelope{
@@ -438,7 +416,7 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
-			specialMetricInstanceUp: func() int {
+			"instance_up": func() int {
 				if md.Conn.Ping(ctx) == nil {
 					return 1
 				}
@@ -451,22 +429,18 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
 	md.Lock()
 	defer md.Unlock()
-
 	spN := r.DetectSprocChanges(ctx, md)
 	tblN := r.DetectTableChanges(ctx, md)
 	idxN := r.DetectIndexChanges(ctx, md)
 	cnfN := r.DetectConfigurationChanges(ctx, md)
 	privN := r.DetectPrivilegeChanges(ctx, md)
-
 	if spN.Total()+tblN.Total()+idxN.Total()+cnfN.Total()+privN.Total() == 0 {
 		return nil, nil
 	}
-
 	m := metrics.NewMeasurement(time.Now().UnixNano())
 	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
 	return metrics.Measurements{m}, nil
 }
-
 func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
 	for _, prevDB := range r.prevLoopMonitoredDBs {
 		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { // removed from config
@@ -474,7 +448,6 @@ func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string
 			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", sinks.DeleteOp)
 		}
 	}
-
 	for toShutDownDB := range hostsToShutDown {
 		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
 			db.Conn.Close()
