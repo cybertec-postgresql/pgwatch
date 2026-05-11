@@ -178,13 +178,19 @@ func (r *reaper) Reap(ctx context.Context) {
 				// Start SourceReaper for this source if not already running
 				if _, exists := r.cancelFuncs[src.Name]; !exists {
 					srcL.Info("starting source reaper")
-					sr := NewSourceReaper(r, md)
+					sr := NewDbConnReaper(r, md)
 					sourceCtx, cancelFunc := context.WithCancel(ctx)
 					r.cancelFuncs[src.Name] = cancelFunc
 					go sr.Reap(sourceCtx)
 				}
 			case *sources.PromConn:
-				// stub: nothing to do for Prometheus sources yet
+				if _, exists := r.cancelFuncs[src.Name]; !exists {
+					srcL.Info("starting prometheus source reaper")
+					pr := NewPromSourceReaper(r, md)
+					sourceCtx, cancelFunc := context.WithCancel(ctx)
+					r.cancelFuncs[src.Name] = cancelFunc
+					go pr.Reap(sourceCtx)
+				}
 			}
 		}
 

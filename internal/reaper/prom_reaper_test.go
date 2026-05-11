@@ -1,16 +1,21 @@
 package reaper
 
 import (
+	"io"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -98,7 +103,7 @@ func TestScrapeAll(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			sc := newTestPromConn(t, scrapeAllFixture)
-			got, err := ScrapeAll(t.Context(), sc)
+			got, err := (&PromReaper{md: sc}).ScrapeAll(t.Context())
 			require.NoError(t, err)
 			tc.check(t, got)
 		})
@@ -114,7 +119,7 @@ mymetric{baz="qux"} NaN
 `
 
 	sc := newTestPromConn(t, fixture)
-	got, err := ScrapeAll(t.Context(), sc)
+	got, err := (&PromReaper{md: sc}).ScrapeAll(t.Context())
 	require.NoError(t, err)
 
 	env := requireEnvelope(t, got, "mymetric")
@@ -168,7 +173,7 @@ func TestScrapeAll_AcceptHeader(t *testing.T) {
 	}
 	require.NoError(t, sc.ParseConfig())
 
-	_, err := ScrapeAll(t.Context(), sc)
+	_, err := (&PromReaper{md: sc}).ScrapeAll(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "text/plain", accept)
 }
@@ -229,4 +234,199 @@ func hasExactTags(measurement map[string]any, tags map[string]string) bool {
 		}
 	}
 	return tagCount == len(tags)
+}
+
+// roundTripFunc is a fake http.RoundTripper backed by a plain function.
+// Using it instead of a real httptest.Server avoids spawning IO-blocked goroutines
+// inside a synctest bubble (which would prevent synctest.Wait from ever returning).
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// fakePromConn builds a PromConn whose HTTP client uses fn as its transport.
+// ConnStr can be any syntactically valid URL; fn intercepts every request.
+func fakePromConn(t *testing.T, src sources.Source, fn roundTripFunc) *sources.PromConn {
+	t.Helper()
+	src.ConnStr = "http://fake.local"
+	pc := &sources.PromConn{
+		Source:     src,
+		HTTPClient: &http.Client{Transport: fn},
+	}
+	require.NoError(t, pc.ParseConfig())
+	return pc
+}
+
+// fakeResponse builds a minimal 200 Prometheus text-format response.
+func fakeResponse(body string) *http.Response {
+	return &http.Response{
+		StatusCode: 200,
+		Header:     http.Header{"Content-Type": []string{"text/plain; version=0.0.4"}},
+		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+// compile-time check that PromReaper implements Reaper.
+var _ Reaper = (*PromReaper)(nil)
+
+// TestCalcScrapeInterval verifies GCD-based interval calculation and defaults.
+func TestCalcScrapeInterval(t *testing.T) {
+	tests := []struct {
+		name    string
+		metrics metrics.MetricIntervals
+		want    time.Duration
+	}{
+		{
+			name:    "multiple intervals produce GCD",
+			metrics: metrics.MetricIntervals{"a": 30, "b": 60},
+			want:    30 * time.Second,
+		},
+		{
+			name:    "single interval returns that value",
+			metrics: metrics.MetricIntervals{"a": 60},
+			want:    60 * time.Second,
+		},
+		{
+			name:    "empty intervals scrape-all defaults to 60s",
+			metrics: metrics.MetricIntervals{},
+			want:    defaultScrapeInterval,
+		},
+		{
+			name:    "all intervals below min floored to minTickInterval",
+			metrics: metrics.MetricIntervals{"a": 0, "b": -1},
+			want:    minTickInterval * time.Second,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			pr := &PromReaper{
+				md: &sources.PromConn{
+					Source: sources.Source{Metrics: tc.metrics},
+				},
+			}
+			assert.Equal(t, tc.want, pr.calcScrapeInterval())
+		})
+	}
+}
+
+// when Metrics is empty, Reap uses 60 s interval and logs a warning.
+func TestPromReaper_ScrapeAllMode(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var scrapeCount atomic.Int32
+
+		ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
+
+		md := fakePromConn(t, sources.Source{Name: "prom_scrapeall", Kind: sources.SourcePrometheus}, func(r *http.Request) (*http.Response, error) {
+			scrapeCount.Add(1)
+			return fakeResponse("# HELP up Up\n# TYPE up gauge\nup 1\n"), nil
+		})
+
+		pr := NewPromSourceReaper(&reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}, md)
+		go pr.Reap(ctx)
+
+		// t=0: first scrape completes; goroutine blocks on time.After(60s).
+		synctest.Wait()
+		assert.Equal(t, int32(1), scrapeCount.Load(), "first scrape should occur at t=0")
+		assert.Contains(t, out.String(), "scrape-all", "scrape-all mode warning should be logged")
+
+		// Advance 60 s → second scrape.
+		time.Sleep(60 * time.Second)
+		synctest.Wait()
+		assert.Equal(t, int32(2), scrapeCount.Load(), "second scrape should occur after 60 s")
+	})
+}
+
+// per-family emit gating — families respect their configured intervals.
+func TestPromReaper_EmitGating(t *testing.T) {
+	const gatingBody = "# HELP fast Fast metric\n# TYPE fast gauge\nfast 1\n" +
+		"# HELP slow Slow metric\n# TYPE slow gauge\nslow 2\n"
+
+	synctest.Test(t, func(t *testing.T) {
+		const fastEnv = "fast"
+		const slowEnv = "slow"
+
+		r := &reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}
+		md := fakePromConn(t, sources.Source{
+			Name:    "gating_test",
+			Kind:    sources.SourcePrometheus,
+			Metrics: metrics.MetricIntervals{"fast": 30, "slow": 60},
+		}, func(r *http.Request) (*http.Response, error) {
+			return fakeResponse(gatingBody), nil
+		})
+
+		pr := NewPromSourceReaper(r, md)
+
+		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+		go pr.Reap(ctx)
+
+		drain := func() []string {
+			var names []string
+			for {
+				select {
+				case env := <-r.measurementCh:
+					names = append(names, env.MetricName)
+				default:
+					return names
+				}
+			}
+		}
+
+		// Tick 1 (t=0): lastEmitted is zero for both → both emitted.
+		synctest.Wait()
+		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), "tick 1: both families emitted")
+
+		// Tick 2 (t=30s): only "fast" due; "slow" still within its 60 s window.
+		time.Sleep(30*time.Second + time.Millisecond)
+		synctest.Wait()
+		assert.ElementsMatch(t, []string{fastEnv}, drain(), "tick 2: only 'fast' emitted")
+
+		// Tick 3 (t=60s): both families now due.
+		time.Sleep(30 * time.Second)
+		synctest.Wait()
+		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), "tick 3: both families emitted again")
+	})
+}
+
+// ScrapeAll error path — warning is logged, lastEmitted stays unchanged, loop continues.
+func TestPromReaper_ScrapeError(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
+		r := &reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 10)}
+
+		md := fakePromConn(t, sources.Source{
+			Name:    "error_test",
+			Kind:    sources.SourcePrometheus,
+			Metrics: metrics.MetricIntervals{"some_metric": 30},
+		}, func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Status:     "500 Internal Server Error",
+				Body:       io.NopCloser(strings.NewReader("")),
+			}, nil
+		})
+
+		pr := NewPromSourceReaper(r, md)
+		go pr.Reap(ctx)
+
+		// First (failing) scrape completes; goroutine blocks on time.After.
+		synctest.Wait()
+		assert.Contains(t, out.String(), "scrape failed", "warning should be logged on scrape error")
+		assert.Empty(t, pr.lastEmitted, "lastEmitted should not change on error")
+
+		select {
+		case <-r.measurementCh:
+			t.Error("no measurements should be dispatched on scrape error")
+		default:
+		}
+
+		// Advance to trigger a second tick; loop must continue without crashing.
+		time.Sleep(30*time.Second + time.Millisecond)
+		synctest.Wait()
+
+		select {
+		case <-r.measurementCh:
+			t.Error("no measurements should be dispatched on repeated scrape errors")
+		default:
+		}
+	})
 }

@@ -29,19 +29,14 @@ type DbConnReaper struct {
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
 }
 
-// NewSourceReaper creates a SourceReaper for the given source connection.
-func NewSourceReaper(r *reaper, s sources.SourceConn) *DbConnReaper {
-	switch s.GetSource().Kind {
-	case sources.SourcePrometheus: //todo
-	default:
-		return &DbConnReaper{
-			reaper:          r,
-			md:              s.(*sources.DbConn),
-			lastFetch:       make(map[string]time.Time),
-			degradedMetrics: make(map[string]struct{}),
-		}
+// NewDbConnReaper creates a SourceReaper for the given source connection.
+func NewDbConnReaper(r *reaper, md *sources.DbConn) *DbConnReaper {
+	return &DbConnReaper{
+		reaper:          r,
+		md:              md,
+		lastFetch:       make(map[string]time.Time),
+		degradedMetrics: make(map[string]struct{}),
 	}
-	return nil
 }
 
 // activeMetrics returns a snapshot copy of the currently active metric intervals
