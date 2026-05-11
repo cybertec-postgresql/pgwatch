@@ -80,7 +80,7 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	sr.executeBatch(ctx, []batchEntry{
 		{metricName: "integ_version", metric: metricDefs.MetricDefs["integ_version"], sql: "SELECT version() AS pg_version"},
@@ -143,7 +143,7 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 20),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
@@ -233,7 +233,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			helperSetNodeStatus(state)
 
-			sr := NewSourceReaper(r, md)
+			sr := NewDbConnReaper(r, md)
 			go func() {
 				sr.Reap(ctx)
 			}()
@@ -260,7 +260,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			helperSetNodeStatus(state)
 
-			sr := NewSourceReaper(r, md)
+			sr := NewDbConnReaper(r, md)
 			go func() {
 				sr.Reap(ctx)
 			}()

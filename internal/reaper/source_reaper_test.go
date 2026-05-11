@@ -111,7 +111,7 @@ func TestNewSourceReaper(t *testing.T) {
 			Metrics: metrics.MetricIntervals{"cpu": 30, "mem": 60, "disk": 120},
 		},
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	assert.NotNil(t, sr.lastFetch)
 	assert.Empty(t, sr.lastFetch)
@@ -154,7 +154,7 @@ func TestSourceReaper_ExecuteBatch(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	rows1 := pgxmock.NewRows([]string{"epoch_ns", "value"}).
 		AddRow(time.Now().UnixNano(), int64(100))
@@ -217,7 +217,7 @@ func TestSourceReaper_RunOneIteration(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	// FetchRuntimeInfo sends a query
 	mock.ExpectQuery("select /\\* pgwatch_generated \\*/").
@@ -307,7 +307,7 @@ func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
 			measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 			measurementCache: NewInstanceMetricCache(),
 		}
-		return NewSourceReaper(r, md), md, mock
+		return NewDbConnReaper(r, md), md, mock
 	}
 
 	sr, _, mock := newSR(t)
@@ -386,7 +386,7 @@ func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	entries := []batchEntry{
 		{metricName: "good_metric", metric: metricDefs.MetricDefs["good_metric"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
@@ -442,7 +442,7 @@ func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	entries := []batchEntry{
 		{metricName: "cascade_trigger", metric: metricDefs.MetricDefs["cascade_trigger"], sql: "SELECT fail"},
@@ -504,7 +504,7 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 			measurementCache: NewInstanceMetricCache(),
 		}
 		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-		sr := NewSourceReaper(r, md)
+		sr := NewDbConnReaper(r, md)
 		sr.degradedMetrics[metricName] = struct{}{} // pre-seed: metric already degraded
 
 		// Iteration 1: FetchRuntimeInfo + degraded individual fetch → fails → stays degraded
@@ -676,7 +676,7 @@ func TestSourceReaper_NonPostgresSequential(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	rows := pgxmock.NewRows([]string{"epoch_ns", "value"}).
 		AddRow(time.Now().UnixNano(), int64(42))

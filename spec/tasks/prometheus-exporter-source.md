@@ -157,7 +157,7 @@ SEC-001.
 
 ---
 
-## Phase 6: `PromSourceReaper` (US3 — Scrape Loop & Emit Gating)
+## Phase 6: `PromReaper` (US3 — Scrape Loop & Emit Gating)
 
 **Purpose**: Implement the per-source goroutine that drives scrapes on a GCD tick loop and
 applies per-family emit-interval gating. Covers REQ-016–REQ-020, REQ-017 (scrape-all mode).
@@ -166,26 +166,26 @@ applies per-family emit-interval gating. Covers REQ-016–REQ-020, REQ-017 (scra
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T034 [P] Table-driven test `TestCalcScrapeInterval` in `internal/reaper/prom_source_reaper_test.go`:
+- [x] T034 [P] Table-driven test `TestCalcScrapeInterval` in `internal/reaper/prom_source_reaper_test.go`:
   - Multiple emit intervals → GCD result
   - Single interval → that value
   - Empty intervals (scrape-all) → 60 s
   - All intervals below `minTickInterval` → floored to `minTickInterval`
-- [ ] T035 [P] Test scrape-all mode: when `Metrics` is empty, `Run` activates 60 s interval and logs warning — use a context with timeout and a counting fake exporter (REQ-010, REQ-017)
-- [ ] T036 [P] Test per-family emit gating in `internal/reaper/prom_source_reaper_test.go`:
+- [x] T035 [P] Test scrape-all mode: when `Metrics` is empty, `Run` activates 60 s interval and logs warning — use a context with timeout and a counting fake exporter (REQ-010, REQ-017)
+- [x] T036 [P] Test per-family emit gating in `internal/reaper/prom_source_reaper_test.go`:
   - Family with `emitInterval = 60 s`: emitted on first tick, NOT emitted on second tick at 30 s, emitted on tick at 60 s
   - `lastEmitted` is zero on first tick → always emit (REQ-019)
-- [ ] T037 [P] Test `ScrapeAll` error path: warning logged, `lastEmitted` unchanged, loop continues without crash (REQ-020)
-- [ ] T038 [P] Compile-time check `var _ Reaper = (*PromSourceReaper)(nil)` in `internal/reaper/prom_source_reaper_test.go` (REQ-016)
+- [x] T037 [P] Test `ScrapeAll` error path: warning logged, `lastEmitted` unchanged, loop continues without crash (REQ-020)
+- [x] T038 [P] Compile-time check `var _ Reaper = (*PromReaper)(nil)` in `internal/reaper/prom_source_reaper_test.go` (REQ-016)
 
 ### Implementation for Phase 6
 
-- [ ] T039 Create `internal/reaper/prom_source_reaper.go`:
-  - `PromSourceReaper` struct with `reaper *Reaper`, `md *sources.PromConn`, `lastEmitted map[string]time.Time`
-  - `NewPromSourceReaper(r *Reaper, md *sources.PromConn) *PromSourceReaper`
+- [x] T039 Create in `internal/reaper/prom_reaper.go`:
+  - `PromReaper` struct with `reaper *Reaper`, `md *sources.PromConn`, `lastEmitted map[string]time.Time`
+  - `NewPromSourceReaper(r *Reaper, md *sources.PromConn) *PromReaper`
   - `calcScrapeInterval() time.Duration` using `GCDSlice`; defaults to 60 s when `md.Metrics` is empty
   - `Run(ctx context.Context)` tick loop with family filtering and `lastEmitted` gating; sets `SourceKind: string(sources.SourcePrometheus)` on every emitted envelope
-- [ ] T040 Wire `PromSourceReaper` into `Reaper.Reap()` in `internal/reaper/reaper.go`: when `source.Kind == sources.SourcePrometheus`, instantiate `PromSourceReaper` and store as `Reaper` in `sourceReapers` map (REQ-016)
+- [x] T040 Wire `PromReaper` into `Reaper.Reap()` in `internal/reaper/reaper.go`: when `source.Kind == sources.SourcePrometheus`, instantiate `PromReaper` and store as `Reaper` in `sourceReapers` map (REQ-016)
 
 **Checkpoint**: `go test ./internal/reaper/...` is green; no data races (`go test -race ./internal/reaper/...`).
 
@@ -258,7 +258,7 @@ Covers REQ-032, REQ-033, GUD-004.
 - **Phase 3 (Kind Registration)**: Depends on Phase 2
 - **Phase 4 (PromConn Lifecycle)**: Depends on Phase 2
 - **Phase 5 (ScrapeAll)**: Depends on Phase 2
-- **Phase 6 (PromSourceReaper)**: Depends on Phases 3, 4, and 5
+- **Phase 6 (PromReaper)**: Depends on Phases 3, 4, and 5
 - **Phase 7 (Prom→Prom Proxy)**: Depends on Phase 5 (`SourceKind` field on envelope)
 - **Phase 8 (Preset & Config)**: Depends on Phase 3 (`SourcePrometheus` kind)
 - **Phase 9 (Cross-Cutting)**: Depends on all previous phases
