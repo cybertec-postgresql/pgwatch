@@ -46,7 +46,7 @@ can begin until this phase is complete and the full test suite is green.
 - [x] T003 [P] Write compile-time interface checks (these will fail until T008–T011 are done):
   - `var _ sources.SourceConn = (*sources.DbConn)(nil)` in `internal/sources/conn_test.go`
   - `var _ sources.SourceConn = (*sources.PromConn)(nil)` in `internal/sources/conn_test.go`
-  - `var _ SourceRunner = (*SourceReaper)(nil)` in `internal/reaper/source_reaper_test.go`
+  - `var _ Reaper = (*SourceReaper)(nil)` in `internal/reaper/source_reaper_test.go`
 - [x] T004 [P] Table-driven test for `DbConn.IsPostgresSource()` returns `true` for all DB kinds in `internal/sources/conn_test.go`
 - [x] T005 [P] Table-driven test for `PromConn.IsPostgresSource()` returns `false` in `internal/sources/conn_test.go`
 - [x] T006 [P] Test that `PromConn.FetchRuntimeInfo()` sets `VersionStr = "prometheus"` and `Version = 0` in `internal/sources/conn_test.go`
@@ -58,12 +58,12 @@ can begin until this phase is complete and the full test suite is green.
 - [x] T009 [P] Create `PromConn` struct in `internal/sources/conn.go` with `Source`, `HTTPClient *http.Client`, `sync.RWMutex`; add `NewPromConn` constructor (REQ-003)
 - [x] T010 [P] Add `NewDbConn` constructor aliasing the existing `NewSourceConn`; update `SourceConns` to `[]SourceConn` (interface slice) (REQ-004/REQ-005)
 - [x] T011 Update all call sites in `internal/reaper/`, `internal/sources/`, and other packages that hold `*sources.SourceConn` to use the interface or concrete type as required
-- [x] T012 Define `SourceRunner` interface in `internal/reaper/runner.go`:
+- [x] T012 Define `Reaper` interface in `internal/reaper/reaper.go`:
   ```go
-  type SourceRunner interface { Run(ctx context.Context) }
-  var _ SourceRunner = (*SourceReaper)(nil)
+  type Reaper interface { Reap(ctx context.Context) }
+  var _ Reaper = (*SourceReaper)(nil)
   ```
-- [x] T013 Change `Reaper.sourceReapers` field type from `map[string]*SourceReaper` to `map[string]SourceRunner` in `internal/reaper/reaper.go`
+- [x] T013 Change `Reaper.sourceReapers` field type from `map[string]*SourceReaper` to `map[string]Reaper` in `internal/reaper/reaper.go`
 
 **Checkpoint**: `go test ./...` is green; interface checks in T003 compile and pass.
 
@@ -176,7 +176,7 @@ applies per-family emit-interval gating. Covers REQ-016–REQ-020, REQ-017 (scra
   - Family with `emitInterval = 60 s`: emitted on first tick, NOT emitted on second tick at 30 s, emitted on tick at 60 s
   - `lastEmitted` is zero on first tick → always emit (REQ-019)
 - [ ] T037 [P] Test `ScrapeAll` error path: warning logged, `lastEmitted` unchanged, loop continues without crash (REQ-020)
-- [ ] T038 [P] Compile-time check `var _ SourceRunner = (*PromSourceReaper)(nil)` in `internal/reaper/prom_source_reaper_test.go` (REQ-016)
+- [ ] T038 [P] Compile-time check `var _ Reaper = (*PromSourceReaper)(nil)` in `internal/reaper/prom_source_reaper_test.go` (REQ-016)
 
 ### Implementation for Phase 6
 
@@ -185,7 +185,7 @@ applies per-family emit-interval gating. Covers REQ-016–REQ-020, REQ-017 (scra
   - `NewPromSourceReaper(r *Reaper, md *sources.PromConn) *PromSourceReaper`
   - `calcScrapeInterval() time.Duration` using `GCDSlice`; defaults to 60 s when `md.Metrics` is empty
   - `Run(ctx context.Context)` tick loop with family filtering and `lastEmitted` gating; sets `SourceKind: string(sources.SourcePrometheus)` on every emitted envelope
-- [ ] T040 Wire `PromSourceReaper` into `Reaper.Reap()` in `internal/reaper/reaper.go`: when `source.Kind == sources.SourcePrometheus`, instantiate `PromSourceReaper` and store as `SourceRunner` in `sourceReapers` map (REQ-016)
+- [ ] T040 Wire `PromSourceReaper` into `Reaper.Reap()` in `internal/reaper/reaper.go`: when `source.Kind == sources.SourcePrometheus`, instantiate `PromSourceReaper` and store as `Reaper` in `sourceReapers` map (REQ-016)
 
 **Checkpoint**: `go test ./internal/reaper/...` is green; no data races (`go test -race ./internal/reaper/...`).
 

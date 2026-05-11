@@ -72,7 +72,7 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 		"integ_uptime":  60,
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -135,7 +135,7 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 		"integ_run_size":    5,
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -149,7 +149,7 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		sr.Run(ctx)
+		sr.Reap(ctx)
 		close(done)
 	}()
 
@@ -203,7 +203,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		}
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -235,7 +235,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			sr := NewSourceReaper(r, md)
 			go func() {
-				sr.Run(ctx)
+				sr.Reap(ctx)
 			}()
 
 			select {
@@ -262,7 +262,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			sr := NewSourceReaper(r, md)
 			go func() {
-				sr.Run(ctx)
+				sr.Reap(ctx)
 			}()
 
 			time.Sleep(2 * time.Second)

@@ -30,7 +30,7 @@ func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args
 	return nil, err
 }
 
-func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
+func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	l := log.GetLogger(ctx)
@@ -106,7 +106,7 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (ch
 	return changeCounts
 }
 
-func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+func (r *reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -185,7 +185,7 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) Cha
 	return changeCounts
 }
 
-func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+func (r *reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -264,7 +264,7 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) Cha
 	return changeCounts
 }
 
-func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+func (r *reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -341,7 +341,7 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+func (r *reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -412,7 +412,7 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbC
 
 // GetInstanceUpMeasurement returns a single measurement with "instance_up" metric
 // used to detect if the instance is up or down
-func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
+func (r *reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
@@ -426,7 +426,7 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbCon
 	}, nil // always return nil error for the status metric
 }
 
-func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
+func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	md.Lock()
 	defer md.Unlock()
 	spN := r.DetectSprocChanges(ctx, md)
@@ -441,7 +441,8 @@ func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.Db
 	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
 	return metrics.Measurements{m}, nil
 }
-func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
+
+func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
 	for _, prevDB := range r.prevLoopMonitoredDBs {
 		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil { // removed from config
 			prevDB.Close()

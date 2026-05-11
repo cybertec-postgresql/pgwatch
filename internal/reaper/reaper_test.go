@@ -386,7 +386,7 @@ func TestReaper_WriteInstanceDown(t *testing.T) {
 func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 	t.Run("adds real dbname and system identifier fields", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Sinks: sinks.CmdOpts{
 					RealDbnameField:       "real_dbname",
@@ -408,7 +408,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 
 	t.Run("skips fields when config field names are empty", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{Options: &cmdopts.Options{}}
+		r := &reaper{Options: &cmdopts.Options{}}
 		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				RealDbname:       "realdb",
@@ -423,7 +423,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 
 	t.Run("skips fields when md values are empty", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Sinks: sinks.CmdOpts{
 					RealDbnameField:       "real_dbname",

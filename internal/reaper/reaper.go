@@ -28,8 +28,12 @@ var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricsConfig metrics.MetricIntervals                 // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
 
-// Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
-type Reaper struct {
+type Reaper interface {
+	Reap(ctx context.Context)
+}
+
+// reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
+type reaper struct {
 	*cmdopts.Options
 	ready                atomic.Bool
 	measurementCh        chan metrics.MeasurementEnvelope
@@ -38,12 +42,12 @@ type Reaper struct {
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
-	sourceReapers        map[string]SourceRunner       // [sourceName] — active SourceRunner instances
+	sourceReapers        map[string]Reaper             // [sourceName] — active SourceRunner instances
 }
 
 // NewReaper creates a new Reaper instance
-func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
-	return &Reaper{
+func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
+	return &reaper{
 		Options:              opts,
 		measurementCh:        make(chan metrics.MeasurementEnvelope, 256),
 		measurementCache:     NewInstanceMetricCache(),
@@ -51,16 +55,16 @@ func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper) {
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
-		sourceReapers:        make(map[string]SourceRunner),
+		sourceReapers:        make(map[string]Reaper),
 	}
 }
 
 // Ready() returns true if the service is healthy and operating correctly
-func (r *Reaper) Ready() bool {
+func (r *reaper) Ready() bool {
 	return r.ready.Load()
 }
 
-func (r *Reaper) PrintMemStats() {
+func (r *reaper) PrintMemStats() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -75,7 +79,7 @@ func (r *Reaper) PrintMemStats() {
 // from the sources and storing them to the sinks. It also manages the lifecycle of
 // the metric gatherers. In case of a source or metric definition change, it will
 // start or stop the gatherers accordingly.
-func (r *Reaper) Reap(ctx context.Context) {
+func (r *reaper) Reap(ctx context.Context) {
 	var err error
 	logger := r.logger
 
@@ -180,7 +184,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 					sourceCtx, cancelFunc := context.WithCancel(ctx)
 					r.cancelFuncs[src.Name] = cancelFunc
 					r.sourceReapers[src.Name] = sr
-					go sr.Run(sourceCtx)
+					go sr.Reap(sourceCtx)
 				}
 			case *sources.PromConn:
 				// stub: nothing to do for Prometheus sources yet
@@ -200,7 +204,7 @@ func (r *Reaper) Reap(ctx context.Context) {
 }
 
 // CreateSourceHelpers creates the extensions and metric helpers for the monitored source
-func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.DbConn) {
+func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.DbConn) {
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
@@ -234,7 +238,7 @@ func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 
 }
 
-func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
+func (r *reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
 	logger := r.logger
 	// loop over existing source reapers and stop if DB removed from config
 	// or state change makes it uninteresting
@@ -267,7 +271,7 @@ func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[str
 }
 
 // LoadSources loads sources from the reader
-func (r *Reaper) LoadSources(ctx context.Context) (err error) {
+func (r *reaper) LoadSources(ctx context.Context) (err error) {
 	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
 		r.monitoredSources = make(sources.SourceConns, 0)
@@ -310,7 +314,7 @@ func (r *Reaper) LoadSources(ctx context.Context) (err error) {
 }
 
 // WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
-func (r *Reaper) WriteInstanceDown(name string) {
+func (r *reaper) WriteInstanceDown(name string) {
 	r.measurementCh <- metrics.MeasurementEnvelope{
 		DBName:     name,
 		MetricName: specialMetricInstanceUp,
@@ -322,12 +326,12 @@ func (r *Reaper) WriteInstanceDown(name string) {
 }
 
 // GetMeasurementCache returns the instance-level metric cache
-func (r *Reaper) GetMeasurementCache(key string) metrics.Measurements {
+func (r *reaper) GetMeasurementCache(key string) metrics.Measurements {
 	return r.measurementCache.Get(key, r.Metrics.CacheAge())
 }
 
 // WriteMeasurements() writes the metrics to the sinks
-func (r *Reaper) WriteMeasurements(ctx context.Context) {
+func (r *reaper) WriteMeasurements(ctx context.Context) {
 	var err error
 	for {
 		select {
@@ -341,7 +345,7 @@ func (r *Reaper) WriteMeasurements(ctx context.Context) {
 	}
 }
 
-func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.DbConn) {
+func (r *reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.DbConn) {
 	for _, dr := range data {
 		if r.Sinks.RealDbnameField > "" && md.RealDbname > "" {
 			dr[r.Sinks.RealDbnameField] = md.RealDbname

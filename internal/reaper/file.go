@@ -48,7 +48,7 @@ func IsDirectlyFetchableMetric(md *sources.DbConn, metric string) bool {
 	return slices.Contains(directlyFetchableOSMetrics, metric) && md.IsClientOnSameHost()
 }
 
-func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.DbConn, metricName string) (*metrics.MeasurementEnvelope, error) {
+func (r *reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.DbConn, metricName string) (*metrics.MeasurementEnvelope, error) {
 	var data, pgDirs metrics.Measurements
 	var err error
 
