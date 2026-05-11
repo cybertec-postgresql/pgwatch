@@ -1,0 +1,431 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.26.3";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper">reaper</a>/<span class="text-muted">source_reaper.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper">github.com/cybertec-postgresql/pgwatch/v5/internal/reaper</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package reaper
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;cmp&#34;
+<span id="L5" class="ln">     5  </span>	&#34;context&#34;
+<span id="L6" class="ln">     6  </span>	&#34;errors&#34;
+<span id="L7" class="ln">     7  </span>	&#34;fmt&#34;
+<span id="L8" class="ln">     8  </span>	&#34;time&#34;
+<span id="L9" class="ln">     9  </span>
+<span id="L10" class="ln">    10  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/metrics&#34;
+<span id="L12" class="ln">    12  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sources&#34;
+<span id="L13" class="ln">    13  </span>	&#34;github.com/jackc/pgx/v5&#34;
+<span id="L14" class="ln">    14  </span>)
+<span id="L15" class="ln">    15  </span>
+<span id="L16" class="ln">    16  </span>const minTickInterval = 1 <span class="comment">// seconds - floor for GCD to help handle zero/negative intervals</span>
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span><span class="comment">// SourceReaper manages metric collection for a single monitored source.</span>
+<span id="L19" class="ln">    19  </span><span class="comment">// Instead of one goroutine per metric it runs a single GCD-based tick loop</span>
+<span id="L20" class="ln">    20  </span><span class="comment">// and batches SQL queries via pgx.Batch when the source is a real Postgres</span>
+<span id="L21" class="ln">    21  </span><span class="comment">// connection (non-pgbouncer, non-pgpool).</span>
+<span id="L22" class="ln">    22  </span>type SourceReaper struct {
+<span id="L23" class="ln">    23  </span>	reaper          *Reaper
+<span id="L24" class="ln">    24  </span>	md              *sources.SourceConn
+<span id="L25" class="ln">    25  </span>	lastFetch       map[string]time.Time
+<span id="L26" class="ln">    26  </span>	lastUptimeS     int64               <span class="comment">// last seen postmaster_uptime_s for restart detection</span>
+<span id="L27" class="ln">    27  </span>	degradedMetrics map[string]struct{} <span class="comment">// metrics that failed individual retry; executed via fetchMetric until they recover</span>
+<span id="L28" class="ln">    28  </span>}
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span><span class="comment">// NewSourceReaper creates a SourceReaper for the given source connection.</span>
+<span id="L31" class="ln">    31  </span>func NewSourceReaper(r *Reaper, md *sources.SourceConn) *SourceReaper {
+<span id="L32" class="ln">    32  </span>	sr := &amp;SourceReaper{
+<span id="L33" class="ln">    33  </span>		reaper:          r,
+<span id="L34" class="ln">    34  </span>		md:              md,
+<span id="L35" class="ln">    35  </span>		lastFetch:       make(map[string]time.Time),
+<span id="L36" class="ln">    36  </span>		degradedMetrics: make(map[string]struct{}),
+<span id="L37" class="ln">    37  </span>	}
+<span id="L38" class="ln">    38  </span>	return sr
+<span id="L39" class="ln">    39  </span>}
+<span id="L40" class="ln">    40  </span>
+<span id="L41" class="ln">    41  </span><span class="comment">// activeMetrics returns a snapshot copy of the currently active metric intervals</span>
+<span id="L42" class="ln">    42  </span><span class="comment">// based on the source&#39;s recovery state. Copying under the lock prevents data</span>
+<span id="L43" class="ln">    43  </span><span class="comment">// races when the caller iterates after the lock is released.</span>
+<span id="L44" class="ln">    44  </span>func (sr *SourceReaper) activeMetrics() map[string]time.Duration {
+<span id="L45" class="ln">    45  </span>	sr.md.RLock()
+<span id="L46" class="ln">    46  </span>	defer sr.md.RUnlock()
+<span id="L47" class="ln">    47  </span>	am := sr.md.Metrics
+<span id="L48" class="ln">    48  </span>	if sr.md.IsInRecovery &amp;&amp; len(sr.md.MetricsStandby) &gt; 0 {
+<span id="L49" class="ln">    49  </span>		am = sr.md.MetricsStandby
+<span id="L50" class="ln">    50  </span>	}
+<span id="L51" class="ln">    51  </span>	c := make(map[string]time.Duration, len(am))
+<span id="L52" class="ln">    52  </span>	for k, v := range am {
+<span id="L53" class="ln">    53  </span>		c[k] = time.Duration(v) * time.Second
+<span id="L54" class="ln">    54  </span>	}
+<span id="L55" class="ln">    55  </span>	return c
+<span id="L56" class="ln">    56  </span>}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span><span class="comment">// GCDSlice computes GCD across a slice. Returns 0 for empty input.</span>
+<span id="L59" class="ln">    59  </span>func GCDSlice(vals []int) int {
+<span id="L60" class="ln">    60  </span>	if len(vals) == 0 {
+<span id="L61" class="ln">    61  </span>		return 0
+<span id="L62" class="ln">    62  </span>	}
+<span id="L63" class="ln">    63  </span>	g := vals[0]
+<span id="L64" class="ln">    64  </span>	for _, v := range vals[1:] {
+<span id="L65" class="ln">    65  </span>		for v != 0 {
+<span id="L66" class="ln">    66  </span>			g, v = v, g%v
+<span id="L67" class="ln">    67  </span>		}
+<span id="L68" class="ln">    68  </span>	}
+<span id="L69" class="ln">    69  </span>	return g
+<span id="L70" class="ln">    70  </span>}
+<span id="L71" class="ln">    71  </span>
+<span id="L72" class="ln">    72  </span><span class="comment">// calcTickInterval computes GCD of all metric intervals with a minimum floor.</span>
+<span id="L73" class="ln">    73  </span>func (sr *SourceReaper) calcTickInterval() time.Duration {
+<span id="L74" class="ln">    74  </span>	am := sr.activeMetrics()
+<span id="L75" class="ln">    75  </span>	intervals := make([]int, 0, len(am))
+<span id="L76" class="ln">    76  </span>	for _, d := range am {
+<span id="L77" class="ln">    77  </span>		intervals = append(intervals, max(int(d.Seconds()), minTickInterval))
+<span id="L78" class="ln">    78  </span>	}
+<span id="L79" class="ln">    79  </span>	return time.Duration(max(GCDSlice(intervals), minTickInterval)) * time.Second
+<span id="L80" class="ln">    80  </span>}
+<span id="L81" class="ln">    81  </span>
+<span id="L82" class="ln">    82  </span><span class="comment">// cacheKey returns the instance-level cache key for the given metric.</span>
+<span id="L83" class="ln">    83  </span>func (sr *SourceReaper) cacheKey(m metrics.Metric, name string) string {
+<span id="L84" class="ln">    84  </span>	age := sr.reaper.Metrics.CacheAge()
+<span id="L85" class="ln">    85  </span>	if m.IsInstanceLevel &amp;&amp; age &gt; 0 &amp;&amp; sr.md.GetMetricInterval(name) &lt; age {
+<span id="L86" class="ln">    86  </span>		return fmt.Sprintf(&#34;%s:%s&#34;, sr.md.GetClusterIdentifier(), name)
+<span id="L87" class="ln">    87  </span>	}
+<span id="L88" class="ln">    88  </span>	return &#34;&#34;
+<span id="L89" class="ln">    89  </span>}
+<span id="L90" class="ln">    90  </span>
+<span id="L91" class="ln">    91  </span><span class="comment">// isRoleExcluded returns true if the metric should be skipped based on the</span>
+<span id="L92" class="ln">    92  </span><span class="comment">// source&#39;s recovery state (e.g. primary-only metric on a standby).</span>
+<span id="L93" class="ln">    93  </span>func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool {
+<span id="L94" class="ln">    94  </span>	sr.md.RLock()
+<span id="L95" class="ln">    95  </span>	defer sr.md.RUnlock()
+<span id="L96" class="ln">    96  </span>	return (m.PrimaryOnly() &amp;&amp; sr.md.IsInRecovery) || (m.StandbyOnly() &amp;&amp; !sr.md.IsInRecovery)
+<span id="L97" class="ln">    97  </span>}
+<span id="L98" class="ln">    98  </span>
+<span id="L99" class="ln">    99  </span><span class="comment">// sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the</span>
+<span id="L100" class="ln">   100  </span><span class="comment">// measurement channel.</span>
+<span id="L101" class="ln">   101  </span>func (sr *SourceReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements) {
+<span id="L102" class="ln">   102  </span>	log.GetLogger(ctx).WithField(&#34;metric&#34;, name).WithField(&#34;rows&#34;, len(data)).Info(&#34;measurements fetched&#34;)
+<span id="L103" class="ln">   103  </span>	sr.reaper.AddSysinfoToMeasurements(data, sr.md)
+<span id="L104" class="ln">   104  </span>	sr.reaper.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L105" class="ln">   105  </span>		DBName:     sr.md.Name,
+<span id="L106" class="ln">   106  </span>		MetricName: cmp.Or(storageName, name),
+<span id="L107" class="ln">   107  </span>		Data:       data,
+<span id="L108" class="ln">   108  </span>		CustomTags: sr.md.CustomTags,
+<span id="L109" class="ln">   109  </span>	}
+<span id="L110" class="ln">   110  </span>}
+<span id="L111" class="ln">   111  </span>
+<span id="L112" class="ln">   112  </span><span class="comment">// dispatchMetricData handles the post-fetch workflow for a collected metric:</span>
+<span id="L113" class="ln">   113  </span><span class="comment">// caching, sysinfo enrichment, sending, and restart detection.</span>
+<span id="L114" class="ln">   114  </span>func (sr *SourceReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements) {
+<span id="L115" class="ln">   115  </span>	if key := sr.cacheKey(metric, name); key != &#34;&#34; {
+<span id="L116" class="ln">   116  </span>		sr.reaper.measurementCache.Put(key, data)
+<span id="L117" class="ln">   117  </span>	}
+<span id="L118" class="ln">   118  </span>	sr.sendEnvelope(ctx, name, metric.StorageName, data)
+<span id="L119" class="ln">   119  </span>	if name == &#34;db_stats&#34; {
+<span id="L120" class="ln">   120  </span>		sr.detectServerRestart(ctx, data)
+<span id="L121" class="ln">   121  </span>	}
+<span id="L122" class="ln">   122  </span>}
+<span id="L123" class="ln">   123  </span>
+<span id="L124" class="ln">   124  </span><span class="comment">// batchEntry holds the minimum info needed to execute and dispatch a metric query.</span>
+<span id="L125" class="ln">   125  </span>type batchEntry struct {
+<span id="L126" class="ln">   126  </span>	name   string
+<span id="L127" class="ln">   127  </span>	metric metrics.Metric
+<span id="L128" class="ln">   128  </span>	sql    string
+<span id="L129" class="ln">   129  </span>}
+<span id="L130" class="ln">   130  </span>
+<span id="L131" class="ln">   131  </span><span class="comment">// Run is the main loop for a single source. It replaces N per-metric goroutines</span>
+<span id="L132" class="ln">   132  </span><span class="comment">// with one goroutine that batches SQL queries at GCD-aligned ticks.</span>
+<span id="L133" class="ln">   133  </span>func (sr *SourceReaper) Run(ctx context.Context) {
+<span id="L134" class="ln">   134  </span>	l := log.GetLogger(ctx).WithField(&#34;source&#34;, sr.md.Name)
+<span id="L135" class="ln">   135  </span>	ctx = log.WithLogger(ctx, l)
+<span id="L136" class="ln">   136  </span>	var err error
+<span id="L137" class="ln">   137  </span>	for {
+<span id="L138" class="ln">   138  </span>		if err = sr.md.FetchRuntimeInfo(ctx, false); err != nil {
+<span id="L139" class="ln">   139  </span>			l.WithError(err).Warning(&#34;could not refresh runtime info&#34;)
+<span id="L140" class="ln">   140  </span>		}
+<span id="L141" class="ln">   141  </span>
+<span id="L142" class="ln">   142  </span>		now := time.Now()
+<span id="L143" class="ln">   143  </span>		var batch []batchEntry
+<span id="L144" class="ln">   144  </span>
+<span id="L145" class="ln">   145  </span>		for name, interval := range sr.activeMetrics() {
+<span id="L146" class="ln">   146  </span>			if interval &lt;= 0 {
+<span id="L147" class="ln">   147  </span>				continue
+<span id="L148" class="ln">   148  </span>			}
+<span id="L149" class="ln">   149  </span>			if lf := sr.lastFetch[name]; !lf.IsZero() &amp;&amp; now.Sub(lf) &lt; interval {
+<span id="L150" class="ln">   150  </span>				continue
+<span id="L151" class="ln">   151  </span>			}
+<span id="L152" class="ln">   152  </span>
+<span id="L153" class="ln">   153  </span>			metric, ok := metricDefs.GetMetricDef(name)
+<span id="L154" class="ln">   154  </span>			if !ok || sr.isRoleExcluded(metric) {
+<span id="L155" class="ln">   155  </span>				continue
+<span id="L156" class="ln">   156  </span>			}
+<span id="L157" class="ln">   157  </span>
+<span id="L158" class="ln">   158  </span>			switch {
+<span id="L159" class="ln">   159  </span>			case name == specialMetricServerLogEventCounts:
+<span id="L160" class="ln">   160  </span>				if sr.lastFetch[name].IsZero() {
+<span id="L161" class="ln">   161  </span>					go func() {
+<span id="L162" class="ln">   162  </span>						if e := sr.runLogParser(ctx); e != nil {
+<span id="L163" class="ln">   163  </span>							l.WithError(e).Error(&#34;log parser error&#34;)
+<span id="L164" class="ln">   164  </span>						}
+<span id="L165" class="ln">   165  </span>					}()
+<span id="L166" class="ln">   166  </span>				}
+<span id="L167" class="ln">   167  </span>			case IsDirectlyFetchableMetric(sr.md, name):
+<span id="L168" class="ln">   168  </span>				err = sr.fetchOSMetric(ctx, name)
+<span id="L169" class="ln">   169  </span>				sr.lastFetch[name] = time.Now()
+<span id="L170" class="ln">   170  </span>			case name == specialMetricChangeEvents || name == specialMetricInstanceUp:
+<span id="L171" class="ln">   171  </span>				err = sr.fetchSpecialMetric(ctx, name, metric.StorageName)
+<span id="L172" class="ln">   172  </span>				sr.lastFetch[name] = time.Now()
+<span id="L173" class="ln">   173  </span>			default:
+<span id="L174" class="ln">   174  </span>				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) &gt; 0 {
+<span id="L175" class="ln">   175  </span>					l.WithField(&#34;metric&#34;, name).Info(&#34;instance level cache hit&#34;)
+<span id="L176" class="ln">   176  </span>					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
+<span id="L177" class="ln">   177  </span>					sr.lastFetch[name] = time.Now()
+<span id="L178" class="ln">   178  </span>					break
+<span id="L179" class="ln">   179  </span>				}
+<span id="L180" class="ln">   180  </span>				sr.md.RLock()
+<span id="L181" class="ln">   181  </span>				version := sr.md.Version
+<span id="L182" class="ln">   182  </span>				sr.md.RUnlock()
+<span id="L183" class="ln">   183  </span>				sql := metric.GetSQL(version)
+<span id="L184" class="ln">   184  </span>				if sql == &#34;&#34; {
+<span id="L185" class="ln">   185  </span>					l.WithField(&#34;source&#34;, sr.md.Name).WithField(&#34;version&#34;, version).Warning(&#34;no SQL found for metric version&#34;)
+<span id="L186" class="ln">   186  </span>					sr.lastFetch[name] = time.Now()
+<span id="L187" class="ln">   187  </span>					break
+<span id="L188" class="ln">   188  </span>				}
+<span id="L189" class="ln">   189  </span>				if _, degraded := sr.degradedMetrics[name]; degraded {
+<span id="L190" class="ln">   190  </span>					if err = sr.fetchMetric(ctx, batchEntry{name: name, metric: metric, sql: sql}); err != nil {
+<span id="L191" class="ln">   191  </span>						l.WithError(err).WithField(&#34;metric&#34;, name).Error(&#34;degraded metric fetch failed&#34;)
+<span id="L192" class="ln">   192  </span>					} else {
+<span id="L193" class="ln">   193  </span>						l.WithField(&#34;metric&#34;, name).Info(&#34;degraded metric recovered, returning to batch execution&#34;)
+<span id="L194" class="ln">   194  </span>						delete(sr.degradedMetrics, name)
+<span id="L195" class="ln">   195  </span>					}
+<span id="L196" class="ln">   196  </span>					sr.lastFetch[name] = time.Now()
+<span id="L197" class="ln">   197  </span>					break
+<span id="L198" class="ln">   198  </span>				}
+<span id="L199" class="ln">   199  </span>				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
+<span id="L200" class="ln">   200  </span>			}
+<span id="L201" class="ln">   201  </span>			if err != nil {
+<span id="L202" class="ln">   202  </span>				l.WithError(err).WithField(&#34;metric&#34;, name).Error(&#34;failed to fetch metric&#34;)
+<span id="L203" class="ln">   203  </span>			}
+<span id="L204" class="ln">   204  </span>		}
+<span id="L205" class="ln">   205  </span>
+<span id="L206" class="ln">   206  </span>		if len(batch) &gt; 0 {
+<span id="L207" class="ln">   207  </span>			if sr.md.IsPostgresSource() {
+<span id="L208" class="ln">   208  </span>				err = sr.executeBatch(ctx, batch)
+<span id="L209" class="ln">   209  </span>			} else {
+<span id="L210" class="ln">   210  </span>				for _, e := range batch {
+<span id="L211" class="ln">   211  </span>					err = sr.fetchMetric(ctx, e)
+<span id="L212" class="ln">   212  </span>				}
+<span id="L213" class="ln">   213  </span>			}
+<span id="L214" class="ln">   214  </span>			if err != nil {
+<span id="L215" class="ln">   215  </span>				l.WithError(err).Error(&#34;failed to fetch metrics&#34;)
+<span id="L216" class="ln">   216  </span>			}
+<span id="L217" class="ln">   217  </span>
+<span id="L218" class="ln">   218  </span>			now := time.Now()
+<span id="L219" class="ln">   219  </span>			for _, e := range batch {
+<span id="L220" class="ln">   220  </span>				sr.lastFetch[e.name] = now
+<span id="L221" class="ln">   221  </span>			}
+<span id="L222" class="ln">   222  </span>		}
+<span id="L223" class="ln">   223  </span>		select {
+<span id="L224" class="ln">   224  </span>		case &lt;-ctx.Done():
+<span id="L225" class="ln">   225  </span>			return
+<span id="L226" class="ln">   226  </span>		case &lt;-time.After(sr.calcTickInterval()):
+<span id="L227" class="ln">   227  </span>		}
+<span id="L228" class="ln">   228  </span>	}
+<span id="L229" class="ln">   229  </span>}
+<span id="L230" class="ln">   230  </span>
+<span id="L231" class="ln">   231  </span><span class="comment">// executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching</span>
+<span id="L232" class="ln">   232  </span><span class="comment">// each result immediately as it arrives. If any query fails, PostgreSQL&#39;s</span>
+<span id="L233" class="ln">   233  </span><span class="comment">// extended protocol aborts all subsequent queries in the same sync boundary</span>
+<span id="L234" class="ln">   234  </span><span class="comment">// (cascade failure). Any entry that returns an error from the batch is retried</span>
+<span id="L235" class="ln">   235  </span><span class="comment">// individually via fetchMetric to isolate real failures from cascade failures.</span>
+<span id="L236" class="ln">   236  </span><span class="comment">// Entries that fail even after the individual retry are marked as degraded</span>
+<span id="L237" class="ln">   237  </span><span class="comment">// so that subsequent runs use fetchMetric for them until they recover.</span>
+<span id="L238" class="ln">   238  </span>func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
+<span id="L239" class="ln">   239  </span>	batch := &amp;pgx.Batch{}
+<span id="L240" class="ln">   240  </span>	for _, e := range entries {
+<span id="L241" class="ln">   241  </span>		batch.Queue(e.sql)
+<span id="L242" class="ln">   242  </span>	}
+<span id="L243" class="ln">   243  </span>
+<span id="L244" class="ln">   244  </span>	br := sr.md.Conn.SendBatch(ctx, batch)
+<span id="L245" class="ln">   245  </span>	defer func() { _ = br.Close() }()
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>	var (
+<span id="L248" class="ln">   248  </span>		errs    []error
+<span id="L249" class="ln">   249  </span>		retries []batchEntry
+<span id="L250" class="ln">   250  </span>	)
+<span id="L251" class="ln">   251  </span>	for _, e := range entries {
+<span id="L252" class="ln">   252  </span>		rows, err := br.Query()
+<span id="L253" class="ln">   253  </span>		if err != nil {
+<span id="L254" class="ln">   254  </span>			<span class="comment">// May be a real error or a cascade from an earlier failure; retry individually.</span>
+<span id="L255" class="ln">   255  </span>			retries = append(retries, e)
+<span id="L256" class="ln">   256  </span>			continue
+<span id="L257" class="ln">   257  </span>		}
+<span id="L258" class="ln">   258  </span>		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+<span id="L259" class="ln">   259  </span>	}
+<span id="L260" class="ln">   260  </span>
+<span id="L261" class="ln">   261  </span>	for _, e := range retries {
+<span id="L262" class="ln">   262  </span>		if err := sr.fetchMetric(ctx, e); err != nil {
+<span id="L263" class="ln">   263  </span>			errs = append(errs, fmt.Errorf(&#34;failed to fetch metric %s: %v&#34;, e.name, err))
+<span id="L264" class="ln">   264  </span>			log.GetLogger(ctx).WithField(&#34;metric&#34;, e.name).Warning(&#34;metric degraded after repeated failures, switching to individual fetch&#34;)
+<span id="L265" class="ln">   265  </span>			sr.degradedMetrics[e.name] = struct{}{}
+<span id="L266" class="ln">   266  </span>		}
+<span id="L267" class="ln">   267  </span>	}
+<span id="L268" class="ln">   268  </span>	return errors.Join(errs...)
+<span id="L269" class="ln">   269  </span>}
+<span id="L270" class="ln">   270  </span>
+<span id="L271" class="ln">   271  </span><span class="comment">// fetchMetric executes a single SQL query and returns the resulting measurements.</span>
+<span id="L272" class="ln">   272  </span>func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
+<span id="L273" class="ln">   273  </span>	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
+<span id="L274" class="ln">   274  </span>	if err != nil {
+<span id="L275" class="ln">   275  </span>		return err
+<span id="L276" class="ln">   276  </span>	}
+<span id="L277" class="ln">   277  </span>	return sr.CollectAndDispatch(ctx, rows, entry.name, entry.metric)
+<span id="L278" class="ln">   278  </span>}
+<span id="L279" class="ln">   279  </span>
+<span id="L280" class="ln">   280  </span><span class="comment">// CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.</span>
+<span id="L281" class="ln">   281  </span>func (sr *SourceReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
+<span id="L282" class="ln">   282  </span>	data, err := pgx.CollectRows(rows, metrics.RowToMeasurement)
+<span id="L283" class="ln">   283  </span>	if err != nil {
+<span id="L284" class="ln">   284  </span>		return err
+<span id="L285" class="ln">   285  </span>	}
+<span id="L286" class="ln">   286  </span>	if len(data) &gt; 0 {
+<span id="L287" class="ln">   287  </span>		sr.dispatchMetricData(ctx, name, metric, data)
+<span id="L288" class="ln">   288  </span>	}
+<span id="L289" class="ln">   289  </span>	return nil
+<span id="L290" class="ln">   290  </span>}
+<span id="L291" class="ln">   291  </span>
+<span id="L292" class="ln">   292  </span><span class="comment">// fetchOSMetric handles gopsutil-based OS metrics.</span>
+<span id="L293" class="ln">   293  </span>func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error {
+<span id="L294" class="ln">   294  </span>	msg, err := sr.reaper.FetchStatsDirectlyFromOS(ctx, sr.md, name)
+<span id="L295" class="ln">   295  </span>	if err != nil {
+<span id="L296" class="ln">   296  </span>		return fmt.Errorf(&#34;could not read metric from OS: %v&#34;, err)
+<span id="L297" class="ln">   297  </span>	}
+<span id="L298" class="ln">   298  </span>	if msg != nil &amp;&amp; len(msg.Data) &gt; 0 {
+<span id="L299" class="ln">   299  </span>		log.GetLogger(ctx).WithField(&#34;metric&#34;, name).WithField(&#34;rows&#34;, len(msg.Data)).Info(&#34;measurements fetched&#34;)
+<span id="L300" class="ln">   300  </span>		sr.reaper.measurementCh &lt;- *msg
+<span id="L301" class="ln">   301  </span>	}
+<span id="L302" class="ln">   302  </span>	return nil
+<span id="L303" class="ln">   303  </span>}
+<span id="L304" class="ln">   304  </span>
+<span id="L305" class="ln">   305  </span><span class="comment">// fetchSpecialMetric handles change_events and instance_up metrics.</span>
+<span id="L306" class="ln">   306  </span>func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
+<span id="L307" class="ln">   307  </span>	var (
+<span id="L308" class="ln">   308  </span>		data metrics.Measurements
+<span id="L309" class="ln">   309  </span>		err  error
+<span id="L310" class="ln">   310  </span>	)
+<span id="L311" class="ln">   311  </span>	switch name {
+<span id="L312" class="ln">   312  </span>	case specialMetricChangeEvents:
+<span id="L313" class="ln">   313  </span>		data, err = sr.reaper.GetObjectChangesMeasurement(ctx, sr.md)
+<span id="L314" class="ln">   314  </span>	case specialMetricInstanceUp:
+<span id="L315" class="ln">   315  </span>		data, err = sr.reaper.GetInstanceUpMeasurement(ctx, sr.md)
+<span id="L316" class="ln">   316  </span>	}
+<span id="L317" class="ln">   317  </span>	if err != nil {
+<span id="L318" class="ln">   318  </span>		return fmt.Errorf(&#34;failed to fetch special metric: %v&#34;, err)
+<span id="L319" class="ln">   319  </span>	}
+<span id="L320" class="ln">   320  </span>	if len(data) &gt; 0 {
+<span id="L321" class="ln">   321  </span>		sr.sendEnvelope(ctx, name, storageName, data)
+<span id="L322" class="ln">   322  </span>	}
+<span id="L323" class="ln">   323  </span>	return err
+<span id="L324" class="ln">   324  </span>}
+<span id="L325" class="ln">   325  </span>
+<span id="L326" class="ln">   326  </span><span class="comment">// runLogParser launches the server log event counts parser.</span>
+<span id="L327" class="ln">   327  </span>func (sr *SourceReaper) runLogParser(ctx context.Context) error {
+<span id="L328" class="ln">   328  </span>	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
+<span id="L329" class="ln">   329  </span>	if err != nil {
+<span id="L330" class="ln">   330  </span>		return fmt.Errorf(&#34;failed to initialize log parser: %v&#34;, err)
+<span id="L331" class="ln">   331  </span>	}
+<span id="L332" class="ln">   332  </span>	if err := lp.ParseLogs(); err != nil {
+<span id="L333" class="ln">   333  </span>		return fmt.Errorf(&#34;log parser error: %v&#34;, err)
+<span id="L334" class="ln">   334  </span>	}
+<span id="L335" class="ln">   335  </span>	return nil
+<span id="L336" class="ln">   336  </span>}
+<span id="L337" class="ln">   337  </span>
+<span id="L338" class="ln">   338  </span><span class="comment">// detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s</span>
+<span id="L339" class="ln">   339  </span><span class="comment">// in db_stats metric data and emits an object_changes measurement if detected.</span>
+<span id="L340" class="ln">   340  </span>func (sr *SourceReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
+<span id="L341" class="ln">   341  </span>	if len(data) == 0 {
+<span id="L342" class="ln">   342  </span>		return
+<span id="L343" class="ln">   343  </span>	}
+<span id="L344" class="ln">   344  </span>	uptimeS, ok := data[0][&#34;postmaster_uptime_s&#34;].(int64)
+<span id="L345" class="ln">   345  </span>	if !ok {
+<span id="L346" class="ln">   346  </span>		return
+<span id="L347" class="ln">   347  </span>	}
+<span id="L348" class="ln">   348  </span>	prev := sr.lastUptimeS
+<span id="L349" class="ln">   349  </span>	sr.lastUptimeS = uptimeS
+<span id="L350" class="ln">   350  </span>	if prev &gt; 0 &amp;&amp; uptimeS &lt; prev {
+<span id="L351" class="ln">   351  </span>		l := log.GetLogger(ctx)
+<span id="L352" class="ln">   352  </span>		l.Warning(&#34;Detected server restart (or failover)&#34;)
+<span id="L353" class="ln">   353  </span>		entry := metrics.NewMeasurement(data.GetEpoch())
+<span id="L354" class="ln">   354  </span>		entry[&#34;details&#34;] = &#34;Detected server restart (or failover)&#34;
+<span id="L355" class="ln">   355  </span>		sr.reaper.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L356" class="ln">   356  </span>			DBName:     sr.md.Name,
+<span id="L357" class="ln">   357  </span>			MetricName: &#34;object_changes&#34;,
+<span id="L358" class="ln">   358  </span>			Data:       metrics.Measurements{entry},
+<span id="L359" class="ln">   359  </span>			CustomTags: sr.md.CustomTags,
+<span id="L360" class="ln">   360  </span>		}
+<span id="L361" class="ln">   361  </span>	}
+<span id="L362" class="ln">   362  </span>}
+<span id="L363" class="ln">   363  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.26.3.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>

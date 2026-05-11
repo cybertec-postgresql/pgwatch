@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.26.2";</script>
+<script>var goVersion = "go1.26.3";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -105,7 +105,7 @@
 <span id="L48" class="ln">    48  </span>
 <span id="L49" class="ln">    49  </span>func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 <span id="L50" class="ln">    50  </span>	a := assert.New(t)
-<span id="L51" class="ln">    51  </span>	r := &amp;Reaper{}
+<span id="L51" class="ln">    51  </span>	r := &amp;Reaper{Options: &amp;cmdopts.Options{}}
 <span id="L52" class="ln">    52  </span>	t.Run(&#34;metrics directly fetchable when on same host&#34;, func(*testing.T) {
 <span id="L53" class="ln">    53  </span>		conn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 <span id="L54" class="ln">    54  </span>		expq := conn.ExpectQuery(&#34;SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL&#34;)
@@ -374,7 +374,7 @@
 </pre><p></p>
 
 <div id="footer">
-Build version go1.26.2.<br/>
+Build version go1.26.3.<br/>
 </div>
 
 </div><!-- .container -->

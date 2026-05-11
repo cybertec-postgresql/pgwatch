@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.26.2";</script>
+<script>var goVersion = "go1.26.3";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -127,18 +127,19 @@
 <span id="L70" class="ln">    70  </span>	if err != nil {
 <span id="L71" class="ln">    71  </span>		return nil, err
 <span id="L72" class="ln">    72  </span>	}
-<span id="L73" class="ln">    73  </span>	return &amp;metrics.MeasurementEnvelope{
-<span id="L74" class="ln">    74  </span>		DBName:     md.Name,
-<span id="L75" class="ln">    75  </span>		MetricName: metricName,
-<span id="L76" class="ln">    76  </span>		CustomTags: md.CustomTags,
-<span id="L77" class="ln">    77  </span>		Data:       data,
-<span id="L78" class="ln">    78  </span>	}, nil
-<span id="L79" class="ln">    79  </span>}
-<span id="L80" class="ln">    80  </span>
+<span id="L73" class="ln">    73  </span>	r.AddSysinfoToMeasurements(data, md)
+<span id="L74" class="ln">    74  </span>	return &amp;metrics.MeasurementEnvelope{
+<span id="L75" class="ln">    75  </span>		DBName:     md.Name,
+<span id="L76" class="ln">    76  </span>		MetricName: metricName,
+<span id="L77" class="ln">    77  </span>		CustomTags: md.CustomTags,
+<span id="L78" class="ln">    78  </span>		Data:       data,
+<span id="L79" class="ln">    79  </span>	}, nil
+<span id="L80" class="ln">    80  </span>}
+<span id="L81" class="ln">    81  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.26.2.<br/>
+Build version go1.26.3.<br/>
 </div>
 
 </div><!-- .container -->

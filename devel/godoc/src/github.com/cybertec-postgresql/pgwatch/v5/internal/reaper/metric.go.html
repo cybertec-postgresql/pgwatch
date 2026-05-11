@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.26.2";</script>
+<script>var goVersion = "go1.26.3";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -156,19 +156,23 @@
 <span id="L99" class="ln">    99  </span>	<span class="comment">// update the monitored sources with real metric definitions from presets</span>
 <span id="L100" class="ln">   100  </span>	for _, md := range r.monitoredSources {
 <span id="L101" class="ln">   101  </span>		if md.PresetMetrics &gt; &#34;&#34; {
-<span id="L102" class="ln">   102  </span>			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
-<span id="L103" class="ln">   103  </span>		}
-<span id="L104" class="ln">   104  </span>		if md.PresetMetricsStandby &gt; &#34;&#34; {
-<span id="L105" class="ln">   105  </span>			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
-<span id="L106" class="ln">   106  </span>		}
-<span id="L107" class="ln">   107  </span>	}
-<span id="L108" class="ln">   108  </span>	return
-<span id="L109" class="ln">   109  </span>}
-<span id="L110" class="ln">   110  </span>
+<span id="L102" class="ln">   102  </span>			md.Lock()
+<span id="L103" class="ln">   103  </span>			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
+<span id="L104" class="ln">   104  </span>			md.Unlock()
+<span id="L105" class="ln">   105  </span>		}
+<span id="L106" class="ln">   106  </span>		if md.PresetMetricsStandby &gt; &#34;&#34; {
+<span id="L107" class="ln">   107  </span>			md.Lock()
+<span id="L108" class="ln">   108  </span>			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
+<span id="L109" class="ln">   109  </span>			md.Unlock()
+<span id="L110" class="ln">   110  </span>		}
+<span id="L111" class="ln">   111  </span>	}
+<span id="L112" class="ln">   112  </span>	return
+<span id="L113" class="ln">   113  </span>}
+<span id="L114" class="ln">   114  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.26.2.<br/>
+Build version go1.26.3.<br/>
 </div>
 
 </div><!-- .container -->
