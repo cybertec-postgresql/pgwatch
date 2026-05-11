@@ -91,6 +91,8 @@ func (sr *SourceReaper) cacheKey(m metrics.Metric, name string) string {
 // isRoleExcluded returns true if the metric should be skipped based on the
 // source's recovery state (e.g. primary-only metric on a standby).
 func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool {
+	sr.md.RLock()
+	defer sr.md.RUnlock()
 	return (m.PrimaryOnly() && sr.md.IsInRecovery) || (m.StandbyOnly() && !sr.md.IsInRecovery)
 }
 
@@ -175,9 +177,12 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 					sr.lastFetch[name] = time.Now()
 					break
 				}
-				sql := metric.GetSQL(sr.md.Version)
+				sr.md.RLock()
+				version := sr.md.Version
+				sr.md.RUnlock()
+				sql := metric.GetSQL(version)
 				if sql == "" {
-					l.WithField("source", sr.md.Name).WithField("version", sr.md.Version).Warning("no SQL found for metric version")
+					l.WithField("source", sr.md.Name).WithField("version", version).Warning("no SQL found for metric version")
 					sr.lastFetch[name] = time.Now()
 					break
 				}
