@@ -416,3 +416,40 @@ func TestMutationsWriteError(t *testing.T) {
 	assert.Error(t, yamlrw.DeleteSource("x"))
 	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: "x"}))
 }
+
+func TestYAML_PrometheusSourceRoundTrip(t *testing.T) {
+	a := assert.New(t)
+	tmpFile := filepath.Join(t.TempDir(), "prometheus.sources.yaml")
+	yamlContent := `
+- name: my-postgres-exporter
+  kind: prometheus
+  conn_str: "http://localhost:9187/metrics"
+  custom_metrics:
+    pg_stat_activity_count: 30
+  custom_tags:
+    env: production
+  is_enabled: true
+`
+
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	a.NoError(err)
+
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+	a.NoError(err)
+
+	srcs, err := yamlrw.GetSources()
+	a.NoError(err)
+
+	srcs, err = srcs.Validate()
+	a.NoError(err)
+	if !a.Len(srcs, 1) {
+		return
+	}
+
+	src := srcs[0]
+	a.Equal(sources.SourcePrometheus, src.Kind)
+	a.Equal("http://localhost:9187/metrics", src.ConnStr)
+	a.Contains(src.Metrics, "pg_stat_activity_count")
+	a.Equal(30, src.Metrics["pg_stat_activity_count"])
+	a.Equal("production", src.CustomTags["env"])
+}

@@ -78,14 +78,14 @@ round-trip works. Covers REQ-001, REQ-004, REQ-005, REQ-034.
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T014 [P] Table-driven test: `Kind("prometheus").IsValid()` returns `true`; existing kinds still valid; `Kind("unknown").IsValid()` returns `false` — in `internal/sources/types_test.go`
-- [ ] T015 [P] YAML unmarshal test: a `prometheus` source with `conn_str`, `custom_metrics`, and `custom_tags` round-trips correctly through `sources.Sources.Validate()` — in `internal/sources/yaml_test.go`
-- [ ] T016 [P] Test `sources.Validate()` with `kind: prometheus` does NOT error on `IncludePattern`, `ExcludePattern`, `OnlyIfMaster`, `MetricsStandby`, `PresetMetricsStandby` being empty — in `internal/sources/types_test.go` (CON-001)
+- [x] T014 [P] Table-driven test: `Kind("prometheus").IsValid()` returns `true`; existing kinds still valid; `Kind("unknown").IsValid()` returns `false` — in `internal/sources/types_test.go`
+- [x] T015 [P] YAML unmarshal test: a `prometheus` source with `conn_str`, `custom_metrics`, and `custom_tags` round-trips correctly through `sources.Sources.Validate()` — in `internal/sources/yaml_test.go`
+- [x] T016 [P] Test `sources.Validate()` with `kind: prometheus` does NOT error on `IncludePattern`, `ExcludePattern`, `OnlyIfMaster`, `MetricsStandby`, `PresetMetricsStandby` being empty — in `internal/sources/types_test.go` (CON-001)
 
 ### Implementation for Phase 3
 
-- [ ] T017 Add `SourcePrometheus Kind = "prometheus"` constant and append it to `Kinds` slice in `internal/sources/types.go` (REQ-001, REQ-005)
-- [ ] T018 Update `Sources.Validate()` in `internal/sources/types.go` to accept `kind: prometheus`; no special validation needed for ignored fields (CON-001)
+- [x] T017 Add `SourcePrometheus Kind = "prometheus"` constant and append it to `Kinds` slice in `internal/sources/types.go` (REQ-001, REQ-005)
+- [x] T018 Update `Sources.Validate()` in `internal/sources/types.go` to accept `kind: prometheus`; no special validation needed for ignored fields (CON-001)
 
 **Checkpoint**: `go test ./internal/sources/...` is green.
 

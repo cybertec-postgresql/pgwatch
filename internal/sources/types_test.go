@@ -15,21 +15,41 @@ var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 func TestKind_IsValid(t *testing.T) {
 	tests := []struct {
+		name     string
 		kind     sources.Kind
 		expected bool
 	}{
-		{kind: sources.SourcePostgres, expected: true},
-		{kind: sources.SourcePostgresContinuous, expected: true},
-		{kind: sources.SourcePgBouncer, expected: true},
-		{kind: sources.SourcePgPool, expected: true},
-		{kind: sources.SourcePatroni, expected: true},
-		{kind: "invalid", expected: false},
+		{name: "postgres", kind: sources.SourcePostgres, expected: true},
+		{name: "postgres continuous", kind: sources.SourcePostgresContinuous, expected: true},
+		{name: "pgbouncer", kind: sources.SourcePgBouncer, expected: true},
+		{name: "pgpool", kind: sources.SourcePgPool, expected: true},
+		{name: "patroni", kind: sources.SourcePatroni, expected: true},
+		{name: "prometheus", kind: sources.SourcePrometheus, expected: true},
+		{name: "invalid", kind: "invalid", expected: false},
 	}
 
 	for _, tt := range tests {
-		got := tt.kind.IsValid()
-		assert.True(t, got == tt.expected, "IsValid(%v) = %v, want %v", tt.kind, got, tt.expected)
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.kind.IsValid()
+			assert.Equal(t, tt.expected, got, "IsValid(%v)", tt.kind)
+		})
 	}
+}
+
+func TestValidate_PrometheusKindAcceptsEmptyOptionalFields(t *testing.T) {
+	srcs := sources.Sources{
+		{
+			Name:    "prom-test",
+			ConnStr: "http://localhost:9187/metrics",
+			Kind:    sources.SourcePrometheus,
+		},
+	}
+
+	validated, err := srcs.Validate()
+
+	assert.NoError(t, err)
+	assert.Len(t, validated, 1)
+	assert.Equal(t, sources.SourcePrometheus, validated[0].Kind)
 }
 
 func TestSource_Equal(t *testing.T) {
