@@ -269,3 +269,31 @@ func TestScanRowError(t *testing.T) {
 	err := m.ScanRow(errRows{})
 	assert.ErrorContains(t, err, "values error")
 }
+
+func TestMeasurementEnvelope_SourceKind(t *testing.T) {
+	tests := []struct {
+		name string
+		env  MeasurementEnvelope
+		want string
+	}{
+		{
+			name: "explicit source kind",
+			env: MeasurementEnvelope{
+				SourceKind: "prometheus",
+			},
+			want: "prometheus",
+		},
+		{
+			name: "zero value source kind",
+			env:  MeasurementEnvelope{},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotNil(t, t.Context())
+			assert.Equal(t, tt.want, tt.env.SourceKind)
+		})
+	}
+}
