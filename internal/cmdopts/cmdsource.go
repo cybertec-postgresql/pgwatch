@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -58,7 +59,11 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
 			mdb := sources.NewSourceConn(s)
-			e = mdb.Connect(context.Background(), cmd.owner.Sources)
+			// we don't want to log connection errors here, so we use a noop logger in the context
+			ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+			if e = mdb.Connect(ctx, cmd.owner.Sources); e == nil {
+				e = mdb.Ping(ctx)
+			}
 		}
 		if e != nil {
 			fmt.Printf("FAIL:\t%s (%s)\n", s.Name, e)
