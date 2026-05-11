@@ -248,7 +248,6 @@ func TestReaper_LoadSources(t *testing.T) {
 				r.cancelFuncs[initialSource.Name] = func() {
 					cancelCalled[initialSource.Name] = true
 				}
-				r.sourceReapers[initialSource.Name] = &SourceReaper{}
 
 				// Create modified source
 				modifiedSource := *baseSource.Clone()
@@ -315,8 +314,6 @@ func TestReaper_LoadSources(t *testing.T) {
 		source2Cancelled := false
 		r.cancelFuncs[source1.Name] = func() { source1Cancelled = true }
 		r.cancelFuncs[source2.Name] = func() { source2Cancelled = true }
-		r.sourceReapers[source1.Name] = &SourceReaper{}
-		r.sourceReapers[source2.Name] = &SourceReaper{}
 
 		// Only modify source1
 		modifiedSource1 := *source1.Clone()
@@ -447,7 +444,6 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{})
 
@@ -460,7 +456,6 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{"testdb": true})
 
@@ -473,7 +468,6 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
 			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
@@ -491,7 +485,6 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
 			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
