@@ -243,9 +243,9 @@ Covers REQ-032, REQ-033, GUD-004.
 
 **Purpose**: Race-detector sweep, build verification, and documentation.
 
-- [ ] T051 Run `go test -race -failfast -p 1 -timeout=300s -parallel=1 ./...` and fix any detected races
-- [ ] T052 [P] Run `go build ./cmd/pgwatch/` and confirm binary builds without errors
-- [ ] T053 [P] Update `docs/reference/` or `docs/howto/` with a short section on configuring prometheus sources and the `postgres-exporter-basic` preset
+- [x] T051 Run `go test -race -failfast -p 1 -timeout=300s -parallel=1 ./...` and fix any detected races
+- [x] T052 [P] Run `go build ./cmd/pgwatch/` and confirm binary builds without errors
+- [x] T053 [P] Update `docs/reference/` or `docs/howto/` with a short section on configuring prometheus sources and the `postgres-exporter-basic` preset
 
 ---
 
