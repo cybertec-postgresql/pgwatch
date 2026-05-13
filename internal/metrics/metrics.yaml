@@ -4486,6 +4486,21 @@ presets:
     # These presets map Prometheus metric family names (as emitted by exporters such as
     # postgres_exporter or node_exporter) to per-family emit intervals in seconds.
     # They are only meaningful for sources with kind: prometheus.
+    patroni:
+        description: "Core metrics from Patroni /metrics endpoint (port 8008)"
+        metrics:
+            patroni_postgres_running: 30
+            patroni_primary: 30
+            patroni_replica: 30
+            patroni_standby_leader: 30
+            patroni_cluster_unlocked: 30
+            patroni_xlog_location: 30
+            patroni_xlog_received_location: 30
+            patroni_xlog_replayed_location: 30
+            patroni_dcs_last_seen: 30
+            patroni_pending_restart: 60
+            patroni_is_paused: 60
+            patroni_postgres_timeline: 60
     postgres-exporter-basic:
         description: "Core metrics from postgres_exporter"
         metrics:
