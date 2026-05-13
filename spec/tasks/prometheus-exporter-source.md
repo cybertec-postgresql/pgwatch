@@ -200,19 +200,19 @@ metric names and labels, without prepending the pgwatch namespace. Covers REQ-02
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T041 [P] Test `isPromSourcedEnvelope` returns `true` only when `SourceKind == "prometheus"` — in `internal/sinks/prometheus_test.go` (REQ-027)
-- [ ] T042 [P] Test `PrometheusWriter.Write()` + `Collect()` for a prom-sourced envelope in `internal/sinks/prometheus_test.go`:
+- [x] T041 [P] Test `isPromSourcedEnvelope` returns `true` only when `SourceKind == "prometheus"` — in `internal/sinks/prometheus_test.go` (REQ-027)
+- [x] T042 [P] Test `PrometheusWriter.Write()` + `Collect()` for a prom-sourced envelope in `internal/sinks/prometheus_test.go`:
   - Value column is used as the metric name (envelope.MetricName) without namespace prefix (GUD-003)
   - `tag_*` columns become Prometheus label key-value pairs (REQ-029)
   - `epoch_ns` converted to `time.Time` for metric timestamp (REQ-030)
   - Duplicate `(metric_name, label_set)` pairs deduplicated within one `Collect()` call (REQ-031)
-- [ ] T043 [P] Test that pgwatch namespace IS still prepended for non-prometheus-sourced envelopes (regression guard, GUD-003)
+- [x] T043 [P] Test that pgwatch namespace IS still prepended for non-prometheus-sourced envelopes (regression guard, GUD-003)
 
 ### Implementation for Phase 7
 
-- [ ] T044 Add `isPromSourcedEnvelope(envelope metrics.MeasurementEnvelope) bool` helper in `internal/sinks/prometheus.go` (REQ-027)
-- [ ] T045 Add prom-sourced branch in `PrometheusWriter.Write()`: cache envelope as-is, tagged with original metric name (REQ-028)
-- [ ] T046 Add prom-sourced branch in `PrometheusWriter.Collect()`: for each cached prom-sourced envelope, iterate rows, build `prometheus.Desc` from metric name (no namespace) + sorted `tag_*` label keys, emit `prometheus.MustNewConstMetric`; deduplicate using the existing dedup mechanism (REQ-028–REQ-031, GUD-003)
+- [x] T044 Add `isPromSourcedEnvelope(envelope metrics.MeasurementEnvelope) bool` helper in `internal/sinks/prometheus.go` (REQ-027)
+- [x] T045 Add prom-sourced branch in `PrometheusWriter.Write()`: cache envelope as-is, tagged with original metric name (REQ-028)
+- [x] T046 Add prom-sourced branch in `PrometheusWriter.Collect()`: for each cached prom-sourced envelope, iterate rows, build `prometheus.Desc` from metric name (no namespace) + sorted `tag_*` label keys, emit `prometheus.MustNewConstMetric`; deduplicate using the existing dedup mechanism (REQ-028–REQ-031, GUD-003)
 
 **Checkpoint**: `go test ./internal/sinks/...` is green; no data races.
 

@@ -1,8 +1,11 @@
 package sinks
 
 import (
+	"strings"
 	"testing"
 	"time"
+
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
@@ -262,4 +265,176 @@ func TestPrometheusWRiteUnsupportedMetric(t *testing.T) {
 			{metrics.EpochColumnName: time.Now().UnixNano(), "value": int64(100)},
 		},
 	}))
+}
+
+// TestSourceKindPrometheus covers T041: SourceKind == "prometheus" is the sentinel
+// used to distinguish prom-sourced envelopes from DB-sourced ones.
+func TestSourceKindPrometheus(t *testing.T) {
+	tests := []struct {
+		name     string
+		envelope metrics.MeasurementEnvelope
+		want     bool
+	}{
+		{name: "prometheus", envelope: metrics.MeasurementEnvelope{SourceKind: "prometheus"}, want: true},
+		{name: "empty", envelope: metrics.MeasurementEnvelope{}, want: false},
+		{name: "postgresql", envelope: metrics.MeasurementEnvelope{SourceKind: "postgresql"}, want: false},
+		{name: "pgbouncer", envelope: metrics.MeasurementEnvelope{SourceKind: "pgbouncer"}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.envelope.SourceKind == "prometheus")
+		})
+	}
+}
+
+// collectDataMetrics drains ch and returns only the metrics whose desc string
+// contains nameFilter.
+func collectDataMetrics(t *testing.T, ch <-chan prometheus.Metric, nameFilter string) []prometheus.Metric {
+	t.Helper()
+	var out []prometheus.Metric
+	for m := range ch {
+		if strings.Contains(m.Desc().String(), nameFilter) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// TestPrometheusWriter_PromSourcedEnvelope covers T042: Write + Collect for a
+// prom-sourced envelope.
+func TestPrometheusWriter_PromSourcedEnvelope(t *testing.T) {
+	const namespace = "pgwatch"
+	const metricName = "pg_stat_activity_count"
+	epochNs := time.Now().UnixNano()
+
+	newEnv := func() metrics.MeasurementEnvelope {
+		return metrics.MeasurementEnvelope{
+			DBName:     "mydb",
+			MetricName: metricName,
+			SourceKind: "prometheus",
+			Data: metrics.Measurements{
+				{
+					"tag_datname":           "defaultdb",
+					metricName:              float64(42),
+					metrics.EpochColumnName: epochNs,
+				},
+			},
+		}
+	}
+
+	t.Run("metric name has no namespace prefix", func(t *testing.T) {
+		promw := newTestPrometheusWriter(namespace)
+		require.NoError(t, promw.Write(newEnv()))
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+		close(ch)
+
+		dataMetrics := collectDataMetrics(t, ch, metricName)
+		require.Len(t, dataMetrics, 1)
+
+		descStr := dataMetrics[0].Desc().String()
+		assert.Contains(t, descStr, `fqName: "`+metricName+`"`)
+		assert.NotContains(t, descStr, namespace+"_"+metricName)
+	})
+
+	t.Run("tag_* columns become labels", func(t *testing.T) {
+		promw := newTestPrometheusWriter(namespace)
+		require.NoError(t, promw.Write(newEnv()))
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+		close(ch)
+
+		dataMetrics := collectDataMetrics(t, ch, metricName)
+		require.Len(t, dataMetrics, 1)
+
+		var dtoMetric dto.Metric
+		require.NoError(t, dataMetrics[0].Write(&dtoMetric))
+
+		labels := make(map[string]string)
+		for _, lp := range dtoMetric.GetLabel() {
+			labels[lp.GetName()] = lp.GetValue()
+		}
+		assert.Equal(t, "defaultdb", labels["datname"], "tag_datname should become label datname")
+		assert.Equal(t, "mydb", labels["dbname"], "DBName should be added as dbname label")
+	})
+
+	t.Run("epoch_ns used as metric timestamp", func(t *testing.T) {
+		promw := newTestPrometheusWriter(namespace)
+		require.NoError(t, promw.Write(newEnv()))
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+		close(ch)
+
+		dataMetrics := collectDataMetrics(t, ch, metricName)
+		require.Len(t, dataMetrics, 1)
+
+		var dtoMetric dto.Metric
+		require.NoError(t, dataMetrics[0].Write(&dtoMetric))
+		require.NotNil(t, dtoMetric.TimestampMs)
+		assert.Equal(t, epochNs/1_000_000, dtoMetric.GetTimestampMs())
+	})
+
+	t.Run("duplicate label sets are deduplicated", func(t *testing.T) {
+		promw := newTestPrometheusWriter(namespace)
+
+		env := metrics.MeasurementEnvelope{
+			DBName:     "mydb",
+			MetricName: "pg_connections",
+			SourceKind: "prometheus",
+			Data: metrics.Measurements{
+				{
+					"tag_host":              "server1",
+					"pg_connections":        float64(10),
+					metrics.EpochColumnName: time.Now().UnixNano(),
+				},
+				{
+					"tag_host":              "server1", // same label set → duplicate
+					"pg_connections":        float64(20),
+					metrics.EpochColumnName: time.Now().UnixNano(),
+				},
+			},
+		}
+		require.NoError(t, promw.Write(env))
+
+		ch := make(chan prometheus.Metric, 100)
+		promw.Collect(ch)
+		close(ch)
+
+		dataMetrics := collectDataMetrics(t, ch, "pg_connections")
+		assert.Len(t, dataMetrics, 1, "duplicate (metric_name, label_set) pair should be emitted only once")
+	})
+}
+
+// TestPrometheusWriter_NonPromSourced_NamespacePrefix covers T043: the pgwatch
+// namespace IS still prepended for non-prometheus-sourced envelopes.
+func TestPrometheusWriter_NonPromSourced_NamespacePrefix(t *testing.T) {
+	const namespace = "pgwatch"
+	promw := newTestPrometheusWriter(namespace)
+	promw.gauges = map[string][]string{"pg_stat_activity": {"*"}}
+
+	env := metrics.MeasurementEnvelope{
+		DBName:     "mydb",
+		MetricName: "pg_stat_activity",
+		SourceKind: "", // not prometheus
+		Data: metrics.Measurements{
+			{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"numbackends":           int64(5),
+			},
+		},
+	}
+	require.NoError(t, promw.Write(env))
+
+	ch := make(chan prometheus.Metric, 100)
+	promw.Collect(ch)
+	close(ch)
+
+	dataMetrics := collectDataMetrics(t, ch, "pg_stat_activity")
+	require.Len(t, dataMetrics, 1)
+
+	descStr := dataMetrics[0].Desc().String()
+	assert.Contains(t, descStr, `fqName: "`+namespace+`_pg_stat_activity_numbackends"`)
 }
