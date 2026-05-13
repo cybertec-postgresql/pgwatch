@@ -161,9 +161,10 @@ var notSupportedMetrics = map[string]struct{}{
 	"pgpool_stats":      {},
 }
 
+
 func (promw *PrometheusWriter) AddCacheEntry(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
-	if _, ok := notSupportedMetrics[metric]; ok {
-		return // not supported
+	if _, ok := notSupportedMetrics[metric]; ok && msgArr.SourceKind != "prometheus" {
+		return // not supported for DB-sourced metrics
 	}
 	promw.Lock()
 	defer promw.Unlock()
@@ -246,18 +247,27 @@ func (promw *PrometheusWriter) snapshotCache() PromMetricCache {
 
 // WritePromMetrics converts a MeasurementEnvelope into Prometheus const metrics
 // and sends them directly to ch. Returns the count of metrics written and errors encountered.
+//
+// For prom-sourced envelopes (SourceKind == "prometheus") the original family
+// name is used as the fully-qualified metric name with no pgwatch namespace
+// prefix, and each measurement's own epoch_ns is used as the timestamp.
+// For all other sources the existing namespace+family+field naming and a
+// single envelope-level timestamp are applied.
 func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope, ch chan<- prometheus.Metric) (written int, errorCount int) {
 	if len(msg.Data) == 0 {
 		return
 	}
 
+	isPromSource := msg.SourceKind == "prometheus"
+
 	promw.RLock()
 	gauges := promw.gauges[msg.MetricName]
 	promw.RUnlock()
 
-	epochTime := time.Unix(0, msg.Data.GetEpoch())
-
-	if epochTime.Before(time.Now().Add(-promCacheTTL)) {
+	// baseEpochTime is used for staleness check and as the per-row timestamp
+	// for non-prom sources (all rows in one envelope share the same instant).
+	baseEpochTime := time.Unix(0, msg.Data.GetEpoch())
+	if baseEpochTime.Before(time.Now().Add(-promCacheTTL)) {
 		promw.logger.Debugf("Dropping metric %s:%s cache set due to staleness (>%v)...", msg.DBName, msg.MetricName, promCacheTTL)
 		promw.PurgeCacheEntry(msg.DBName, msg.MetricName)
 		return
@@ -273,13 +283,22 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 		}
 		labels["dbname"] = msg.DBName
 
+		// Prom-sourced measurements each carry their own timestamp.
+		rowEpochTime := baseEpochTime
 		for k, v := range measurement {
-			if k == metrics.EpochColumnName || v == nil || v == "" {
-				continue // epoch checked/assigned once
+			if k == metrics.EpochColumnName {
+				if isPromSource {
+					if ns, ok := v.(int64); ok && ns != 0 {
+						rowEpochTime = time.Unix(0, ns)
+					}
+				}
+				continue
+			}
+			if v == nil || v == "" {
+				continue
 			}
 
-			tag, found := strings.CutPrefix(k, "tag_")
-			if found {
+			if tag, found := strings.CutPrefix(k, metrics.TagPrefix); found {
 				labels[tag] = fmt.Sprintf("%v", v)
 			} else {
 				switch t := v.(type) {
@@ -288,9 +307,6 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 				case bool:
 					fields[k] = map[bool]float64{true: 1, false: 0}[t]
 				default:
-					// Only "tag_" prefixed columns become labels (handled above).
-					// Plain string columns (e.g. data_dir, version_str) are not
-					// numeric values and must not be promoted to labels
 					promw.logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
 					continue
 				}
@@ -298,9 +314,6 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 		}
 
 		// Sort label keys for deterministic descriptor identity.
-		// Since Go maps iterate in random order, the same label set
-		// could produce different prometheus.Desc objects across rows or scrapes,
-		// leading to "duplicate metric" errors
 		labelKeys := slices.Sorted(maps.Keys(labels))
 		labelValues := make([]string, len(labelKeys))
 		for i, k := range labelKeys {
@@ -308,17 +321,29 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 		}
 
 		for field, value := range fields {
-			fieldPromDataType := prometheus.CounterValue
-			if msg.MetricName == promInstanceUpStateMetric ||
-				len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
-				fieldPromDataType = prometheus.GaugeValue
-			}
-
 			var fqName string
-			if msg.MetricName == promInstanceUpStateMetric {
-				fqName = fmt.Sprintf("%s_%s", promw.Namespace, msg.MetricName)
+			var fieldPromDataType prometheus.ValueType
+
+			if isPromSource {
+				// Prom→prom proxy path: ScrapeAll stores exactly one value
+				// column per family, named after the family itself. Skip any
+				// other numeric column that may appear unexpectedly.
+				if field != msg.MetricName {
+					continue
+				}
+				fqName = field
+				fieldPromDataType = prometheus.UntypedValue
 			} else {
-				fqName = fmt.Sprintf("%s_%s_%s", promw.Namespace, msg.MetricName, field)
+				fieldPromDataType = prometheus.CounterValue
+				if msg.MetricName == promInstanceUpStateMetric ||
+					len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
+					fieldPromDataType = prometheus.GaugeValue
+				}
+				if msg.MetricName == promInstanceUpStateMetric {
+					fqName = fmt.Sprintf("%s_%s", promw.Namespace, msg.MetricName)
+				} else {
+					fqName = fmt.Sprintf("%s_%s_%s", promw.Namespace, msg.MetricName, field)
+				}
 			}
 
 			// skip if this exact identity was already emitted in this scrape
@@ -339,7 +364,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 				errorCount++
 				continue
 			}
-			ch <- prometheus.NewMetricWithTimestamp(epochTime, m)
+			ch <- prometheus.NewMetricWithTimestamp(rowEpochTime, m)
 			written++
 		}
 	}
