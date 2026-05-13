@@ -227,13 +227,13 @@ Covers REQ-032, REQ-033, GUD-004.
 
 > **Write FIRST; ensure they FAIL before implementation.**
 
-- [ ] T047 [P] Test that preset `postgres-exporter-basic` is resolvable from the default metrics store and yields `MetricIntervals` with at least `pg_stat_activity_count`, `pg_stat_bgwriter_checkpoints_timed`, `pg_stat_replication_pg_wal_lsn_diff` — in `internal/metrics/default_test.go` (REQ-032)
-- [ ] T048 [P] Test YAML unmarshal of the full example from REQ-033 (including `custom_tags`) produces a valid `Sources` list accepted by `Validate()` — in `internal/sources/yaml_test.go`
+- [x] T047 [P] Test that preset `postgres-exporter-basic` is resolvable from the default metrics store and yields `MetricIntervals` with at least `pg_stat_activity_count`, `pg_stat_bgwriter_checkpoints_timed`, `pg_stat_replication_pg_wal_lsn_diff` — in `internal/metrics/default_test.go` (REQ-032)
+- [x] T048 [P] Test YAML unmarshal of the full example from REQ-033 (including `custom_tags`) produces a valid `Sources` list accepted by `Validate()` — in `internal/sources/yaml_test.go`
 
 ### Implementation for Phase 8
 
-- [ ] T049 Add `postgres-exporter-basic` preset entry to `internal/metrics/metrics.yaml` in a dedicated `# Prometheus-targeted presets` section (REQ-032, GUD-004)
-- [ ] T050 Add a `prometheus` source example to `contrib/sample.sources.yaml` (REQ-033)
+- [x] T049 Add `postgres-exporter-basic` preset entry to `internal/metrics/metrics.yaml` in a dedicated `# Prometheus-targeted presets` section (REQ-032, GUD-004)
+- [x] T050 Add a `prometheus` source example to `contrib/sample.sources.yaml` (REQ-033)
 
 **Checkpoint**: `go test ./internal/metrics/... ./internal/sources/...` is green.
 

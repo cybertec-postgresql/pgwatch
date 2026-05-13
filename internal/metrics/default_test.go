@@ -42,3 +42,26 @@ func TestDefaultMetricReaderUnsupportedOperations(t *testing.T) {
 	assert.NotNil(t, metrics, "The metrics object should not be nil")
 	assert.NoError(t, err, "GetMetrics should return default metrics")
 }
+
+// T047: preset postgres-exporter-basic is resolvable and contains the required metric families.
+func TestDefaultMetrics_PostgresExporterBasicPreset(t *testing.T) {
+	m := metrics.GetDefaultMetrics()
+	if !assert.NotNil(t, m, "GetDefaultMetrics must not return nil") {
+		return
+	}
+
+	preset, ok := m.PresetDefs["postgres-exporter-basic"]
+	if !assert.True(t, ok, "preset 'postgres-exporter-basic' must exist in default metrics") {
+		return
+	}
+
+	requiredFamilies := []string{
+		"pg_stat_activity_count",
+		"pg_stat_bgwriter_checkpoints_timed",
+		"pg_stat_replication_pg_wal_lsn_diff",
+	}
+	for _, family := range requiredFamilies {
+		assert.Contains(t, preset.Metrics, family,
+			"preset 'postgres-exporter-basic' must include metric family %q", family)
+	}
+}

@@ -4482,6 +4482,16 @@ presets:
             wal: 60
             wal_receiver: 120
             wal_size: 300
+    # Prometheus-targeted presets
+    # These presets map Prometheus metric family names (as emitted by exporters such as
+    # postgres_exporter or node_exporter) to per-family emit intervals in seconds.
+    # They are only meaningful for sources with kind: prometheus.
+    postgres-exporter-basic:
+        description: "Core metrics from postgres_exporter"
+        metrics:
+            pg_stat_activity_count: 30
+            pg_stat_bgwriter_checkpoints_timed: 60
+            pg_stat_replication_pg_wal_lsn_diff: 30
     debug:
         description: all available metrics with 30 second intervals for debugging and development
         metrics:
