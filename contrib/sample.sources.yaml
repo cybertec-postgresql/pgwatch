@@ -1,3 +1,11 @@
+- name: postgres-exporter-prod
+  kind: prometheus
+  conn_str: "http://localhost:9187/metrics"
+  preset_metrics: postgres-exporter-basic  # scrape cadence = min(30, 60) = 30 s
+  custom_tags:
+    env: production
+  is_enabled: true
+
 - name: test1       # An arbitrary unique name for the monitored source
   conn_str: postgresql://postgres@localhost/postgres
   kind: postgres              # One of the:

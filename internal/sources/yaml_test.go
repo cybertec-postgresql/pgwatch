@@ -13,7 +13,7 @@ import (
 )
 
 // the number of entries in the sample.sources.yaml file
-const sampleEntriesNumber = 4
+const sampleEntriesNumber = 5
 
 const (
 	contribDir = "../../contrib/"
@@ -415,6 +415,56 @@ func TestMutationsWriteError(t *testing.T) {
 	assert.Error(t, yamlrw.UpdateSource(sources.Source{Name: "x"}))
 	assert.Error(t, yamlrw.DeleteSource("x"))
 	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: "x"}))
+}
+
+// T048: full REQ-033 YAML example (two prometheus sources, one with TLS URL + custom_tags,
+// one in scrape-all mode) must unmarshal and pass Validate() without error.
+func TestYAML_PrometheusREQ033Example(t *testing.T) {
+	a := assert.New(t)
+	tmpFile := filepath.Join(t.TempDir(), "req033.sources.yaml")
+	yamlContent := `
+- name: postgres-exporter-prod
+  kind: prometheus
+  conn_str: "https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem"
+  is_enabled: true
+  custom_metrics:
+    pg_stat_activity_count: 30
+    pg_stat_bgwriter_checkpoints_timed: 60
+  custom_tags:
+    env: production
+
+- name: node-exporter-prod
+  kind: prometheus
+  conn_str: "http://localhost:9100/metrics"
+  is_enabled: true
+`
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	a.NoError(err)
+
+	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+	a.NoError(err)
+
+	srcs, err := yamlrw.GetSources()
+	a.NoError(err)
+
+	srcs, err = srcs.Validate()
+	a.NoError(err)
+	if !a.Len(srcs, 2) {
+		return
+	}
+
+	prod := srcs[0]
+	a.Equal(sources.SourcePrometheus, prod.Kind)
+	a.Equal("postgres-exporter-prod", prod.Name)
+	a.Equal("https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem", prod.ConnStr)
+	a.Equal("production", prod.CustomTags["env"])
+	a.Equal(30, prod.Metrics["pg_stat_activity_count"])
+	a.Equal(60, prod.Metrics["pg_stat_bgwriter_checkpoints_timed"])
+
+	scrapeAll := srcs[1]
+	a.Equal(sources.SourcePrometheus, scrapeAll.Kind)
+	a.Equal("node-exporter-prod", scrapeAll.Name)
+	a.Empty(scrapeAll.Metrics)
 }
 
 func TestYAML_PrometheusSourceRoundTrip(t *testing.T) {
