@@ -6,13 +6,14 @@ datasources:
   type: postgres
   url: postgres:5432
   access: proxy
-  password: pgwatchadmin
   user: pgwatch
-  database: pgwatch_metrics
+  secureJsonData:
+    password: pgwatchadmin
   basicAuth: false
   isDefault: true
   jsonData:
-     sslmode: disable
-     postgresVersion: 1500 
+    database: pgwatch_metrics
+    sslmode: disable
+    postgresVersion: 1500
   version: 1
   editable: true
