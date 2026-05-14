@@ -70,8 +70,7 @@ type PostgresWriter struct {
 	input                    chan metrics.MeasurementEnvelope
 	lastError                chan error
 	forceRecreatePartitions  bool                                        // to signal override PG metrics storage cache
-	partitionMapMetric       map[string]ExistingPartitionInfo            // metric = min/max bounds
-	partitionMapMetricDbname map[string]map[string]ExistingPartitionInfo // metric[dbname = min/max bounds]
+	partitionMapMetric 		 map[string]ExistingPartitionInfo // metric = min/max bounds
 }
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
@@ -97,8 +96,7 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		lastError:                make(chan error),
 		sinkDb:                   conn,
 		forceRecreatePartitions:  false,
-		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
-		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
+		partitionMapMetric: 	  make(map[string]ExistingPartitionInfo),
 	}
 	l.Info("initialising measurements database...")
 	if err = pgw.init(); err != nil {
@@ -364,8 +362,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		return
 	}
 	logger := log.GetLogger(pgw.ctx)
-	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
-	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
+	pgPartBounds := make(map[string]ExistingPartitionInfo) // metric=min/max
 	var err error
 
 	slices.SortFunc(msgs, func(a, b metrics.MeasurementEnvelope) int {
@@ -380,41 +377,21 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	for _, msg := range msgs {
 		for _, dataRow := range msg.Data {
 			epochTime := time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
-			switch pgw.metricSchema {
-			case DbStorageSchemaTimescale:
-				// set min/max timestamps to check/create partitions
-				bounds, ok := pgPartBounds[msg.MetricName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-			case DbStorageSchemaPostgres:
-				_, ok := pgPartBoundsDbName[msg.MetricName]
-				if !ok {
-					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
-				}
-				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-				}
-			default:
-				logger.Fatal("unknown storage schema...")
+			bounds, ok := pgPartBounds[msg.MetricName]
+			if !ok || (ok && epochTime.Before(bounds.StartTime)) {
+				bounds.StartTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
+			}
+			if !ok || (ok && epochTime.After(bounds.EndTime)) {
+				bounds.EndTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
 			}
 		}
 	}
 
 	switch pgw.metricSchema {
 	case DbStorageSchemaPostgres:
-		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName)
+		err = pgw.EnsureMetricTimePartsExist(pgPartBounds)
 	case DbStorageSchemaTimescale:
 		err = pgw.EnsureMetricTimescale(pgPartBounds)
 	default:
@@ -470,38 +447,23 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 	return
 }
 
-func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo) (err error) {
+func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) (error) {
+	var err error
 	var rows pgx.Rows
-	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3, $4)`
-	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
-		_, ok := pgw.partitionMapMetricDbname[metric]
-		if !ok {
-			pgw.partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
+	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2, $3)`
+	for metric, pb := range metricPartBounds {
+		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
+			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
 		}
-
-		for dbname, pb := range dbnameTimestampMap {
-			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-				return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
+		partInfo, ok := pgw.partitionMapMetric[metric]
+		if !ok || pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
+				return err
 			}
-			partInfo, ok := pgw.partitionMapMetricDbname[metric][dbname]
-			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || pgw.forceRecreatePartitions {
-				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
-					return
-				}
-				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-					return err
-				}
-				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
+			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+				return err
 			}
-			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
-				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
-					return
-				}
-				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-					return err
-				}
-				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
-			}
+			pgw.partitionMapMetric[metric] = partInfo
 		}
 	}
 	return nil
