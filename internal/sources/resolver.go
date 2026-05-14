@@ -63,6 +63,8 @@ func (s Source) ResolveDatabases() (SourceConns, error) {
 		return ResolveDatabasesFromPatroni(s)
 	case SourcePostgresContinuous:
 		return ResolveDatabasesFromPostgres(s)
+	case SourcePrometheus:
+		return SourceConns{NewPromConn(s)}, nil
 	}
 	return SourceConns{NewDbConn(s)}, nil
 }
