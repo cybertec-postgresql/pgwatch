@@ -14,7 +14,7 @@ BEGIN
   END IF;
 
   IF l_schema_type = 'postgres' THEN
-    EXECUTE format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY LIST (dbname)', metric);
+    EXECUTE format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY RANGE (time)', metric);
   ELSIF l_schema_type = 'timescale' THEN
     PERFORM admin.ensure_partition_timescale(metric);
   END IF;
@@ -110,7 +110,7 @@ BEGIN
         c.relkind IN ('r', 'p')
         AND c.relnamespace = 'subpartitions'::regnamespace
         AND (regexp_match(pg_catalog.pg_get_expr(c.relpartbound, c.oid), E'TO \\((''.*?'')'))[1]::timestamp < (now()  - older_than)
-        AND pg_catalog.obj_description(c.oid, 'pg_class') IN ('pgwatch-generated-metric-time-lvl', 'pgwatch-generated-metric-dbname-time-lvl')
+        AND pg_catalog.obj_description(c.oid, 'pg_class') = 'pgwatch-generated-metric-time-lvl'
       ORDER BY 1;
   WHEN 'timescale' THEN
     RETURN QUERY
@@ -164,53 +164,6 @@ BEGIN
       RAISE EXCEPTION 'unsupported schema type: %', schema_type;
   END CASE;
   RETURN i;
-END;
-$SQL$ LANGUAGE plpgsql;
-
-/*
-drop_source_partitions removes all metric data for a decommissioned source
-    p_source_name - the dbname (source) whose partitions should be dropped
-Returns the number of patritions dropped
-*/
-CREATE OR REPLACE FUNCTION admin.drop_source_partitions(p_source_name text)
-RETURNS int AS
-$SQL$
-DECLARE
-  r record;
-  v_dropped_count int := 0;
-BEGIN
-  FOR r IN
-    SELECT
-      c.oid::regclass::text      AS partition_name,
-      parent.oid::regclass::text AS metric_table,
-      parent.relname             AS metric_name
-    FROM pg_catalog.pg_class c
-    JOIN pg_catalog.pg_inherits i      ON c.oid = i.inhrelid
-    JOIN pg_catalog.pg_class parent    ON parent.oid = i.inhparent
-    WHERE c.relnamespace = 'subpartitions'::regnamespace
-      AND pg_catalog.obj_description(parent.oid, 'pg_class') = 'pgwatch-generated-metric-lvl'
-      AND (regexp_match(
-             pg_catalog.pg_get_expr(c.relpartbound, c.oid),
-             E'FOR VALUES IN \\(''(.+?)''\\)'
-           ))[1] = p_source_name
-  LOOP
-    -- advisory lock matching ensure_partition_metric_dbname_time
-    PERFORM pg_advisory_xact_lock(
-      regexp_replace(md5(r.metric_name), E'\\D', '', 'g')::varchar(10)::int8
-    );
-
-    RAISE NOTICE 'detaching partition: % from %', r.partition_name, r.metric_table;
-    EXECUTE 'ALTER TABLE ' || r.metric_table || ' DETACH PARTITION ' || r.partition_name;
-
-    RAISE NOTICE 'dropping partition:  %', r.partition_name;
-    EXECUTE 'DROP TABLE IF EXISTS ' || r.partition_name;
-
-    v_dropped_count := v_dropped_count + 1;
-  END LOOP;
-
-  DELETE FROM admin.all_distinct_dbname_metrics WHERE dbname = p_source_name;
-
-  RETURN v_dropped_count;
 END;
 $SQL$ LANGUAGE plpgsql;
 
