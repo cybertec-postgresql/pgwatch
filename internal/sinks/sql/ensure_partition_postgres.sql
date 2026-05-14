@@ -29,6 +29,7 @@ DECLARE
   l_partition_format text;
   l_time_suffix text;
   l_existing_upper_bound timestamptz;
+  l_table_oid oid;
 BEGIN
   -- Validate partition period
   IF partition_period < interval '1 hour' THEN
@@ -46,6 +47,12 @@ BEGIN
 
   PERFORM pg_advisory_xact_lock(regexp_replace( md5(metric) , E'\\D', '', 'g')::varchar(10)::int8);
 
+  -- Check if table exists and has LIST partitioning (legacy); if so, drop it for conversion to RANGE
+  SELECT to_regclass('public.' || quote_ident(metric)) INTO l_table_oid;
+  IF EXISTS (SELECT 1 FROM pg_partitioned_table WHERE partrelid = l_table_oid AND partstrat = 'l')
+     AND l_table_oid IS NOT NULL THEN
+    EXECUTE format('DROP TABLE public.%I CASCADE', metric);
+  END IF;
 
   -- 1. level
   IF to_regclass('public.' || quote_ident(metric)) IS NULL

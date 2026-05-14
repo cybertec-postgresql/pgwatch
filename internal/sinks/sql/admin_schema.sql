@@ -95,5 +95,6 @@ INSERT INTO
     admin.migration (id, version)
 VALUES
     (0,  '01110 Apply postgres sink schema migrations'),
-    (1,  '01180 Apply admin functions migrations for v5');
+    (1,  '01180 Apply admin functions migrations for v5'),
+    (2,  '01409 Apply postgres sink partitioning scheme migrations');
     -- apply new migration value to `sinkSchema` in `cmd/pgwatch/version.go` file as well
