@@ -1,16 +1,14 @@
 /*
-  ensure_partition_metric_dbname_time creates partitioned metric tables if not already existing
+  ensure_partition_metric_time creates partitioned metric tables if not already existing
     metric - name of the metric (top level table)
-    dbname - name of the database (2nd level partition)
     metric_timestamp - timestamp of the metric (used to determine the time partition)
     partition_period - interval for partitioning (e.g., '1 week', '1 day', '1 month')
     partitions_to_precreate - how many future time partitions to create (default 3)
     part_available_from - output parameter, start time of the time partition where the given metric_timestamp fits in
     part_available_to - output parameter, end time of the time partition where the given metric_timestamp fits in
 */
-CREATE OR REPLACE FUNCTION admin.ensure_partition_metric_dbname_time(
+CREATE OR REPLACE FUNCTION admin.ensure_partition_metric_time(
     metric text,
-    dbname text,
     metric_timestamp timestamptz,
     partition_period interval default '1 week'::interval,
     partitions_to_precreate int default 3,
@@ -18,18 +16,16 @@ CREATE OR REPLACE FUNCTION admin.ensure_partition_metric_dbname_time(
     OUT part_available_to timestamptz)
 RETURNS record AS
 /*
-  creates a top level metric table, a dbname partition and a time partition if not already existing.
+  creates a top level metric table and time partitions if not already existing.
   returns time partition start/end date
 */
 $SQL$
 DECLARE
-  l_part_name_2nd text;
-  l_part_name_3rd text;
+  l_part_name text;
   l_part_start timestamptz;
   l_part_end timestamptz;
   ideal_length int;
   l_template_table text := 'admin.metrics_template';
-  MAX_IDENT_LEN CONSTANT integer := current_setting('max_identifier_length')::int;
   l_partition_format text;
   l_time_suffix text;
   l_existing_upper_bound timestamptz;
@@ -54,27 +50,12 @@ BEGIN
   -- 1. level
   IF to_regclass('public.' || quote_ident(metric)) IS NULL
   THEN
-    EXECUTE format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY LIST (dbname)', metric);
+    EXECUTE format('CREATE TABLE public.%I (LIKE admin.metrics_template INCLUDING INDEXES) PARTITION BY RANGE (time)', metric);
     EXECUTE format('COMMENT ON TABLE public.%I IS $$pgwatch-generated-metric-lvl$$', metric);
   END IF;
 
   -- 2. level
-  l_part_name_2nd := metric || '_' || dbname;
-  IF char_length(l_part_name_2nd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
-  THEN
-    ideal_length = MAX_IDENT_LEN - char_length(format('%s_', metric));
-    l_part_name_2nd := metric || '_' || substring(md5(dbname) from 1 for ideal_length);
-  END IF;
 
-  IF to_regclass('subpartitions.' || quote_ident(l_part_name_2nd)) IS NULL
-  THEN
-    EXECUTE format('CREATE TABLE subpartitions.%I PARTITION OF public.%I FOR VALUES IN (%L) PARTITION BY RANGE (time)',
-                    l_part_name_2nd, metric, dbname);
-    EXECUTE format('COMMENT ON TABLE subpartitions.%I IS $$pgwatch-generated-metric-dbname-lvl$$', l_part_name_2nd);
-  END IF;
-
-  -- 3. level 
-  
   -- Get existing partition upper bound
   SELECT max(substring(pg_catalog.pg_get_expr(c.relpartbound, c.oid, true) from 'TO \(''([^'']+)''')::timestamptz)
   INTO l_existing_upper_bound
@@ -83,7 +64,7 @@ BEGIN
   JOIN pg_catalog.pg_class parent ON parent.oid = i.inhparent
   WHERE c.relispartition
     AND c.relnamespace = 'subpartitions'::regnamespace
-    AND parent.relname = l_part_name_2nd;
+    AND parent.relname = metric;
 
   -- Determine starting point for new partitions
   IF l_existing_upper_bound IS NOT NULL THEN
@@ -100,7 +81,7 @@ BEGIN
         -- For hourly periods (>= 1 hour, < 1 day)
         l_part_start := date_trunc('hour', metric_timestamp);
     END CASE;
-    
+
     -- For the first partition, set the available range
     part_available_from := l_part_start;
     part_available_to := l_part_start + partition_period;
@@ -109,7 +90,7 @@ BEGIN
   -- Create partitions
   FOR i IN 0..partitions_to_precreate LOOP
       l_part_end := l_part_start + partition_period;
-      
+
       -- Update the available range for the first partition only if we started from metric_timestamp
       IF i = 0 AND l_existing_upper_bound IS NULL THEN
           part_available_from := l_part_start;
@@ -125,19 +106,13 @@ BEGIN
       END IF;
 
       l_time_suffix := to_char(l_part_start, l_partition_format);
-      l_part_name_3rd := format('%s_%s_%s', metric, dbname, l_time_suffix);
+      l_part_name := format('%s_%s', metric, l_time_suffix);
 
-      IF char_length(l_part_name_3rd) > MAX_IDENT_LEN     -- use "dbname" hash instead of name for overly long ones
+      IF to_regclass('subpartitions.' || quote_ident(l_part_name)) IS NULL
       THEN
-          ideal_length = MAX_IDENT_LEN - char_length(format('%s__%s', metric, l_time_suffix));
-          l_part_name_3rd := format('%s_%s_%s', metric, substring(md5(dbname) from 1 for ideal_length), l_time_suffix);
-      END IF;
-
-      IF to_regclass('subpartitions.' || quote_ident(l_part_name_3rd)) IS NULL
-      THEN
-        EXECUTE format('CREATE TABLE subpartitions.%I PARTITION OF subpartitions.%I FOR VALUES FROM ($$%s$$) TO ($$%s$$)',
-                        l_part_name_3rd, l_part_name_2nd, l_part_start, l_part_end);
-        EXECUTE format('COMMENT ON TABLE subpartitions.%I IS $$pgwatch-generated-metric-dbname-time-lvl$$', l_part_name_3rd);
+        EXECUTE format('CREATE TABLE subpartitions.%I PARTITION OF public.%I FOR VALUES FROM ($$%s$$) TO ($$%s$$)',
+                        l_part_name, metric, l_part_start, l_part_end);
+        EXECUTE format('COMMENT ON TABLE subpartitions.%I IS $$pgwatch-generated-metric-time-lvl$$', l_part_name);
       END IF;
 
       l_part_start := l_part_end;
@@ -156,14 +131,12 @@ BEGIN
       JOIN pg_catalog.pg_class parent ON parent.oid = i.inhparent
       WHERE c.relispartition
         AND n.nspname = 'subpartitions'
-        AND parent.relname = l_part_name_2nd
+        AND parent.relname = metric
     ) AS partitions
-    WHERE metric_timestamp >= lower_text::timestamptz 
+    WHERE metric_timestamp >= lower_text::timestamptz
       AND metric_timestamp < upper_text::timestamptz
     LIMIT 1;
   END IF;
-  
+
 END;
 $SQL$ LANGUAGE plpgsql;
-
--- GRANT EXECUTE ON FUNCTION admin.ensure_partition_metric_dbname_time(text,text,timestamp with time zone,interval,integer) TO pgwatch;
