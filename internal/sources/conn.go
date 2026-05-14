@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"math"
 	"net/http"
@@ -527,7 +528,7 @@ func (pc *PromConn) Ping(ctx context.Context) error {
 		return errors.New("prometheus source not connected: call Connect first")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, cfg.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
 	if err != nil {
 		return err
 	}
@@ -540,6 +541,7 @@ func (pc *PromConn) Ping(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	_, _ = io.Copy(io.Discard, resp.Body)
 	_ = resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
