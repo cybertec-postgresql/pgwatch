@@ -6,7 +6,7 @@ export enum SourceFormSteps {
   Tags = "Tags",
 };
 
-const kindValues = ["postgres", "postgres-continuous-discovery", "pgbouncer", "pgpool", "patroni"];
+const kindValues = ["postgres", "postgres-continuous-discovery", "pgbouncer", "pgpool", "patroni", "prometheus"];
 
 export const KindOptions = kindValues.map((val) => ({ label: val }));
 
