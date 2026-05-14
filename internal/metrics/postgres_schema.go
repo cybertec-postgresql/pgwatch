@@ -154,7 +154,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 		},
 
 		&migrator.Migration{
-			Name: "00XXX Add prometheus to source dbtype check constraint",
+			Name: "01405 Add prometheus to source dbtype check constraint",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, `
 					ALTER TABLE pgwatch.source

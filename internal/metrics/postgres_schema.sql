@@ -85,4 +85,4 @@ INSERT INTO
 VALUES
     (0,  '00179 Apply metrics migrations for v3'),
     (1,  '00824 Refactor recommendations metrics to use metric_storage_name'),
-    (2,  '00XXX Add prometheus to source dbtype check constraint');
+    (2,  '01405 Add prometheus to source dbtype check constraint');
