@@ -65,7 +65,7 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in pgwatch.migration table
-const MigrationsCount = 2
+const MigrationsCount = 3
 
 // migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
@@ -153,8 +153,19 @@ var migrations func() migrator.Option = func() migrator.Option {
 			},
 		},
 
-		// adding new migration here, update "pgwatch"."migration" in "postgres_schema.sql"
-		// and "dbapi" variable in main.go!
+		&migrator.Migration{
+			Name: "00XXX Add prometheus to source dbtype check constraint",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, `
+					ALTER TABLE pgwatch.source
+						DROP CONSTRAINT IF EXISTS source_dbtype_check,
+						ADD CHECK (dbtype IN ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'pgpool', 'prometheus'));
+				`)
+				return err
+			},
+		},
+
+		// adding new migration here, update "pgwatch"."migration" in "postgres_schema.sql"!
 
 		// &migrator.Migration{
 		// 	Name: "000XX Short description of a migration",
