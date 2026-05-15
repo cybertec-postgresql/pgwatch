@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>pb - PgWatch Developer Documentation</title>
+
+<link type="text/css" rel="stylesheet" href="/v3.0/godoc/lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="/v3.0/godoc/lib/godoc/jquery.js" defer></script>
+
+
+
+
+<script>var goVersion = "go1.23.4";</script>
+<script src="/v3.0/godoc/lib/godoc/godocs.js" defer></script>
+
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">PgWatch Developer Documentation</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/v3.0/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/">PgWatch Developer Documentation</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package pb
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/cybertec-postgresql/pgwatch/v5/api/pb"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>Package pb contains the protobuf definitions for pgwatch gRPC API.
+<p>To generate the Go code from the protobuf definitions, you need to install:
+<ul>
+<li>protoc (Protocol Buffers compiler)
+<li>protoc-gen-go (Go plugin for protoc)
+<li>protoc-gen-go-grpc (Go gRPC plugin for protoc)
+</ul>
+<p>On Windows:
+<pre>go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+winget install protobuf
+</pre>
+<p>On Linux/macOS:
+<pre>go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+# Install protoc via package manager (apt, brew, etc.)
+</pre>
+<p>Then run: go generate ./api/pb/
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+				<dd><a href="#pkg-constants">Constants</a></dd>
+			
+			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
+			
+				
+				<dd><a href="#RegisterReceiverServer">func RegisterReceiverServer(s grpc.ServiceRegistrar, srv ReceiverServer)</a></dd>
+			
+				
+				<dd><a href="#_Receiver_DefineMetrics_Handler">func _Receiver_DefineMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)</a></dd>
+			
+				
+				<dd><a href="#_Receiver_SyncMetric_Handler">func _Receiver_SyncMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)</a></dd>
+			
+				
+				<dd><a href="#_Receiver_UpdateMeasurements_Handler">func _Receiver_UpdateMeasurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error)</a></dd>
+			
+				
+				<dd><a href="#file_pgwatch_proto_init">func file_pgwatch_proto_init()</a></dd>
+			
+				
+				<dd><a href="#file_pgwatch_proto_rawDescGZIP">func file_pgwatch_proto_rawDescGZIP() []byte</a></dd>
+			
+				
+				<dd><a href="#init">func init()</a></dd>
+			
+			
+				
+				<dd><a href="#MeasurementEnvelope">type MeasurementEnvelope</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.Descriptor">func (*MeasurementEnvelope) Descriptor() ([]byte, []int)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.GetCustomTags">func (x *MeasurementEnvelope) GetCustomTags() map[string]string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.GetDBName">func (x *MeasurementEnvelope) GetDBName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.GetData">func (x *MeasurementEnvelope) GetData() []*structpb.Struct</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.GetMetricName">func (x *MeasurementEnvelope) GetMetricName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.ProtoMessage">func (*MeasurementEnvelope) ProtoMessage()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.ProtoReflect">func (x *MeasurementEnvelope) ProtoReflect() protoreflect.Message</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.Reset">func (x *MeasurementEnvelope) Reset()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#MeasurementEnvelope.String">func (x *MeasurementEnvelope) String() string</a></dd>
+				
+			
+				
+				<dd><a href="#ReceiverClient">type ReceiverClient</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewReceiverClient">func NewReceiverClient(cc grpc.ClientConnInterface) ReceiverClient</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ReceiverServer">type ReceiverServer</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Reply">type Reply</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.Descriptor">func (*Reply) Descriptor() ([]byte, []int)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.GetLogmsg">func (x *Reply) GetLogmsg() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.ProtoMessage">func (*Reply) ProtoMessage()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.ProtoReflect">func (x *Reply) ProtoReflect() protoreflect.Message</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.Reset">func (x *Reply) Reset()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Reply.String">func (x *Reply) String() string</a></dd>
+				
+			
+				
+				<dd><a href="#SyncOp">type SyncOp</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.Descriptor">func (SyncOp) Descriptor() protoreflect.EnumDescriptor</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.Enum">func (x SyncOp) Enum() *SyncOp</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.EnumDescriptor">func (SyncOp) EnumDescriptor() ([]byte, []int)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.Number">func (x SyncOp) Number() protoreflect.EnumNumber</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.String">func (x SyncOp) String() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncOp.Type">func (SyncOp) Type() protoreflect.EnumType</a></dd>
+				
+			
+				
+				<dd><a href="#SyncReq">type SyncReq</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.Descriptor">func (*SyncReq) Descriptor() ([]byte, []int)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.GetDBName">func (x *SyncReq) GetDBName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.GetMetricName">func (x *SyncReq) GetMetricName() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.GetOperation">func (x *SyncReq) GetOperation() SyncOp</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.ProtoMessage">func (*SyncReq) ProtoMessage()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.ProtoReflect">func (x *SyncReq) ProtoReflect() protoreflect.Message</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.Reset">func (x *SyncReq) Reset()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SyncReq.String">func (x *SyncReq) String() string</a></dd>
+				
+			
+				
+				<dd><a href="#UnimplementedReceiverServer">type UnimplementedReceiverServer</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#UnimplementedReceiverServer.DefineMetrics">func (UnimplementedReceiverServer) DefineMetrics(context.Context, *structpb.Struct) (*Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#UnimplementedReceiverServer.SyncMetric">func (UnimplementedReceiverServer) SyncMetric(context.Context, *SyncReq) (*Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#UnimplementedReceiverServer.UpdateMeasurements">func (UnimplementedReceiverServer) UpdateMeasurements(context.Context, *MeasurementEnvelope) (*Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#UnimplementedReceiverServer.mustEmbedUnimplementedReceiverServer">func (UnimplementedReceiverServer) mustEmbedUnimplementedReceiverServer()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#UnimplementedReceiverServer.testEmbeddedByValue">func (UnimplementedReceiverServer) testEmbeddedByValue()</a></dd>
+				
+			
+				
+				<dd><a href="#UnsafeReceiverServer">type UnsafeReceiverServer</a></dd>
+				
+				
+			
+				
+				<dd><a href="#receiverClient">type receiverClient</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#receiverClient.DefineMetrics">func (c *receiverClient) DefineMetrics(ctx context.Context, in *structpb.Struct, opts ...grpc.CallOption) (*Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#receiverClient.SyncMetric">func (c *receiverClient) SyncMetric(ctx context.Context, in *SyncReq, opts ...grpc.CallOption) (*Reply, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#receiverClient.UpdateMeasurements">func (c *receiverClient) UpdateMeasurements(ctx context.Context, in *MeasurementEnvelope, opts ...grpc.CallOption) (*Reply, error)</a></dd>
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/doc.go">doc.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go">pgwatch.pb.go</a>
+			
+				<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go">pgwatch_grpc.pb.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+			<h2 id="pkg-constants">Constants</h2>
+			
+				
+				<pre>const (
+    <span class="comment">// Verify that this generated code is sufficiently up-to-date.</span>
+    <span id="_">_</span> = <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#EnforceVersion">EnforceVersion</a>(20 - <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MinVersion">MinVersion</a>)
+    <span class="comment">// Verify that runtime/protoimpl is sufficiently up-to-date.</span>
+    <span id="_">_</span> = <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#EnforceVersion">EnforceVersion</a>(<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MaxVersion">MaxVersion</a> - 20)
+)</pre>
+			
+				
+				<pre>const (
+    <span id="Receiver_UpdateMeasurements_FullMethodName">Receiver_UpdateMeasurements_FullMethodName</span> = &#34;/Receiver/UpdateMeasurements&#34;
+    <span id="Receiver_SyncMetric_FullMethodName">Receiver_SyncMetric_FullMethodName</span>         = &#34;/Receiver/SyncMetric&#34;
+    <span id="Receiver_DefineMetrics_FullMethodName">Receiver_DefineMetrics_FullMethodName</span>      = &#34;/Receiver/DefineMetrics&#34;
+)</pre>
+			
+				<p>This is a compile-time assertion to ensure that this generated file
+is compatible with the grpc package it is being compiled against.
+Requires gRPC-Go v1.64.0 or later.
+
+				<pre>const <span id="_">_</span> = <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#SupportPackageIsVersion9">SupportPackageIsVersion9</a></pre>
+			
+				
+				<pre>const <span id="file_pgwatch_proto_rawDesc">file_pgwatch_proto_rawDesc</span> = &#34;&#34; +
+    &#34;\n&#34; +
+    &#34;\rpgwatch.proto\x1a\x1cgoogle/protobuf/struct.proto\&#34;\x1f\n&#34; +
+    &#34;\x05Reply\x12\x16\n&#34; +
+    &#34;\x06logmsg\x18\x01 \x01(\tR\x06logmsg\&#34;\xff\x01\n&#34; +
+    &#34;\x13MeasurementEnvelope\x12\x16\n&#34; +
+    &#34;\x06DBName\x18\x01 \x01(\tR\x06DBName\x12\x1e\n&#34; +
+    &#34;\n&#34; +
+    &#34;MetricName\x18\x02 \x01(\tR\n&#34; +
+    &#34;MetricName\x12D\n&#34; +
+    &#34;\n&#34; +
+    &#34;CustomTags\x18\x03 \x03(\v2$.MeasurementEnvelope.CustomTagsEntryR\n&#34; +
+    &#34;CustomTags\x12+\n&#34; +
+    &#34;\x04Data\x18\x04 \x03(\v2\x17.google.protobuf.StructR\x04Data\x1a=\n&#34; +
+    &#34;\x0fCustomTagsEntry\x12\x10\n&#34; +
+    &#34;\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n&#34; +
+    &#34;\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\&#34;h\n&#34; +
+    &#34;\aSyncReq\x12\x16\n&#34; +
+    &#34;\x06DBName\x18\x01 \x01(\tR\x06DBName\x12\x1e\n&#34; +
+    &#34;\n&#34; +
+    &#34;MetricName\x18\x02 \x01(\tR\n&#34; +
+    &#34;MetricName\x12%\n&#34; +
+    &#34;\tOperation\x18\x03 \x01(\x0e2\a.SyncOpR\tOperation*&gt;\n&#34; +
+    &#34;\x06SyncOp\x12\r\n&#34; +
+    &#34;\tInvalidOp\x10\x00\x12\t\n&#34; +
+    &#34;\x05AddOp\x10\x01\x12\f\n&#34; +
+    &#34;\bDeleteOp\x10\x02\x12\f\n&#34; +
+    &#34;\bDefineOp\x10\x032\x90\x01\n&#34; +
+    &#34;\bReceiver\x122\n&#34; +
+    &#34;\x12UpdateMeasurements\x12\x14.MeasurementEnvelope\x1a\x06.Reply\x12\x1e\n&#34; +
+    &#34;\n&#34; +
+    &#34;SyncMetric\x12\b.SyncReq\x1a\x06.Reply\x120\n&#34; +
+    &#34;\rDefineMetrics\x12\x17.google.protobuf.Struct\x1a\x06.ReplyB\x06Z\x04.;pbb\x06proto3&#34;</pre>
+			
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				<p>Enum value maps for SyncOp.
+
+				<pre>var (
+    <span id="SyncOp_name">SyncOp_name</span> = map[<a href="https://pkg.go.dev/builtin/#int32">int32</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>{
+        0: &#34;InvalidOp&#34;,
+        1: &#34;AddOp&#34;,
+        2: &#34;DeleteOp&#34;,
+        3: &#34;DefineOp&#34;,
+    }
+    <span id="SyncOp_value">SyncOp_value</span> = map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int32">int32</a>{
+        &#34;InvalidOp&#34;: 0,
+        &#34;AddOp&#34;:     1,
+        &#34;DeleteOp&#34;:  2,
+        &#34;DefineOp&#34;:  3,
+    }
+)</pre>
+			
+				
+				<pre>var (
+    <span id="file_pgwatch_proto_rawDescOnce">file_pgwatch_proto_rawDescOnce</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Once">Once</a>
+    <span id="file_pgwatch_proto_rawDescData">file_pgwatch_proto_rawDescData</span> []<a href="https://pkg.go.dev/builtin/#byte">byte</a>
+)</pre>
+			
+				
+				<pre>var <span id="File_pgwatch_proto">File_pgwatch_proto</span> <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#FileDescriptor">FileDescriptor</a></pre>
+			
+				<p>Receiver_ServiceDesc is the grpc.ServiceDesc for Receiver service.
+It&apos;s only intended for direct use with grpc.RegisterService,
+and not to be introspected or modified (even as a copy)
+
+				<pre>var <span id="Receiver_ServiceDesc">Receiver_ServiceDesc</span> = <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc">ServiceDesc</a>{
+    <a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc.ServiceName">ServiceName</a>: &#34;Receiver&#34;,
+    <a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc.HandlerType">HandlerType</a>: (*<a href="#ReceiverServer">ReceiverServer</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>),
+    <a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc.Methods">Methods</a>: []<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#MethodDesc">MethodDesc</a>{
+        {
+            <a href="#MethodName">MethodName</a>: &#34;UpdateMeasurements&#34;,
+            <a href="#Handler">Handler</a>:    _Receiver_UpdateMeasurements_Handler,
+        },
+        {
+            <a href="#MethodName">MethodName</a>: &#34;SyncMetric&#34;,
+            <a href="#Handler">Handler</a>:    _Receiver_SyncMetric_Handler,
+        },
+        {
+            <a href="#MethodName">MethodName</a>: &#34;DefineMetrics&#34;,
+            <a href="#Handler">Handler</a>:    _Receiver_DefineMetrics_Handler,
+        },
+    },
+    <a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc.Streams">Streams</a>:  []<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#StreamDesc">StreamDesc</a>{},
+    <a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceDesc.Metadata">Metadata</a>: &#34;pgwatch.proto&#34;,
+}</pre>
+			
+				
+				<pre>var <span id="file_pgwatch_proto_depIdxs">file_pgwatch_proto_depIdxs</span> = []<a href="https://pkg.go.dev/builtin/#int32">int32</a>{
+    4,
+    5,
+    0,
+    2,
+    3,
+    5,
+    1,
+    1,
+    1,
+    6,
+    3,
+    3,
+    3,
+    0,
+}</pre>
+			
+				
+				<pre>var <span id="file_pgwatch_proto_enumTypes">file_pgwatch_proto_enumTypes</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>([]<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#EnumInfo">EnumInfo</a>, 1)</pre>
+			
+				
+				<pre>var <span id="file_pgwatch_proto_goTypes">file_pgwatch_proto_goTypes</span> = []<a href="https://pkg.go.dev/builtin/#any">any</a>{
+    (<a href="#SyncOp">SyncOp</a>)(0),
+    (*<a href="#Reply">Reply</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>),
+    (*<a href="#MeasurementEnvelope">MeasurementEnvelope</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>),
+    (*<a href="#SyncReq">SyncReq</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>),
+    <a href="https://pkg.go.dev/builtin/#nil">nil</a>,
+    (*<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>),
+}</pre>
+			
+				
+				<pre>var <span id="file_pgwatch_proto_msgTypes">file_pgwatch_proto_msgTypes</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>([]<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MessageInfo">MessageInfo</a>, 4)</pre>
+			
+		
+		
+			
+			
+			<h2 id="RegisterReceiverServer">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L111">RegisterReceiverServer</a>
+				<a class="permalink" href="#RegisterReceiverServer">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func RegisterReceiverServer(s <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#ServiceRegistrar">ServiceRegistrar</a>, srv <a href="#ReceiverServer">ReceiverServer</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="_Receiver_DefineMetrics_Handler">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L158">_Receiver_DefineMetrics_Handler</a>
+				<a class="permalink" href="#_Receiver_DefineMetrics_Handler">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func _Receiver_DefineMetrics_Handler(srv interface{}, ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dec func(interface{}) <a href="https://pkg.go.dev/builtin/#error">error</a>, interceptor <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#UnaryServerInterceptor">UnaryServerInterceptor</a>) (interface{}, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="_Receiver_SyncMetric_Handler">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L140">_Receiver_SyncMetric_Handler</a>
+				<a class="permalink" href="#_Receiver_SyncMetric_Handler">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func _Receiver_SyncMetric_Handler(srv interface{}, ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dec func(interface{}) <a href="https://pkg.go.dev/builtin/#error">error</a>, interceptor <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#UnaryServerInterceptor">UnaryServerInterceptor</a>) (interface{}, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="_Receiver_UpdateMeasurements_Handler">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L122">_Receiver_UpdateMeasurements_Handler</a>
+				<a class="permalink" href="#_Receiver_UpdateMeasurements_Handler">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func _Receiver_UpdateMeasurements_Handler(srv interface{}, ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, dec func(interface{}) <a href="https://pkg.go.dev/builtin/#error">error</a>, interceptor <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#UnaryServerInterceptor">UnaryServerInterceptor</a>) (interface{}, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="file_pgwatch_proto_init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L328">file_pgwatch_proto_init</a>
+				<a class="permalink" href="#file_pgwatch_proto_init">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func file_pgwatch_proto_init()</pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="file_pgwatch_proto_rawDescGZIP">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L293">file_pgwatch_proto_rawDescGZIP</a>
+				<a class="permalink" href="#file_pgwatch_proto_rawDescGZIP">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func file_pgwatch_proto_rawDescGZIP() []<a href="https://pkg.go.dev/builtin/#byte">byte</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="init">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L327">init</a>
+				<a class="permalink" href="#init">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func init()</pre>
+			
+			
+			
+
+		
+		
+			
+			
+			<h2 id="MeasurementEnvelope">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L124">MeasurementEnvelope</a>
+				<a class="permalink" href="#MeasurementEnvelope">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type MeasurementEnvelope struct {
+<span id="MeasurementEnvelope.state"></span>    state         <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MessageState">MessageState</a> `protogen:&#34;open.v1&#34;`
+<span id="MeasurementEnvelope.DBName"></span>    DBName        <a href="https://pkg.go.dev/builtin/#string">string</a>                 `protobuf:&#34;bytes,1,opt,name=DBName,proto3&#34; json:&#34;DBName,omitempty&#34;`
+<span id="MeasurementEnvelope.MetricName"></span>    MetricName    <a href="https://pkg.go.dev/builtin/#string">string</a>                 `protobuf:&#34;bytes,2,opt,name=MetricName,proto3&#34; json:&#34;MetricName,omitempty&#34;`
+<span id="MeasurementEnvelope.CustomTags"></span>    CustomTags    map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>      `protobuf:&#34;bytes,3,rep,name=CustomTags,proto3&#34; json:&#34;CustomTags,omitempty&#34; protobuf_key:&#34;bytes,1,opt,name=key&#34; protobuf_val:&#34;bytes,2,opt,name=value&#34;`
+<span id="MeasurementEnvelope.Data"></span>    Data          []*<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>     `protobuf:&#34;bytes,4,rep,name=Data,proto3&#34; json:&#34;Data,omitempty&#34;`
+<span id="MeasurementEnvelope.unknownFields"></span>    unknownFields <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#UnknownFields">UnknownFields</a>
+<span id="MeasurementEnvelope.sizeCache"></span>    sizeCache     <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#SizeCache">SizeCache</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="MeasurementEnvelope.Descriptor">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L160">Descriptor</a>
+					<a class="permalink" href="#MeasurementEnvelope.Descriptor">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) Descriptor() ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, []<a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+				<p>Deprecated: Use MeasurementEnvelope.ProtoReflect.Descriptor instead.
+
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.GetCustomTags">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L178">GetCustomTags</a>
+					<a class="permalink" href="#MeasurementEnvelope.GetCustomTags">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) GetCustomTags() map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.GetDBName">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L164">GetDBName</a>
+					<a class="permalink" href="#MeasurementEnvelope.GetDBName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) GetDBName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.GetData">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L185">GetData</a>
+					<a class="permalink" href="#MeasurementEnvelope.GetData">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) GetData() []*<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.GetMetricName">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L171">GetMetricName</a>
+					<a class="permalink" href="#MeasurementEnvelope.GetMetricName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) GetMetricName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.ProtoMessage">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L145">ProtoMessage</a>
+					<a class="permalink" href="#MeasurementEnvelope.ProtoMessage">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) ProtoMessage()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.ProtoReflect">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L147">ProtoReflect</a>
+					<a class="permalink" href="#MeasurementEnvelope.ProtoReflect">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) ProtoReflect() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#Message">Message</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.Reset">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L134">Reset</a>
+					<a class="permalink" href="#MeasurementEnvelope.Reset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) Reset()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="MeasurementEnvelope.String">func (*MeasurementEnvelope) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L141">String</a>
+					<a class="permalink" href="#MeasurementEnvelope.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="ReceiverClient">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L31">ReceiverClient</a>
+				<a class="permalink" href="#ReceiverClient">&#xb6;</a>
+				
+				
+			</h2>
+			<p>ReceiverClient is the client API for Receiver service.
+<p>For semantics around ctx use and closing/ending streaming RPCs, please refer to <a href="https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream">https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream</a>.
+
+			<pre>type ReceiverClient interface {
+    UpdateMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    SyncMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="#SyncReq">SyncReq</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    DefineMetrics(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewReceiverClient">func <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L41">NewReceiverClient</a>
+					<a class="permalink" href="#NewReceiverClient">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewReceiverClient(cc <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#ClientConnInterface">ClientConnInterface</a>) <a href="#ReceiverClient">ReceiverClient</a></pre>
+				
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="ReceiverServer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L78">ReceiverServer</a>
+				<a class="permalink" href="#ReceiverServer">&#xb6;</a>
+				
+				
+			</h2>
+			<p>ReceiverServer is the server API for Receiver service.
+All implementations must embed UnimplementedReceiverServer
+for forward compatibility.
+
+			<pre>type ReceiverServer interface {
+    UpdateMeasurements(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    SyncMetric(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="#SyncReq">SyncReq</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    DefineMetrics(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    mustEmbedUnimplementedReceiverServer()
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Reply">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L80">Reply</a>
+				<a class="permalink" href="#Reply">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Reply struct {
+<span id="Reply.state"></span>    state         <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MessageState">MessageState</a> `protogen:&#34;open.v1&#34;`
+<span id="Reply.Logmsg"></span>    Logmsg        <a href="https://pkg.go.dev/builtin/#string">string</a>                 `protobuf:&#34;bytes,1,opt,name=logmsg,proto3&#34; json:&#34;logmsg,omitempty&#34;`
+<span id="Reply.unknownFields"></span>    unknownFields <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#UnknownFields">UnknownFields</a>
+<span id="Reply.sizeCache"></span>    sizeCache     <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#SizeCache">SizeCache</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="Reply.Descriptor">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L113">Descriptor</a>
+					<a class="permalink" href="#Reply.Descriptor">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#Reply">Reply</a>) Descriptor() ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, []<a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+				<p>Deprecated: Use Reply.ProtoReflect.Descriptor instead.
+
+				
+				
+				
+			
+				
+				<h3 id="Reply.GetLogmsg">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L117">GetLogmsg</a>
+					<a class="permalink" href="#Reply.GetLogmsg">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#Reply">Reply</a>) GetLogmsg() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reply.ProtoMessage">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L98">ProtoMessage</a>
+					<a class="permalink" href="#Reply.ProtoMessage">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#Reply">Reply</a>) ProtoMessage()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reply.ProtoReflect">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L100">ProtoReflect</a>
+					<a class="permalink" href="#Reply.ProtoReflect">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#Reply">Reply</a>) ProtoReflect() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#Message">Message</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reply.Reset">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L87">Reset</a>
+					<a class="permalink" href="#Reply.Reset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#Reply">Reply</a>) Reset()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Reply.String">func (*Reply) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L94">String</a>
+					<a class="permalink" href="#Reply.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#Reply">Reply</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="SyncOp">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L28">SyncOp</a>
+				<a class="permalink" href="#SyncOp">&#xb6;</a>
+				
+				
+			</h2>
+			<p>SyncOp represents synchronization operations for metrics.
+The actual constants are defined in internal/sinks/types.go
+and should be used instead of these protobuf-generated constants.
+
+			<pre>type SyncOp <a href="https://pkg.go.dev/builtin/#int32">int32</a></pre>
+
+			
+				
+				<pre>const (
+    <span id="SyncOp_InvalidOp">SyncOp_InvalidOp</span> <a href="#SyncOp">SyncOp</a> = 0
+    <span id="SyncOp_AddOp">SyncOp_AddOp</span>     <a href="#SyncOp">SyncOp</a> = 1
+    <span id="SyncOp_DeleteOp">SyncOp_DeleteOp</span>  <a href="#SyncOp">SyncOp</a> = 2
+    <span id="SyncOp_DefineOp">SyncOp_DefineOp</span>  <a href="#SyncOp">SyncOp</a> = 3
+)</pre>
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="SyncOp.Descriptor">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L63">Descriptor</a>
+					<a class="permalink" href="#SyncOp.Descriptor">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#SyncOp">SyncOp</a>) Descriptor() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#EnumDescriptor">EnumDescriptor</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncOp.Enum">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L53">Enum</a>
+					<a class="permalink" href="#SyncOp.Enum">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x <a href="#SyncOp">SyncOp</a>) Enum() *<a href="#SyncOp">SyncOp</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncOp.EnumDescriptor">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L76">EnumDescriptor</a>
+					<a class="permalink" href="#SyncOp.EnumDescriptor">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#SyncOp">SyncOp</a>) EnumDescriptor() ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, []<a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+				<p>Deprecated: Use SyncOp.Descriptor instead.
+
+				
+				
+				
+			
+				
+				<h3 id="SyncOp.Number">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L71">Number</a>
+					<a class="permalink" href="#SyncOp.Number">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x <a href="#SyncOp">SyncOp</a>) Number() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#EnumNumber">EnumNumber</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncOp.String">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L59">String</a>
+					<a class="permalink" href="#SyncOp.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x <a href="#SyncOp">SyncOp</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncOp.Type">func (SyncOp) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L67">Type</a>
+					<a class="permalink" href="#SyncOp.Type">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#SyncOp">SyncOp</a>) Type() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#EnumType">EnumType</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="SyncReq">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L192">SyncReq</a>
+				<a class="permalink" href="#SyncReq">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type SyncReq struct {
+<span id="SyncReq.state"></span>    state         <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#MessageState">MessageState</a> `protogen:&#34;open.v1&#34;`
+<span id="SyncReq.DBName"></span>    DBName        <a href="https://pkg.go.dev/builtin/#string">string</a>                 `protobuf:&#34;bytes,1,opt,name=DBName,proto3&#34; json:&#34;DBName,omitempty&#34;`
+<span id="SyncReq.MetricName"></span>    MetricName    <a href="https://pkg.go.dev/builtin/#string">string</a>                 `protobuf:&#34;bytes,2,opt,name=MetricName,proto3&#34; json:&#34;MetricName,omitempty&#34;`
+<span id="SyncReq.Operation"></span>    Operation     <a href="#SyncOp">SyncOp</a>                 `protobuf:&#34;varint,3,opt,name=Operation,proto3,enum=SyncOp&#34; json:&#34;Operation,omitempty&#34;`
+<span id="SyncReq.unknownFields"></span>    unknownFields <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#UnknownFields">UnknownFields</a>
+<span id="SyncReq.sizeCache"></span>    sizeCache     <a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/">protoimpl</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/runtime/protoimpl/#SizeCache">SizeCache</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="SyncReq.Descriptor">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L227">Descriptor</a>
+					<a class="permalink" href="#SyncReq.Descriptor">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#SyncReq">SyncReq</a>) Descriptor() ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, []<a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
+				<p>Deprecated: Use SyncReq.ProtoReflect.Descriptor instead.
+
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.GetDBName">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L231">GetDBName</a>
+					<a class="permalink" href="#SyncReq.GetDBName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) GetDBName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.GetMetricName">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L238">GetMetricName</a>
+					<a class="permalink" href="#SyncReq.GetMetricName">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) GetMetricName() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.GetOperation">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L245">GetOperation</a>
+					<a class="permalink" href="#SyncReq.GetOperation">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) GetOperation() <a href="#SyncOp">SyncOp</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.ProtoMessage">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L212">ProtoMessage</a>
+					<a class="permalink" href="#SyncReq.ProtoMessage">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (*<a href="#SyncReq">SyncReq</a>) ProtoMessage()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.ProtoReflect">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L214">ProtoReflect</a>
+					<a class="permalink" href="#SyncReq.ProtoReflect">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) ProtoReflect() <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/">protoreflect</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect/#Message">Message</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.Reset">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L201">Reset</a>
+					<a class="permalink" href="#SyncReq.Reset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) Reset()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="SyncReq.String">func (*SyncReq) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch.pb.go#L208">String</a>
+					<a class="permalink" href="#SyncReq.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (x *<a href="#SyncReq">SyncReq</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="UnimplementedReceiverServer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L90">UnimplementedReceiverServer</a>
+				<a class="permalink" href="#UnimplementedReceiverServer">&#xb6;</a>
+				
+				
+			</h2>
+			<p>UnimplementedReceiverServer must be embedded to have
+forward compatible implementations.
+<p>NOTE: this should be embedded by value instead of pointer to avoid a nil
+pointer dereference when methods are called.
+
+			<pre>type UnimplementedReceiverServer struct{}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="UnimplementedReceiverServer.DefineMetrics">func (UnimplementedReceiverServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L98">DefineMetrics</a>
+					<a class="permalink" href="#UnimplementedReceiverServer.DefineMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#UnimplementedReceiverServer">UnimplementedReceiverServer</a>) DefineMetrics(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="UnimplementedReceiverServer.SyncMetric">func (UnimplementedReceiverServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L95">SyncMetric</a>
+					<a class="permalink" href="#UnimplementedReceiverServer.SyncMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#UnimplementedReceiverServer">UnimplementedReceiverServer</a>) SyncMetric(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="#SyncReq">SyncReq</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="UnimplementedReceiverServer.UpdateMeasurements">func (UnimplementedReceiverServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L92">UpdateMeasurements</a>
+					<a class="permalink" href="#UnimplementedReceiverServer.UpdateMeasurements">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#UnimplementedReceiverServer">UnimplementedReceiverServer</a>) UpdateMeasurements(<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="UnimplementedReceiverServer.mustEmbedUnimplementedReceiverServer">func (UnimplementedReceiverServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L101">mustEmbedUnimplementedReceiverServer</a>
+					<a class="permalink" href="#UnimplementedReceiverServer.mustEmbedUnimplementedReceiverServer">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#UnimplementedReceiverServer">UnimplementedReceiverServer</a>) mustEmbedUnimplementedReceiverServer()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="UnimplementedReceiverServer.testEmbeddedByValue">func (UnimplementedReceiverServer) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L102">testEmbeddedByValue</a>
+					<a class="permalink" href="#UnimplementedReceiverServer.testEmbeddedByValue">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#UnimplementedReceiverServer">UnimplementedReceiverServer</a>) testEmbeddedByValue()</pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="UnsafeReceiverServer">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L107">UnsafeReceiverServer</a>
+				<a class="permalink" href="#UnsafeReceiverServer">&#xb6;</a>
+				
+				
+			</h2>
+			<p>UnsafeReceiverServer may be embedded to opt out of forward compatibility for this service.
+Use of this interface is not recommended, as added methods to ReceiverServer will
+result in compilation errors.
+
+			<pre>type UnsafeReceiverServer interface {
+    mustEmbedUnimplementedReceiverServer()
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="receiverClient">type <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L37">receiverClient</a>
+				<a class="permalink" href="#receiverClient">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type receiverClient struct {
+<span id="receiverClient.cc"></span>    cc <a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#ClientConnInterface">ClientConnInterface</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="receiverClient.DefineMetrics">func (*receiverClient) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L65">DefineMetrics</a>
+					<a class="permalink" href="#receiverClient.DefineMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *receiverClient) DefineMetrics(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/">structpb</a>.<a href="https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb/#Struct">Struct</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="receiverClient.SyncMetric">func (*receiverClient) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L55">SyncMetric</a>
+					<a class="permalink" href="#receiverClient.SyncMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *receiverClient) SyncMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="#SyncReq">SyncReq</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="receiverClient.UpdateMeasurements">func (*receiverClient) <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/api/pb/pgwatch_grpc.pb.go#L45">UpdateMeasurements</a>
+					<a class="permalink" href="#receiverClient.UpdateMeasurements">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *receiverClient) UpdateMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, in *<a href="#MeasurementEnvelope">MeasurementEnvelope</a>, opts ...<a href="https://pkg.go.dev/google.golang.org/grpc/">grpc</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/#CallOption">CallOption</a>) (*<a href="#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.23.4.<br>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>
