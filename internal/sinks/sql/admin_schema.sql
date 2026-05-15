@@ -96,5 +96,5 @@ INSERT INTO
 VALUES
     (0,  '01110 Apply postgres sink schema migrations'),
     (1,  '01180 Apply admin functions migrations for v5'),
-    (2,  '01409 Apply postgres sink partitioning scheme migrations');
+    (2,  '01409 Switch to time-only partitioning');
     -- apply new migration value to `sinkSchema` in `cmd/pgwatch/version.go` file as well
