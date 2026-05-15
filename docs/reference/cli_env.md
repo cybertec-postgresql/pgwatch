@@ -94,7 +94,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--partition-interval=`
 
-    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 week)  
+    Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 day)  
     ENV: `$PW_PARTITION_INTERVAL`
 
     Example:
