@@ -966,9 +966,9 @@ func Test_Maintain(t *testing.T) {
 	})
 }
 
-// TestEnsureMetricTimePartsExist_SpecialSourceNames verifies that metric names with special characters
+// TestEnsureMetricTimePartsExist_SpecialMetricNames verifies that metric names with special characters
 // (dots, uppercase, hyphens, underscores) are accepted by the partition functions.
-func TestEnsureMetricTimePartsExist_SpecialSourceNames(t *testing.T) {
+func TestEnsureMetricTimePartsExist_SpecialMetricNames(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
@@ -1017,7 +1017,7 @@ func TestEnsureMetricTimePartsExist_SpecialSourceNames(t *testing.T) {
 	err = conn.QueryRow(ctx, `SELECT COUNT(*) FROM pg_partition_tree('"metric.new"') WHERE level = 1`).Scan(&partitionCount)
 	r.NoError(err)
 	// 4 time partitions (1 requested + 3 precreated) per metric
-	a.Equal(4, partitionCount, "expected one time partition set per metric")
+	a.Equal(4, partitionCount)
 }
 
 // TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts verifies that repeated calls to
@@ -1048,7 +1048,6 @@ func TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts(t *testing.T) {
 		},
 	}
 
-	var partitionCountAfterFirst int
 	for i := range 5 {
 		pgw, err := NewPostgresWriter(ctx, connStr, opts)
 		r.NoError(err)
@@ -1060,13 +1059,7 @@ func TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts(t *testing.T) {
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('restart_test_metric') WHERE isleaf").Scan(&count)
 		conn.Close(ctx)
 		r.NoError(err)
-
-		if i == 0 {
-			partitionCountAfterFirst = count
-		} else {
-			a.Equal(partitionCountAfterFirst, count,
-				"partition count should not grow on restart %d", i+1)
-		}
+		a.Equal(4, count, "partition count should not grow on restart %d", i+1)
 	}
 }
 
