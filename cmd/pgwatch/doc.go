@@ -54,6 +54,9 @@
 //	                                     may be ignored by some sinks
 //	                                     (default: 950ms)
 //	                                     [$PW_BATCHING_DELAY]
+//  --partition-interval=                Time range for PostgreSQL sink time partitions. 
+// 										 Must be a valid PostgreSQL interval. 
+// 										 (default: 1 day) [$PW_PARTITION_INTERVAL]
 //	--retention=                         Delete metrics older than this. 
 //	                                     Must be a valid PostgreSQL interval. 
 //	                                     (default: 14 days) [$PW_RETENTION]
