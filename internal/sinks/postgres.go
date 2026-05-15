@@ -594,7 +594,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 		},
 
 		&migrator.Migration{
-			Name: "01409 Apply postgres sink partitioning scheme migrations",
+			Name: "01409 Switch to time-only partitioning",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, `
 					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
