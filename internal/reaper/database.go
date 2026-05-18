@@ -1,6 +1,7 @@
 package reaper
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +15,356 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error) {
+const minTickInterval = 1 // seconds - floor for GCD to help handle zero/negative intervals
+
+var _ Reaper = (*DbConnReaper)(nil)
+
+// DbConnReaper manages metric collection for a single monitored database source.
+// Instead of one goroutine per metric it runs a single GCD-based tick loop
+// and batches SQL queries via pgx.Batch when the source is a real Postgres
+// connection (non-pgbouncer, non-pgpool).
+type DbConnReaper struct {
+	reaper          *reaper
+	md              *sources.DbConn
+	lastFetch       map[string]time.Time
+	lastUptimeS     int64               // last seen postmaster_uptime_s for restart detection
+	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
+}
+
+// NewDbConnReaper creates a SourceReaper for the given source connection.
+func NewDbConnReaper(r *reaper, md *sources.DbConn) *DbConnReaper {
+	return &DbConnReaper{
+		reaper:          r,
+		md:              md,
+		lastFetch:       make(map[string]time.Time),
+		degradedMetrics: make(map[string]struct{}),
+	}
+}
+
+// activeMetrics returns a snapshot copy of the currently active metric intervals
+// based on the source's recovery state. Copying under the lock prevents data
+// races when the caller iterates after the lock is released.
+func (sr *DbConnReaper) activeMetrics() map[string]time.Duration {
+	sr.md.RLock()
+	defer sr.md.RUnlock()
+	am := sr.md.Metrics
+	if sr.md.IsInRecovery && len(sr.md.MetricsStandby) > 0 {
+		am = sr.md.MetricsStandby
+	}
+	c := make(map[string]time.Duration, len(am))
+	for k, v := range am {
+		c[k] = time.Duration(v) * time.Second
+	}
+	return c
+}
+
+// GCDSlice computes GCD across a slice. Returns 0 for empty input.
+func GCDSlice(vals []int) int {
+	if len(vals) == 0 {
+		return 0
+	}
+	g := vals[0]
+	for _, v := range vals[1:] {
+		for v != 0 {
+			g, v = v, g%v
+		}
+	}
+	return g
+}
+
+// calcTickInterval computes GCD of all metric intervals with a minimum floor.
+func (sr *DbConnReaper) calcTickInterval() time.Duration {
+	am := sr.activeMetrics()
+	intervals := make([]int, 0, len(am))
+	for _, d := range am {
+		intervals = append(intervals, max(int(d.Seconds()), minTickInterval))
+	}
+	return time.Duration(max(GCDSlice(intervals), minTickInterval)) * time.Second
+}
+
+// cacheKey returns the instance-level cache key for the given metric.
+func (sr *DbConnReaper) cacheKey(m metrics.Metric, name string) string {
+	age := sr.reaper.Metrics.CacheAge()
+	if m.IsInstanceLevel && age > 0 && sr.md.GetMetricInterval(name) < age {
+		return fmt.Sprintf("%s:%s", sr.md.GetClusterIdentifier(), name)
+	}
+	return ""
+}
+
+// isRoleExcluded returns true if the metric should be skipped based on the
+// source's recovery state (e.g. primary-only metric on a standby).
+func (sr *DbConnReaper) isRoleExcluded(m metrics.Metric) bool {
+	sr.md.RLock()
+	defer sr.md.RUnlock()
+	return (m.PrimaryOnly() && sr.md.IsInRecovery) || (m.StandbyOnly() && !sr.md.IsInRecovery)
+}
+
+// sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the
+// measurement channel.
+func (sr *DbConnReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements) {
+	log.GetLogger(ctx).WithField("metric", name).WithField("rows", len(data)).Info("measurements fetched")
+	sr.reaper.AddSysinfoToMeasurements(data, sr.md)
+	sr.reaper.measurementCh <- metrics.MeasurementEnvelope{
+		DBName:     sr.md.Name,
+		MetricName: cmp.Or(storageName, name),
+		Data:       data,
+		CustomTags: sr.md.CustomTags,
+	}
+}
+
+// dispatchMetricData handles the post-fetch workflow for a collected metric:
+// caching, sysinfo enrichment, sending, and restart detection.
+func (sr *DbConnReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements) {
+	if key := sr.cacheKey(metric, name); key != "" {
+		sr.reaper.measurementCache.Put(key, data)
+	}
+	sr.sendEnvelope(ctx, name, metric.StorageName, data)
+	if name == "db_stats" {
+		sr.detectServerRestart(ctx, data)
+	}
+}
+
+// batchEntry holds the minimum info needed to execute and dispatch a metric query.
+type batchEntry struct {
+	name   string
+	metric metrics.Metric
+	sql    string
+}
+
+// Run is the main loop for a single source. It replaces N per-metric goroutines
+// with one goroutine that batches SQL queries at GCD-aligned ticks.
+func (sr *DbConnReaper) Reap(ctx context.Context) {
+	l := log.GetLogger(ctx).WithField("source", sr.md.Name)
+	ctx = log.WithLogger(ctx, l)
+	var err error
+	for {
+		if err = sr.md.FetchRuntimeInfo(ctx, false); err != nil {
+			l.WithError(err).Warning("could not refresh runtime info")
+		}
+
+		now := time.Now()
+		var batch []batchEntry
+
+		for name, interval := range sr.activeMetrics() {
+			if interval <= 0 {
+				continue
+			}
+			if lf := sr.lastFetch[name]; !lf.IsZero() && now.Sub(lf) < interval {
+				continue
+			}
+
+			metric, ok := metricDefs.GetMetricDef(name)
+			if !ok || sr.isRoleExcluded(metric) {
+				continue
+			}
+
+			switch {
+			case name == specialMetricServerLogEventCounts:
+				if sr.lastFetch[name].IsZero() {
+					go func() {
+						if e := sr.runLogParser(ctx); e != nil {
+							l.WithError(e).Error("log parser error")
+						}
+					}()
+				}
+			case IsDirectlyFetchableMetric(sr.md, name):
+				err = sr.fetchOSMetric(ctx, name)
+				sr.lastFetch[name] = time.Now()
+			case name == specialMetricChangeEvents || name == specialMetricInstanceUp:
+				err = sr.fetchSpecialMetric(ctx, name, metric.StorageName)
+				sr.lastFetch[name] = time.Now()
+			default:
+				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) > 0 {
+					l.WithField("metric", name).Info("instance level cache hit")
+					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
+					sr.lastFetch[name] = time.Now()
+					break
+				}
+				sr.md.RLock()
+				version := sr.md.Version
+				sr.md.RUnlock()
+				sql := metric.GetSQL(version)
+				if sql == "" {
+					l.WithField("source", sr.md.Name).WithField("version", version).Warning("no SQL found for metric version")
+					sr.lastFetch[name] = time.Now()
+					break
+				}
+				if _, degraded := sr.degradedMetrics[name]; degraded {
+					if err = sr.fetchMetric(ctx, batchEntry{name: name, metric: metric, sql: sql}); err != nil {
+						l.WithError(err).WithField("metric", name).Error("degraded metric fetch failed")
+					} else {
+						l.WithField("metric", name).Info("degraded metric recovered, returning to batch execution")
+						delete(sr.degradedMetrics, name)
+					}
+					sr.lastFetch[name] = time.Now()
+					break
+				}
+				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
+			}
+			if err != nil {
+				l.WithError(err).WithField("metric", name).Error("failed to fetch metric")
+			}
+		}
+
+		if len(batch) > 0 {
+			if sr.md.IsPostgresSource() {
+				err = sr.executeBatch(ctx, batch)
+			} else {
+				for _, e := range batch {
+					err = sr.fetchMetric(ctx, e)
+				}
+			}
+			if err != nil {
+				l.WithError(err).Error("failed to fetch metrics")
+			}
+
+			now := time.Now()
+			for _, e := range batch {
+				sr.lastFetch[e.name] = now
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(sr.calcTickInterval()):
+		}
+	}
+}
+
+// executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching
+// each result immediately as it arrives. If any query fails, PostgreSQL's
+// extended protocol aborts all subsequent queries in the same sync boundary
+// (cascade failure). Any entry that returns an error from the batch is retried
+// individually via fetchMetric to isolate real failures from cascade failures.
+// Entries that fail even after the individual retry are marked as degraded
+// so that subsequent runs use fetchMetric for them until they recover.
+func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
+	batch := &pgx.Batch{}
+	for _, e := range entries {
+		batch.Queue(e.sql)
+	}
+
+	br := sr.md.Conn.SendBatch(ctx, batch)
+	defer func() { _ = br.Close() }()
+
+	var (
+		errs    []error
+		retries []batchEntry
+	)
+	for _, e := range entries {
+		rows, err := br.Query()
+		if err != nil {
+			// May be a real error or a cascade from an earlier failure; retry individually.
+			retries = append(retries, e)
+			continue
+		}
+		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+	}
+
+	for _, e := range retries {
+		if err := sr.fetchMetric(ctx, e); err != nil {
+			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.name, err))
+			log.GetLogger(ctx).WithField("metric", e.name).Warning("metric degraded after repeated failures, switching to individual fetch")
+			sr.degradedMetrics[e.name] = struct{}{}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// fetchMetric executes a single SQL query and returns the resulting measurements.
+func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
+	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
+	if err != nil {
+		return err
+	}
+	return sr.CollectAndDispatch(ctx, rows, entry.name, entry.metric)
+}
+
+// CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.
+func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
+	data, err := pgx.CollectRows(rows, metrics.RowToMeasurement)
+	if err != nil {
+		return err
+	}
+	if len(data) > 0 {
+		sr.dispatchMetricData(ctx, name, metric, data)
+	}
+	return nil
+}
+
+// fetchOSMetric handles gopsutil-based OS metrics.
+func (sr *DbConnReaper) fetchOSMetric(ctx context.Context, name string) error {
+	msg, err := sr.reaper.FetchStatsDirectlyFromOS(ctx, sr.md, name)
+	if err != nil {
+		return fmt.Errorf("could not read metric from OS: %v", err)
+	}
+	if msg != nil && len(msg.Data) > 0 {
+		log.GetLogger(ctx).WithField("metric", name).WithField("rows", len(msg.Data)).Info("measurements fetched")
+		sr.reaper.measurementCh <- *msg
+	}
+	return nil
+}
+
+// fetchSpecialMetric handles change_events and instance_up metrics.
+func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
+	var (
+		data metrics.Measurements
+		err  error
+	)
+	switch name {
+	case specialMetricChangeEvents:
+		data, err = sr.reaper.GetObjectChangesMeasurement(ctx, sr.md)
+	case specialMetricInstanceUp:
+		data, err = sr.reaper.GetInstanceUpMeasurement(ctx, sr.md)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to fetch special metric: %v", err)
+	}
+	if len(data) > 0 {
+		sr.sendEnvelope(ctx, name, storageName, data)
+	}
+	return err
+}
+
+// runLogParser launches the server log event counts parser.
+func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
+	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
+	if err != nil {
+		return fmt.Errorf("failed to initialize log parser: %v", err)
+	}
+	if err := lp.ParseLogs(); err != nil {
+		return fmt.Errorf("log parser error: %v", err)
+	}
+	return nil
+}
+
+// detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s
+// in db_stats metric data and emits an object_changes measurement if detected.
+func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
+	if len(data) == 0 {
+		return
+	}
+	uptimeS, ok := data[0]["postmaster_uptime_s"].(int64)
+	if !ok {
+		return
+	}
+	prev := sr.lastUptimeS
+	sr.lastUptimeS = uptimeS
+	if prev > 0 && uptimeS < prev {
+		l := log.GetLogger(ctx)
+		l.Warning("Detected server restart (or failover)")
+		entry := metrics.NewMeasurement(data.GetEpoch())
+		entry["details"] = "Detected server restart (or failover)"
+		sr.reaper.measurementCh <- metrics.MeasurementEnvelope{
+			DBName:     sr.md.Name,
+			MetricName: "object_changes",
+			Data:       metrics.Measurements{entry},
+			CustomTags: sr.md.CustomTags,
+		}
+	}
+}
+
+func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error) {
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
@@ -30,7 +380,7 @@ func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, 
 	return nil, err
 }
 
-func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn) (changeCounts ChangeDetectionResults) {
+func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	l := log.GetLogger(ctx)
@@ -106,7 +456,7 @@ func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -185,7 +535,7 @@ func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -264,7 +614,7 @@ func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn)
 	return changeCounts
 }
 
-func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -341,7 +691,7 @@ func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceC
 	return changeCounts
 }
 
-func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults {
+func (r *reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
 	detectedChanges := make(metrics.Measurements, 0)
 	var firstRun bool
 	var changeCounts ChangeDetectionResults
@@ -412,7 +762,7 @@ func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.Sou
 
 // GetInstanceUpMeasurement returns a single measurement with "instance_up" metric
 // used to detect if the instance is up or down
-func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+func (r *reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	return metrics.Measurements{
 		metrics.Measurement{
 			metrics.EpochColumnName: time.Now().UnixNano(),
@@ -426,7 +776,7 @@ func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.Sourc
 	}, nil // always return nil error for the status metric
 }
 
-func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error) {
+func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
 	md.Lock()
 	defer md.Unlock()
 	spN := r.DetectSprocChanges(ctx, md)
@@ -441,16 +791,17 @@ func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.So
 	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
 	return metrics.Measurements{m}, nil
 }
-func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
+
+func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
 	for _, prevDB := range r.prevLoopMonitoredDBs {
-		if r.monitoredSources.GetMonitoredDatabase(prevDB.Name) == nil { // removed from config
-			prevDB.Conn.Close()
-			_ = r.SinksWriter.SyncMetric(prevDB.Name, "", sinks.DeleteOp)
+		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil { // removed from config
+			prevDB.Close()
+			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
 		}
 	}
 	for toShutDownDB := range hostsToShutDown {
 		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
-			db.Conn.Close()
+			db.Close()
 		}
 		_ = r.SinksWriter.SyncMetric(toShutDownDB, "", sinks.DeleteOp)
 	}

@@ -25,7 +25,7 @@ func TestReaper_LoadSources(t *testing.T) {
 		a := assert.New(t)
 		pausefile := filepath.Join(t.TempDir(), "pausefile")
 		require.NoError(t, os.WriteFile(pausefile, []byte("foo"), 0644))
-		r := NewReaper(ctx, &cmdopts.Options{Metrics: metrics.CmdOpts{EmergencyPauseTriggerfile: pausefile}})
+		r := newReaper(ctx, &cmdopts.Options{Metrics: metrics.CmdOpts{EmergencyPauseTriggerfile: pausefile}})
 		a.NoError(r.LoadSources(ctx))
 		a.True(len(r.monitoredSources) == 0, "Expected no monitored sources when pause trigger file exists")
 	})
@@ -37,7 +37,7 @@ func TestReaper_LoadSources(t *testing.T) {
 				return nil, assert.AnError
 			},
 		}
-		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		a.Error(r.LoadSources(ctx))
 		a.Equal(0, len(r.monitoredSources), "Expected no monitored sources after error")
 	})
@@ -52,7 +52,7 @@ func TestReaper_LoadSources(t *testing.T) {
 			},
 		}
 
-		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		a.NoError(r.LoadSources(ctx))
 		a.Equal(2, len(r.monitoredSources), "Expected two monitored sources after successful load")
 		a.NotNil(r.monitoredSources.GetMonitoredDatabase(source1.Name))
@@ -69,7 +69,7 @@ func TestReaper_LoadSources(t *testing.T) {
 			},
 		}
 
-		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
 		a.NoError(r.LoadSources(ctx))
 		a.Equal(2, len(r.monitoredSources), "Expected two monitored sources after first load")
 
@@ -91,15 +91,15 @@ func TestReaper_LoadSources(t *testing.T) {
 			},
 		}
 
-		r := NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1", "group2"}}})
 		a.NoError(r.LoadSources(ctx))
 		a.Equal(3, len(r.monitoredSources), "Expected three monitored sources after load")
 
-		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1"}}})
+		r = newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{"group1"}}})
 		a.NoError(r.LoadSources(ctx))
 		a.Equal(2, len(r.monitoredSources), "Expected two monitored source after group filtering")
 
-		r = NewReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader})
+		r = newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: newReader})
 		a.NoError(r.LoadSources(ctx))
 		a.Equal(5, len(r.monitoredSources), "Expected five monitored sources after resetting groups")
 	})
@@ -231,7 +231,7 @@ func TestReaper_LoadSources(t *testing.T) {
 					},
 				}
 
-				r := NewReaper(ctx, &cmdopts.Options{
+				r := newReaper(ctx, &cmdopts.Options{
 					SourcesReaderWriter: initialReader,
 					SinksWriter:         &sinks.MultiWriter{},
 				})
@@ -241,14 +241,13 @@ func TestReaper_LoadSources(t *testing.T) {
 				mockConn, err := pgxmock.NewPool()
 				require.NoError(t, err)
 				mockConn.ExpectClose()
-				r.monitoredSources[0].Conn = mockConn
+				r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
 
 				// Add a mock cancel function for the source reaper
 				cancelCalled := make(map[string]bool)
 				r.cancelFuncs[initialSource.Name] = func() {
 					cancelCalled[initialSource.Name] = true
 				}
-				r.sourceReapers[initialSource.Name] = &SourceReaper{}
 
 				// Create modified source
 				modifiedSource := *baseSource.Clone()
@@ -264,7 +263,7 @@ func TestReaper_LoadSources(t *testing.T) {
 				// Reload sources
 				a.NoError(r.LoadSources(ctx))
 				a.Equal(1, len(r.monitoredSources), "Expected one monitored source after reload")
-				a.Equal(modifiedSource, r.monitoredSources[0].Source)
+				a.Equal(modifiedSource, r.monitoredSources[0].GetSource())
 
 				assert.Equal(t, tc.expectCancel, cancelCalled[initialSource.Name])
 				if tc.expectCancel {
@@ -299,7 +298,7 @@ func TestReaper_LoadSources(t *testing.T) {
 			},
 		}
 
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			SourcesReaderWriter: initialReader,
 			SinksWriter:         &sinks.MultiWriter{},
 		})
@@ -309,14 +308,12 @@ func TestReaper_LoadSources(t *testing.T) {
 		mockConn1, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		mockConn1.ExpectClose()
-		r.monitoredSources[0].Conn = mockConn1
+		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn1
 
 		source1Cancelled := false
 		source2Cancelled := false
 		r.cancelFuncs[source1.Name] = func() { source1Cancelled = true }
 		r.cancelFuncs[source2.Name] = func() { source2Cancelled = true }
-		r.sourceReapers[source1.Name] = &SourceReaper{}
-		r.sourceReapers[source2.Name] = &SourceReaper{}
 
 		// Only modify source1
 		modifiedSource1 := *source1.Clone()
@@ -351,7 +348,7 @@ func TestWriteMeasurements(t *testing.T) {
 	ctx, cancel := context.WithCancel(log.WithLogger(t.Context(), log.NewNoopLogger()))
 	defer cancel()
 	var err mockErr = "write error"
-	r := NewReaper(ctx, &cmdopts.Options{
+	r := newReaper(ctx, &cmdopts.Options{
 		SinksWriter: err,
 	})
 	go r.WriteMeasurements(ctx)
@@ -361,7 +358,7 @@ func TestWriteMeasurements(t *testing.T) {
 func TestReaper_Ready(t *testing.T) {
 	a := assert.New(t)
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	r := NewReaper(ctx, &cmdopts.Options{})
+	r := newReaper(ctx, &cmdopts.Options{})
 	a.False(r.Ready())
 	r.ready.Store(true)
 	a.True(r.Ready())
@@ -370,7 +367,7 @@ func TestReaper_Ready(t *testing.T) {
 func TestReaper_WriteInstanceDown(t *testing.T) {
 	a := assert.New(t)
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	r := NewReaper(ctx, &cmdopts.Options{})
+	r := newReaper(ctx, &cmdopts.Options{})
 	r.WriteInstanceDown("testdb")
 	select {
 	case msg := <-r.measurementCh:
@@ -386,7 +383,7 @@ func TestReaper_WriteInstanceDown(t *testing.T) {
 func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 	t.Run("adds real dbname and system identifier fields", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Sinks: sinks.CmdOpts{
 					RealDbnameField:       "real_dbname",
@@ -394,7 +391,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 				},
 			},
 		}
-		md := &sources.SourceConn{
+		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				RealDbname:       "realdb",
 				SystemIdentifier: "12345",
@@ -408,8 +405,8 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 
 	t.Run("skips fields when config field names are empty", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{Options: &cmdopts.Options{}}
-		md := &sources.SourceConn{
+		r := &reaper{Options: &cmdopts.Options{}}
+		md := &sources.DbConn{
 			RuntimeInfo: sources.RuntimeInfo{
 				RealDbname:       "realdb",
 				SystemIdentifier: "12345",
@@ -423,7 +420,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 
 	t.Run("skips fields when md values are empty", func(t *testing.T) {
 		a := assert.New(t)
-		r := &Reaper{
+		r := &reaper{
 			Options: &cmdopts.Options{
 				Sinks: sinks.CmdOpts{
 					RealDbnameField:       "real_dbname",
@@ -431,7 +428,7 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 				},
 			},
 		}
-		md := &sources.SourceConn{}
+		md := &sources.DbConn{}
 		data := metrics.Measurements{metrics.Measurement{}}
 		r.AddSysinfoToMeasurements(data, md)
 		a.NotContains(data[0], "real_dbname")
@@ -444,10 +441,9 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 
 	t.Run("cancels worker for DB removed from config", func(t *testing.T) {
 		a := assert.New(t)
-		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{})
 
@@ -457,10 +453,9 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 
 	t.Run("cancels worker for whole DB shutdown", func(t *testing.T) {
 		a := assert.New(t)
-		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{"testdb": true})
 
@@ -470,12 +465,11 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 
 	t.Run("keeps worker when source is still active", func(t *testing.T) {
 		a := assert.New(t)
-		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
-			{Source: sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}},
+			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
 		r.ShutdownOldWorkers(ctx, map[string]bool{})
@@ -488,12 +482,11 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		a := assert.New(t)
 		cancelledCtx, cancel := context.WithCancel(ctx)
 		cancel()
-		r := NewReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-		r.sourceReapers["testdb"] = &SourceReaper{}
 		r.monitoredSources = sources.SourceConns{
-			{Source: sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}},
+			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
 		r.ShutdownOldWorkers(cancelledCtx, map[string]bool{})
@@ -506,22 +499,22 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
 	t.Run("skips already initialized source", func(*testing.T) {
-		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{Source: sources.Source{Name: "existing"}}
+		r := newReaper(ctx, &cmdopts.Options{})
+		md := &sources.DbConn{Source: sources.Source{Name: "existing"}}
 		r.prevLoopMonitoredDBs = sources.SourceConns{md}
 		// Conn is nil — would panic if used, proving early return
 		r.CreateSourceHelpers(ctx, r.logger, md)
 	})
 
 	t.Run("skips non-postgres source", func(*testing.T) {
-		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
+		r := newReaper(ctx, &cmdopts.Options{})
+		md := &sources.DbConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
 		r.CreateSourceHelpers(ctx, r.logger, md)
 	})
 
 	t.Run("skips source in recovery", func(*testing.T) {
-		r := NewReaper(ctx, &cmdopts.Options{})
-		md := &sources.SourceConn{
+		r := newReaper(ctx, &cmdopts.Options{})
+		md := &sources.DbConn{
 			Source:      sources.Source{Name: "standby"},
 			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
 		}
@@ -530,7 +523,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 
 	t.Run("creates extensions when configured", func(t *testing.T) {
 		a := assert.New(t)
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			Sources: sources.CmdOpts{TryCreateListedExtsIfMissing: "pg_stat_statements"},
 		})
 		md, mock := createTestSourceConn(t)
@@ -546,7 +539,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 
 	t.Run("creates metric helpers when configured", func(t *testing.T) {
 		a := assert.New(t)
-		r := NewReaper(ctx, &cmdopts.Options{
+		r := newReaper(ctx, &cmdopts.Options{
 			Sources: sources.CmdOpts{CreateHelpers: true},
 		})
 		md, mock := createTestSourceConn(t)
@@ -569,6 +562,6 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 
 func TestReaper_PrintMemStats(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	r := NewReaper(ctx, &cmdopts.Options{})
+	r := newReaper(ctx, &cmdopts.Options{})
 	assert.NotPanics(t, r.PrintMemStats)
 }
