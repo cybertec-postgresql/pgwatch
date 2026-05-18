@@ -182,7 +182,7 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 				sr.md.RUnlock()
 				sql := metric.GetSQL(version)
 				if sql == "" {
-					l.WithField("source", sr.md.Name).WithField("version", version).Warning("no SQL found for metric version")
+					l.WithField("metric", name).WithField("version", version).Warning("no SQL found for metric version")
 					sr.lastFetch[name] = time.Now()
 					break
 				}
