@@ -239,7 +239,7 @@
 <span id="L182" class="ln">   182  </span>				sr.md.RUnlock()
 <span id="L183" class="ln">   183  </span>				sql := metric.GetSQL(version)
 <span id="L184" class="ln">   184  </span>				if sql == &#34;&#34; {
-<span id="L185" class="ln">   185  </span>					l.WithField(&#34;source&#34;, sr.md.Name).WithField(&#34;version&#34;, version).Warning(&#34;no SQL found for metric version&#34;)
+<span id="L185" class="ln">   185  </span>					l.WithField(&#34;metric&#34;, name).WithField(&#34;version&#34;, version).Warning(&#34;no SQL found for metric version&#34;)
 <span id="L186" class="ln">   186  </span>					sr.lastFetch[name] = time.Now()
 <span id="L187" class="ln">   187  </span>					break
 <span id="L188" class="ln">   188  </span>				}
