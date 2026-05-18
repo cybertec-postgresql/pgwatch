@@ -349,7 +349,7 @@ metrics:
             It returns the number of timed and requested checkpoints, restart points, write and sync times, and buffer statistics.
             This metric helps administrators monitor the checkpointer's activity and its impact on database performance.
         sqls:
-            14: "; -- covered by bgwriter"
+            # 14: "; -- covered by bgwriter"
             17: |-
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
