@@ -46,19 +46,6 @@ BEGIN
 
   PERFORM pg_advisory_xact_lock(regexp_replace( md5(metric) , E'\\D', '', 'g')::varchar(10)::int8);
 
-  -- Check if table exists and has LIST partitioning (legacy); if so, drop it for conversion to RANGE
-  IF EXISTS 
-      (
-        SELECT 1 
-        FROM pg_partitioned_table 
-        WHERE 
-          partrelid = to_regclass('public.' || quote_ident(metric))
-          AND
-          partstrat = 'l'
-      ) THEN
-    EXECUTE format('DROP TABLE public.%I CASCADE', metric);
-  END IF;
-
   -- 1. level
   IF to_regclass('public.' || quote_ident(metric)) IS NULL
   THEN

@@ -602,9 +602,19 @@ var migrations func() migrator.Option = func() migrator.Option {
 		&migrator.Migration{
 			Name: "01409 Switch to time-only partitioning",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
-				_, err := tx.Exec(ctx, `
+				_, err := tx.Exec(ctx, `SELECT admin.drop_all_metric_tables()`)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Exec(ctx, `
 					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
 				`)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
 				if err != nil {
 					return err
 				}
