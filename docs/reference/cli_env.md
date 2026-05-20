@@ -39,11 +39,6 @@ It reads the configuration from the specified sources and metrics, then begins c
     Smaller size databases will be ignored and not monitored until they reach the threshold (default: 0).  
     ENV: `$PW_MIN_DB_SIZE_MB`
 
-- `--max-parallel-connections-per-db=`
-
-    Max parallel metric fetches per monitored database. Note the multiplication effect on multi-DB instances (default: 4).  
-    ENV: `$PW_MAX_PARALLEL_CONNECTIONS_PER_DB`
-
 - `--try-create-listed-exts-if-missing=`
 
     Try creating the listed extensions (comma sep.) on first connect for all monitored DBs when missing. Main usage - pg_stat_statements.  
