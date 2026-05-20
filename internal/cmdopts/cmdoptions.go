@@ -207,9 +207,6 @@ func (c *Options) ValidateConfig() error {
 	if c.Sources.Refresh <= 1 {
 		return errors.New("--refresh must be greater than 1")
 	}
-	if c.Sources.MaxParallelConnectionsPerDb < 1 {
-		return errors.New("--max-parallel-connections-per-db must be >= 1")
-	}
 
 	// validate that input is boolean is set
 	if c.Sinks.BatchingDelay <= 0 || c.Sinks.BatchingDelay > time.Hour {

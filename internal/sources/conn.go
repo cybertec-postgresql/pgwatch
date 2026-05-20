@@ -90,9 +90,6 @@ func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
 		if md.Kind == SourcePgBouncer {
 			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 		}
-		if opts.MaxParallelConnectionsPerDb > 0 {
-			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
-		}
 		md.Conn, err = NewConnWithConfig(ctx, md.ConnConfig)
 		if err != nil {
 			return err

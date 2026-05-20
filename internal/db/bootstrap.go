@@ -42,6 +42,7 @@ func NewWithConfig(ctx context.Context, connConfig *pgxpool.Config, callbacks ..
 	if connConfig.ConnConfig.ConnectTimeout == 0 {
 		connConfig.ConnConfig.ConnectTimeout = time.Second * 5
 	}
+	connConfig.MaxConns = 1
 	connConfig.MaxConnIdleTime = 15 * time.Second
 	connConfig.MaxConnLifetime = pgConnRecycleSeconds * time.Second
 	connConfig.ConnConfig.RuntimeParams["application_name"] = applicationName
