@@ -47,7 +47,7 @@ func TestConfigUpgrade_VerifyNoCircularDependency(t *testing.T) {
 	// After successful upgrade, InitConfigReaders should succeed
 	opts2 := &Options{
 		Metrics: metrics.CmdOpts{Metrics: connStr},
-		Sources: sources.CmdOpts{Sources: connStr, Refresh: 120, MaxParallelConnectionsPerDb: 1},
+		Sources: sources.CmdOpts{Sources: connStr, Refresh: 120},
 		Sinks:   sinks.CmdOpts{Sinks: []string{connStr}},
 	}
 	err = opts2.InitConfigReaders(ctx)

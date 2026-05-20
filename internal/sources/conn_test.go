@@ -23,7 +23,7 @@ func TestSourceConn_Connect(t *testing.T) {
 	t.Run("failed config parsing", func(t *testing.T) {
 		md := &sources.SourceConn{}
 		md.ConnStr = "invalid connection string"
-		err := md.Connect(ctx, sources.CmdOpts{})
+		err := md.Connect(ctx)
 		assert.Error(t, err)
 	})
 
@@ -32,7 +32,7 @@ func TestSourceConn_Connect(t *testing.T) {
 		sources.NewConnWithConfig = func(_ context.Context, _ *pgxpool.Config, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
 			return nil, assert.AnError
 		}
-		err := md.Connect(ctx, sources.CmdOpts{})
+		err := md.Connect(ctx)
 		assert.ErrorIs(t, err, assert.AnError)
 	})
 
@@ -46,12 +46,9 @@ func TestSourceConn_Connect(t *testing.T) {
 		md := &sources.SourceConn{}
 		md.Kind = sources.SourcePgBouncer
 
-		opts := sources.CmdOpts{}
-		opts.MaxParallelConnectionsPerDb = 3
-
 		mock.ExpectExec("SHOW VERSION").WillReturnResult(pgconn.NewCommandTag("SELECT 1"))
 
-		err = md.Connect(ctx, opts)
+		err = md.Connect(ctx)
 		assert.NoError(t, err)
 
 		assert.NoError(t, mock.ExpectationsWereMet())

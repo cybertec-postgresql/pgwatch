@@ -82,7 +82,7 @@ func (md *SourceConn) Ping(ctx context.Context) (err error) {
 
 // Connect will establish a connection to the database if it's not already connected.
 // If the connection is already established, it pings the server to ensure it's still alive.
-func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
+func (md *SourceConn) Connect(ctx context.Context) (err error) {
 	if md.Conn == nil {
 		if err = md.ParseConfig(); err != nil {
 			return err

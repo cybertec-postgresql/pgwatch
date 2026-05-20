@@ -305,7 +305,7 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 	t.Run("non-postgres configuration not supported", func(*testing.T) {
 		opts := &Options{
 			Metrics:      metrics.CmdOpts{Metrics: "/tmp/metrics.yaml"},
-			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sources:      sources.CmdOpts{Sources: "/tmp/sources.yaml", Refresh: 120},
 			Sinks:        sinks.CmdOpts{},
 			OutputWriter: t.Output(),
 		}
@@ -320,7 +320,7 @@ func TestConfigUpgradeCommand_Errors(t *testing.T) {
 	t.Run("init metrics reader fails", func(*testing.T) {
 		opts := &Options{
 			Metrics:      metrics.CmdOpts{Metrics: "postgresql://invalid@host/db"},
-			Sources:      sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120, MaxParallelConnectionsPerDb: 1},
+			Sources:      sources.CmdOpts{Sources: "postgresql://invalid@host/db", Refresh: 120},
 			Sinks:        sinks.CmdOpts{},
 			OutputWriter: t.Output(),
 		}
