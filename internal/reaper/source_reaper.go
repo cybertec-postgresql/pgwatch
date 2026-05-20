@@ -242,7 +242,6 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 	}
 
 	br := sr.md.Conn.SendBatch(ctx, batch)
-	defer func() { _ = br.Close() }()
 
 	var (
 		errs    []error
@@ -256,6 +255,11 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 			continue
 		}
 		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+	}
+	 
+	// Release the connection before potential retries to avoid deadlocking
+	if err := br.Close(); err != nil {
+		log.GetLogger(ctx).WithError(err).Error("Error executing batch - falling back to sequential execution")
 	}
 
 	for _, e := range retries {
