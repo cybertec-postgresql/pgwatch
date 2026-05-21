@@ -531,7 +531,76 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		assert.NotContains(t, sr.degradedMetrics, metricName, "should recover after successful fetchMetric")
 
 		assert.NoError(t, mock.ExpectationsWereMet())
-	})
+	})	
+}
+
+// TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry is a regression test for issue #1412.
+// It verifies that the batch connection is released before individual retries run, preventing
+// a deadlock when max-parallel-connections-per-db=1.
+func TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry(t *testing.T) {
+	metricDefs.MetricDefs["dl_bad"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "; -- invalid sql"},
+	}
+	metricDefs.MetricDefs["dl_good"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 1 as value, 100::bigint as epoch_ns"},
+	}
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := &sources.SourceConn{
+		Source: sources.Source{
+			Name:    "deadlock_test",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{"dl_bad": 30, "dl_good": 30},
+		},
+		Conn: mock,
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &Reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewSourceReaper(r, md)
+
+	entries := []batchEntry{
+		{name: "dl_bad", metric: metricDefs.MetricDefs["dl_bad"], sql: "; -- invalid sql"},
+		{name: "dl_good", metric: metricDefs.MetricDefs["dl_good"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
+	}
+
+	// Batch: dl_bad fails (empty/invalid query), dl_good cascades.
+	// After the fix, the batch is closed before individual retries run, so the
+	// connection is available again and retries do not deadlock.
+	eb := mock.ExpectBatch()
+	eb.ExpectQuery("; -- invalid sql").WillReturnError(assert.AnError)
+	eb.ExpectQuery("SELECT 1").WillReturnError(assert.AnError) // cascade failure
+	// dl_bad fails even on individual retry → marked degraded
+	mock.ExpectQuery("; -- invalid sql").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+	// dl_good succeeds on individual retry → not marked degraded (was cascade-only)
+	mock.ExpectQuery("SELECT 1").WithArgs(pgx.QueryExecModeSimpleProtocol).
+		WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(time.Now().UnixNano(), int64(1)))
+
+	// Use a context with a short deadline: if the batch is not closed before retries,
+	// the pool connection remains held and the retry would block/time out.
+	ctx, cancel := context.WithTimeout(
+		log.WithLogger(context.Background(), log.NewNoopLogger()),
+		5*time.Second,
+	)
+	defer cancel()
+
+	err = sr.executeBatch(ctx, entries)
+	assert.Error(t, err, "dl_bad error should propagate")
+	assert.Contains(t, sr.degradedMetrics, "dl_bad", "dl_bad should be marked degraded")
+	assert.NotContains(t, sr.degradedMetrics, "dl_good", "dl_good must not be degraded (cascade-only victim)")
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestSourceReaper_NonPostgresSequential(t *testing.T) {
