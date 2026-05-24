@@ -335,8 +335,14 @@ func (c *copyFromMeasurements) Values() ([]any, error) {
 		tagRow = make(map[string]string)
 	}
 	for k, v := range row {
-		if floatValue, ok := v.(float64); ok {
-			if math.IsNaN(floatValue) || math.IsInf(floatValue, 0) {
+		switch val := v.(type) {
+		case float64:
+			if math.IsNaN(val) || math.IsInf(val, 0) {
+				row[k] = nil
+			}
+		case float32:
+			f := float64(val)
+			if math.IsNaN(f) || math.IsInf(f, 0) {
 				row[k] = nil
 			}
 		}
@@ -349,7 +355,7 @@ func (c *copyFromMeasurements) Values() ([]any, error) {
 	json, err := jsoniter.ConfigFastest.MarshalToString(row)
 	if err != nil || terr != nil {
 		c.err = errors.Join(err, terr)
-		return nil, errors.Join(err, terr)
+		return nil, c.err
 	}
 	return []any{time.Unix(0, c.envelopes[c.envelopeIdx].Data.GetEpoch()), c.envelopes[c.envelopeIdx].DBName, json, jsonTags}, nil
 }
