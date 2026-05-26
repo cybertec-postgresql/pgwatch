@@ -2,16 +2,19 @@ package reaper
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"testing/synctest"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -531,13 +534,63 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		assert.NotContains(t, sr.degradedMetrics, metricName, "should recover after successful fetchMetric")
 
 		assert.NoError(t, mock.ExpectationsWereMet())
-	})	
+	})
 }
+
+// semPool wraps a db.PgxPoolIface and enforces single-connection semantics via a
+// semaphore channel of capacity 1. SendBatch acquires the semaphore; the returned
+// semBatchResults releases it on Close. Query non-blockingly tries to acquire the
+// semaphore and returns an error if it is still held by an unclosed batch result.
+// This simulates a pgxpool.Pool with MaxConns=1 to detect the deadlock described
+// in issue #1412 without a real database.
+type semPool struct {
+	db.PgxPoolIface
+	sem chan struct{}
+}
+
+func newSemPool(inner db.PgxPoolIface) *semPool {
+	return &semPool{PgxPoolIface: inner, sem: make(chan struct{}, 1)}
+}
+
+func (p *semPool) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	p.sem <- struct{}{}
+	return &semBatchResults{inner: p.PgxPoolIface.SendBatch(ctx, b), pool: p}
+}
+
+func (p *semPool) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	select {
+	case p.sem <- struct{}{}:
+		defer func() { <-p.sem }()
+	default:
+		return nil, fmt.Errorf("deadlock: batch connection not released before retry")
+	}
+	return p.PgxPoolIface.Query(ctx, sql, args...)
+}
+
+type semBatchResults struct {
+	inner pgx.BatchResults
+	pool  *semPool
+}
+
+func (r *semBatchResults) Close() error {
+	err := r.inner.Close()
+	<-r.pool.sem
+	return err
+}
+func (r *semBatchResults) Query() (pgx.Rows, error)         { return r.inner.Query() }
+func (r *semBatchResults) QueryRow() pgx.Row                { return r.inner.QueryRow() }
+func (r *semBatchResults) Exec() (pgconn.CommandTag, error) { return r.inner.Exec() }
 
 // TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry is a regression test for issue #1412.
 // It verifies that the batch connection is released before individual retries run, preventing
 // a deadlock when max-parallel-connections-per-db=1.
+//
+// pgxmock does not simulate pool locking, so a semPool wrapper enforces single-connection
+// semantics: SendBatch acquires the semaphore; Close releases it; Query returns an error
+// if called while the semaphore is still held (i.e. the batch was not closed first).
 func TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry(t *testing.T) {
+	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+
 	metricDefs.MetricDefs["dl_bad"] = metrics.Metric{
 		SQLs: metrics.SQLs{0: "; -- invalid sql"},
 	}
@@ -555,7 +608,7 @@ func TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry(t *testing.T) {
 			Kind:    sources.SourcePostgres,
 			Metrics: metrics.MetricIntervals{"dl_bad": 30, "dl_good": 30},
 		},
-		Conn: mock,
+		Conn: newSemPool(mock),
 		RuntimeInfo: sources.RuntimeInfo{
 			Version:     120000,
 			ChangeState: make(map[string]map[string]string),
@@ -576,25 +629,17 @@ func TestSourceReaper_ExecuteBatch_NoDeadlockOnRetry(t *testing.T) {
 		{name: "dl_good", metric: metricDefs.MetricDefs["dl_good"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
 	}
 
-	// Batch: dl_bad fails (empty/invalid query), dl_good cascades.
-	// After the fix, the batch is closed before individual retries run, so the
-	// connection is available again and retries do not deadlock.
+	// Batch: dl_bad fails, dl_good cascades → both are retried individually.
+	// semPool.Query succeeds only if br.Close() was called first (semaphore released).
+	// Without the fix, Query returns a "deadlock" error and dl_good is wrongly degraded.
 	eb := mock.ExpectBatch()
 	eb.ExpectQuery("; -- invalid sql").WillReturnError(assert.AnError)
-	eb.ExpectQuery("SELECT 1").WillReturnError(assert.AnError) // cascade failure
-	// dl_bad fails even on individual retry → marked degraded
+	eb.ExpectQuery("SELECT 1").WillReturnError(assert.AnError) // cascade
+	// dl_bad fails on retry → degraded
 	mock.ExpectQuery("; -- invalid sql").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
-	// dl_good succeeds on individual retry → not marked degraded (was cascade-only)
+	// dl_good succeeds on retry → not degraded
 	mock.ExpectQuery("SELECT 1").WithArgs(pgx.QueryExecModeSimpleProtocol).
 		WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value"}).AddRow(time.Now().UnixNano(), int64(1)))
-
-	// Use a context with a short deadline: if the batch is not closed before retries,
-	// the pool connection remains held and the retry would block/time out.
-	ctx, cancel := context.WithTimeout(
-		log.WithLogger(context.Background(), log.NewNoopLogger()),
-		5*time.Second,
-	)
-	defer cancel()
 
 	err = sr.executeBatch(ctx, entries)
 	assert.Error(t, err, "dl_bad error should propagate")
