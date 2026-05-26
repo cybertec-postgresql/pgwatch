@@ -2,11 +2,16 @@ package metrics
 
 import (
 	"context"
+	"errors"
+	"math"
 	"testing"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/jackc/pgx/v5"
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())
@@ -201,4 +206,66 @@ func TestFilterByNames(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSanitizeValue(t *testing.T) {
+	tests := []struct {
+		name  string
+		input any
+		want  any
+	}{
+		{"float64 NaN", math.NaN(), nil},
+		{"float64 +Inf", math.Inf(1), nil},
+		{"float64 -Inf", math.Inf(-1), nil},
+		{"float64 valid", float64(3.14), float64(3.14)},
+		{"float64 zero", float64(0), float64(0)},
+		{"float32 NaN", float32(math.NaN()), nil},
+		{"float32 +Inf", float32(math.Inf(1)), nil},
+		{"float32 -Inf", float32(math.Inf(-1)), nil},
+		{"float32 valid", float32(1.5), float32(1.5)},
+		{"int64", int64(42), int64(42)},
+		{"string", "hello", "hello"},
+		{"nil", nil, nil},
+		{"bool", true, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, sanitizeValue(tt.input))
+		})
+	}
+}
+
+func TestScanRow(t *testing.T) {
+	conn, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer conn.Close()
+
+	conn.ExpectQuery("SELECT").
+		WillReturnRows(pgxmock.NewRows([]string{"epoch_ns", "value", "nan_col", "inf_col"}).
+			AddRow(int64(1000), int64(42), math.NaN(), math.Inf(1)))
+
+	rows, err := conn.Query(context.Background(), "SELECT")
+	require.NoError(t, err)
+
+	data, err := pgx.CollectRows(rows, RowToMeasurement)
+	require.NoError(t, err)
+	require.Len(t, data, 1)
+
+	assert.Equal(t, int64(42), data[0]["value"])
+	assert.Nil(t, data[0]["nan_col"])
+	assert.Nil(t, data[0]["inf_col"])
+	assert.NoError(t, conn.ExpectationsWereMet())
+}
+
+// errRows is a pgx.Rows stub whose Values() returns an error.
+// Other methods are never called on the error path, so the nil
+// embedded interface is safe.
+type errRows struct{ pgx.Rows }
+
+func (e errRows) Values() ([]any, error) { return nil, errors.New("values error") }
+
+func TestScanRowError(t *testing.T) {
+	m := NewMeasurement(0)
+	err := m.ScanRow(errRows{})
+	assert.ErrorContains(t, err, "values error")
 }

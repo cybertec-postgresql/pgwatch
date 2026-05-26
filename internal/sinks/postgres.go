@@ -284,6 +284,7 @@ type copyFromMeasurements struct {
 	envelopeIdx    int
 	measurementIdx int // index of the current measurement in the envelope
 	metricName     string
+	err            error
 }
 
 func (c *copyFromMeasurements) NextEnvelope() bool {
@@ -341,13 +342,14 @@ func (c *copyFromMeasurements) Values() ([]any, error) {
 	jsonTags, terr := jsoniter.ConfigFastest.MarshalToString(tagRow)
 	json, err := jsoniter.ConfigFastest.MarshalToString(row)
 	if err != nil || terr != nil {
-		return nil, errors.Join(err, terr)
+		c.err = errors.Join(err, terr)
+		return nil, c.err
 	}
 	return []any{time.Unix(0, c.envelopes[c.envelopeIdx].Data.GetEpoch()), c.envelopes[c.envelopeIdx].DBName, json, jsonTags}, nil
 }
 
 func (c *copyFromMeasurements) Err() error {
-	return nil
+	return c.err
 }
 
 func (c *copyFromMeasurements) MetricName() (ident pgx.Identifier) {
