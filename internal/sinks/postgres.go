@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"math"
 	"maps"
 	"slices"
 	"strings"
@@ -335,17 +334,6 @@ func (c *copyFromMeasurements) Values() ([]any, error) {
 		tagRow = make(map[string]string)
 	}
 	for k, v := range row {
-		switch val := v.(type) {
-		case float64:
-			if math.IsNaN(val) || math.IsInf(val, 0) {
-				row[k] = nil
-			}
-		case float32:
-			f := float64(val)
-			if math.IsNaN(f) || math.IsInf(f, 0) {
-				row[k] = nil
-			}
-		}
 		if after, ok := strings.CutPrefix(k, metrics.TagPrefix); ok {
 			tagRow[after] = fmt.Sprintf("%v", v)
 			delete(row, k)

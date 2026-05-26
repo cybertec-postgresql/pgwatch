@@ -3,6 +3,7 @@ package metrics
 import (
 	"fmt"
 	"maps"
+	"math"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -97,11 +98,28 @@ func (m *Measurement) ScanRow(rows pgx.Rows) error {
 	if err != nil {
 		return err
 	}
-	// *rs = make(Measurement, len(values))
 	for i := range values {
-		(*m)[string(rows.FieldDescriptions()[i].Name)] = values[i]
+		(*m)[string(rows.FieldDescriptions()[i].Name)] = sanitizeValue(values[i])
 	}
 	return nil
+}
+
+// sanitizeValue replaces non-finite float values with nil so measurements
+// are always safe to marshal to JSON.
+func sanitizeValue(v any) any {
+	var f float64
+	switch val := v.(type) {
+	case float64:
+		f = val
+	case float32:
+		f = float64(val)
+	default:
+		return v
+	}
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return nil
+	}
+	return v
 }
 
 func NewMeasurement(epoch int64) Measurement {
