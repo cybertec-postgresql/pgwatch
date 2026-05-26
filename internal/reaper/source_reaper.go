@@ -242,7 +242,6 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 	}
 
 	br := sr.md.Conn.SendBatch(ctx, batch)
-	defer func() { _ = br.Close() }()
 
 	var (
 		errs    []error
@@ -256,6 +255,13 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 			continue
 		}
 		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+	}
+
+	// Close the batch explicitly before retrying to release the connection back to the
+	// pool. A deferred close would hold the connection through the retry loop, causing a
+	// potential deadlock
+	if err := br.Close(); err != nil {
+		errs = append(errs, err)
 	}
 
 	for _, e := range retries {
