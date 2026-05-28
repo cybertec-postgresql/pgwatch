@@ -32,6 +32,8 @@
     "eslint-plugin-import/**/minimatch": "^3.1.4",
     "@typescript-eslint/**/minimatch": "^10.2.3",
     "typescript-eslint/**/minimatch": "^10.2.3",
+    "@typescript-eslint/**/brace-expansion": "^5.0.6",
+    "typescript-eslint/**/brace-expansion": "^5.0.6",
     "yaml": "^2.8.4"
   },
   "dependencies": {
