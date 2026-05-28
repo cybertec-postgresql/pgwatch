@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import svgr from 'vite-plugin-svgr';
 
 const handleGoTemplates = (command: string) => ({
@@ -21,11 +20,13 @@ export default defineConfig(({ command }) => ({
   plugins: [
     handleGoTemplates(command),
     react(),
-    tsconfigPaths(),
     svgr({
       include: '**/*.svg',
     }),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
   base: './',
   server: {
     port: 4000,
