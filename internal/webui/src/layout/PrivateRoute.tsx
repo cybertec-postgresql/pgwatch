@@ -1,8 +1,9 @@
+import React from "react";
 import { Navigate } from "react-router-dom";
 import { getToken } from "services/Token";
 
 type Props = {
-  children: JSX.Element
+  children: React.ReactNode
 };
 
 export const PrivateRoute = ({ children }: Props) => {

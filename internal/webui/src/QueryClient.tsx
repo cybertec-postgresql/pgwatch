@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClientProvider as ClientProvider, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { isUnauthorized } from "api";
 import axios from "axios";
@@ -7,7 +8,7 @@ import { logout } from "queries/Auth";
 import { useAlert } from "utils/AlertContext";
 
 type Props = {
-  children: JSX.Element
+  children: React.ReactNode
 };
 
 export const QueryClientProvider = ({ children }: Props) => {

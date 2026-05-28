@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useState } from "react";
 import { AlertColor, SnackbarCloseReason } from "@mui/material";
 
 export type AlertContextType = {
@@ -10,7 +10,7 @@ export type AlertContextType = {
 };
 
 type AlertProviderProps = {
-  children: JSX.Element;
+  children: React.ReactNode;
 };
 
 export const AlertContext = createContext<AlertContextType | null>(null);

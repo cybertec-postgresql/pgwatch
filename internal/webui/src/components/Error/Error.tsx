@@ -10,7 +10,7 @@ export const Error = ({ message }: Props) => {
 
   return (
     <div className={classes.root}>
-      <Typography variant="h3" fontWeight="bold">Oops!</Typography>
+      <Typography variant="h3" sx={{ fontWeight: "bold" }}>Oops!</Typography>
       <Typography variant="h5">Something went wrong...</Typography>
       <Typography>{message}</Typography>
     </div>

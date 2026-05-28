@@ -46,7 +46,7 @@ export const Autocomplete = (props: Props) => {
       )}
       onChange={(_, value) => field.onChange(value ? value.label : "")}
       loading={loading}
-      componentsProps={{
+      slotProps={{
         popper: {
           modifiers: [
             {

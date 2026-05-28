@@ -40,7 +40,7 @@ export const LoginPage = () => {
   if (isCheckingAuth) {
     return (
       <div className={cx(pageClasses.root, signLoginClasses.root)}>
-        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
           <CircularProgress size={40} />
           <Typography variant="body1">Checking authentication...</Typography>
         </Box>
