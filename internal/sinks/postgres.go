@@ -438,8 +438,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		rowsBatched += n
 		if err != nil {
 			logger.Error(err)
-			if err := pgw.sinkDb.Ping(pgw.ctx); err != nil {
-				logger.WithError(err).Error("Sink db is not reachable, dropping cached measurements")
+			if _, ok := err.(*pgconn.ConnectError); ok {
+				logger.Errorf("Sink DB not reachable, dropping %d cached measurements", len(msgs))
 				break
 			}
 			if PgError, ok := err.(*pgconn.PgError); ok {
