@@ -1081,3 +1081,39 @@ func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
 		}
 	}
 }
+
+func TestFlush_CopyFromFailsAndPingSucceeds(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+	defer conn.Close()
+
+	pgw := &PostgresWriter{
+		ctx:                      ctx,
+		sinkDb:                   conn,
+		opts:                     &CmdOpts{PartitionInterval: "1 hour"},
+		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
+		metricSchema:             DbStorageSchemaPostgres,
+	}
+
+	now := time.Now()
+	msgs := []metrics.MeasurementEnvelope{
+		{
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{"epoch_ns": now.UnixNano(), "value": 1},
+			},
+			DBName: "test_db",
+		},
+	}
+
+	conn.ExpectQuery("(?i)SELECT.*ensure_partition_metric_dbname_time").
+		WithArgs("test_metric", "test_db", pgxmock.AnyArg(), "1 hour").
+		WillReturnRows(pgxmock.NewRows([]string{"start_time", "end_time"}).AddRow(now.Add(-time.Hour), now.Add(time.Hour)))
+	conn.ExpectCopyFrom(pgx.Identifier{"test_metric"}, targetColumns[:]).WillReturnError(errors.New("copy failed"))
+	conn.ExpectPing().WillReturnError(nil)
+
+	pgw.flush(msgs)
+
+	a.NoError(conn.ExpectationsWereMet())
+}

@@ -438,6 +438,10 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		rowsBatched += n
 		if err != nil {
 			logger.Error(err)
+			if err := pgw.sinkDb.Ping(pgw.ctx); err != nil {
+				logger.WithError(err).Error("Sink db is not reachable, dropping cached measurements")
+				break
+			}
 			if PgError, ok := err.(*pgconn.PgError); ok {
 				pgw.forceRecreatePartitions = PgError.Code == "23514"
 			}
