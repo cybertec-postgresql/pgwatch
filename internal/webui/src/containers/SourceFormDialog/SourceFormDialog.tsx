@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useSourceFormContext } from "contexts/SourceForm/SourceForm.context";
 import { SourceFormActions } from "contexts/SourceForm/SourceForm.types";
-import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import { FormProvider, Resolver, SubmitHandler, useForm } from "react-hook-form";
 import { useFormStyles } from "styles/form";
 import { useAddSource, useEditSource } from "queries/Source";
 import { createSourceRequest, getSourceInitialValues } from "./SourceFormDialog.consts";
@@ -16,7 +16,7 @@ export const SourceFormDialog = () => {
   const [nameOrig, setnameOrig] = useState<string>("");
 
   const formMethods = useForm<SourceFormValues>({
-    resolver: yupResolver(sourceFormValuesValidationSchema),
+    resolver: yupResolver(sourceFormValuesValidationSchema) as unknown as Resolver<SourceFormValues>,
   });
   const { handleSubmit, reset, setValue } = formMethods;
 

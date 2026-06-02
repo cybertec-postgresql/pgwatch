@@ -58,6 +58,7 @@ export const PresetsGrid = () => {
           columns={columnsWithSizing}
           rows={rows}
           pageSizeOptions={[]}
+          showToolbar
           slots={{ 
             toolbar: () => <PresetsGridToolbar />
           }}

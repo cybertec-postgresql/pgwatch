@@ -1,8 +1,8 @@
 import { useState } from "react";
 import DataObjectIcon from '@mui/icons-material/DataObject';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Tooltip, Typography } from "@mui/material";
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutlined';
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
 import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { atomOneLight } from "react-syntax-highlighter/dist/esm/styles/hljs";

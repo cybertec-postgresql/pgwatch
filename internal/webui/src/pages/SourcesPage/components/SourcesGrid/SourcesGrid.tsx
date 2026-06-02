@@ -51,6 +51,7 @@ export const SourcesGrid = () => {
           columns={columnsWithSizing}
           rows={data ?? []}
           pageSizeOptions={[]}
+          showToolbar
           slots={{ 
             toolbar: () => <SourcesGridToolbar />
           }}

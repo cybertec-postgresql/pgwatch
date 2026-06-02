@@ -1,7 +1,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, FormControl, FormHelperText, InputLabel, OutlinedInput, Typography } from "@mui/material";
 import { PasswordInput } from "components/PasswordInput/PasswordInput";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Resolver, SubmitHandler, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useFormStyles } from "styles/form";
 import { useLogin } from "queries/Auth";
@@ -14,7 +14,7 @@ export const LoginForm = () => {
   const { classes: formClasses } = useFormStyles();
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
-    resolver: yupResolver(loginFormValuesValidationSchema),
+    resolver: yupResolver(loginFormValuesValidationSchema) as unknown as Resolver<LoginFormValues>,
   });
 
   const navigate = useNavigate();

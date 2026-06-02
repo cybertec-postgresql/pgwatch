@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { usePresetFormContext } from "contexts/PresetForm/PresetForm.context";
-import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import { FormProvider, Resolver, SubmitHandler, useForm } from "react-hook-form";
 import { useFormStyles } from "styles/form";
 import { useAddPreset, useEditPreset } from "queries/Preset";
 import { createPresetRequest, getPresetInitialValues } from "./PresetFormDialog.consts";
@@ -13,7 +13,7 @@ import { PresetFormValues } from "./components/PresetForm/PresetForm.types";
 export const PresetFormDialog = () => {
   const { data, open, handleClose } = usePresetFormContext();
   const formMethods = useForm<PresetFormValues>({
-    resolver: yupResolver(presetFormValuesValidationSchema)
+    resolver: yupResolver(presetFormValuesValidationSchema) as unknown as Resolver<PresetFormValues>
   });
   const { handleSubmit, reset } = formMethods;
   const { classes } = useFormStyles();

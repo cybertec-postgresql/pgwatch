@@ -58,6 +58,7 @@ export const MetricsGrid = () => {
           columns={columnsWithSizing}
           rows={rows}
           pageSizeOptions={[]}
+          showToolbar
           slots={{ 
             toolbar: () => <MetricsGridToolbar />
           }}

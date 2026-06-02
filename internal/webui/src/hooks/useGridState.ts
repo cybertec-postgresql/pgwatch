@@ -70,20 +70,6 @@ export const useGridState = (
     });
   }, [saveToStorage]);
 
-  const resetColumnSizes = useCallback(() => {
-    const defaultSizing = columns?.reduce((acc, col) => ({
-      ...acc,
-      [col.field]: col.width || 150
-    }), {});
-
-    setGridState(prev => {
-      const newState = { ...prev, columnSizing: defaultSizing };
-      saveToStorage(newState);
-      return newState;
-    });
-  }, [columns, saveToStorage]);
-
-  // Memoize columns with applied widths so objects are stable between renders
   const columnsWithSizing = useMemo(() => columns?.map(col => ({
     ...col,
     width: gridState.columnSizing[col.field] || col.width || 150
@@ -95,6 +81,5 @@ export const useGridState = (
     columnsWithSizing,
     onColumnVisibilityChange: handleColumnVisibilityChange,
     onColumnWidthChange: handleColumnWidthChange,
-    resetColumnSizes
   };
 };

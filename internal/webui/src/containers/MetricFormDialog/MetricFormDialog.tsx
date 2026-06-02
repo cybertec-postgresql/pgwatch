@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
 import { useMetricFormContext } from "contexts/MetricForm/MetricForm.context";
-import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import { FormProvider, Resolver, SubmitHandler, useForm } from "react-hook-form";
 import { useFormStyles } from "styles/form";
 import { useAddMetric, useEditMetric } from "queries/Metric";
 import { createMetricRequest, getMetricInitialValues } from "./MetricFormDialog.consts";
@@ -13,7 +13,7 @@ import { MetricFormValues } from "./components/MetricForm/MetricForm.types";
 export const MetricFormDialog = () => {
   const { data, open, handleClose } = useMetricFormContext();
   const formMethods = useForm<MetricFormValues>({
-    resolver: yupResolver(metricFormValuesValidationSchema),
+    resolver: yupResolver(metricFormValuesValidationSchema) as unknown as Resolver<MetricFormValues>,
   });
   const { handleSubmit, reset, setError } = formMethods;
   const { classes } = useFormStyles();

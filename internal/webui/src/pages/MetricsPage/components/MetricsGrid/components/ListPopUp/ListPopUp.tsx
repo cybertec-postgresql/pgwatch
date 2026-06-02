@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutlined';
 import { Box, Chip, Dialog, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemText, Tooltip } from "@mui/material";
 
 type Props = {
@@ -50,10 +50,11 @@ export const ListPopUp = ({ title, items }: Props) => {
               <ListItem key={index} divider>
                 <ListItemText 
                   primary={item} 
-                  primaryTypographyProps={{ 
-                    fontFamily: 'monospace',
-                    fontSize: '0.9rem'
-                  }} 
+                  slotProps={{
+                    primary: {
+                      sx: { fontFamily: 'monospace', fontSize: '0.9rem' }
+                    }
+                  }}
                 />
               </ListItem>
             ))}
