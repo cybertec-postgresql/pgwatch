@@ -1886,9 +1886,9 @@ metrics:
                 */
     settings:
         description: >
-            This metric collects various PostgreSQL server settings and configurations.
-            It provides insights into the server's configuration, including version, memory settings, and other important parameters.
-            This metric is useful for monitoring server settings and ensuring optimal performance.
+            DEPRECATED: use 'settings_num' instead. This metric returns most configuration values as text columns,
+            which causes Prometheus label cardinality explosion (each config change creates a new time series).
+            Kept for backward compatibility only — it is no longer included in any built-in preset.
         sqls:
             14: |
                 with qs as (
@@ -4237,7 +4237,6 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 60
@@ -4265,7 +4264,6 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
@@ -4291,7 +4289,6 @@ presets:
             replication: 60
             replication_slots: 60
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_ssl: 60
@@ -4330,7 +4327,6 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
@@ -4378,7 +4374,6 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             server_log_event_counts: 60
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
@@ -4407,7 +4402,6 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_statements: 180
@@ -4460,7 +4454,6 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
@@ -4504,7 +4497,7 @@ presets:
             replication: 120
             replication_slots: 120
             sequence_health: 3600
-            settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
             stat_statements: 180
@@ -4563,7 +4556,7 @@ presets:
             replication_slots: 30
             sequence_health: 30
             server_log_event_counts: 30
-            settings: 30
+            settings_num: 30
             smart_health_per_disk: 30
             sproc_hashes: 30
             sproc_stats: 30
