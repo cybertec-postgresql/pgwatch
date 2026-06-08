@@ -1945,6 +1945,32 @@ metrics:
                   (select setting::float8 from qs where name = 'autovacuum_vacuum_threshold') as autovacuum_vacuum_threshold,
                   (select setting::float8 from qs where name = 'autovacuum_analyze_scale_factor') as autovacuum_analyze_scale_factor,
                   (select setting::float8 from qs where name = 'autovacuum_analyze_threshold') as autovacuum_analyze_scale_factor
+    settings_num:
+        description: >
+            Exports all PostgreSQL settings (including extension and user-defined parameters) as numeric values,
+            one row per setting. Boolean settings are converted to 1/0, integer and real settings are cast to
+            float8, and enum settings are represented as the 1-based ordinal position of the current value
+            within the setting's list of valid values (enumvals). The setting name is exposed as a tag so each
+            parameter becomes its own Prometheus time series, avoiding the cardinality explosion caused by the
+            legacy 'settings' metric which returned all values as labels.
+        sqls:
+            11: |
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  name as tag_name,
+                  case vartype
+                    when 'integer' then setting::float8
+                    when 'real'    then setting::float8
+                    when 'bool'    then (case setting when 'on' then 1 else 0 end)::float8
+                    when 'enum'    then array_position(enumvals, setting)::float8
+                  end as value
+                from pg_settings
+                where vartype in ('integer', 'real', 'bool', 'enum')
+                  and setting is not null
+                order by name
+        gauges:
+            - value
+        is_instance_level: true
     smart_health_per_disk:
         description: >
             This metric collects SMART health status for all disk devices using the `smartmontools` utility.
@@ -4212,6 +4238,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 60
             stat_statements: 180
@@ -4239,6 +4266,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
             stat_statements: 180
@@ -4264,6 +4292,7 @@ presets:
             replication_slots: 60
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_ssl: 60
             stat_statements: 180
@@ -4302,6 +4331,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
             stat_statements: 180
@@ -4349,6 +4379,7 @@ presets:
             sequence_health: 3600
             server_log_event_counts: 60
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
             stat_ssl: 120
@@ -4377,6 +4408,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_statements: 180
             stat_statements_calls: 60
@@ -4429,6 +4461,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             settings: 7200
+            settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
             stat_statements: 180
