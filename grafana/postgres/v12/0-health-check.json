@@ -387,7 +387,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "select (data->>'server_version_num')::int8 as value \nfrom settings \nwhere dbname = '$dbname' and $__timeFilter(time) \norder by time \ndesc limit 1;",
+          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'server_version_num'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1281,7 +1281,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'max_connections')::int\n  FROM settings\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n  ORDER BY time DESC\n  LIMIT 1\n)\n\nSELECT round(((b.data->>'numbackends')::float / s.max_connections) * 100)\nFROM db_stats b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
+          "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'value')::int\n  FROM settings_num\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n    AND tag_data->>'name' = 'max_connections'\n  ORDER BY time DESC\n  LIMIT 1\n)\nSELECT round(((b.data->>'numbackends')::float / s.max_connections) * 100)\nFROM db_stats b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -3425,7 +3425,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n\nSELECT * FROM (\n\nSELECT\n  case when data->>'autovacuum' = 'off' then 1 else 0 end as count\nFROM\n  settings\nWHERE\n  dbname = '$dbname'\n  AND time > now() - '1d'::interval\nORDER BY time DESC LIMIT 1\n\n) a\n\nUNION ALL\n\nSELECT * FROM (\n\nSELECT\n  count(*)\nFROM\n  table_stats\nWHERE\n  dbname = '$dbname'\n  AND time = (select max(time) from table_stats where dbname = '$dbname')\n  AND (data->>'no_autovacuum')::int = 1\n\n) b\n\n) x;",
+          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n  SELECT\n    CASE WHEN (data->>'value')::float8 = 0 THEN 1 ELSE 0 END AS count\n  FROM settings_num\n  WHERE dbname = '$dbname'\n    AND tag_data->>'name' = 'autovacuum'\n    AND time > now() - '1d'::interval\n  ORDER BY time DESC LIMIT 1\n  UNION ALL\n  SELECT count(*)\n  FROM table_stats\n  WHERE dbname = '$dbname'\n    AND time = (SELECT max(time) FROM table_stats WHERE dbname = '$dbname')\n    AND (data->>'no_autovacuum')::int = 1\n) x",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -5193,7 +5193,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "content": "### Brought to you by\n\n[![Cybertec \u2013 The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
       "pluginVersion": "12.3.1",
