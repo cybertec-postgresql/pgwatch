@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/sources"
 )
 
 //go:embed build

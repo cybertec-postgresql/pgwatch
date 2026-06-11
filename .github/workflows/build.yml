@@ -99,7 +99,7 @@ jobs:
     - name: Test
       run: |
         go generate ./api/pb/
-        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./cmd/... ./internal/...
+        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./cmd/... ./pkg/... ./internal/...
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2

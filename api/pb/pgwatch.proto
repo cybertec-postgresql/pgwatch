@@ -27,7 +27,7 @@ message SyncReq {
 }
 
 // SyncOp represents synchronization operations for metrics.
-// The actual constants are defined in internal/sinks/types.go
+// The actual constants are defined in pkg/sinks/types.go
 // and should be used instead of these protobuf-generated constants.
 enum SyncOp {
     InvalidOp = 0;

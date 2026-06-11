@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/sources"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
