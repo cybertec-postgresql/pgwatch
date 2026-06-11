@@ -34,7 +34,7 @@ provided by the pgwatch project to cover all typical needs.
 However, when monitoring hundreds of hosts, you'd typically want to define **custom metrics and/or presets**
 or at least adjust the metric fetching intervals according to your monitoring goals.
 
-You can find the full list in pgwatch's default [metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) file,
+You can find the full list in pgwatch's default [metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/pkg/metrics/metrics.yaml) file,
 for a more user-friendly experience, consider browsing them via the [Web UI](../gallery/webui.md)
 
 !!! tip "Exporting Metric Definitions"

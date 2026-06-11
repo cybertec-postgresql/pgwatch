@@ -87,19 +87,19 @@ At peak alignment (t = 7200s, all 32 metrics due): **32 → 1 round-trip = 97% r
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `internal/reaper/source_reaper.go` | 494 | SourceReaper struct, GCD, batch execution, Run loop |
-| `internal/reaper/source_reaper_test.go` | 471 | pgxmock unit tests (12 test functions, 20+ subtests) |
-| `internal/reaper/source_reaper_integration_test.go` | 301 | testcontainers integration tests (6 test functions) |
-| `internal/reaper/observability.go` | 38 | Prometheus metrics for batch observability |
+| `pkg/reaper/source_reaper.go` | 494 | SourceReaper struct, GCD, batch execution, Run loop |
+| `pkg/reaper/source_reaper_test.go` | 471 | pgxmock unit tests (12 test functions, 20+ subtests) |
+| `pkg/reaper/source_reaper_integration_test.go` | 301 | testcontainers integration tests (6 test functions) |
+| `pkg/reaper/observability.go` | 38 | Prometheus metrics for batch observability |
 
 ### Modified Files
 
 | File | Changes | Purpose |
 |------|---------|---------|
 | `internal/db/conn.go` | +1 line | Added `SendBatch` to `PgxPoolIface` interface |
-| `internal/reaper/reaper.go` | +21 / -186 lines | Per-source goroutines, simplified cancel management |
-| `internal/reaper/database.go` | +303 lines | Batched change detection, `prefetchChangeDetectionData` |
-| `internal/reaper/reaper_test.go` | +15 / -14 lines | Updated tests for per-source cancel pattern |
+| `pkg/reaper/reaper.go` | +21 / -186 lines | Per-source goroutines, simplified cancel management |
+| `pkg/reaper/database.go` | +303 lines | Batched change detection, `prefetchChangeDetectionData` |
+| `pkg/reaper/reaper_test.go` | +15 / -14 lines | Updated tests for per-source cancel pattern |
 
 **Total: 4 new files (1,304 lines), 4 modified files (+340 / -200 net)**
 
@@ -137,7 +137,7 @@ At peak alignment (t = 7200s, all 32 metrics due): **32 → 1 round-trip = 97% r
 
 ### Existing Tests — 0 regressions
 
-All 152 test cases in `internal/reaper/` pass, including all pre-existing tests for `DetectSprocChanges`, `DetectTableChanges`, `DetectIndexChanges`, `DetectPrivilegeChanges`, `DetectConfigurationChanges`, `FetchMetric`, `LoadSources`, `LoadMetrics`, log parser tests, and OS metric tests.
+All 152 test cases in `pkg/reaper/` pass, including all pre-existing tests for `DetectSprocChanges`, `DetectTableChanges`, `DetectIndexChanges`, `DetectPrivilegeChanges`, `DetectConfigurationChanges`, `FetchMetric`, `LoadSources`, `LoadMetrics`, log parser tests, and OS metric tests.
 
 ---
 

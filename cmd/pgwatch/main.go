@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/reaper"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/reaper"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/webserver"
 )
 

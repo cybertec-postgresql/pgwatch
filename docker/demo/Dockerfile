@@ -62,7 +62,7 @@ FROM postgres:18-bookworm AS demo
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
-COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
+COPY pkg/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Install TimescaleDB and extensions
 ENV DEBIAN_FRONTEND=noninteractive

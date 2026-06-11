@@ -1,0 +1,524 @@
+package metrics_test
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/metrics"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
+)
+
+func TestDeaultMetrics(t *testing.T) {
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, "") // empty path is reserved for default metrics
+	assert.NoError(t, err)
+
+	// Test GetMetrics
+	metricsDefs, err := fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Test WriteMetrics
+	err = fmr.WriteMetrics(metricsDefs)
+	assert.Error(t, err)
+
+	// Test DeleteMetric
+	err = fmr.DeleteMetric("test")
+	assert.Error(t, err)
+
+	// Test UpdateMetric
+	err = fmr.UpdateMetric("test", metrics.Metric{})
+	assert.Error(t, err)
+
+	// Test DeletePreset
+	err = fmr.DeletePreset("test")
+	assert.Error(t, err)
+
+	// Test UpdatePreset
+	err = fmr.UpdatePreset("test", metrics.Preset{})
+	assert.Error(t, err)
+}
+
+func TestWriteMetricsToFile(t *testing.T) {
+	// Define test data
+	metricDefs := metrics.Metrics{
+		MetricDefs: metrics.MetricDefs{
+			"test_metric": metrics.Metric{
+				SQLs: map[int]string{
+					1: "SELECT 1",
+				},
+				InitSQL:         "SELECT 1",
+				NodeStatus:      "primary",
+				Gauges:          []string{"gauge1", "gauge2"},
+				IsInstanceLevel: true,
+				StorageName:     "storage1",
+				Description:     "Test metric",
+			},
+		},
+		PresetDefs: metrics.PresetDefs{
+			"test_preset": metrics.Preset{
+				Description: "Test preset",
+				Metrics: metrics.MetricIntervals{
+					"test_metric": 1.0,
+				},
+			},
+		},
+	}
+
+	// Create a temporary file for testing
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	assert.NoError(t, err)
+
+	// Call the function being tested
+	err = fmr.WriteMetrics(&metricDefs)
+	assert.NoError(t, err)
+
+	// Read the contents of the file
+	metrics, err := fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Assert that the file contains the expected data
+	assert.Equal(t, metricDefs, *metrics)
+}
+func TestMetricsToFile(t *testing.T) {
+	// Define test data
+	metricDefs := metrics.Metrics{
+		MetricDefs: metrics.MetricDefs{
+			"existing_metric": metrics.Metric{
+				SQLs: map[int]string{
+					1: "SELECT 1",
+				},
+				InitSQL:         "SELECT 1",
+				NodeStatus:      "primary",
+				Gauges:          []string{"gauge1", "gauge2"},
+				IsInstanceLevel: true,
+				StorageName:     "storage1",
+				Description:     "Existing metric",
+			},
+		},
+		PresetDefs: metrics.PresetDefs{
+			"test_preset": metrics.Preset{
+				Description: "Test preset",
+				Metrics: metrics.MetricIntervals{
+					"existing_metric": 1.0,
+				},
+			},
+		},
+	}
+
+	// Create a temporary file for testing
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	assert.NoError(t, err)
+
+	// Write initial metrics to the file
+	err = fmr.WriteMetrics(&metricDefs)
+	assert.NoError(t, err)
+
+	// Call the function being tested
+	newMetric := metrics.Metric{
+		SQLs: map[int]string{
+			1: "SELECT 2",
+		},
+		InitSQL:         "SELECT 2",
+		NodeStatus:      "primary",
+		Gauges:          []string{"gauge3", "gauge4"},
+		IsInstanceLevel: true,
+		StorageName:     "storage2",
+		Description:     "New metric",
+	}
+	err = fmr.UpdateMetric("new_metric", newMetric)
+	assert.NoError(t, err)
+
+	// Read the updated metrics from the file
+	updatedMetrics, err := fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Assert that the metric was updated correctly
+	expectedMetrics := metricDefs
+	expectedMetrics.MetricDefs["new_metric"] = newMetric
+	assert.Equal(t, expectedMetrics, *updatedMetrics)
+
+	// Call the function being tested
+	err = fmr.DeleteMetric("new_metric")
+	assert.NoError(t, err)
+
+	// Read the updated metrics from the file
+	updatedMetrics, err = fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Assert that the metric was deleted correctly
+	assert.Zero(t, updatedMetrics.MetricDefs["new_metric"])
+}
+
+func TestPresetsToFile(t *testing.T) {
+	// Define test data
+	presetDefs := metrics.PresetDefs{
+		"existing_preset": metrics.Preset{
+			Description: "Existing preset",
+			Metrics: metrics.MetricIntervals{
+				"existing_metric": 1.0,
+			},
+		},
+	}
+
+	// Create a temporary file for testing
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	assert.NoError(t, err)
+
+	// Write initial presets to the file
+	err = fmr.WriteMetrics(&metrics.Metrics{
+		PresetDefs: presetDefs,
+	})
+	assert.NoError(t, err)
+
+	// Call the function being tested
+	newPreset := metrics.Preset{
+		Description: "New preset",
+		Metrics: metrics.MetricIntervals{
+			"new_metric": 1.0,
+		},
+	}
+	err = fmr.UpdatePreset("new_preset", newPreset)
+	assert.NoError(t, err)
+
+	// Read the updated presets from the file
+	updatedMetrics, err := fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Assert that the preset was updated correctly
+	expectedPresets := presetDefs
+	expectedPresets["new_preset"] = newPreset
+	assert.Equal(t, expectedPresets, updatedMetrics.PresetDefs)
+
+	// check the delete preset function
+	err = fmr.DeletePreset("new_preset")
+	assert.NoError(t, err)
+
+	// Read the updated presets from the file
+	updatedMetrics, err = fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Assert that the preset was deleted correctly
+	assert.Zero(t, updatedMetrics.PresetDefs["new_preset"])
+}
+
+func TestErrorHandlingToFile(t *testing.T) {
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, "/") // empty path is reserved for default metrics
+	assert.NoError(t, err)
+
+	// Test WriteMetrics
+	err = fmr.WriteMetrics(&metrics.Metrics{})
+	assert.Error(t, err)
+
+	// Test GetMetrics - root dir has no yaml files, returns empty metrics without error
+	_, err = fmr.GetMetrics()
+	assert.NoError(t, err)
+
+	// Test DeleteMetric
+	err = fmr.DeleteMetric("test")
+	assert.Error(t, err)
+
+	// Test UpdateMetric
+	err = fmr.UpdateMetric("test", metrics.Metric{})
+	assert.Error(t, err)
+
+	// Test DeletePreset
+	err = fmr.DeletePreset("test")
+	assert.Error(t, err)
+
+	// Test UpdatePreset
+	err = fmr.UpdatePreset("test", metrics.Preset{})
+	assert.Error(t, err)
+
+	// Test invalid YAML
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+	file, err := os.Create(tempFile)
+	assert.NoError(t, err)
+	defer file.Close()
+	_, err = file.WriteString("invalid yaml")
+	assert.NoError(t, err)
+
+	fmr, err = metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	assert.NoError(t, err)
+
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
+
+func TestCreateMetricAndPreset(t *testing.T) {
+
+	a := assert.New(t)
+
+	t.Run("YAML_CreateMetric_Success", func(t *testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "test_metrics.yaml")
+		defer os.Remove(tmpFile)
+
+		// Create YAML reader/writer
+		yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		// Initialize empty metrics file first
+		emptyMetrics := &metrics.Metrics{
+			MetricDefs: make(map[string]metrics.Metric),
+			PresetDefs: make(map[string]metrics.Preset),
+		}
+		err = yamlrw.WriteMetrics(emptyMetrics)
+		a.NoError(err)
+
+		// Create a new metric
+		testMetric := metrics.Metric{
+			Description: "Test metric for creation",
+		}
+		err = yamlrw.CreateMetric("test_metric", testMetric)
+		a.NoError(err)
+
+		// Verify it was created
+		m, err := yamlrw.GetMetrics()
+		a.NoError(err)
+		a.Contains(m.MetricDefs, "test_metric")
+		a.Equal("Test metric for creation", m.MetricDefs["test_metric"].Description)
+
+		// Try to create the same metric again - should fail
+		err = yamlrw.CreateMetric("test_metric", testMetric)
+		a.Error(err)
+		a.Equal(metrics.ErrMetricExists, err)
+	})
+
+	t.Run("YAML_CreatePreset_Success", func(t *testing.T) {
+		tmpFile := filepath.Join(t.TempDir(), "test_presets.yaml")
+		defer os.Remove(tmpFile)
+
+		yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tmpFile)
+		a.NoError(err)
+
+		// Initialize empty metrics file first
+		emptyMetrics := &metrics.Metrics{
+			MetricDefs: make(map[string]metrics.Metric),
+			PresetDefs: make(map[string]metrics.Preset),
+		}
+		err = yamlrw.WriteMetrics(emptyMetrics)
+		a.NoError(err)
+
+		// Create a new preset
+		testPreset := metrics.Preset{
+			Description: "Test preset for creation",
+			Metrics:     metrics.MetricIntervals{"db_stats": 60},
+		}
+		err = yamlrw.CreatePreset("test_preset", testPreset)
+		a.NoError(err)
+
+		// Verify it was created
+		m, err := yamlrw.GetMetrics()
+		a.NoError(err)
+		a.Contains(m.PresetDefs, "test_preset")
+		a.Equal("Test preset for creation", m.PresetDefs["test_preset"].Description)
+
+		// Try to create the same preset again - should fail
+		err = yamlrw.CreatePreset("test_preset", testPreset)
+		a.Error(err)
+		a.Equal(metrics.ErrPresetExists, err)
+	})
+}
+
+func TestMetricsDir(t *testing.T) {
+	a := assert.New(t)
+
+	// first metrics file data
+	metrics1 := metrics.Metrics{
+		MetricDefs: map[string]metrics.Metric{
+			"metric1": {
+				Description: "metric1 description",
+			},
+		},
+		PresetDefs: map[string]metrics.Preset{
+			"preset1": {
+				Description: "preset1 description",
+				Metrics: metrics.MetricIntervals{
+					"metric1": 10,
+				},
+			},
+		},
+	}
+
+	// second metrics file data
+	metrics2 := metrics.Metrics{
+		MetricDefs: map[string]metrics.Metric{
+			"metric2": {
+				Description: "metric2 description",
+			},
+		},
+		PresetDefs: map[string]metrics.Preset{
+			"preset2": {
+				Description: "preset2 description",
+				Metrics: metrics.MetricIntervals{
+					"metric2": 10,
+				},
+			},
+		},
+	}
+
+	metrics1File, err := yaml.Marshal(metrics1)
+	a.NoError(err)
+	metrics2File, err := yaml.Marshal(metrics2)
+	a.NoError(err)
+
+	// write data to different files in a folder: one .yaml and one .yml
+	tempDir := t.TempDir()
+	err = os.WriteFile(filepath.Join(tempDir, "metrics1.yaml"), metrics1File, 0644)
+	a.NoError(err)
+	err = os.WriteFile(filepath.Join(tempDir, "metrics2.yml"), metrics2File, 0644)
+	a.NoError(err)
+
+	// use folder of yaml files for metrics configs
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempDir)
+	a.NoError(err)
+
+	// load metrics configs from folder
+	ms, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal("metric1 description", ms.MetricDefs["metric1"].Description)
+	a.Equal("preset1 description", ms.PresetDefs["preset1"].Description)
+	a.Equal("metric2 description", ms.MetricDefs["metric2"].Description)
+	a.Equal("preset2 description", ms.PresetDefs["preset2"].Description)
+}
+
+func TestConcurrentMetricUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	// Create initial empty metrics file
+	initialMetrics := &metrics.Metrics{
+		MetricDefs: make(map[string]metrics.Metric),
+		PresetDefs: make(map[string]metrics.Preset),
+	}
+	err = yamlrw.WriteMetrics(initialMetrics)
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+
+	// Each goroutine will add a unique metric
+	for id := range numGoroutines {
+		wg.Go(func() {
+			metricName := fmt.Sprintf("metric_%d", id)
+			testMetric := metrics.Metric{
+				Description: fmt.Sprintf("Test metric %d", id),
+				SQLs: map[int]string{
+					1: fmt.Sprintf("SELECT %d", id),
+				},
+			}
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+			err := yamlrw.UpdateMetric(metricName, testMetric)
+			a.NoError(err, "Error during concurrent update")
+		})
+	}
+	wg.Wait()
+
+	finalMetrics, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal(numGoroutines, len(finalMetrics.MetricDefs), "Some updates were lost due to race condition!")
+}
+
+func TestConcurrentPresetUpdates(t *testing.T) {
+	a := assert.New(t)
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "metrics.yaml")
+
+	yamlrw, err := metrics.NewYAMLMetricReaderWriter(ctx, tempFile)
+	a.NoError(err)
+
+	// Create initial empty metrics file
+	initialMetrics := &metrics.Metrics{
+		MetricDefs: make(map[string]metrics.Metric),
+		PresetDefs: make(map[string]metrics.Preset),
+	}
+	err = yamlrw.WriteMetrics(initialMetrics)
+	a.NoError(err)
+
+	numGoroutines := 10
+	var wg sync.WaitGroup
+
+	for id := range numGoroutines {
+		wg.Go(func() {
+			presetName := fmt.Sprintf("preset_%d", id)
+			testPreset := metrics.Preset{
+				Description: fmt.Sprintf("Test preset %d", id),
+				Metrics:     metrics.MetricIntervals{fmt.Sprintf("metric_%d", id): 60},
+			}
+			time.Sleep(time.Millisecond * time.Duration(id%3))
+			err := yamlrw.UpdatePreset(presetName, testPreset)
+			a.NoError(err, "Error during concurrent update")
+		})
+	}
+	wg.Wait()
+
+	// ensure all presets were saved
+	finalMetrics, err := yamlrw.GetMetrics()
+	a.NoError(err)
+	a.Equal(numGoroutines, len(finalMetrics.PresetDefs), "Some updates were lost due to race condition!")
+}
+
+func TestGetMetricsNonExistentPath(t *testing.T) {
+	nonExistent := filepath.Join(t.TempDir(), "does_not_exist", "metrics.yaml")
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, nonExistent)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
+
+func TestGetMetricsDirWithInvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	err := os.WriteFile(filepath.Join(dir, "bad.yaml"), []byte("invalid: yaml: {unclosed"), 0644)
+	assert.NoError(t, err)
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, dir)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
+
+func TestMutationsGetMetricsError(t *testing.T) {
+	nonExistent := filepath.Join(t.TempDir(), "does_not_exist", "metrics.yaml")
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, nonExistent)
+	assert.NoError(t, err)
+
+	assert.Error(t, fmr.DeleteMetric("x"))
+	assert.Error(t, fmr.UpdateMetric("x", metrics.Metric{}))
+	assert.Error(t, fmr.CreateMetric("x", metrics.Metric{}))
+	assert.Error(t, fmr.DeletePreset("x"))
+	assert.Error(t, fmr.UpdatePreset("x", metrics.Preset{}))
+	assert.Error(t, fmr.CreatePreset("x", metrics.Preset{}))
+}
+
+func TestLoadMetricsUnreadableFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("cannot reliably test file permissions on Windows")
+	}
+	if os.Getuid() == 0 {
+		t.Skip("running as root, permission checks do not apply")
+	}
+	f := filepath.Join(t.TempDir(), "metrics.yaml")
+	err := os.WriteFile(f, []byte(""), 0000)
+	assert.NoError(t, err)
+	fmr, err := metrics.NewYAMLMetricReaderWriter(ctx, f)
+	assert.NoError(t, err)
+	_, err = fmr.GetMetrics()
+	assert.Error(t, err)
+}
