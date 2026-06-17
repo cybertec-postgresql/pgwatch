@@ -19,7 +19,7 @@ services:
       - "9187:9187"
       # - "6060:6060" # Uncomment for profiling
     volumes:
-      - "../internal/metrics/metrics.yaml:/etc/pgwatch/metrics.yml"
+      - "../pkg/metrics/metrics.yaml:/etc/pgwatch/metrics.yml"
       - "./bootstrap/.pgpass:/root/.pgpass:ro"
     depends_on:
       postgres:

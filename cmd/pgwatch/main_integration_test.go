@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -29,7 +29,7 @@ archives:
   files:
     - "./grafana/**/*"
     - "./README.md"
-    - src: "./internal/metrics/metrics.yaml"
+    - src: "./pkg/metrics/metrics.yaml"
       dst: "metrics.yaml"
     - src: "./contrib/sample.sources.yaml"
       dst: "sample.sources.yaml"
@@ -66,7 +66,7 @@ nfpms:
         dst: "/etc/pgwatch/grafana"
       - src: "./contrib/sample.sources.yaml"
         dst: "/etc/pgwatch/sample.sources.yaml"
-      - src: "./internal/metrics/metrics.yaml"
+      - src: "./pkg/metrics/metrics.yaml"
         dst: "/etc/pgwatch/metrics.yaml"
       - src: "./README.md"
         dst: "/etc/pgwatch/README.md"

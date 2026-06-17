@@ -1,0 +1,398 @@
+package sources
+
+// This file contains the implemendation of Patroni and PostgrSQL resolvers for continuous monitoring.
+// Patroni resolver will return the list of databases from the Patroni cluster.
+// Postgres resolver will return the list of databases from the given Postgres instance.
+
+import (
+	"cmp"
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
+	jsoniter "github.com/json-iterator/go"
+
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/pkg/log"
+	pgx "github.com/jackc/pgx/v5"
+	client "go.etcd.io/etcd/client/v3"
+	"go.uber.org/zap"
+)
+
+// ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
+// Each source is resolved concurrently so that a slow or unreachable source does not block the others.
+func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err error) {
+	type result struct {
+		dbs SourceConns
+		err error
+	}
+	results := make([]result, len(srcs))
+	var wg sync.WaitGroup
+	for i, s := range srcs {
+		wg.Go(func() {
+			dbs, e := s.ResolveDatabases()
+			results[i] = result{dbs, e}
+		})
+	}
+	wg.Wait()
+	resolvedDbs := make(SourceConns, 0, len(srcs))
+	for i, res := range results {
+		if res.err != nil {
+			if onError != nil {
+				onError(srcs[i].Name)
+			}
+			logger.WithField("source", srcs[i].Name).WithError(res.err).Error("could not resolve databases from source")
+			err = errors.Join(err, res.err)
+		}
+		resolvedDbs = append(resolvedDbs, res.dbs...)
+	}
+	return resolvedDbs, err
+}
+
+// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
+func (s Source) ResolveDatabases() (SourceConns, error) {
+	switch s.Kind {
+	case SourcePatroni:
+		return ResolveDatabasesFromPatroni(s)
+	case SourcePostgresContinuous:
+		return ResolveDatabasesFromPostgres(s)
+	}
+	return SourceConns{NewSourceConn(s)}, nil
+}
+
+type PatroniClusterMember struct {
+	Scope   string
+	Name    string
+	ConnURL string `yaml:"conn_url"`
+	Role    string
+}
+
+func (pcm PatroniClusterMember) IsPrimary() bool {
+	return pcm.Role == "primary" || pcm.Role == "master"
+}
+
+var logger log.Logger = log.FallbackLogger
+
+var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
+// don't want to immediately remove monitoring of DBs
+
+func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
+	return nil, errors.ErrUnsupported
+}
+
+func getZookeeperClusterMembers(Source, HostConfig) ([]PatroniClusterMember, error) {
+	return nil, errors.ErrUnsupported
+}
+
+func jsonTextToStringMap(jsonText string) (map[string]string, error) {
+	retmap := make(map[string]string)
+	if jsonText == "" {
+		return retmap, nil
+	}
+	var iMap map[string]any
+	if err := jsoniter.ConfigFastest.Unmarshal([]byte(jsonText), &iMap); err != nil {
+		return nil, err
+	}
+	for k, v := range iMap {
+		retmap[k] = fmt.Sprintf("%v", v)
+	}
+	return retmap, nil
+}
+
+func getTransport(conf HostConfig) (*tls.Config, error) {
+	var caCertPool *x509.CertPool
+
+	// create valid CertPool only if the ca certificate file exists
+	if conf.CAFile != "" {
+		caCert, err := os.ReadFile(conf.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load CA file: %s", err)
+		}
+
+		caCertPool = x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+	}
+
+	var certificates []tls.Certificate
+
+	// create valid []Certificate only if the client cert and key files exists
+	if conf.CertFile != "" && conf.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load client cert or key file: %s", err)
+		}
+
+		certificates = []tls.Certificate{cert}
+	}
+
+	tlsClientConfig := new(tls.Config)
+
+	if caCertPool != nil {
+		tlsClientConfig.RootCAs = caCertPool
+		if certificates != nil {
+			tlsClientConfig.Certificates = certificates
+		}
+	}
+
+	return tlsClientConfig, nil
+}
+
+func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error) {
+	var ret = make([]PatroniClusterMember, 0)
+	var cfg client.Config
+
+	if len(hc.DcsEndpoints) == 0 {
+		return ret, errors.New("missing ETCD connect info, make sure host config has a 'dcs_endpoints' key")
+	}
+
+	tlsConfig, err := getTransport(hc)
+	if err != nil {
+		return nil, err
+	}
+	cfg = client.Config{
+		Endpoints:            hc.DcsEndpoints,
+		TLS:                  tlsConfig,
+		DialKeepAliveTimeout: time.Second,
+		Username:             hc.Username,
+		Password:             hc.Password,
+		DialTimeout:          5 * time.Second,
+		Logger:               zap.NewNop(),
+	}
+
+	c, err := client.New(cfg)
+	if err != nil {
+		return ret, err
+	}
+	defer c.Close()
+
+	ctx, cancel := context.WithTimeoutCause(context.Background(), 5*time.Second, errors.New("etcd client timeout"))
+	defer cancel()
+
+	// etcd3 does not have a dir node.
+	// Key="/namespace/scope/leader", e.g. "/service/batman/leader"
+	// Key="/namespace/scope/members/node", e.g. "/service/batman/members/pg1"
+
+	resp, err := c.Get(ctx, hc.Path, client.WithPrefix())
+	if err != nil {
+		return ret, cmp.Or(context.Cause(ctx), err)
+	}
+
+	for _, node := range resp.Kvs {
+		// remove leading slash and split by "/"
+		parts := strings.Split(strings.TrimPrefix(string(node.Key), "/"), "/")
+		if len(parts) < 4 || parts[2] != "members" {
+			continue // skip non-member keys
+		}
+		nodeData, err := jsonTextToStringMap(string(node.Value))
+		if err != nil {
+			logger.Errorf("Could not parse ETCD node data for node \"%s\": %s", node.Key, err)
+			continue
+		}
+		role := nodeData["role"]
+		connURL := nodeData["conn_url"]
+		scope := parts[1]
+		name := parts[3]
+		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
+	}
+
+	lastFoundClusterMembers[s.Name] = ret
+	return ret, nil
+}
+
+const (
+	dcsTypeEtcd      = "etcd"
+	dcsTypeZookeeper = "zookeeper"
+	dcsTypeConsul    = "consul"
+)
+
+type HostConfig struct {
+	DcsType      string   `yaml:"dcs_type"`
+	DcsEndpoints []string `yaml:"dcs_endpoints"`
+	Path         string
+	Username     string
+	Password     string
+	CAFile       string `yaml:"ca_file"`
+	CertFile     string `yaml:"cert_file"`
+	KeyFile      string `yaml:"key_file"`
+}
+
+func (hc HostConfig) IsScopeSpecified() bool {
+	// Path is usually "/namespace/scope"
+	// so we check if it has at least 2 slashes
+	return strings.Count(hc.Path, "/") >= 2
+}
+
+func NewHostConfig(URI string) (hc HostConfig, err error) {
+	// Extract scheme
+	before, after, ok := strings.Cut(URI, "://")
+	if !ok {
+		return hc, fmt.Errorf("invalid URI: missing scheme")
+	}
+	scheme := before
+	remainder := after // skip "://"
+
+	// Find where the host portion ends (at first '/' or '?' or end of string)
+	hostEnd := strings.IndexAny(remainder, "/?")
+	var hostPart, pathAndQuery string
+	if hostEnd == -1 {
+		hostPart = remainder
+		pathAndQuery = ""
+	} else {
+		hostPart = remainder[:hostEnd]
+		pathAndQuery = remainder[hostEnd:]
+	}
+
+	// Check for user info (username:password@)
+	var userInfo string
+	if atIdx := strings.LastIndex(hostPart, "@"); atIdx != -1 {
+		userInfo = hostPart[:atIdx]
+		hostPart = hostPart[atIdx+1:]
+	}
+
+	// Split hosts by comma for multiple endpoints
+	hosts := strings.Split(hostPart, ",")
+
+	// Parse a clean URL with just the first host to extract other components
+	cleanURI := scheme + "://"
+	if userInfo != "" {
+		cleanURI += userInfo + "@"
+	}
+	cleanURI += hosts[0] + pathAndQuery
+
+	var url *url.URL
+	url, err = url.Parse(cleanURI)
+	if err != nil {
+		return
+	}
+
+	switch url.Scheme {
+	case dcsTypeEtcd:
+		hc.DcsType = dcsTypeEtcd
+		for _, h := range hosts {
+			hc.DcsEndpoints = append(hc.DcsEndpoints, "http://"+h)
+		}
+	case dcsTypeZookeeper:
+		hc.DcsType = dcsTypeZookeeper
+		hc.DcsEndpoints = hosts // Use the split hosts directly
+	case dcsTypeConsul:
+		hc.DcsType = dcsTypeConsul
+		hc.DcsEndpoints = hosts // Use the split hosts directly
+	default:
+		return hc, fmt.Errorf("unsupported DCS type: %s", url.Scheme)
+	}
+
+	hc.Path = url.Path
+	hc.Username = url.User.Username()
+	hc.Password, _ = url.User.Password() // password is optional, so we ignore the error
+	hc.CAFile = url.Query().Get("ca_file")
+	hc.CertFile = url.Query().Get("cert_file")
+	hc.KeyFile = url.Query().Get("key_file")
+
+	return hc, nil
+}
+
+func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
+	var mds []*SourceConn
+	var clusterMembers []PatroniClusterMember
+	var err error
+	var ok bool
+
+	hostConfig, err := NewHostConfig(source.ConnStr)
+	if err != nil {
+		return nil, err
+	}
+
+	switch hostConfig.DcsType {
+	case dcsTypeEtcd:
+		clusterMembers, err = getEtcdClusterMembers(source, hostConfig)
+	case dcsTypeZookeeper:
+		clusterMembers, err = getZookeeperClusterMembers(source, hostConfig)
+	case dcsTypeConsul:
+		clusterMembers, err = getConsulClusterMembers(source)
+	default:
+		return nil, errors.New("unknown DCS")
+	}
+	logger := logger.WithField("source", source.Name)
+	if err != nil {
+		if errors.Is(err, errors.ErrUnsupported) {
+			return nil, err
+		}
+		logger.Debug("failed to get info from DCS, using previous member info if any")
+		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
+			err = nil
+		}
+	} else {
+		lastFoundClusterMembers[source.Name] = clusterMembers
+	}
+	if len(clusterMembers) == 0 {
+		return mds, err
+	}
+
+	for _, patroniMember := range clusterMembers {
+		logger.Info("processing Patroni cluster member: ", patroniMember.Name)
+		if source.OnlyIfMaster && !patroniMember.IsPrimary() {
+			continue
+		}
+		src := *source.Clone()
+		src.ConnStr = patroniMember.ConnURL
+		if !hostConfig.IsScopeSpecified() {
+			src.Name += "_" + patroniMember.Scope
+		}
+		src.Name += "_" + patroniMember.Name
+		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
+			mds = append(mds, dbs...)
+		} else {
+			logger.WithError(err).Error("failed to resolve databases for Patroni member: ", patroniMember.Name)
+		}
+	}
+	return mds, err
+}
+
+// ResolveDatabasesFromPostgres reads all the databases from the given cluster,
+// additionally matching/not matching specified regex patterns
+func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+	var (
+		c      db.PgxPoolIface
+		dbname string
+		rows   pgx.Rows
+	)
+	c, err = NewConn(context.TODO(), s.ConnStr)
+	if err != nil {
+		return
+	}
+	defer c.Close()
+
+	sql := `select /* pgwatch_generated */
+	datname
+	from pg_database
+	where not datistemplate
+	and datallowconn
+	and has_database_privilege (datname, 'CONNECT')
+	and case when length(trim($1)) > 0 then datname ~ $1 else true end
+	and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
+
+	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		if err = rows.Scan(&dbname); err != nil {
+			return nil, err
+		}
+		rdb := NewSourceConn(*s.Clone())
+		rdb.Name += "_" + dbname
+		rdb.SetDatabaseName(dbname)
+		resolvedDbs = append(resolvedDbs, rdb)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return
+}

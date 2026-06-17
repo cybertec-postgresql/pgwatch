@@ -220,4 +220,4 @@ Source file `sources.yaml` in the same directory:
 Running this setup you get pgwatch that uses sources from YAML file and
 outputs measurements to postgres DB and exposes them for Prometheus
 to scrape on port 8080 instead of WebUI (which is disabled by `--web-disable`).
-Metrics definition are built-in, you can examine definition in [`internal/metrics/metrics.yaml`](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml).
+Metrics definition are built-in, you can examine definition in [`pkg/metrics/metrics.yaml`](https://github.com/cybertec-postgresql/pgwatch/blob/master/pkg/metrics/metrics.yaml).
