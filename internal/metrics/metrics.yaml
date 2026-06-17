@@ -1593,7 +1593,7 @@ metrics:
                     table_full_name as tag_table_full_name,
                     index_full_name as tag_object_name,
                     index_size_b,
-                    duplicate_count,
+                    affected_count,
                     oids,
                     index_def
                 from all_recommendations
@@ -1601,7 +1601,7 @@ metrics:
                 limit 100;
         node_status: primary
         gauges:
-            - "duplicate_count"
+            - "affected_count"
             - "index_size_b"
         storage_name: "recommendations"
     reco_nested_views:
