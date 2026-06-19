@@ -1510,7 +1510,7 @@ metrics:
                         quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name,
                         quote_ident(schemaname)||'.'||quote_ident(relname) as table_full_name,
                         pg_relation_size(indexrelid) as index_size_b,
-                        null::int as duplicate_count,
+                        1 as affected_count,
                         array[indexrelid] as oids,
                         null::text as index_def
                     from pg_index
@@ -1526,7 +1526,7 @@ metrics:
                         quote_ident(schemaname)||'.'||quote_ident(indexrelname) as index_full_name,
                         quote_ident(schemaname)||'.'||quote_ident(relname) as table_full_name,
                         pg_relation_size(indexrelid) as index_size_b,
-                        null::int as duplicate_count,
+                        1 as affected_count,
                         array[indexrelid] as oids,
                         null::text as index_def
                     from pg_stat_user_indexes
@@ -1574,7 +1574,7 @@ metrics:
                         null::text as index_full_name,
                         quote_ident(schemaname)||'.'||quote_ident(relid::regclass::text) as table_full_name,
                         dg.max_size_b as index_size_b,
-                        dg.dup_count::int as duplicate_count,
+                        dg.dup_count::int as affected_count,
                         dg.oids,
                         normalized_def::text as index_def
                     from duplicate_groups dg
@@ -1593,7 +1593,7 @@ metrics:
                     table_full_name as tag_table_full_name,
                     index_full_name as tag_object_name,
                     index_size_b,
-                    duplicate_count,
+                    affected_count,
                     oids,
                     index_def
                 from all_recommendations
@@ -1601,7 +1601,7 @@ metrics:
                 limit 100;
         node_status: primary
         gauges:
-            - "duplicate_count"
+            - "affected_count"
             - "index_size_b"
         storage_name: "recommendations"
     reco_nested_views:
