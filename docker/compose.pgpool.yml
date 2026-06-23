@@ -1,6 +1,6 @@
 services:
   pgpool:
-    image: bitnamilegacy/pgpool:4.6.3
+    image: soldevelo/pgpool:4.6.3
     container_name: pgpool
     ports:
       - "7432:5432"
