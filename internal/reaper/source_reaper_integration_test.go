@@ -82,11 +82,10 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 	}
 	sr := NewSourceReaper(r, md)
 
-	err := sr.executeBatch(ctx, []batchEntry{
-		{name: "integ_version", metric: metricDefs.MetricDefs["integ_version"], sql: "SELECT version() AS pg_version"},
-		{name: "integ_uptime", metric: metricDefs.MetricDefs["integ_uptime"], sql: "SELECT extract(epoch from now() - pg_postmaster_start_time())::int8 AS uptime_seconds"},
+	sr.executeBatch(ctx, []batchEntry{
+		{metricName: "integ_version", metric: metricDefs.MetricDefs["integ_version"], sql: "SELECT version() AS pg_version"},
+		{metricName: "integ_uptime", metric: metricDefs.MetricDefs["integ_uptime"], sql: "SELECT extract(epoch from now() - pg_postmaster_start_time())::int8 AS uptime_seconds"},
 	})
-	require.NoError(t, err)
 
 	received := make(map[string]metrics.MeasurementEnvelope)
 	for range 10 {
@@ -187,23 +186,23 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 	helperSetNodeStatus := func(status string) {
 		metricDefs.MetricDefs["test_metric"] = metrics.Metric{
-			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			SQLs:       metrics.SQLs{0: "SELECT 1 AS value"},
 			NodeStatus: status,
 		}
 		metricDefs.MetricDefs["server_log_event_counts"] = metrics.Metric{
-			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			SQLs:       metrics.SQLs{0: "SELECT 1 AS value"},
 			NodeStatus: status,
 		}
 		metricDefs.MetricDefs["psutil_cpu"] = metrics.Metric{
-			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			SQLs:       metrics.SQLs{0: "SELECT 1 AS value"},
 			NodeStatus: status,
 		}
 		metricDefs.MetricDefs[specialMetricInstanceUp] = metrics.Metric{
-			SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+			SQLs:       metrics.SQLs{0: "SELECT 1 AS value"},
 			NodeStatus: status,
 		}
 	}
-	
+
 	r := &Reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
@@ -216,10 +215,10 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 	// using psutil_*, server_log_event_counts, instance_up
 	// to ensure specially-handled metrics have the same behaviour
 	md.Metrics = metrics.MetricIntervals{
-		"test_metric": 5,
+		"test_metric":             5,
 		"server_log_event_counts": 5,
-		"psutil_cpu": 5,
-		specialMetricInstanceUp: 5,
+		"psutil_cpu":              5,
+		specialMetricInstanceUp:   5,
 	}
 
 	t.Run("primary-only/standby-only metrics get excluded when node is standby/primary", func(t *testing.T) {

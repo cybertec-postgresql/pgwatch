@@ -3,7 +3,6 @@ package reaper
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -123,9 +122,9 @@ func (sr *SourceReaper) dispatchMetricData(ctx context.Context, name string, met
 
 // batchEntry holds the minimum info needed to execute and dispatch a metric query.
 type batchEntry struct {
-	name   string
-	metric metrics.Metric
-	sql    string
+	metricName string
+	metric     metrics.Metric
+	sql        string
 }
 
 // Run is the main loop for a single source. It replaces N per-metric goroutines
@@ -142,39 +141,39 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 		now := time.Now()
 		var batch []batchEntry
 
-		for name, interval := range sr.activeMetrics() {
-			if interval <= 0 {
+		for metricName, metricInterval := range sr.activeMetrics() {
+			if metricInterval <= 0 {
 				continue
 			}
-			if lf := sr.lastFetch[name]; !lf.IsZero() && now.Sub(lf) < interval {
+			if lf := sr.lastFetch[metricName]; !lf.IsZero() && now.Sub(lf) < metricInterval {
 				continue
 			}
 
-			metric, ok := metricDefs.GetMetricDef(name)
+			metric, ok := metricDefs.GetMetricDef(metricName)
 			if !ok || sr.isRoleExcluded(metric) {
 				continue
 			}
 
 			switch {
-			case name == specialMetricServerLogEventCounts:
-				if sr.lastFetch[name].IsZero() {
+			case metricName == specialMetricServerLogEventCounts:
+				if sr.lastFetch[metricName].IsZero() {
 					go func() {
 						if e := sr.runLogParser(ctx); e != nil {
 							l.WithError(e).Error("log parser error")
 						}
 					}()
 				}
-			case IsDirectlyFetchableMetric(sr.md, name):
-				err = sr.fetchOSMetric(ctx, name)
-				sr.lastFetch[name] = time.Now()
-			case name == specialMetricChangeEvents || name == specialMetricInstanceUp:
-				err = sr.fetchSpecialMetric(ctx, name, metric.StorageName)
-				sr.lastFetch[name] = time.Now()
+			case IsDirectlyFetchableMetric(sr.md, metricName):
+				err = sr.fetchOSMetric(ctx, metricName)
+				sr.lastFetch[metricName] = time.Now()
+			case metricName == specialMetricChangeEvents || metricName == specialMetricInstanceUp:
+				err = sr.fetchSpecialMetric(ctx, metricName, metric.StorageName)
+				sr.lastFetch[metricName] = time.Now()
 			default:
-				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, name)); len(cached) > 0 {
-					l.WithField("metric", name).Info("instance level cache hit")
-					sr.sendEnvelope(ctx, name, metric.StorageName, cached)
-					sr.lastFetch[name] = time.Now()
+				if cached := sr.reaper.GetMeasurementCache(sr.cacheKey(metric, metricName)); len(cached) > 0 {
+					l.WithField("metric", metricName).Info("instance level cache hit")
+					sr.sendEnvelope(ctx, metricName, metric.StorageName, cached)
+					sr.lastFetch[metricName] = time.Now()
 					break
 				}
 				sr.md.RLock()
@@ -182,42 +181,39 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 				sr.md.RUnlock()
 				sql := metric.GetSQL(version)
 				if sql == "" {
-					l.WithField("metric", name).WithField("version", version).Warning("no SQL found for metric version")
-					sr.lastFetch[name] = time.Now()
+					l.WithField("metric", metricName).WithField("version", version).Warning("no SQL found for metric version")
+					sr.lastFetch[metricName] = time.Now()
 					break
 				}
-				if _, degraded := sr.degradedMetrics[name]; degraded {
-					if err = sr.fetchMetric(ctx, batchEntry{name: name, metric: metric, sql: sql}); err != nil {
-						l.WithError(err).WithField("metric", name).Error("degraded metric fetch failed")
+				if _, degraded := sr.degradedMetrics[metricName]; degraded {
+					if err = sr.fetchMetric(ctx, batchEntry{metricName: metricName, metric: metric, sql: sql}); err != nil {
+						l.WithError(err).WithField("metric", metricName).Error("degraded metric fetch failed")
 					} else {
-						l.WithField("metric", name).Info("degraded metric recovered, returning to batch execution")
-						delete(sr.degradedMetrics, name)
+						l.WithField("metric", metricName).Info("degraded metric recovered, returning to batch execution")
+						delete(sr.degradedMetrics, metricName)
 					}
-					sr.lastFetch[name] = time.Now()
+					sr.lastFetch[metricName] = time.Now()
 					break
 				}
-				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
+				batch = append(batch, batchEntry{metricName: metricName, metric: metric, sql: sql})
 			}
 			if err != nil {
-				l.WithError(err).WithField("metric", name).Error("failed to fetch metric")
+				l.WithError(err).WithField("metric", metricName).Error("failed to fetch metric")
 			}
 		}
 
 		if len(batch) > 0 {
+			// executeBatch/fetchMetrics log every failure individually with the
+			// metric name attached, so there is nothing to re-log here.
 			if sr.md.IsPostgresSource() {
-				err = sr.executeBatch(ctx, batch)
+				sr.executeBatch(ctx, batch)
 			} else {
-				for _, e := range batch {
-					err = sr.fetchMetric(ctx, e)
-				}
-			}
-			if err != nil {
-				l.WithError(err).Error("failed to fetch metrics")
+				sr.fetchMetrics(ctx, batch)
 			}
 
 			now := time.Now()
 			for _, e := range batch {
-				sr.lastFetch[e.name] = now
+				sr.lastFetch[e.metricName] = now
 			}
 		}
 		select {
@@ -235,43 +231,55 @@ func (sr *SourceReaper) Run(ctx context.Context) {
 // individually via fetchMetric to isolate real failures from cascade failures.
 // Entries that fail even after the individual retry are marked as degraded
 // so that subsequent runs use fetchMetric for them until they recover.
-func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
+//
+// Failures are logged per-metric as they happen.
+func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) {
 	batch := &pgx.Batch{}
 	for _, e := range entries {
 		batch.Queue(e.sql)
 	}
 
 	br := sr.md.Conn.SendBatch(ctx, batch)
+	l := log.GetLogger(ctx)
 
-	var (
-		errs    []error
-		retries []batchEntry
-	)
+	var retries []batchEntry
 	for _, e := range entries {
 		rows, err := br.Query()
 		if err != nil {
 			// May be a real error or a cascade from an earlier failure; retry individually.
+			// Don't log here: a cascade failure is expected noise and the retry will
+			// log a single accurate error if the metric truly fails.
 			retries = append(retries, e)
 			continue
 		}
-		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+		if err = sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric); err != nil {
+			retries = append(retries, e)
+		}
 	}
 
 	// Close the batch explicitly before retrying to release the connection back to the
 	// pool. A deferred close would hold the connection through the retry loop, causing a
 	// potential deadlock
 	if err := br.Close(); err != nil {
-		errs = append(errs, err)
+		l.WithError(err).Error("failed to close batch")
 	}
 
-	for _, e := range retries {
+	sr.fetchMetrics(ctx, retries)
+}
+
+// fetchMetrics fetches a batch of entries individually, marking any that fail
+// as degraded so subsequent runs will continue to use individual fetching for them.
+// Each failure is logged on its own line with the metric name attached.
+func (sr *SourceReaper) fetchMetrics(ctx context.Context, entries []batchEntry) {
+	for _, e := range entries {
 		if err := sr.fetchMetric(ctx, e); err != nil {
-			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.name, err))
-			log.GetLogger(ctx).WithField("metric", e.name).Warning("metric degraded after repeated failures, switching to individual fetch")
-			sr.degradedMetrics[e.name] = struct{}{}
+			log.GetLogger(ctx).
+				WithField("metric", e.metricName).
+				WithError(err).
+				Warning("failed to fetch metric")
+			sr.degradedMetrics[e.metricName] = struct{}{}
 		}
 	}
-	return errors.Join(errs...)
 }
 
 // fetchMetric executes a single SQL query and returns the resulting measurements.
@@ -280,7 +288,7 @@ func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error
 	if err != nil {
 		return err
 	}
-	return sr.CollectAndDispatch(ctx, rows, entry.name, entry.metric)
+	return sr.CollectAndDispatch(ctx, rows, entry.metricName, entry.metric)
 }
 
 // CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.
