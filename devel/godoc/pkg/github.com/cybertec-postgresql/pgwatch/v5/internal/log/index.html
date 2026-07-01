@@ -118,6 +118,9 @@
 				<dd><a href="#WithLogger">func WithLogger(ctx context.Context, logger Logger) context.Context</a></dd>
 			
 				
+				<dd><a href="#WithSuppressedPgxErrors">func WithSuppressedPgxErrors(ctx context.Context) context.Context</a></dd>
+			
+				
 				<dd><a href="#getColorByLevel">func getColorByLevel(level logrus.Level) int</a></dd>
 			
 				
@@ -125,6 +128,9 @@
 			
 				
 				<dd><a href="#getLogFileWriter">func getLogFileWriter(opts CmdOpts) any</a></dd>
+			
+				
+				<dd><a href="#pgxErrorsSuppressed">func pgxErrorsSuppressed(ctx context.Context) bool</a></dd>
 			
 				
 				<dd><a href="#trimFilename">func trimFilename(s string) string</a></dd>
@@ -237,6 +243,11 @@
 				
 				
 			
+				
+				<dd><a href="#suppressPgxErrorsKey">type suppressPgxErrorsKey</a></dd>
+				
+				
+			
 			
 			</dl>
 			</div><!-- #manual-nav -->
@@ -314,7 +325,7 @@
 		
 			
 			
-			<h2 id="WithLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L110">WithLogger</a>
+			<h2 id="WithLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L132">WithLogger</a>
 				<a class="permalink" href="#WithLogger">&#xb6;</a>
 				
 				
@@ -322,6 +333,22 @@
 			<pre>func WithLogger(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, logger <a href="#Logger">Logger</a>) <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a></pre>
 			<p>WithLogger returns a new context with the provided logger. Use in
 combination with logger.WithField(s) for great effect
+
+			
+			
+
+		
+			
+			
+			<h2 id="WithSuppressedPgxErrors">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L36">WithSuppressedPgxErrors</a>
+				<a class="permalink" href="#WithSuppressedPgxErrors">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func WithSuppressedPgxErrors(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a></pre>
+			<p>WithSuppressedPgxErrors returns a context in which pgx tracer log entries at
+error level are downgraded to debug. Use it around operations where query or
+batch failures are an expected, handled part of the control flow.
 
 			
 			
@@ -342,7 +369,7 @@ combination with logger.WithField(s) for great effect
 		
 			
 			
-			<h2 id="getLogFileFormatter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L49">getLogFileFormatter</a>
+			<h2 id="getLogFileFormatter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L67">getLogFileFormatter</a>
 				<a class="permalink" href="#getLogFileFormatter">&#xb6;</a>
 				
 				
@@ -355,12 +382,25 @@ combination with logger.WithField(s) for great effect
 		
 			
 			
-			<h2 id="getLogFileWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L32">getLogFileWriter</a>
+			<h2 id="getLogFileWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L50">getLogFileWriter</a>
 				<a class="permalink" href="#getLogFileWriter">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func getLogFileWriter(opts <a href="#CmdOpts">CmdOpts</a>) <a href="https://pkg.go.dev/builtin/#any">any</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="pgxErrorsSuppressed">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L40">pgxErrorsSuppressed</a>
+				<a class="permalink" href="#pgxErrorsSuppressed">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func pgxErrorsSuppressed(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
 			
 			
 			
@@ -734,7 +774,7 @@ l.Error(&#34;test4&#34;)
 
 			
 				
-				<h3 id="GetLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L119">GetLogger</a>
+				<h3 id="GetLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L141">GetLogger</a>
 					<a class="permalink" href="#GetLogger">&#xb6;</a>
 					
 					
@@ -747,7 +787,7 @@ available, the default logger is returned
 				
 			
 				
-				<h3 id="NewNoopLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L127">NewNoopLogger</a>
+				<h3 id="NewNoopLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L149">NewNoopLogger</a>
 					<a class="permalink" href="#NewNoopLogger">&#xb6;</a>
 					
 					
@@ -786,7 +826,7 @@ available, the default logger is returned
 
 			
 				
-				<h3 id="Init">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L57">Init</a>
+				<h3 id="Init">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L75">Init</a>
 					<a class="permalink" href="#Init">&#xb6;</a>
 					
 					
@@ -848,7 +888,7 @@ available, the default logger is returned
 		
 			
 			
-			<h2 id="PgxLogger">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L76">PgxLogger</a>
+			<h2 id="PgxLogger">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L94">PgxLogger</a>
 				<a class="permalink" href="#PgxLogger">&#xb6;</a>
 				
 				
@@ -870,7 +910,7 @@ available, the default logger is returned
 
 			
 				
-				<h3 id="NewPgxLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L81">NewPgxLogger</a>
+				<h3 id="NewPgxLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L99">NewPgxLogger</a>
 					<a class="permalink" href="#NewPgxLogger">&#xb6;</a>
 					
 					
@@ -884,7 +924,7 @@ available, the default logger is returned
 
 			
 				
-				<h3 id="PgxLogger.Log">func (*PgxLogger) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L86">Log</a>
+				<h3 id="PgxLogger.Log">func (*PgxLogger) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L104">Log</a>
 					<a class="permalink" href="#PgxLogger.Log">&#xb6;</a>
 					
 					
@@ -899,7 +939,7 @@ available, the default logger is returned
 		
 			
 			
-			<h2 id="logger">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L27">logger</a>
+			<h2 id="logger">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L45">logger</a>
 				<a class="permalink" href="#logger">&#xb6;</a>
 				
 				
@@ -932,6 +972,33 @@ available, the default logger is returned
 			</h2>
 			
 			<pre>type loggerKey struct{}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="suppressPgxErrorsKey">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/log/log.go.html#L30">suppressPgxErrorsKey</a>
+				<a class="permalink" href="#suppressPgxErrorsKey">&#xb6;</a>
+				
+				
+			</h2>
+			<p>suppressPgxErrorsKey marks a context in which pgx tracer errors are
+expected (e.g. a batch that deliberately probes for cascade failures and
+then retries). Such errors are downgraded to debug so they don&apos;t flood
+the log; the caller is responsible for logging the meaningful outcome.
+
+			<pre>type suppressPgxErrorsKey struct{}
 </pre>
 
 			
