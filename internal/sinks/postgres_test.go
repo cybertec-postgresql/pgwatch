@@ -1081,3 +1081,38 @@ func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
 		}
 	}
 }
+
+func TestFlush_SinkDBIsDown(t *testing.T) {
+	r := require.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 day",
+		RetentionInterval:   "7 days",
+		MaintenanceInterval: "12 hours",
+		BatchingDelay:       time.Second,
+	}
+
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
+	// Bring the sink db down
+	pgTearDown()
+
+	msgs := []metrics.MeasurementEnvelope{
+		{
+			MetricName: "test_metric",
+			Data: metrics.Measurements{
+				{"epoch_ns": time.Now().UnixNano(), "value": 1},
+			},
+			DBName: "test_db",
+		},
+	}
+
+	// It should return, Issue:#1426 will keep it spinning forever
+	pgw.flush(msgs)
+}
