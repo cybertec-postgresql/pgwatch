@@ -239,7 +239,12 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 		batch.Queue(e.sql)
 	}
 
-	br := sr.md.Conn.SendBatch(ctx, batch)
+	// A failing query aborts the rest of the batch (cascade), and the per-query
+	// retry below may also fail. Those failures are expected and handled, so run
+	// them under a context that downgrades pgx tracer errors to debug and avoids
+	// flooding the log with BatchClose/Query dumps. We log the real outcome once.
+	pgxCtx := log.WithSuppressedPgxErrors(ctx)
+	br := sr.md.Conn.SendBatch(pgxCtx, batch)
 	l := log.GetLogger(ctx)
 
 	var retries []batchEntry
@@ -261,7 +266,7 @@ func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 	// pool. A deferred close would hold the connection through the retry loop, causing a
 	// potential deadlock
 	if err := br.Close(); err != nil {
-		l.WithError(err).Error("failed to close batch")
+		l.WithError(err).Debug("failed to close batch")
 	}
 
 	sr.fetchMetrics(ctx, retries)
@@ -276,15 +281,18 @@ func (sr *SourceReaper) fetchMetrics(ctx context.Context, entries []batchEntry) 
 			log.GetLogger(ctx).
 				WithField("metric", e.metricName).
 				WithError(err).
-				Warning("failed to fetch metric")
+				Error("failed to fetch metric")
 			sr.degradedMetrics[e.metricName] = struct{}{}
 		}
 	}
 }
 
 // fetchMetric executes a single SQL query and returns the resulting measurements.
+// pgx tracer errors are suppressed because the caller logs a single, accurate
+// message (with the metric name) on failure; the raw SQL/args dump is only
+// emitted at debug level.
 func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
-	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
+	rows, err := sr.md.Conn.Query(log.WithSuppressedPgxErrors(ctx), entry.sql, pgx.QueryExecModeSimpleProtocol)
 	if err != nil {
 		return err
 	}

@@ -22,7 +22,25 @@ type (
 	}
 
 	loggerKey struct{}
+
+	// suppressPgxErrorsKey marks a context in which pgx tracer errors are
+	// expected (e.g. a batch that deliberately probes for cascade failures and
+	// then retries). Such errors are downgraded to debug so they don't flood
+	// the log; the caller is responsible for logging the meaningful outcome.
+	suppressPgxErrorsKey struct{}
 )
+
+// WithSuppressedPgxErrors returns a context in which pgx tracer log entries at
+// error level are downgraded to debug. Use it around operations where query or
+// batch failures are an expected, handled part of the control flow.
+func WithSuppressedPgxErrors(ctx context.Context) context.Context {
+	return context.WithValue(ctx, suppressPgxErrorsKey{}, true)
+}
+
+func pgxErrorsSuppressed(ctx context.Context) bool {
+	v, _ := ctx.Value(suppressPgxErrorsKey{}).(bool)
+	return v
+}
 
 type logger struct {
 	*logrus.Logger
@@ -99,7 +117,11 @@ func (pgxlogger *PgxLogger) Log(ctx context.Context, level tracelog.LogLevel, ms
 	case tracelog.LogLevelWarn:
 		logger.Warn(msg)
 	case tracelog.LogLevelError:
-		logger.Error(msg)
+		if pgxErrorsSuppressed(ctx) {
+			logger.Debug(msg)
+		} else {
+			logger.Error(msg)
+		}
 	default:
 		logger.WithField("INVALID_PGX_LOG_LEVEL", level).Error(msg)
 	}
