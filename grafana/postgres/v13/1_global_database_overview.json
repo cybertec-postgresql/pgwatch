@@ -4,22 +4,17 @@
   "metadata": {
     "name": "global-database-overview",
     "namespace": "default",
-    "uid": "47b2ca9e-78f7-41f8-a221-427c67c71d56",
-    "resourceVersion": "1782476278786987",
-    "generation": 8,
-    "creationTimestamp": "2026-06-19T09:19:54Z",
+    "uid": "db03ddcd-9d0a-4f58-a064-204046c347f1",
+    "resourceVersion": "1784530767361982",
+    "generation": 1,
+    "creationTimestamp": "2026-07-20T06:59:27Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "8"
+      "grafana.app/deprecatedInternalID": "2939417880076288"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:afoipfjig8k5cf",
-      "grafana.app/folder": "efoipikg7bjswc",
-      "grafana.app/message": "Finish ordering, resize panels to make things more compact",
-      "grafana.app/saved-from-ui": "Grafana v13.0.2 (3fcdbc5a)",
-      "grafana.app/updatedBy": "user:afoipfjig8k5cf",
-      "grafana.app/updatedTimestamp": "2026-06-26T12:17:58Z",
-      "grafana.app/folderTitle": "v13 test",
-      "grafana.app/folderUrl": "/dashboards/f/efoipikg7bjswc/v13-test"
+      "grafana.app/createdBy": "anonymous:0",
+      "grafana.app/folder": "",
+      "grafana.app/saved-from-ui": "Grafana v13.1.0 (b309c9bb3b)"
     }
   },
   "spec": {
@@ -31,8 +26,8 @@
             "kind": "DataQuery",
             "group": "grafana",
             "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
+            "labels": {
+              "grafana.app/export-label": "grafana-1"
             },
             "spec": {
               "limit": 100,
@@ -71,7 +66,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -233,7 +228,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -395,7 +390,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -557,7 +552,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -720,7 +715,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -883,7 +878,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -1047,7 +1042,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -1191,7 +1186,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -1337,7 +1332,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -1499,7 +1494,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -1644,7 +1639,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -1806,7 +1801,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -1967,7 +1962,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -2125,7 +2120,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -2266,7 +2261,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -2426,7 +2421,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -2624,7 +2619,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -2786,7 +2781,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -2924,7 +2919,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -3069,7 +3064,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "format": "time_series",
@@ -3214,7 +3209,7 @@
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "ffopxl0bi2tj4b"
+                        "name": "pgwatch-metrics"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -3745,12 +3740,8 @@
         "spec": {
           "name": "dbname",
           "current": {
-            "text": [
-              "omdb"
-            ],
-            "value": [
-              "omdb"
-            ]
+            "text": "",
+            "value": ""
           },
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
