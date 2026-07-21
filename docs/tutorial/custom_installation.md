@@ -205,7 +205,10 @@ Add databases to monitor via one of the methods:
 2. Import the default postgres and/or prometheus dashboards from the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder into your Grafana instance.
 
 !!! note
-    The default built-in dashboards expect `postgres/prometheus` data sources with uids `pgwatch-metrics/pgwatch-prometheus` by default.
+    The default built-in dashboards expect `postgres` or `prometheus` data sources with the default UIDs `pgwatch-metrics` or `pgwatch-prometheus`, respectively.
+
+!!! note
+    Starting from Grafana 12.4, a small adjustment to `grafana.ini` is needed for avoiding too small fonts for displayed values in some of the dashboards.  Add `newPanelPadding = false` to the `[feature_toggles]` section.
 
 ## Next Steps
 
