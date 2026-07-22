@@ -599,28 +599,108 @@ var migrations func() migrator.Option = func() migrator.Option {
 			},
 		},
 
-		&migrator.Migration{
+		&migrator.MigrationNoTx{
 			Name: "01409 Switch to time-only partitioning",
-			Func: func(ctx context.Context, tx pgx.Tx) error {
-				_, err := tx.Exec(ctx, `SELECT admin.drop_all_metric_tables()`)
+			Func: func(ctx context.Context, conn migrator.PgxIface) error {
+				err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+					if _, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`); err != nil {
+						return err
+					}
+					if _, err := tx.Exec(ctx, sqlMetricAdminFunctions); err != nil {
+						return err
+					}
+					if _, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres); err != nil {
+						return err
+					}
+					return nil
+				})
 				if err != nil {
 					return err
 				}
 
-				_, err = tx.Exec(ctx, `
-					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
-				`)
+				rows, _ := conn.Query(ctx, `SELECT objoid::regclass FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`)
+				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 				if err != nil {
 					return err
 				}
 
-				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
-				if err != nil {
-					return err
+				for _, metricTable := range metricTables {
+					// skip *_before_v6_migration tables to avoid double migration
+					// this could happen if the migration is re-run after a failed attempt
+					suffix := "_before_v6_migration"
+					if strings.HasSuffix(metricTable, suffix) {
+						continue
+					}
+					metricTableRenamed := metricTable + suffix
+
+					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
+						var isTableMigrated bool
+						if err = conn.QueryRow(ctx, `SELECT true pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r'`, metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
+							return err
+						}
+
+						if _, err = tx.Exec(ctx, `ALTER TABLE ` + metricTable + ` RENAME TO ` + metricTableRenamed); err != nil {
+							return err
+						}
+
+						var minTime *time.Time
+						var daysToPrecreate *int32
+						if err := tx.QueryRow(ctx, `SELECT MIN(time), CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1 FROM ` + metricTableRenamed).Scan(&minTime, &daysToPrecreate); err != nil {
+							return err
+						}
+
+						if minTime == nil {
+							// no data in the table, just create a new empty partitioned table
+							if _, err = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, NOW()::timestamptz, '1 day'::interval, 0)`, metricTable); err != nil {
+								return err
+							}
+						} else {
+							if _, err = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate); err != nil {
+								return err
+							}
+						}
+						
+						return nil
+					})
+					if err != nil {
+						return err
+					}
+
+					type partitionInfo struct {
+						Rel       string
+						ParentRel string
+					}
+					rows, _ := conn.Query(ctx, `SELECT relid::regclass, parentrelid::regclass FROM pg_partition_tree($1::regclass) WHERE relid::text like 'subpartitions%' ORDER BY isleaf DESC, relid::text`, metricTableRenamed)
+					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
+					if err != nil {
+						return err
+					}
+
+					for _, partInfo := range partitionsInfo {
+						err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+							if _, err = tx.Exec(ctx, `INSERT INTO ` + metricTable + ` SELECT * FROM ` + partInfo.Rel); err != nil {
+								return err
+							}
+							if _, err = tx.Exec(ctx, `ALTER TABLE ` + partInfo.ParentRel + ` DETACH PARTITION ` + partInfo.Rel); err != nil {
+								return err
+							}
+							if _, err = tx.Exec(ctx, `DROP TABLE IF EXISTS ` + partInfo.Rel); err != nil {
+								return err
+							}
+							return nil
+						})
+						if err != nil {
+							return err
+						}
+					}
+
+					if _, err := conn.Exec(ctx, `DROP TABLE IF EXISTS ` + metricTableRenamed); err != nil {
+						return err
+					}
 				}
 
-				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
-				return err
+				return nil
 			},
 		},
 
