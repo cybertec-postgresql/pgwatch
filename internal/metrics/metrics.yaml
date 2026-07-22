@@ -638,6 +638,21 @@ metrics:
             - checksum_last_failure_s
             - parallel_workers_to_launch
             - parallel_workers_launched
+    dsm_registry_allocations:
+        description: >
+            This metric provides information about entries in the dynamic shared memory (DSM) registry, it retrieves the name, type (segment, area, or hash), and size of each entry.
+        sqls:
+            19: |
+                select /* pgwatch_generated */
+                  (extract (epoch from now()) * 1e9)::int8 as epoch_ns,
+                  name::text as tag_name,
+                  type::text as tag_type,
+                  coalesce(size, 0)::int8 as size_bytes
+                from 
+                  pg_dsm_registry_allocations;
+        gauges:
+            - size_bytes
+        is_instance_level: true    
     index_hashes:
         description: >
             Retrieves the hash of index definitions in the PostgreSQL database, providing a way to track changes in index definitions over time.
@@ -4293,6 +4308,7 @@ presets:
             datfrozenxid: 300
             db_size: 300
             db_stats: 60
+            dsm_registry_allocations: 60
             index_stats: 900
             instance_up: 60
             locks: 60
@@ -4325,6 +4341,7 @@ presets:
             datfrozenxid: 300
             db_size: 300
             db_stats: 60
+            dsm_registry_allocations: 60
             index_stats: 900
             instance_up: 60
             kpi: 120
@@ -4463,6 +4480,7 @@ presets:
             datfrozenxid: 300
             db_size: 300
             db_stats: 60
+            dsm_registry_allocations: 60
             index_stats: 900
             instance_up: 60
             locks: 60
@@ -4503,6 +4521,7 @@ presets:
             db_size: 30
             db_size_approx: 30
             db_stats: 30
+            dsm_registry_allocations: 30
             index_hashes: 30
             index_stats: 30
             instance_up: 30
