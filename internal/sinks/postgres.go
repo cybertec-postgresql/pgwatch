@@ -605,6 +605,8 @@ var migrations func() migrator.Option = func() migrator.Option {
 				// %s placeholders are filled with regclass-derived identifiers, which are already
 				// safely quoted by PostgreSQL, so fmt.Sprintf interpolation is safe here.
 				const (
+					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
+
 					sqlListMetricTables = `SELECT objoid::regclass 
 						FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`
 
@@ -631,19 +633,9 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
 				)
-				err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-					if _, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`); err != nil {
-						return err
-					}
-					if _, err := tx.Exec(ctx, sqlMetricAdminFunctions); err != nil {
-						return err
-					}
-					if _, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres); err != nil {
-						return err
-					}
-					return nil
-				})
-				if err != nil {
+				if _, err := conn.Exec(ctx, sqlDropOldEnsurePartitionDbnameTime+
+					sqlMetricAdminFunctions+
+					sqlMetricEnsurePartitionPostgres); err != nil {
 					return err
 				}
 
