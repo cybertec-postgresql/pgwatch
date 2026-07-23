@@ -633,38 +633,32 @@ var migrations func() migrator.Option = func() migrator.Option {
 					}
 					metricTableRenamed := metricTable + suffix
 
-					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
 						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
 						var isTableMigrated bool
-						if err := tx.QueryRow(ctx, `SELECT EXISTS (
+						if ferr = tx.QueryRow(ctx, `SELECT EXISTS (
 						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`,
-							metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
-							return err
+							metricTable).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
+							return
 						}
 
-						if _, err := tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); err != nil {
-							return err
+						if _, ferr = tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); ferr != nil {
+							return
 						}
 
-						var minTime *time.Time
-						var daysToPrecreate *int32
-						if err := tx.QueryRow(ctx, `SELECT MIN(time), CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1 FROM `+metricTableRenamed).Scan(&minTime, &daysToPrecreate); err != nil {
-							return err
+						// for an empty table MIN(time) is NULL, so COALESCE falls back to server-side
+						// NOW() and daysToPrecreate becomes 0, creating a single empty partition
+						var minTime time.Time
+						var daysToPrecreate int32
+						if ferr = tx.QueryRow(ctx, `SELECT 
+						COALESCE(MIN(time), NOW()),
+						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
+						FROM `+metricTableRenamed).Scan(&minTime, &daysToPrecreate); ferr == nil {
+							_, ferr = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate)
 						}
-
-						if minTime == nil {
-							// no data in the table, just create a new empty partitioned table
-							if _, err := tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, NOW()::timestamptz, '1 day'::interval, 0)`, metricTable); err != nil {
-								return err
-							}
-						} else {
-							if _, err := tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate); err != nil {
-								return err
-							}
-						}
-
-						return nil
+						return
 					})
+
 					if err != nil {
 						return err
 					}
