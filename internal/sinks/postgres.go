@@ -681,7 +681,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 					for _, partInfo := range partitionsInfo {
 						err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-							if _, err := tx.Exec(ctx, `INSERT INTO `+metricTable+` SELECT * FROM `+partInfo.Rel); err != nil {
+							if _, err := tx.Exec(ctx, `INSERT INTO `+metricTable+` (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM `+partInfo.Rel); err != nil {
 								return err
 							}
 							if _, err := tx.Exec(ctx, `ALTER TABLE `+partInfo.ParentRel+` DETACH PARTITION `+partInfo.Rel); err != nil {
