@@ -61,16 +61,16 @@ var (
 // However, one is able to use any Postgres-compatible database as a storage backend,
 // e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 type PostgresWriter struct {
-	ctx                      context.Context
-	sinkDb                   db.PgxPoolIface
-	metricSchema             DbStorageSchemaType
-	opts                     *CmdOpts
-	retentionInterval        time.Duration
-	maintenanceInterval      time.Duration
-	input                    chan metrics.MeasurementEnvelope
-	lastError                chan error
-	forceRecreatePartitions  bool                                        // to signal override PG metrics storage cache
-	partitionMapMetric 		 map[string]ExistingPartitionInfo // metric = min/max bounds
+	ctx                     context.Context
+	sinkDb                  db.PgxPoolIface
+	metricSchema            DbStorageSchemaType
+	opts                    *CmdOpts
+	retentionInterval       time.Duration
+	maintenanceInterval     time.Duration
+	input                   chan metrics.MeasurementEnvelope
+	lastError               chan error
+	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
+	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
 }
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
@@ -90,13 +90,13 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
 	ctx = log.WithLogger(ctx, l)
 	pgw = &PostgresWriter{
-		ctx:                      ctx,
-		opts:                     opts,
-		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:                make(chan error),
-		sinkDb:                   conn,
-		forceRecreatePartitions:  false,
-		partitionMapMetric: 	  make(map[string]ExistingPartitionInfo),
+		ctx:                     ctx,
+		opts:                    opts,
+		input:                   make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:               make(chan error),
+		sinkDb:                  conn,
+		forceRecreatePartitions: false,
+		partitionMapMetric:      make(map[string]ExistingPartitionInfo),
 	}
 	l.Info("initialising measurements database...")
 	if err = pgw.init(); err != nil {
@@ -453,7 +453,7 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 	return
 }
 
-func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) (error) {
+func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) error {
 	var err error
 	var rows pgx.Rows
 	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2, $3)`
@@ -636,17 +636,17 @@ var migrations func() migrator.Option = func() migrator.Option {
 					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
 						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
 						var isTableMigrated bool
-						if err = conn.QueryRow(ctx, `SELECT true pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r'`, metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
+						if err = conn.QueryRow(ctx, `SELECT true FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r'`, metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
 							return err
 						}
 
-						if _, err = tx.Exec(ctx, `ALTER TABLE ` + metricTable + ` RENAME TO ` + metricTableRenamed); err != nil {
+						if _, err = tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); err != nil {
 							return err
 						}
 
 						var minTime *time.Time
 						var daysToPrecreate *int32
-						if err := tx.QueryRow(ctx, `SELECT MIN(time), CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1 FROM ` + metricTableRenamed).Scan(&minTime, &daysToPrecreate); err != nil {
+						if err := tx.QueryRow(ctx, `SELECT MIN(time), CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1 FROM `+metricTableRenamed).Scan(&minTime, &daysToPrecreate); err != nil {
 							return err
 						}
 
@@ -660,7 +660,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 								return err
 							}
 						}
-						
+
 						return nil
 					})
 					if err != nil {
@@ -679,13 +679,13 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 					for _, partInfo := range partitionsInfo {
 						err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-							if _, err = tx.Exec(ctx, `INSERT INTO ` + metricTable + ` SELECT * FROM ` + partInfo.Rel); err != nil {
+							if _, err = tx.Exec(ctx, `INSERT INTO `+metricTable+` SELECT * FROM `+partInfo.Rel); err != nil {
 								return err
 							}
-							if _, err = tx.Exec(ctx, `ALTER TABLE ` + partInfo.ParentRel + ` DETACH PARTITION ` + partInfo.Rel); err != nil {
+							if _, err = tx.Exec(ctx, `ALTER TABLE `+partInfo.ParentRel+` DETACH PARTITION `+partInfo.Rel); err != nil {
 								return err
 							}
-							if _, err = tx.Exec(ctx, `DROP TABLE IF EXISTS ` + partInfo.Rel); err != nil {
+							if _, err = tx.Exec(ctx, `DROP TABLE IF EXISTS `+partInfo.Rel); err != nil {
 								return err
 							}
 							return nil
@@ -695,7 +695,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 						}
 					}
 
-					if _, err := conn.Exec(ctx, `DROP TABLE IF EXISTS ` + metricTableRenamed); err != nil {
+					if _, err := conn.Exec(ctx, `DROP TABLE IF EXISTS `+metricTableRenamed); err != nil {
 						return err
 					}
 				}
