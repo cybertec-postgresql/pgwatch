@@ -602,6 +602,35 @@ var migrations func() migrator.Option = func() migrator.Option {
 		&migrator.MigrationNoTx{
 			Name: "01409 Switch to time-only partitioning",
 			Func: func(ctx context.Context, conn migrator.PgxIface) error {
+				// %s placeholders are filled with regclass-derived identifiers, which are already
+				// safely quoted by PostgreSQL, so fmt.Sprintf interpolation is safe here.
+				const (
+					sqlListMetricTables = `SELECT objoid::regclass 
+						FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`
+
+					sqlIsTableMigrated = `SELECT EXISTS (
+						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`
+
+					sqlRenameMetricTable = `ALTER TABLE %s RENAME TO %s`
+
+					sqlMetricTableBounds = `SELECT COALESCE(MIN(time), NOW()),
+						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
+						FROM %s`
+
+					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`
+
+					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
+						FROM pg_partition_tree($1::regclass) WHERE relid::text LIKE 'subpartitions%' 
+						ORDER BY isleaf DESC, relid::text`
+
+					// moves rows into the new partitioned parent, detaches and drops the old subpartition;
+					// multiple statements in a single Exec run in an implicit transaction
+					sqlMoveSubpartition = `INSERT INTO %[1]s (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM %[2]s;
+						ALTER TABLE %[3]s DETACH PARTITION %[2]s;
+						DROP TABLE %[2]s;`
+
+					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
+				)
 				err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
 					if _, err := tx.Exec(ctx, `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time`); err != nil {
 						return err
@@ -618,7 +647,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 					return err
 				}
 
-				rows, _ := conn.Query(ctx, `SELECT objoid::regclass FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`)
+				rows, _ := conn.Query(ctx, sqlListMetricTables)
 				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 				if err != nil {
 					return err
@@ -636,13 +665,11 @@ var migrations func() migrator.Option = func() migrator.Option {
 					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
 						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
 						var isTableMigrated bool
-						if ferr = tx.QueryRow(ctx, `SELECT EXISTS (
-						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`,
-							metricTable).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
+						if ferr = tx.QueryRow(ctx, sqlIsTableMigrated, metricTable).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
 							return
 						}
 
-						if _, ferr = tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); ferr != nil {
+						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
 							return
 						}
 
@@ -650,11 +677,8 @@ var migrations func() migrator.Option = func() migrator.Option {
 						// NOW() and daysToPrecreate becomes 0, creating a single empty partition
 						var minTime time.Time
 						var daysToPrecreate int32
-						if ferr = tx.QueryRow(ctx, `SELECT 
-						COALESCE(MIN(time), NOW()),
-						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
-						FROM `+metricTableRenamed).Scan(&minTime, &daysToPrecreate); ferr == nil {
-							_, ferr = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate)
+						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&minTime, &daysToPrecreate); ferr == nil {
+							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTable, minTime, daysToPrecreate)
 						}
 						return
 					})
@@ -667,24 +691,19 @@ var migrations func() migrator.Option = func() migrator.Option {
 						Rel       string
 						ParentRel string
 					}
-					rows, _ := conn.Query(ctx, `SELECT relid::regclass, parentrelid::regclass FROM pg_partition_tree($1::regclass) WHERE relid::text like 'subpartitions%' ORDER BY isleaf DESC, relid::text`, metricTableRenamed)
+					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRenamed)
 					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
 					if err != nil {
 						return err
 					}
 
 					for _, partInfo := range partitionsInfo {
-						// multiple statements in a single Exec run in an implicit transaction
-						if _, err := conn.Exec(ctx,
-							`INSERT INTO `+metricTable+` (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM `+partInfo.Rel+`;
-							ALTER TABLE `+partInfo.ParentRel+` DETACH PARTITION `+partInfo.Rel+`;
-							DROP TABLE `+partInfo.Rel+`;`,
-						); err != nil {
+						if _, err := conn.Exec(ctx, fmt.Sprintf(sqlMoveSubpartition, metricTable, partInfo.Rel, partInfo.ParentRel)); err != nil {
 							return err
 						}
 					}
 
-					if _, err := conn.Exec(ctx, `DROP TABLE IF EXISTS `+metricTableRenamed); err != nil {
+					if _, err := conn.Exec(ctx, fmt.Sprintf(sqlDropTableIfExists, metricTableRenamed)); err != nil {
 						return err
 					}
 				}
