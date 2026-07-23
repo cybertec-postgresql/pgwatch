@@ -61,17 +61,16 @@ var (
 // However, one is able to use any Postgres-compatible database as a storage backend,
 // e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 type PostgresWriter struct {
-	ctx                      context.Context
-	sinkDb                   db.PgxPoolIface
-	metricSchema             DbStorageSchemaType
-	opts                     *CmdOpts
-	retentionInterval        time.Duration
-	maintenanceInterval      time.Duration
-	input                    chan metrics.MeasurementEnvelope
-	lastError                chan error
-	forceRecreatePartitions  bool                                        // to signal override PG metrics storage cache
-	partitionMapMetric       map[string]ExistingPartitionInfo            // metric = min/max bounds
-	partitionMapMetricDbname map[string]map[string]ExistingPartitionInfo // metric[dbname = min/max bounds]
+	ctx                     context.Context
+	sinkDb                  db.PgxPoolIface
+	metricSchema            DbStorageSchemaType
+	opts                    *CmdOpts
+	retentionInterval       time.Duration
+	maintenanceInterval     time.Duration
+	input                   chan metrics.MeasurementEnvelope
+	lastError               chan error
+	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
+	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
 }
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
@@ -91,14 +90,13 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
 	ctx = log.WithLogger(ctx, l)
 	pgw = &PostgresWriter{
-		ctx:                      ctx,
-		opts:                     opts,
-		input:                    make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:                make(chan error),
-		sinkDb:                   conn,
-		forceRecreatePartitions:  false,
-		partitionMapMetric:       make(map[string]ExistingPartitionInfo),
-		partitionMapMetricDbname: make(map[string]map[string]ExistingPartitionInfo),
+		ctx:                     ctx,
+		opts:                    opts,
+		input:                   make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:               make(chan error),
+		sinkDb:                  conn,
+		forceRecreatePartitions: false,
+		partitionMapMetric:      make(map[string]ExistingPartitionInfo),
 	}
 	l.Info("initialising measurements database...")
 	if err = pgw.init(); err != nil {
@@ -366,8 +364,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 		return
 	}
 	logger := log.GetLogger(pgw.ctx)
-	pgPartBounds := make(map[string]ExistingPartitionInfo)                  // metric=min/max
-	pgPartBoundsDbName := make(map[string]map[string]ExistingPartitionInfo) // metric=[dbname=min/max]
+	pgPartBounds := make(map[string]ExistingPartitionInfo) // metric=min/max
 	var err error
 
 	slices.SortFunc(msgs, func(a, b metrics.MeasurementEnvelope) int {
@@ -382,41 +379,21 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	for _, msg := range msgs {
 		for _, dataRow := range msg.Data {
 			epochTime := time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
-			switch pgw.metricSchema {
-			case DbStorageSchemaTimescale:
-				// set min/max timestamps to check/create partitions
-				bounds, ok := pgPartBounds[msg.MetricName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBounds[msg.MetricName] = bounds
-				}
-			case DbStorageSchemaPostgres:
-				_, ok := pgPartBoundsDbName[msg.MetricName]
-				if !ok {
-					pgPartBoundsDbName[msg.MetricName] = make(map[string]ExistingPartitionInfo)
-				}
-				bounds, ok := pgPartBoundsDbName[msg.MetricName][msg.DBName]
-				if !ok || (ok && epochTime.Before(bounds.StartTime)) {
-					bounds.StartTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-				}
-				if !ok || (ok && epochTime.After(bounds.EndTime)) {
-					bounds.EndTime = epochTime
-					pgPartBoundsDbName[msg.MetricName][msg.DBName] = bounds
-				}
-			default:
-				logger.Fatal("unknown storage schema...")
+			bounds, ok := pgPartBounds[msg.MetricName]
+			if !ok || (ok && epochTime.Before(bounds.StartTime)) {
+				bounds.StartTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
+			}
+			if !ok || (ok && epochTime.After(bounds.EndTime)) {
+				bounds.EndTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
 			}
 		}
 	}
 
 	switch pgw.metricSchema {
 	case DbStorageSchemaPostgres:
-		err = pgw.EnsureMetricDbnameTime(pgPartBoundsDbName)
+		err = pgw.EnsureMetricTimePartsExist(pgPartBounds)
 	case DbStorageSchemaTimescale:
 		err = pgw.EnsureMetricTimescale(pgPartBounds)
 	default:
@@ -476,38 +453,23 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 	return
 }
 
-func (pgw *PostgresWriter) EnsureMetricDbnameTime(metricDbnamePartBounds map[string]map[string]ExistingPartitionInfo) (err error) {
+func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) error {
+	var err error
 	var rows pgx.Rows
-	sqlEnsure := `select * from admin.ensure_partition_metric_dbname_time($1, $2, $3, $4)`
-	for metric, dbnameTimestampMap := range metricDbnamePartBounds {
-		_, ok := pgw.partitionMapMetricDbname[metric]
-		if !ok {
-			pgw.partitionMapMetricDbname[metric] = make(map[string]ExistingPartitionInfo)
+	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2, $3)`
+	for metric, pb := range metricPartBounds {
+		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
+			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
 		}
-
-		for dbname, pb := range dbnameTimestampMap {
-			if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
-				return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
+		partInfo, ok := pgw.partitionMapMetric[metric]
+		if !ok || pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
+				return err
 			}
-			partInfo, ok := pgw.partitionMapMetricDbname[metric][dbname]
-			if !ok || (ok && (pb.StartTime.Before(partInfo.StartTime))) || pgw.forceRecreatePartitions {
-				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
-					return
-				}
-				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-					return err
-				}
-				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
+			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+				return err
 			}
-			if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
-				if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, dbname, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
-					return
-				}
-				if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
-					return err
-				}
-				pgw.partitionMapMetricDbname[metric][dbname] = partInfo
-			}
+			pgw.partitionMapMetric[metric] = partInfo
 		}
 	}
 	return nil
@@ -602,7 +564,7 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in admin.migration table
-const MigrationsCount = 1
+const MigrationsCount = 3
 
 // migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
@@ -634,6 +596,111 @@ var migrations func() migrator.Option = func() migrator.Option {
 				}
 				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
 				return err
+			},
+		},
+
+		&migrator.MigrationNoTx{
+			Name: "01409 Switch to time-only partitioning",
+			Func: func(ctx context.Context, conn migrator.PgxIface) error {
+				// %s placeholders are filled with regclass-derived identifiers, which are already
+				// safely quoted by PostgreSQL, so fmt.Sprintf interpolation is safe here.
+				const (
+					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
+
+					sqlListMetricTables = `SELECT objoid::regclass 
+						FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`
+
+					sqlIsTableMigrated = `SELECT EXISTS (
+						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`
+
+					sqlRenameMetricTable = `ALTER TABLE %s RENAME TO %s`
+
+					sqlMetricTableBounds = `SELECT COALESCE(MIN(time), NOW()),
+						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
+						FROM %s`
+
+					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`
+
+					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
+						FROM pg_partition_tree($1::regclass) WHERE relid::text LIKE 'subpartitions%' 
+						ORDER BY isleaf DESC, relid::text`
+
+					// moves rows into the new partitioned parent, detaches and drops the old subpartition;
+					// multiple statements in a single Exec run in an implicit transaction
+					sqlMoveSubpartition = `INSERT INTO %[1]s (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM %[2]s;
+						ALTER TABLE %[3]s DETACH PARTITION %[2]s;
+						DROP TABLE %[2]s;`
+
+					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
+				)
+				if _, err := conn.Exec(ctx, sqlDropOldEnsurePartitionDbnameTime+
+					sqlMetricAdminFunctions+
+					sqlMetricEnsurePartitionPostgres); err != nil {
+					return err
+				}
+
+				rows, _ := conn.Query(ctx, sqlListMetricTables)
+				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+				if err != nil {
+					return err
+				}
+
+				// skip *_before_v6_migration tables to avoid double migration
+				// this could happen if the migration is re-run after a failed attempt
+				const suffix = "_before_v6_migration"
+				for _, metricTable := range metricTables {
+					if strings.HasSuffix(metricTable, suffix) {
+						continue
+					}
+					metricTableRenamed := metricTable + suffix
+
+					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
+						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
+						var isTableMigrated bool
+						if ferr = tx.QueryRow(ctx, sqlIsTableMigrated, metricTable).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
+							return
+						}
+
+						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
+							return
+						}
+
+						// for an empty table MIN(time) is NULL, so COALESCE falls back to server-side
+						// NOW() and daysToPrecreate becomes 0, creating a single empty partition
+						var minTime time.Time
+						var daysToPrecreate int32
+						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&minTime, &daysToPrecreate); ferr == nil {
+							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTable, minTime, daysToPrecreate)
+						}
+						return
+					})
+
+					if err != nil {
+						return err
+					}
+
+					type partitionInfo struct {
+						Rel       string
+						ParentRel string
+					}
+					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRenamed)
+					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
+					if err != nil {
+						return err
+					}
+
+					for _, partInfo := range partitionsInfo {
+						if _, err := conn.Exec(ctx, fmt.Sprintf(sqlMoveSubpartition, metricTable, partInfo.Rel, partInfo.ParentRel)); err != nil {
+							return err
+						}
+					}
+
+					if _, err := conn.Exec(ctx, fmt.Sprintf(sqlDropTableIfExists, metricTableRenamed)); err != nil {
+						return err
+					}
+				}
+
+				return nil
 			},
 		},
 

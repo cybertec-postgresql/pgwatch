@@ -1,7 +1,7 @@
 ## Rollout sequence
 
 pgwatch automatically handles database schema for metric measurements. If `timescale` extension is available then `timescale`
-schema will be used by default. Otherwise `metric-dbname-time` schema is applied.
+schema will be used by default. Otherwise `metric-time` schema is applied.
 
 If one wants to init the schema without running the monitoring, they should use `--init` command-line parameter, e.g.
 
@@ -11,9 +11,9 @@ pgwatch --config=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=post
 
 ## Schema types
 
-### metric-dbname-time
+### metric-time
 
-A single top level table for each distinct metric in the "public" schema + 2 levels of subpartitions ("dbname" + weekly time based) in the "subpartitions" schema.
+A single top level table for each distinct metric in the "public" schema with time-based partitioning in the "subpartitions" schema.
 
 Provides the fastest query runtimes when having long retention intervals / lots of metrics data or slow disks and accessing mostly only a single DB's metrics at a time.
 
@@ -27,18 +27,13 @@ Something like below will be done by the gatherer AUTOMATICALLY:
 ```sql
 create table public."mymetric"
   (LIKE admin.metrics_template)
-  PARTITION BY LIST (dbname);
+  PARTITION BY RANGE (time);
 COMMENT ON TABLE public."mymetric" IS 'pgwatch-generated-metric-lvl';
 
-create table subpartitions."mymetric_mydbname"
+create table subpartitions."mymetric_y2019w01" -- week calculated dynamically of course
   PARTITION OF public."mymetric"
-  FOR VALUES IN ('my-dbname') PARTITION BY RANGE (time);
-COMMENT ON TABLE subpartitions."mymetric_mydbname" IS 'pgwatch-generated-metric-dbname-lvl';
-
-create table subpartitions."mymetric_mydbname_y2019w01" -- month calculated dynamically of course
-  PARTITION OF subpartitions."mymetric_mydbname"
   FOR VALUES FROM ('2019-01-01') TO ('2019-01-07');
-COMMENT ON TABLE subpartitions."mymetric_mydbname_y2019w01" IS 'pgwatch-generated-metric-dbname-time-lvl';
+COMMENT ON TABLE subpartitions."mymetric_y2019w01" IS 'pgwatch-generated-metric-time-lvl';
 ```
 
 ### timescale
