@@ -564,7 +564,7 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in admin.migration table
-const MigrationsCount = 1
+const MigrationsCount = 3
 
 // migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
