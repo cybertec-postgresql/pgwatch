@@ -642,7 +642,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 							return err
 						}
 
-						if _, err = tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); err != nil {
+						if _, err := tx.Exec(ctx, `ALTER TABLE `+metricTable+` RENAME TO `+metricTableRenamed); err != nil {
 							return err
 						}
 
@@ -654,11 +654,11 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 						if minTime == nil {
 							// no data in the table, just create a new empty partitioned table
-							if _, err = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, NOW()::timestamptz, '1 day'::interval, 0)`, metricTable); err != nil {
+							if _, err := tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, NOW()::timestamptz, '1 day'::interval, 0)`, metricTable); err != nil {
 								return err
 							}
 						} else {
-							if _, err = tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate); err != nil {
+							if _, err := tx.Exec(ctx, `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`, metricTable, minTime, daysToPrecreate); err != nil {
 								return err
 							}
 						}
@@ -681,13 +681,13 @@ var migrations func() migrator.Option = func() migrator.Option {
 
 					for _, partInfo := range partitionsInfo {
 						err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-							if _, err = tx.Exec(ctx, `INSERT INTO `+metricTable+` SELECT * FROM `+partInfo.Rel); err != nil {
+							if _, err := tx.Exec(ctx, `INSERT INTO `+metricTable+` SELECT * FROM `+partInfo.Rel); err != nil {
 								return err
 							}
-							if _, err = tx.Exec(ctx, `ALTER TABLE `+partInfo.ParentRel+` DETACH PARTITION `+partInfo.Rel); err != nil {
+							if _, err := tx.Exec(ctx, `ALTER TABLE `+partInfo.ParentRel+` DETACH PARTITION `+partInfo.Rel); err != nil {
 								return err
 							}
-							if _, err = tx.Exec(ctx, `DROP TABLE IF EXISTS `+partInfo.Rel); err != nil {
+							if _, err := tx.Exec(ctx, `DROP TABLE IF EXISTS `+partInfo.Rel); err != nil {
 								return err
 							}
 							return nil
