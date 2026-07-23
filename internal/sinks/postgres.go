@@ -624,10 +624,10 @@ var migrations func() migrator.Option = func() migrator.Option {
 					return err
 				}
 
+				// skip *_before_v6_migration tables to avoid double migration
+				// this could happen if the migration is re-run after a failed attempt
+				const suffix = "_before_v6_migration"
 				for _, metricTable := range metricTables {
-					// skip *_before_v6_migration tables to avoid double migration
-					// this could happen if the migration is re-run after a failed attempt
-					suffix := "_before_v6_migration"
 					if strings.HasSuffix(metricTable, suffix) {
 						continue
 					}
