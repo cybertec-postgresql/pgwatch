@@ -636,7 +636,9 @@ var migrations func() migrator.Option = func() migrator.Option {
 					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
 						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
 						var isTableMigrated bool
-						if err = conn.QueryRow(ctx, `SELECT true FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r'`, metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
+						if err := tx.QueryRow(ctx, `SELECT EXISTS (
+						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`,
+							metricTable).Scan(&isTableMigrated); isTableMigrated || err != nil {
 							return err
 						}
 
