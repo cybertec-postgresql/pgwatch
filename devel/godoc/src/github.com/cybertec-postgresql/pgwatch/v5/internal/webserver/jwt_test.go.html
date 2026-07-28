@@ -175,7 +175,7 @@
 <span id="L118" class="ln">   118  </span>	claims[&#34;authorized&#34;] = true
 <span id="L119" class="ln">   119  </span>	claims[&#34;username&#34;] = &#34;user&#34;
 <span id="L120" class="ln">   120  </span>	claims[&#34;exp&#34;] = time.Now().Add(-time.Hour).Unix() <span class="comment">// expired</span>
-<span id="L121" class="ln">   121  </span>	token, _ := tok.SignedString(sampleSecretKey)
+<span id="L121" class="ln">   121  </span>	token, _ := tok.SignedString(jwtSecretKey())
 <span id="L122" class="ln">   122  </span>	r := httptest.NewRequest(http.MethodGet, &#34;/&#34;, nil)
 <span id="L123" class="ln">   123  </span>	r.Header.Set(&#34;Token&#34;, token)
 <span id="L124" class="ln">   124  </span>	err := validateToken(r)
@@ -183,6 +183,26 @@
 <span id="L126" class="ln">   126  </span>	assert.Contains(t, err.Error(), &#34;token is expired&#34;)
 <span id="L127" class="ln">   127  </span>}
 <span id="L128" class="ln">   128  </span>
+<span id="L129" class="ln">   129  </span>func TestJWTSecretKey_RandomAndStable(t *testing.T) {
+<span id="L130" class="ln">   130  </span>	<span class="comment">// It must be at least 32 bytes of entropy and stable within a process.</span>
+<span id="L131" class="ln">   131  </span>	assert.GreaterOrEqual(t, len(jwtSecretKey()), 32)
+<span id="L132" class="ln">   132  </span>	assert.Equal(t, jwtSecretKey(), jwtSecretKey())
+<span id="L133" class="ln">   133  </span>}
+<span id="L134" class="ln">   134  </span>
+<span id="L135" class="ln">   135  </span>func TestValidateToken_RejectsHardcodedKey(t *testing.T) {
+<span id="L136" class="ln">   136  </span>	<span class="comment">// A token forged with the old, publicly known key must be rejected.</span>
+<span id="L137" class="ln">   137  </span>	tok := jwt.New(jwt.SigningMethodHS256)
+<span id="L138" class="ln">   138  </span>	claims := tok.Claims.(jwt.MapClaims)
+<span id="L139" class="ln">   139  </span>	claims[&#34;authorized&#34;] = false
+<span id="L140" class="ln">   140  </span>	claims[&#34;username&#34;] = &#34;intruder&#34;
+<span id="L141" class="ln">   141  </span>	claims[&#34;exp&#34;] = time.Now().Add(time.Hour).Unix()
+<span id="L142" class="ln">   142  </span>	forged, err := tok.SignedString([]byte(&#34;5m3R7K4754p4m&#34;))
+<span id="L143" class="ln">   143  </span>	assert.NoError(t, err)
+<span id="L144" class="ln">   144  </span>	r := httptest.NewRequest(http.MethodGet, &#34;/&#34;, nil)
+<span id="L145" class="ln">   145  </span>	r.Header.Set(&#34;Token&#34;, forged)
+<span id="L146" class="ln">   146  </span>	assert.Error(t, validateToken(r))
+<span id="L147" class="ln">   147  </span>}
+<span id="L148" class="ln">   148  </span>
 </pre><p></p>
 
 <div id="footer">

@@ -122,6 +122,9 @@
 				<dd><a href="#init">func init()</a></dd>
 			
 				
+				<dd><a href="#jwtSecretKey">func jwtSecretKey() []byte</a></dd>
+			
+				
 				<dd><a href="#reader">func reader(ws *websocket.Conn, done chan struct{})</a></dd>
 			
 				
@@ -329,10 +332,13 @@
 			<h2 id="pkg-variables">Variables</h2>
 			
 				
-				<pre>var <span id="buildFS">buildFS</span> <a href="https://pkg.go.dev/embed/">embed</a>.<a href="https://pkg.go.dev/embed/#FS">FS</a></pre>
+				<pre>var (
+    <span id="secretKeyOnce">secretKeyOnce</span> <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Once">Once</a>
+    <span id="secretKey">secretKey</span>     []<a href="https://pkg.go.dev/builtin/#byte">byte</a>
+)</pre>
 			
 				
-				<pre>var <span id="sampleSecretKey">sampleSecretKey</span> = []<a href="https://pkg.go.dev/builtin/#byte">byte</a>(&#34;5m3R7K4754p4m&#34;)</pre>
+				<pre>var <span id="buildFS">buildFS</span> <a href="https://pkg.go.dev/embed/">embed</a>.<a href="https://pkg.go.dev/embed/#FS">FS</a></pre>
 			
 				
 				<pre>var <span id="uiFS">uiFS</span> <a href="https://pkg.go.dev/io/fs/">fs</a>.<a href="https://pkg.go.dev/io/fs/#FS">FS</a></pre>
@@ -362,7 +368,7 @@
 		
 			
 			
-			<h2 id="generateJWT">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L75">generateJWT</a>
+			<h2 id="generateJWT">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L106">generateJWT</a>
 				<a class="permalink" href="#generateJWT">&#xb6;</a>
 				
 				
@@ -388,6 +394,31 @@
 		
 			
 			
+			<h2 id="jwtSecretKey">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L94">jwtSecretKey</a>
+				<a class="permalink" href="#jwtSecretKey">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func jwtSecretKey() []<a href="https://pkg.go.dev/builtin/#byte">byte</a></pre>
+			<p>jwtSecretKey returns the HS256 signing key used for Web UI/API tokens.
+The key is a cryptographically random 32-byte value generated once per
+process at first use. Generating it at runtime (instead of hardcoding a
+value in the source) prevents attackers from forging valid tokens.
+<p>The key is intentionally not persisted: every process restart rotates it,
+which invalidates any previously issued token. This is a security feature,
+not a limitation - it bounds the lifetime of leaked tokens and forces users
+to re-authenticate with the configured credentials rather than relying on
+long-lived sessions.
+<p>Operational note: because each instance generates its own key, tokens are
+not portable across instances. Multi-replica/HA deployments should use
+sticky sessions at the load balancer.
+
+			
+			
+
+		
+			
+			
 			<h2 id="reader">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/wslog.go.html#L29">reader</a>
 				<a class="permalink" href="#reader">&#xb6;</a>
 				
@@ -401,7 +432,7 @@
 		
 			
 			
-			<h2 id="validateToken">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L86">validateToken</a>
+			<h2 id="validateToken">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L117">validateToken</a>
 				<a class="permalink" href="#validateToken">&#xb6;</a>
 				
 				
@@ -458,7 +489,7 @@
 		
 			
 			
-			<h2 id="EnsureAuth">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L57">EnsureAuth</a>
+			<h2 id="EnsureAuth">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L59">EnsureAuth</a>
 				<a class="permalink" href="#EnsureAuth">&#xb6;</a>
 				
 				
@@ -479,7 +510,7 @@
 
 			
 				
-				<h3 id="NewEnsureAuth">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L69">NewEnsureAuth</a>
+				<h3 id="NewEnsureAuth">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L71">NewEnsureAuth</a>
 					<a class="permalink" href="#NewEnsureAuth">&#xb6;</a>
 					
 					
@@ -492,7 +523,7 @@
 
 			
 				
-				<h3 id="EnsureAuth.ServeHTTP">func (*EnsureAuth) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L61">ServeHTTP</a>
+				<h3 id="EnsureAuth.ServeHTTP">func (*EnsureAuth) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L63">ServeHTTP</a>
 					<a class="permalink" href="#EnsureAuth.ServeHTTP">&#xb6;</a>
 					
 					
@@ -691,7 +722,7 @@ Supports both single and bulk creation
 				
 			
 				
-				<h3 id="WebUIServer.IsCorrectPassword">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L18">IsCorrectPassword</a>
+				<h3 id="WebUIServer.IsCorrectPassword">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L20">IsCorrectPassword</a>
 					<a class="permalink" href="#WebUIServer.IsCorrectPassword">&#xb6;</a>
 					
 					
@@ -832,7 +863,7 @@ Supports both single and bulk creation
 				
 			
 				
-				<h3 id="WebUIServer.handleLogin">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L23">handleLogin</a>
+				<h3 id="WebUIServer.handleLogin">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L25">handleLogin</a>
 					<a class="permalink" href="#WebUIServer.handleLogin">&#xb6;</a>
 					
 					
@@ -1024,7 +1055,7 @@ and path parameters like /source/{name}
 		
 			
 			
-			<h2 id="loginReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L13">loginReq</a>
+			<h2 id="loginReq">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/jwt.go.html#L15">loginReq</a>
 				<a class="permalink" href="#loginReq">&#xb6;</a>
 				
 				
