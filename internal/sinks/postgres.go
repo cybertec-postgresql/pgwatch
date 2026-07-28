@@ -602,13 +602,13 @@ var migrations func() migrator.Option = func() migrator.Option {
 		&migrator.MigrationNoTx{
 			Name: "01409 Switch to time-only partitioning",
 			Func: func(ctx context.Context, conn migrator.PgxIface) error {
-				// %s placeholders are filled with regclass-derived identifiers, which are already
-				// safely quoted by PostgreSQL, so fmt.Sprintf interpolation is safe here.
 				const (
 					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
 
-					sqlListMetricTables = `SELECT objoid::regclass 
-						FROM pg_description WHERE description = 'pgwatch-generated-metric-lvl'`
+					sqlListMetricTables = `SELECT c.relname
+						FROM pg_description d
+						JOIN pg_class c ON c.oid = d.objoid
+						WHERE d.description = 'pgwatch-generated-metric-lvl'`
 
 					sqlIsTableMigrated = `SELECT EXISTS (
 						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`
@@ -622,7 +622,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`
 
 					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
-						FROM pg_partition_tree($1::regclass) WHERE relid::text LIKE 'subpartitions%' 
+						FROM pg_partition_tree(to_regclass($1)) WHERE relid::text LIKE 'subpartitions%' 
 						ORDER BY isleaf DESC, relid::text`
 
 					// moves rows into the new partitioned parent, detaches and drops the old subpartition;
@@ -648,16 +648,19 @@ var migrations func() migrator.Option = func() migrator.Option {
 				// skip *_before_v6_migration tables to avoid double migration
 				// this could happen if the migration is re-run after a failed attempt
 				const suffix = "_before_v6_migration"
-				for _, metricTable := range metricTables {
-					if strings.HasSuffix(metricTable, suffix) {
+				for _, metricTableRawName := range metricTables {
+					if strings.HasSuffix(metricTableRawName, suffix) {
 						continue
 					}
-					metricTableRenamed := metricTable + suffix
+
+					metricTableRawRename := metricTableRawName + suffix
+					metricTableRenamed := pgx.Identifier{metricTableRawRename}.Sanitize()
+					metricTable := pgx.Identifier{metricTableRawName}.Sanitize()
 
 					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
 						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
 						var isTableMigrated bool
-						if ferr = tx.QueryRow(ctx, sqlIsTableMigrated, metricTable).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
+						if ferr = tx.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
 							return
 						}
 
@@ -670,7 +673,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 						var minTime time.Time
 						var daysToPrecreate int32
 						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&minTime, &daysToPrecreate); ferr == nil {
-							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTable, minTime, daysToPrecreate)
+							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTableRawName, minTime, daysToPrecreate)
 						}
 						return
 					})
@@ -683,7 +686,7 @@ var migrations func() migrator.Option = func() migrator.Option {
 						Rel       string
 						ParentRel string
 					}
-					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRenamed)
+					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRawRename)
 					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
 					if err != nil {
 						return err
