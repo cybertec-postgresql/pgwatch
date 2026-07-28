@@ -645,24 +645,21 @@ func TestPartitionInterval(t *testing.T) {
 	conn, err := pgx.Connect(ctx, connStr)
 	r.NoError(err)
 
-	m := map[string]map[string]ExistingPartitionInfo{
+	m := map[string]ExistingPartitionInfo{
 		"test_metric": {
-			"test_db": {
-				time.Now(), time.Now().Add(time.Hour),
-			},
+			time.Now(), time.Now().Add(time.Hour),
 		},
 	}
-	err = pgw.EnsureMetricDbnameTime(m)
+	err = pgw.EnsureMetricTimePartsExist(m)
 	r.NoError(err)
 
 	var partitionsNum int
 	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric');").Scan(&partitionsNum)
 	a.NoError(err)
-	// 1 the metric table itself + 1 dbname partition
-	// + 4 time partitions (1 we asked for + 3 precreated)
-	a.Equal(6, partitionsNum)
+	// 1 the metric table itself + 4 time partitions (1 we asked for + 3 precreated)
+	a.Equal(5, partitionsNum)
 
-	part := pgw.partitionMapMetricDbname["test_metric"]["test_db"]
+	part := pgw.partitionMapMetric["test_metric"]
 	// partition bounds should have a difference of 3 weeks
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
@@ -744,29 +741,26 @@ func Test_Maintain(t *testing.T) {
 		err = pgw.EnsureMetricDummy("test_metric_b")
 		r.NoError(err)
 
-		// Create partitions for each dbname
+		// Create time-based partitions for each metric
 		_, err = conn.Exec(ctx, `
-			CREATE TABLE subpartitions.test_metric_a_db1 PARTITION OF public.test_metric_a FOR VALUES IN ('db1');
-			CREATE TABLE subpartitions.test_metric_a_db2 PARTITION OF public.test_metric_a FOR VALUES IN ('db2');
-			CREATE TABLE subpartitions.test_metric_a_db3 PARTITION OF public.test_metric_a FOR VALUES IN ('db3');
-			CREATE TABLE subpartitions.test_metric_b_db1 PARTITION OF public.test_metric_b FOR VALUES IN ('db1');
-			CREATE TABLE subpartitions.test_metric_b_db2 PARTITION OF public.test_metric_b FOR VALUES IN ('db2');
+			CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
+			CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
 		`)
 		r.NoError(err)
 
 		// Directly insert test data with different dbnames
 		_, err = conn.Exec(ctx, `
-			INSERT INTO test_metric_a (time, dbname, data) VALUES 
-				(now(), 'db1', '{}'::jsonb),
-				(now(), 'db2', '{}'::jsonb),
-				(now(), 'db3', '{}'::jsonb)
+			INSERT INTO test_metric_a (time, dbname, data) VALUES
+				('2024-01-03', 'db1', '{}'::jsonb),
+				('2024-01-03', 'db2', '{}'::jsonb),
+				('2024-01-03', 'db3', '{}'::jsonb)
 		`)
 		r.NoError(err)
 
 		_, err = conn.Exec(ctx, `
-			INSERT INTO test_metric_b (time, dbname, data) VALUES 
-				(now(), 'db1', '{}'::jsonb),
-				(now(), 'db2', '{}'::jsonb)
+			INSERT INTO test_metric_b (time, dbname, data) VALUES
+				('2024-01-03', 'db1', '{}'::jsonb),
+				('2024-01-03', 'db2', '{}'::jsonb)
 		`)
 		r.NoError(err)
 
@@ -794,16 +788,16 @@ func Test_Maintain(t *testing.T) {
 		err = pgw.EnsureMetricDummy("test_metric_c")
 		r.NoError(err)
 
-		// Create partition for db_active
+		// Create time partition for the metric
 		_, err = conn.Exec(ctx, `
-			CREATE TABLE subpartitions.test_metric_c_db_active PARTITION OF public.test_metric_c FOR VALUES IN ('db_active');
+			CREATE TABLE subpartitions.test_metric_c_2024w01 PARTITION OF public.test_metric_c FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
 		`)
 		r.NoError(err)
 
 		// Directly insert test data with one active dbname
 		_, err = conn.Exec(ctx, `
-			INSERT INTO test_metric_c (time, dbname, data) VALUES 
-				(now(), 'db_active', '{}'::jsonb)
+			INSERT INTO test_metric_c (time, dbname, data) VALUES
+				('2024-01-03', 'db_active', '{}'::jsonb)
 		`)
 		r.NoError(err)
 
@@ -845,14 +839,14 @@ func Test_Maintain(t *testing.T) {
 		r.NoError(err)
 
 		_, err = conn.Exec(ctx, `
-			CREATE TABLE subpartitions.test_metric_d_db1 PARTITION OF public.test_metric_d FOR VALUES IN ('db1');
+			CREATE TABLE subpartitions.test_metric_d_2024w01 PARTITION OF public.test_metric_d FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
 		`)
 		r.NoError(err)
 
 		// Directly insert test data for only db1
 		_, err = conn.Exec(ctx, `
-			INSERT INTO test_metric_d (time, dbname, data) VALUES 
-				(now(), 'db1', '{}'::jsonb)
+			INSERT INTO test_metric_d (time, dbname, data) VALUES
+				('2024-01-03', 'db1', '{}'::jsonb)
 		`)
 		r.NoError(err)
 
@@ -908,43 +902,39 @@ func Test_Maintain(t *testing.T) {
 		err = pgw.SyncMetric("test", "test_metric_2", AddOp)
 		r.NoError(err)
 
-		// create the 2nd level dbname partition
-		_, err = conn.Exec(ctx, "CREATE TABLE subpartitions.test_metric_2_dbname PARTITION OF public.test_metric_2 FOR VALUES IN ('test') PARTITION BY RANGE (time)")
-		a.NoError(err)
-
 		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format("2006-01-02")
 		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format("2006-01-02")
 
-		// create the 3rd level time partition with end bound yesterday
+		// create the time partition with end bound yesterday
 		_, err = conn.Exec(ctx,
 			fmt.Sprintf(
-				`CREATE TABLE subpartitions.test_metric_2_dbname_time 
-			PARTITION OF subpartitions.test_metric_2_dbname 
+				`CREATE TABLE subpartitions.test_metric_2_yesterday
+			PARTITION OF public.test_metric_2
 			FOR VALUES FROM ('%s') TO ('%s')`,
 				boundStart, boundEnd),
 		)
 		a.NoError(err)
-		_, err = conn.Exec(ctx, "COMMENT ON TABLE subpartitions.test_metric_2_dbname_time IS $$pgwatch-generated-metric-dbname-time-lvl$$")
+		_, err = conn.Exec(ctx, "COMMENT ON TABLE subpartitions.test_metric_2_yesterday IS $$pgwatch-generated-metric-time-lvl$$")
 		a.NoError(err)
 
 		var partitionsNum int
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
 		a.NoError(err)
-		a.Equal(3, partitionsNum)
+		a.Equal(2, partitionsNum)
 
 		pgw.opts.RetentionInterval = "2 days"
 		pgw.DeleteOldPartitions() // 1 day < 2 days, shouldn't delete anything
 
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
 		a.NoError(err)
-		a.Equal(3, partitionsNum)
+		a.Equal(2, partitionsNum)
 
 		pgw.opts.RetentionInterval = "1 hour"
 		pgw.DeleteOldPartitions() // 1 day > 1 hour, should delete the partition
 
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric_2');").Scan(&partitionsNum)
 		a.NoError(err)
-		a.Equal(2, partitionsNum)
+		a.Equal(1, partitionsNum)
 	})
 
 	t.Run("Epoch to Duration Conversion", func(_ *testing.T) {
@@ -976,9 +966,9 @@ func Test_Maintain(t *testing.T) {
 	})
 }
 
-// TestEnsureMetricDbnameTime_SpecialSourceNames verifies that source names with special characters
+// TestEnsureMetricTimePartsExist_SpecialMetricNames verifies that metric names with special characters
 // (dots, uppercase, hyphens, underscores) are accepted by the partition functions.
-func TestEnsureMetricDbnameTime_SpecialSourceNames(t *testing.T) {
+func TestEnsureMetricTimePartsExist_SpecialMetricNames(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
@@ -999,41 +989,41 @@ func TestEnsureMetricDbnameTime_SpecialSourceNames(t *testing.T) {
 	r.NoError(err)
 
 	specialNames := []string{
-		"source.new",
-		"Source.With.Dots",
-		"UPPERCASE_SOURCE",
-		"MixedCase_Source-123",
-		"source-with-hyphens",
-		"source_with_underscores",
-		"Source123.Test_Name-456",
+		"metric.new",
+		"Metric.With.Dots",
+		"UPPERCASE_METRIC",
+		"MixedCase_Metric-123",
+		"metric-with-hyphens",
+		"metric_with_underscores",
+		"Metric123.Test_Name-456",
 	}
 
-	m := make(map[string]map[string]ExistingPartitionInfo)
-	m["test_metric"] = make(map[string]ExistingPartitionInfo)
+	m := make(map[string]ExistingPartitionInfo)
 	for _, name := range specialNames {
-		m["test_metric"][name] = ExistingPartitionInfo{
+		m[name] = ExistingPartitionInfo{
 			StartTime: time.Now(),
 			EndTime:   time.Now().Add(time.Hour),
 		}
 	}
 
-	err = pgw.EnsureMetricDbnameTime(m)
-	r.NoError(err, "EnsureMetricDbnameTime should handle special source names")
+	err = pgw.EnsureMetricTimePartsExist(m)
+	r.NoError(err, "EnsureMetricTimePartsExist should handle special metric names")
 
 	conn, err := pgx.Connect(ctx, connStr)
 	r.NoError(err)
 	defer conn.Close(ctx)
 
 	var partitionCount int
-	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('test_metric') WHERE level = 1").Scan(&partitionCount)
+	err = conn.QueryRow(ctx, `SELECT COUNT(*) FROM pg_partition_tree('"metric.new"') WHERE level = 1`).Scan(&partitionCount)
 	r.NoError(err)
-	a.Equal(len(specialNames), partitionCount, "expected one dbname-level partition per special source name")
+	// 4 time partitions (1 requested + 3 precreated) per metric
+	a.Equal(4, partitionCount)
 }
 
-// TestEnsureMetricDbnameTime_IdempotentAcrossRestarts verifies that repeated calls to
-// EnsureMetricDbnameTime with fresh writer instances (simulating process restarts)
+// TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts verifies that repeated calls to
+// EnsureMetricTimePartsExist with fresh writer instances (simulating process restarts)
 // do not create duplicate partitions.
-func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
+func TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
@@ -1051,20 +1041,17 @@ func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
 		BatchingDelay:       time.Second,
 	}
 
-	m := map[string]map[string]ExistingPartitionInfo{
+	m := map[string]ExistingPartitionInfo{
 		"restart_test_metric": {
-			"test_source": {
-				StartTime: time.Now(),
-				EndTime:   time.Now().Add(time.Hour),
-			},
+			StartTime: time.Now(),
+			EndTime:   time.Now().Add(time.Hour),
 		},
 	}
 
-	var partitionCountAfterFirst int
 	for i := range 5 {
 		pgw, err := NewPostgresWriter(ctx, connStr, opts)
 		r.NoError(err)
-		r.NoError(pgw.EnsureMetricDbnameTime(m))
+		r.NoError(pgw.EnsureMetricTimePartsExist(m))
 
 		conn, err := pgx.Connect(ctx, connStr)
 		r.NoError(err)
@@ -1072,13 +1059,7 @@ func TestEnsureMetricDbnameTime_IdempotentAcrossRestarts(t *testing.T) {
 		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM pg_partition_tree('restart_test_metric') WHERE isleaf").Scan(&count)
 		conn.Close(ctx)
 		r.NoError(err)
-
-		if i == 0 {
-			partitionCountAfterFirst = count
-		} else {
-			a.Equal(partitionCountAfterFirst, count,
-				"partition count should not grow on restart %d", i+1)
-		}
+		a.Equal(4, count, "partition count should not grow on restart %d", i+1)
 	}
 }
 
