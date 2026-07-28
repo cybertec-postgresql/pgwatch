@@ -118,10 +118,30 @@ func TestJWT_Expiration(t *testing.T) {
 	claims["authorized"] = true
 	claims["username"] = "user"
 	claims["exp"] = time.Now().Add(-time.Hour).Unix() // expired
-	token, _ := tok.SignedString(sampleSecretKey)
+	token, _ := tok.SignedString(jwtSecretKey())
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.Header.Set("Token", token)
 	err := validateToken(r)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "token is expired")
+}
+
+func TestJWTSecretKey_RandomAndStable(t *testing.T) {
+	// It must be at least 32 bytes of entropy and stable within a process.
+	assert.GreaterOrEqual(t, len(jwtSecretKey()), 32)
+	assert.Equal(t, jwtSecretKey(), jwtSecretKey())
+}
+
+func TestValidateToken_RejectsHardcodedKey(t *testing.T) {
+	// A token forged with the old, publicly known key must be rejected.
+	tok := jwt.New(jwt.SigningMethodHS256)
+	claims := tok.Claims.(jwt.MapClaims)
+	claims["authorized"] = false
+	claims["username"] = "intruder"
+	claims["exp"] = time.Now().Add(time.Hour).Unix()
+	forged, err := tok.SignedString([]byte("5m3R7K4754p4m"))
+	assert.NoError(t, err)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.Header.Set("Token", forged)
+	assert.Error(t, validateToken(r))
 }
