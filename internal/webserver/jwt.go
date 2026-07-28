@@ -1,9 +1,11 @@
 package webserver
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -70,7 +72,36 @@ func NewEnsureAuth(handlerToWrap http.HandlerFunc) *EnsureAuth {
 	return &EnsureAuth{handlerToWrap}
 }
 
-var sampleSecretKey = []byte("5m3R7K4754p4m")
+var (
+	secretKeyOnce sync.Once
+	secretKey     []byte
+)
+
+// jwtSecretKey returns the HS256 signing key used for Web UI/API tokens.
+// The key is a cryptographically random 32-byte value generated once per
+// process at first use. Generating it at runtime (instead of hardcoding a
+// value in the source) prevents attackers from forging valid tokens.
+//
+// The key is intentionally not persisted: every process restart rotates it,
+// which invalidates any previously issued token. This is a security feature,
+// not a limitation - it bounds the lifetime of leaked tokens and forces users
+// to re-authenticate with the configured credentials rather than relying on
+// long-lived sessions.
+//
+// Operational note: because each instance generates its own key, tokens are
+// not portable across instances. Multi-replica/HA deployments should use
+// sticky sessions at the load balancer.
+func jwtSecretKey() []byte {
+	secretKeyOnce.Do(func() {
+		secretKey = make([]byte, 32)
+		if _, err := rand.Read(secretKey); err != nil {
+			// crypto/rand.Read should never fail; if it does there is no safe
+			// way to continue issuing/validating tokens, so fail loudly.
+			panic("webserver: unable to generate JWT secret key: " + err.Error())
+		}
+	})
+	return secretKey
+}
 
 func generateJWT(username string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -80,7 +111,7 @@ func generateJWT(username string) (string, error) {
 	claims["username"] = username
 	claims["exp"] = time.Now().Add(time.Hour * 8).Unix()
 
-	return token.SignedString(sampleSecretKey)
+	return token.SignedString(jwtSecretKey())
 }
 
 func validateToken(r *http.Request) (err error) {
@@ -96,7 +127,7 @@ func validateToken(r *http.Request) (err error) {
 
 	_, err = jwt.Parse(t,
 		func(_ *jwt.Token) (any, error) {
-			return sampleSecretKey, nil
+			return jwtSecretKey(), nil
 		},
 		jwt.WithExpirationRequired(),
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
