@@ -657,13 +657,15 @@ var migrations func() migrator.Option = func() migrator.Option {
 					metricTableRenamed := pgx.Identifier{metricTableRawRename}.Sanitize()
 					metricTable := pgx.Identifier{metricTableRawName}.Sanitize()
 
-					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
-						// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
-						var isTableMigrated bool
-						if ferr = tx.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&isTableMigrated); isTableMigrated || ferr != nil {
-							return
-						}
+					// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
+					var isTableMigrated bool
+					if err = conn.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&isTableMigrated); err != nil {
+						return err
+					} else if isTableMigrated {
+						continue
+					}
 
+					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
 						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
 							return
 						}
