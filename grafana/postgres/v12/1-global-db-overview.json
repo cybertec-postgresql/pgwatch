@@ -2144,7 +2144,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'application_name'::text as client_info,\n  avg((data->>'total_lag')::bigint) as \" \"\nfrom replication\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'total_lag')::bigint > 0\ngroup by 1, 2\norder by 1",
+          "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  tag_data->>'application_name'::text as client_info,\n  avg((data->>'replay_lag_b')::bigint) as \" \"\nfrom replication\nwhere dbname in ($dbname) and $__timeFilter(time)\n  and (data->>'replay_lag_b')::bigint > 0\ngroup by 1, 2\norder by 1",
           "refId": "A",
           "select": [
             [
