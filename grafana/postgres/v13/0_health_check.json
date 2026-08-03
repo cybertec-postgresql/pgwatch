@@ -2,25 +2,7 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "health-check",
-    "namespace": "default",
-    "uid": "2a7bec29-276b-4a7e-8aff-85d798d4a198",
-    "resourceVersion": "1781768932208986",
-    "generation": 13,
-    "creationTimestamp": "2026-06-08T13:16:38Z",
-    "labels": {
-      "grafana.app/deprecatedInternalID": "1324846417690624"
-    },
-    "annotations": {
-      "grafana.app/createdBy": "user:afoipfjig8k5cf",
-      "grafana.app/folder": "efoipikg7bjswc",
-      "grafana.app/message": "Add max conn count panel",
-      "grafana.app/saved-from-ui": "Grafana v13.0.2 (3fcdbc5a)",
-      "grafana.app/updatedBy": "user:afoipfjig8k5cf",
-      "grafana.app/updatedTimestamp": "2026-06-18T07:48:52Z",
-      "grafana.app/folderTitle": "v13 test",
-      "grafana.app/folderUrl": "/dashboards/f/efoipikg7bjswc/v13-test"
-    }
+    "name": "health-check"
   },
   "spec": {
     "annotations": [
