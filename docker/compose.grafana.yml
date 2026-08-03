@@ -1,7 +1,7 @@
 services:
   grafana:
     # to use specific Grafana image, e.g. grafana/grafana:11.5.6, update the dashboards provisioning folder below
-    image: grafana/grafana:12.3
+    image: grafana/grafana:13.1
     container_name: grafana
     user: "0:0"
     environment:
@@ -9,7 +9,7 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/postgres/1-global-db-overview.json
       GF_INSTALL_PLUGINS: marcusolsson-treemap-panel
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      # GF_FEATURE_TOGGLES_ENABLE: dashboardNewLayouts
+      GF_FEATURE_TOGGLES_ENABLE: dashboardNewLayouts
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -19,7 +19,7 @@ services:
       - "../grafana/postgres_datasource.yml:/etc/grafana/provisioning/datasources/postgres_datasource.yml"
       - "../grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
-      - "../grafana/postgres/v12:/var/lib/grafana/dashboards/postgres"
+      - "../grafana/postgres/v13:/var/lib/grafana/dashboards/postgres"
       - "../grafana/prometheus/v12:/var/lib/grafana/dashboards/prometheus"
     depends_on:
       postgres:

@@ -2,20 +2,7 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "global-database-overview",
-    "namespace": "default",
-    "uid": "db03ddcd-9d0a-4f58-a064-204046c347f1",
-    "resourceVersion": "1784530767361982",
-    "generation": 1,
-    "creationTimestamp": "2026-07-20T06:59:27Z",
-    "labels": {
-      "grafana.app/deprecatedInternalID": "2939417880076288"
-    },
-    "annotations": {
-      "grafana.app/createdBy": "anonymous:0",
-      "grafana.app/folder": "",
-      "grafana.app/saved-from-ui": "Grafana v13.1.0 (b309c9bb3b)"
-    }
+    "name": "global-database-overview"
   },
   "spec": {
     "annotations": [
