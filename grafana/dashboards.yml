@@ -5,8 +5,8 @@ providers:
   orgId: 1
   folder: 'pgwatch (postgres)'
   type: 'file'
-  disableDeletion: false
-  allowUiUpdates: true
+  disableDeletion: true
+  allowUiUpdates: false
   editable: true
   updateIntervalSeconds: 10
   options:
@@ -16,8 +16,8 @@ providers:
   orgId: 1
   folder: 'pgwatch (prometheus)'
   type: 'file'
-  disableDeletion: false
-  allowUiUpdates: true
+  disableDeletion: true
+  allowUiUpdates: false
   editable: true
   updateIntervalSeconds: 10
   options:
