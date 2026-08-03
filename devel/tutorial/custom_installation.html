@@ -2441,7 +2441,11 @@
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The default built-in dashboards expect <code>postgres/prometheus</code> data sources with uids <code>pgwatch-metrics/pgwatch-prometheus</code> by default.</p>
+<p>The default built-in dashboards expect <code>postgres</code> or <code>prometheus</code> data sources with the default UIDs <code>pgwatch-metrics</code> or <code>pgwatch-prometheus</code>, respectively.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Starting from Grafana 12.4, a small adjustment to <code>grafana.ini</code> is needed for avoiding too small fonts for displayed values in some of the dashboards.  Add <code>newPanelPadding = false</code> to the <code>[feature_toggles]</code> section.</p>
 </div>
 <h2 id="next-steps">Next Steps</h2>
 <ul>
