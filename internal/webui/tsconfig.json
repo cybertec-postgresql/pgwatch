@@ -1,18 +1,22 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "paths": {
+      "*": [
+        "./src/*"
+      ]
+    },
     "rootDir": "src",
     "outDir": "build/dist",
-    "target": "es2019",
+    "target": "es2020",
     "lib": [
-      "es2019",
+      "es2020",
       "dom",
       "dom.iterable",
       "esnext"
     ],
     "allowJs": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -25,7 +29,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "downlevelIteration": true,
     "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx"
   },
