@@ -20,7 +20,7 @@ services:
       - "../grafana/prometheus_datasource.yml:/etc/grafana/provisioning/datasources/prometheus_datasource.yml"
       # Uncomment the dashboard version you want to use and comment out the other one.
       - "../grafana/postgres/v13:/var/lib/grafana/dashboards/postgres"
-      # - "../grafana/prometheus/v12:/var/lib/grafana/dashboards/prometheus"
+      - "../grafana/prometheus/v12:/var/lib/grafana/dashboards/prometheus"
     depends_on:
       postgres:
         condition: service_healthy
