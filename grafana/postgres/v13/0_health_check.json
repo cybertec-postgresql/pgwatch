@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Current and avg. KPI-s. Expects 'get_load_average' and 'backends'  helpers to be installed on the monitored DB.",
+    "description": "At-a-glance health of the selected database: status, traffic, and resource usage.",
     "editable": true,
     "elements": {
       "panel-12": {
@@ -72,8 +72,8 @@
         "kind": "Panel",
         "spec": {
           "id": 13,
-          "title": "TX rollback % (avg.)",
-          "description": "",
+          "title": "Rolled-Back Transactions",
+          "description": "Share of transactions that were rolled back rather than committed.",
           "links": [
             {
               "title": "'DB overview :: Rollback Ratio' panel",
@@ -198,8 +198,8 @@
         "kind": "Panel",
         "spec": {
           "id": 14,
-          "title": "WAL folder size",
-          "description": "Transaction Log Folder size.  Assumes get_wal_size helper being installed. 1/10 GB Warn / 50  Error  thresholds by default",
+          "title": "WAL Size",
+          "description": "Total size of the write-ahead log folder.",
           "links": [
             {
               "title": "DB overview :: WAL panel",
@@ -364,8 +364,8 @@
         "kind": "Panel",
         "spec": {
           "id": 15,
-          "title": "Active queries",
-          "description": "",
+          "title": "Active Queries",
+          "description": "Number of queries currently running.",
           "links": [
             {
               "title": "'DB overview :: backends' panel",
@@ -540,8 +540,8 @@
         "kind": "Panel",
         "spec": {
           "id": 16,
-          "title": "QPS (avg.)",
-          "description": "Queries per Second based on  \"pg_stat_statements\" extension info. < 0.1 Error / < 1 Warning thresholds by default",
+          "title": "Queries / sec",
+          "description": "Average number of queries executed per second.",
           "links": [
             {
               "title": "'DB overview Unprivileged / Developer :: QPS' panel",
@@ -706,8 +706,8 @@
         "kind": "Panel",
         "spec": {
           "id": 17,
-          "title": "Query runtime (avg.)",
-          "description": "Average query runtime based on \"pg_stat_statements\"",
+          "title": "Average Query Time",
+          "description": "Average time taken to run a query.",
           "links": [
             {
               "title": "'DB overview:: Query runtime' panel",
@@ -873,7 +873,7 @@
         "spec": {
           "id": 18,
           "title": "Uptime",
-          "description": "Time from last Postgres process restart.  < 5m Error, < 30m Warn thresholds by default",
+          "description": "Time since the database server last restarted.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1038,8 +1038,8 @@
         "kind": "Panel",
         "spec": {
           "id": 19,
-          "title": "WAL archiving status",
-          "description": "Based on pg_stat_archiver. N/A when archiving is not enabled.",
+          "title": "WAL Archiving",
+          "description": "Whether transaction-log archiving is healthy, failing, or turned off.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1214,8 +1214,8 @@
         "kind": "Panel",
         "spec": {
           "id": 20,
-          "title": "Table changes",
-          "description": "Number of DDL changes i.e. new or changed tables, columns, functions etc.  >1 Warn thresholds by default",
+          "title": "Table Structure Changes",
+          "description": "Number of table, column, or function definition changes in the selected range.",
           "links": [
             {
               "title": "'DDL / Config change events' dash",
@@ -1387,8 +1387,8 @@
         "kind": "Panel",
         "spec": {
           "id": 21,
-          "title": "Shared buffers hit %",
-          "description": "Shared buffers is the Postgres-managed  cache. 90%+ is what you normally want to see for good performance.",
+          "title": "Cache Hit Rate",
+          "description": "Share of reads served from memory instead of disk. Aim for 90% or higher.",
           "links": [
             {
               "title": "Open 'DB overview :: share'd buffers ' panel",
@@ -1514,8 +1514,8 @@
         "kind": "Panel",
         "spec": {
           "id": 22,
-          "title": "Config change events",
-          "description": "Server configuration changes.  >1 Warn thresholds by default",
+          "title": "Configuration Changes",
+          "description": "Number of server setting changes in the selected range.",
           "links": [
             {
               "title": "'DDL / Config change events' dash",
@@ -1687,8 +1687,8 @@
         "kind": "Panel",
         "spec": {
           "id": 24,
-          "title": "DATADIR disk space left",
-          "description": "Assumes get_psutil_disk wrapper being installed. 10/50GB Warn/Error thresholds by default",
+          "title": "Free Disk Space",
+          "description": "Free space left on the disk holding the data directory.",
           "links": [
             {
               "title": "Open 'System Stats :: Free disk ' panel",
@@ -1860,8 +1860,8 @@
         "kind": "Panel",
         "spec": {
           "id": 25,
-          "title": "Database size (last)",
-          "description": "Size for selected DB only",
+          "title": "Database Size",
+          "description": "Current size of the selected database.",
           "links": [
             {
               "title": "DB overview :: DB size panel",
@@ -2022,8 +2022,8 @@
         "kind": "Panel",
         "spec": {
           "id": 26,
-          "title": "Checkpoints requested",
-          "description": "Checkpoints should normally be performed by the background \"Checkpointer\" process. If seeing high numbers then adjusting server configuration is recommended.",
+          "title": "Requested Checkpoints",
+          "description": "Checkpoints triggered on demand instead of on schedule. Frequent ones suggest server tuning is needed.",
           "links": [
             {
               "title": "Checkpointer / Bgwriter / Block IO Stats",
@@ -2194,8 +2194,8 @@
         "kind": "Panel",
         "spec": {
           "id": 27,
-          "title": "Table bloat",
-          "description": "Estimated extra space held by tables (excluding indexes) that would disappear after \"compacting\".",
+          "title": "Table Bloat",
+          "description": "Estimated space that could be reclaimed by compacting tables.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2352,8 +2352,8 @@
         "kind": "Panel",
         "spec": {
           "id": 28,
-          "title": "Instance role",
-          "description": "PRIMARY - accepting writes, REPLICA - read-only",
+          "title": "Instance Role",
+          "description": "Whether this server accepts writes (Primary) or is read-only (Replica).",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2477,8 +2477,8 @@
         "kind": "Panel",
         "spec": {
           "id": 29,
-          "title": "FIXME in case #1446 gets merged Invalid / duplicate indexes",
-          "description": "Invalid indexes should be dropped as they're updated during DML operations but cannot be used to speed up queries. \n\nIn case multiple indexes of the same structure, Postgres will use the smallest, so the others can be dropped. \n\n'N/A' is displayed both when there are no Invalid/duplicate indexes or no metrics data for recommendations.\n\nRequires `reco_drop_index` metric.",
+          "title": "Unused Indexes",
+          "description": "Invalid or duplicate indexes that can safely be dropped. They slow down writes without helping reads.",
           "links": [
             {
               "title": "\"Index overview\" dashboard",
@@ -2633,8 +2633,8 @@
         "kind": "Panel",
         "spec": {
           "id": 30,
-          "title": "Autovacuum issues",
-          "description": "Autovacuum disabled globally or per table.  This can lead to stale statistics or bloated tables, both adversely affecting performance.",
+          "title": "Autovacuum Disabled",
+          "description": "Places where autovacuum is turned off, server-wide or per table. This causes stale statistics and bloat.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2793,8 +2793,8 @@
         "kind": "Panel",
         "spec": {
           "id": 32,
-          "title": "Longest query runtime",
-          "description": "",
+          "title": "Longest Query Time",
+          "description": "Duration of the slowest query in the selected range.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2911,8 +2911,8 @@
         "kind": "Panel",
         "spec": {
           "id": 33,
-          "title": "\"Idle in TX\" count",
-          "description": "Transactions opened but where no queries are being executed.",
+          "title": "Idle Open Transactions",
+          "description": "Open transactions sitting idle. They hold locks and block cleanup.",
           "links": [
             {
               "title": "'DB overview :: Backends' panel",
@@ -3083,8 +3083,8 @@
         "kind": "Panel",
         "spec": {
           "id": 34,
-          "title": "Blocked sessions",
-          "description": "Max number of queries waiting on resources locked by other sessions.  1 Warn / 5 Err thresholds by default",
+          "title": "Blocked Sessions",
+          "description": "Queries waiting on locks held by other sessions.",
           "links": [
             {
               "title": "'Lock details' dashboard",
@@ -3255,8 +3255,8 @@
         "kind": "Panel",
         "spec": {
           "id": 35,
-          "title": "Longest run",
-          "description": "Long running autovacuum processes can hint at workload or configuration  problems",
+          "title": "Longest Autovacuum Run",
+          "description": "Duration of the longest running autovacuum. Long runs can signal workload or tuning problems.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -3372,8 +3372,8 @@
         "kind": "Panel",
         "spec": {
           "id": 36,
-          "title": "WAL bytes/s (avg.)",
-          "description": "Transaction logs generation velocity.",
+          "title": "WAL Write Rate",
+          "description": "Average write-ahead log bytes written per second.",
           "links": [
             {
               "title": "DB overview :: WAL panel",
@@ -3496,8 +3496,8 @@
         "kind": "Panel",
         "spec": {
           "id": 37,
-          "title": "Temp. bytes/s (avg.)",
-          "description": "Postgres writes temporary files to disk when sorting / grouping  big amounts of data that doesn't fit into \"work_mem\".  10/100 MB Warn / Error by default",
+          "title": "Temp File Write Rate",
+          "description": "Average temporary-file bytes written per second. High values mean queries exceed work_mem.",
           "links": [
             {
               "title": "DB overview",
@@ -3620,8 +3620,8 @@
         "kind": "Panel",
         "spec": {
           "id": 39,
-          "title": "Seq. scans on >100 MB tables per minute (avg.)",
-          "description": "Frequent sequential scans on bigger tables should usually be avoided. Warn / Error thresholds: 10 / 100",
+          "title": "Large Table Scans / min",
+          "description": "Full scans per minute on tables larger than 100 MB. Frequent scans often mean a missing index.",
           "links": [
             {
               "title": "'Tables Top :: Most scans' panel",
@@ -3800,8 +3800,8 @@
         "kind": "Panel",
         "spec": {
           "id": 4,
-          "title": "Inactive repl. slots",
-          "description": "Inactive replication slots accumulate WAL files, potentially until disk space runs out. Re-animate the replica or use  pg_drop_replication_slot() to remove the slot so that Postgres can delete the unneeded WALs.",
+          "title": "Inactive Replication Slots",
+          "description": "Unused replication slots. They pile up transaction logs and can eventually fill the disk.",
           "links": [
             {
               "title": "'Replication lag' dashboard",
@@ -3966,8 +3966,8 @@
         "kind": "Panel",
         "spec": {
           "id": 42,
-          "title": "Backup running since",
-          "description": "Based on pg_backup_start_time() [9.3+] function. N/A if no backup in progress.",
+          "title": "Backup Duration",
+          "description": "How long a backup has been running. Shows nothing when no backup is active.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -4132,8 +4132,8 @@
         "kind": "Panel",
         "spec": {
           "id": 43,
-          "title": "Oldest TX age",
-          "description": "In TX count, both from sessions and replication slots. Holds back vacuum.",
+          "title": "Oldest Transaction",
+          "description": "Age of the oldest open transaction. Old transactions block cleanup and cause bloat.",
           "links": [
             {
               "title": "'Replication lag' dashboard",
@@ -4304,8 +4304,8 @@
         "kind": "Panel",
         "spec": {
           "id": 44,
-          "title": "Version",
-          "description": "\"SHOW server_version_num;\"\n110005 => 11.5",
+          "title": "PostgreSQL Version",
+          "description": "The running PostgreSQL major version.",
           "links": [
             {
               "title": "Postgres Version Overview",
@@ -4472,8 +4472,8 @@
         "kind": "Panel",
         "spec": {
           "id": 45,
-          "title": "Connections used %",
-          "description": "",
+          "title": "Connections Used",
+          "description": "Share of the connection limit currently in use.",
           "links": [
             {
               "title": "'DB overview :: backends' panel",
@@ -4646,8 +4646,8 @@
         "kind": "Panel",
         "spec": {
           "id": 46,
-          "title": "Max. replication lag",
-          "description": "\"Apply\" (data made visible to queries on replica)  lag in bytes",
+          "title": "Replication Lag",
+          "description": "How far behind the furthest replica is, in bytes.",
           "links": [
             {
               "title": "'Replication lag' dashboard",
@@ -4811,8 +4811,8 @@
         "kind": "Panel",
         "spec": {
           "id": 47,
-          "title": "Max FREEZE age",
-          "description": "Max. age since last VACUUM FREEZE. Could hint at problems when going into 100s of millions",
+          "title": "Transaction Freeze Age",
+          "description": "Age since the oldest VACUUM FREEZE. Very high values risk transaction ID wraparound.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -5015,8 +5015,8 @@
         "kind": "Panel",
         "spec": {
           "id": 49,
-          "title": "Established connections (total)",
-          "description": "Total number of sessions established to this database during the interval set in the dashboard",
+          "title": "New Connections",
+          "description": "Number of new sessions opened during the selected range.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -5114,8 +5114,8 @@
         "kind": "Panel",
         "spec": {
           "id": 50,
-          "title": "JIT %",
-          "description": "Percentage of total query execution time spent in JIT (requires stat_statements_jit metric)",
+          "title": "JIT Compilation",
+          "description": "Share of query time spent compiling queries before running them.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -5277,8 +5277,8 @@
         "kind": "Panel",
         "spec": {
           "id": 51,
-          "title": "Total index size",
-          "description": "Total size of user indexes for the selected DB. requires db_size metric.",
+          "title": "Total Index Size",
+          "description": "Combined size of all indexes in the selected database.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -5378,8 +5378,8 @@
         "kind": "Panel",
         "spec": {
           "id": 7,
-          "title": "TPS (avg.)",
-          "description": "Transactions per second",
+          "title": "Transactions / sec",
+          "description": "Average transactions committed and rolled back per second.",
           "links": [
             {
               "title": "'DB overview Unprivileged / Developer :: TPS' panel",
@@ -5544,8 +5544,8 @@
         "kind": "Panel",
         "spec": {
           "id": 71,
-          "title": "DB size change (%)",
-          "description": "",
+          "title": "Database Growth",
+          "description": "Percent change in database size over the selected range.",
           "links": [
             {
               "title": "'DB overview :: backends' panel",
@@ -5718,8 +5718,8 @@
         "kind": "Panel",
         "spec": {
           "id": 72,
-          "title": "DB size change",
-          "description": "",
+          "title": "Database Growth (Size)",
+          "description": "Change in database size over the selected range.",
           "links": [
             {
               "title": "'DB overview :: backends' panel",
@@ -5884,8 +5884,8 @@
         "kind": "Panel",
         "spec": {
           "id": 73,
-          "title": "INSERT/min (avg.)",
-          "description": "On non-temporary  tables",
+          "title": "Rows Inserted / min",
+          "description": "Average rows inserted per minute.",
           "links": [
             {
               "title": "'Tables Top :: Inserts' panel",
@@ -6040,8 +6040,8 @@
         "kind": "Panel",
         "spec": {
           "id": 74,
-          "title": "UPDATE/min (avg.)",
-          "description": "On non-temporary  tables",
+          "title": "Rows Updated / min",
+          "description": "Average rows updated per minute.",
           "links": [
             {
               "title": "'Tables Top :: Updates' panel",
@@ -6196,8 +6196,8 @@
         "kind": "Panel",
         "spec": {
           "id": 75,
-          "title": "DELETE/min (avg.)pd",
-          "description": "On non-temporary  tables",
+          "title": "Rows Deleted / min",
+          "description": "Average rows deleted per minute.",
           "links": [
             {
               "title": "'Tables Top :: Deletes' panel",
@@ -6352,8 +6352,8 @@
         "kind": "Panel",
         "spec": {
           "id": 79,
-          "title": "Max. number of connections",
-          "description": "",
+          "title": "Peak Connections",
+          "description": "Highest number of connections seen in the selected range.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
