@@ -27,7 +27,7 @@
   },
   "resolutions": {
     "axios": "^1.18.1",
-    "brace-expansion": "^5.0.8",
+    "brace-expansion": "^5.0.9",
     "minimatch": "^10.2.3",
     "cookie": "^0.7.0",
     "postcss": "^8.5.18",
