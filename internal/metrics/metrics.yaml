@@ -46,7 +46,8 @@ metrics:
         is_instance_level: true
     autovacuum_scores:
         description: >
-            This metric retrieves vacuum scores for each table in the current database from the PostgreSQL pg_stat_autovacuum_scores view, it also shows whether autovacuum would vacuum or analyze the table.
+            This metric retrieves vacuum scores for each table in the current database from the PostgreSQL pg_stat_autovacuum_scores view,
+            it also shows whether autovacuum would vacuum or analyze the table.
         sqls: 
             19: |
                 select /* pgwatch_generated */
@@ -60,13 +61,15 @@ metrics:
                   vacuum_score,
                   vacuum_insert_score,
                   analyze_score,
-                  case when do_vacuum then 1 else 0 end as do_vacuum_int,
-                  case when do_analyze then 1 else 0 end as do_analyze_int,
-                  case when for_wraparound then 1 else 0 end as for_wraparound_int
+                  do_vacuum::int as do_vacuum_int,
+                  do_analyze::int as do_analyze_int,
+                  for_wraparound::int as for_wraparound_int
                 from
-                  pg_stat_autovacuum_scores 
+                  pg_stat_autovacuum_scores
                 where
-                  schemaname not like any (array[E'pg\\_%', 'information_schema', E'\\_timescaledb%']) 
+                  schemaname not like all (array[E'pg\\_%', 'information_schema', E'\\_timescaledb%'])
+                order by score desc nulls last
+                limit 300
         gauges:
             - '*'
     backends:
