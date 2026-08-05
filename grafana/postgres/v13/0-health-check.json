@@ -30,6 +30,246 @@
     "description": "At-a-glance health of the selected database: status, traffic, and resource usage.",
     "editable": true,
     "elements": {
+      "row-label-overall-state": {
+        "kind": "Panel",
+        "spec": {
+          "id": 101,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Overall state",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-autovacuum": {
+        "kind": "Panel",
+        "spec": {
+          "id": 102,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Autovacuum",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-wal-replication": {
+        "kind": "Panel",
+        "spec": {
+          "id": 103,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## WAL & replication",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-connections": {
+        "kind": "Panel",
+        "spec": {
+          "id": 104,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Connections",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-disk-usage": {
+        "kind": "Panel",
+        "spec": {
+          "id": 105,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Disk usage",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-miscellaneous": {
+        "kind": "Panel",
+        "spec": {
+          "id": 106,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Misc.",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-change-rate": {
+        "kind": "Panel",
+        "spec": {
+          "id": 107,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Change rate",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-transactions": {
+        "kind": "Panel",
+        "spec": {
+          "id": 108,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Transactions",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-queries": {
+        "kind": "Panel",
+        "spec": {
+          "id": 109,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Queries",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-tables-indexes": {
+        "kind": "Panel",
+        "spec": {
+          "id": 110,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "content": "## Tables & indexes",
+                "mode": "markdown"
+              },
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          },
+          "transparent": true
+        }
+      },
       "panel-12": {
         "kind": "Panel",
         "spec": {
@@ -72,7 +312,7 @@
         "kind": "Panel",
         "spec": {
           "id": 13,
-          "title": "Rolled-Back Transactions",
+          "title": "Rolled-back transactions",
           "description": "Share of transactions that were rolled back rather than committed.",
           "links": [
             {
@@ -175,15 +415,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 0.5,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 1,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -198,7 +438,7 @@
         "kind": "Panel",
         "spec": {
           "id": 14,
-          "title": "WAL Size",
+          "title": "WAL size",
           "description": "Total size of the write-ahead log folder.",
           "links": [
             {
@@ -341,15 +581,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1000000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 10000000000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -364,7 +604,7 @@
         "kind": "Panel",
         "spec": {
           "id": 15,
-          "title": "Active Queries",
+          "title": "Active queries",
           "description": "Number of queries currently running.",
           "links": [
             {
@@ -513,19 +753,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "dark-yellow"
-                      },
-                      {
-                        "value": 5,
-                        "color": "dark-orange"
+                        "color": "orange"
                       },
                       {
                         "value": 10,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -683,15 +919,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#d44a3a"
+                        "color": "red"
                       },
                       {
                         "value": 0.1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 1,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -706,7 +942,7 @@
         "kind": "Panel",
         "spec": {
           "id": 17,
-          "title": "Average Query Time",
+          "title": "Average query time",
           "description": "Average time taken to run a query.",
           "links": [
             {
@@ -849,15 +1085,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 500,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 5000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -1015,15 +1251,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#d44a3a"
+                        "color": "red"
                       },
                       {
                         "value": 300,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 1800,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -1038,7 +1274,7 @@
         "kind": "Panel",
         "spec": {
           "id": 19,
-          "title": "WAL Archiving",
+          "title": "WAL archiving",
           "description": "Whether transaction-log archiving is healthy, failing, or turned off.",
           "links": [],
           "data": {
@@ -1195,11 +1431,11 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -1214,7 +1450,7 @@
         "kind": "Panel",
         "spec": {
           "id": 20,
-          "title": "Table Structure Changes",
+          "title": "Table structure changes",
           "description": "Number of table, column, or function definition changes in the selected range.",
           "links": [
             {
@@ -1354,7 +1590,7 @@
                         "match": "null",
                         "result": {
                           "text": "0",
-                          "color": "#28781e"
+                          "color": "green"
                         }
                       }
                     }
@@ -1364,15 +1600,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": null,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -1387,7 +1623,7 @@
         "kind": "Panel",
         "spec": {
           "id": 21,
-          "title": "Cache Hit Rate",
+          "title": "Cache hit rate",
           "description": "Share of reads served from memory instead of disk. Aim for 90% or higher.",
           "links": [
             {
@@ -1481,7 +1717,7 @@
                         "match": "null",
                         "result": {
                           "text": "0",
-                          "color": "#d44a3a"
+                          "color": "red"
                         }
                       }
                     }
@@ -1491,15 +1727,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#d44a3a"
+                        "color": "red"
                       },
                       {
                         "value": 50,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 90,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -1514,7 +1750,7 @@
         "kind": "Panel",
         "spec": {
           "id": 22,
-          "title": "Configuration Changes",
+          "title": "Configuration changes",
           "description": "Number of server setting changes in the selected range.",
           "links": [
             {
@@ -1654,7 +1890,7 @@
                         "match": "null",
                         "result": {
                           "text": "0",
-                          "color": "#28781e"
+                          "color": "green"
                         }
                       }
                     }
@@ -1664,15 +1900,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": null,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -1687,7 +1923,7 @@
         "kind": "Panel",
         "spec": {
           "id": 24,
-          "title": "Free Disk Space",
+          "title": "Free disk space",
           "description": "Free space left on the disk holding the data directory.",
           "links": [
             {
@@ -1827,7 +2063,7 @@
                         "match": "null",
                         "result": {
                           "text": "0",
-                          "color": "#d44a3a"
+                          "color": "red"
                         }
                       }
                     }
@@ -1837,15 +2073,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#d44a3a"
+                        "color": "red"
                       },
                       {
                         "value": 10000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 50000000,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -1860,7 +2096,7 @@
         "kind": "Panel",
         "spec": {
           "id": 25,
-          "title": "Database Size",
+          "title": "Database size",
           "description": "Current size of the selected database.",
           "links": [
             {
@@ -2022,7 +2258,7 @@
         "kind": "Panel",
         "spec": {
           "id": 26,
-          "title": "Requested Checkpoints",
+          "title": "Requested checkpoints",
           "description": "Checkpoints triggered on demand instead of on schedule. Frequent ones suggest server tuning is needed.",
           "links": [
             {
@@ -2171,15 +2407,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 2,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -2194,7 +2430,7 @@
         "kind": "Panel",
         "spec": {
           "id": 27,
-          "title": "Table Bloat",
+          "title": "Table bloat",
           "description": "Estimated space that could be reclaimed by compacting tables.",
           "links": [],
           "data": {
@@ -2352,7 +2588,7 @@
         "kind": "Panel",
         "spec": {
           "id": 28,
-          "title": "Instance Role",
+          "title": "Instance role",
           "description": "Whether this server accepts writes (Primary) or is read-only (Replica).",
           "links": [],
           "data": {
@@ -2454,15 +2690,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 2,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -2477,7 +2713,7 @@
         "kind": "Panel",
         "spec": {
           "id": 29,
-          "title": "Unused Indexes",
+          "title": "Unused indexes",
           "description": "Invalid or duplicate indexes that can safely be dropped. They slow down writes without helping reads.",
           "links": [
             {
@@ -2609,15 +2845,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 2,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   },
@@ -2633,7 +2869,7 @@
         "kind": "Panel",
         "spec": {
           "id": 30,
-          "title": "Autovacuum Disabled",
+          "title": "Autovacuum disabled",
           "description": "Places where autovacuum is turned off, server-wide or per table. This causes stale statistics and bloat.",
           "links": [],
           "data": {
@@ -2770,15 +3006,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 10,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -2793,7 +3029,7 @@
         "kind": "Panel",
         "spec": {
           "id": 32,
-          "title": "Longest Query Time",
+          "title": "Longest query time",
           "description": "Duration of the slowest query in the selected range.",
           "links": [],
           "data": {
@@ -2888,15 +3124,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 30,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 300,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -2911,7 +3147,7 @@
         "kind": "Panel",
         "spec": {
           "id": 33,
-          "title": "Idle Open Transactions",
+          "title": "Idle open transactions",
           "description": "Open transactions sitting idle. They hold locks and block cleanup.",
           "links": [
             {
@@ -3060,15 +3296,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 5,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3083,7 +3319,7 @@
         "kind": "Panel",
         "spec": {
           "id": 34,
-          "title": "Blocked Sessions",
+          "title": "Blocked sessions",
           "description": "Queries waiting on locks held by other sessions.",
           "links": [
             {
@@ -3232,15 +3468,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 5,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3255,7 +3491,7 @@
         "kind": "Panel",
         "spec": {
           "id": 35,
-          "title": "Longest Autovacuum Run",
+          "title": "Longest autovacuum run",
           "description": "Duration of the longest running autovacuum. Long runs can signal workload or tuning problems.",
           "links": [],
           "data": {
@@ -3349,15 +3585,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 60,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 300,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3372,7 +3608,7 @@
         "kind": "Panel",
         "spec": {
           "id": 36,
-          "title": "WAL Write Rate",
+          "title": "WAL write rate",
           "description": "Average write-ahead log bytes written per second.",
           "links": [
             {
@@ -3473,15 +3709,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 16000000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3496,7 +3732,7 @@
         "kind": "Panel",
         "spec": {
           "id": 37,
-          "title": "Temp File Write Rate",
+          "title": "Temp file write rate",
           "description": "Average temporary-file bytes written per second. High values mean queries exceed work_mem.",
           "links": [
             {
@@ -3597,15 +3833,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 100000000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3620,7 +3856,7 @@
         "kind": "Panel",
         "spec": {
           "id": 39,
-          "title": "Large Table Scans / min",
+          "title": "Large table scans / min",
           "description": "Full scans per minute on tables larger than 100 MB. Frequent scans often mean a missing index.",
           "links": [
             {
@@ -3776,15 +4012,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 100,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   },
@@ -3800,7 +4036,7 @@
         "kind": "Panel",
         "spec": {
           "id": 4,
-          "title": "Inactive Replication Slots",
+          "title": "Inactive replication slots",
           "description": "Unused replication slots. They pile up transaction logs and can eventually fill the disk.",
           "links": [
             {
@@ -3943,15 +4179,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1,
-                        "color": "#bf1b00"
+                        "color": "orange"
                       },
                       {
                         "value": 1000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -3966,7 +4202,7 @@
         "kind": "Panel",
         "spec": {
           "id": 42,
-          "title": "Backup Duration",
+          "title": "Backup duration",
           "description": "How long a backup has been running. Shows nothing when no backup is active.",
           "links": [],
           "data": {
@@ -4109,15 +4345,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 3600,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 36000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -4132,8 +4368,8 @@
         "kind": "Panel",
         "spec": {
           "id": 43,
-          "title": "Oldest Transaction",
-          "description": "Age of the oldest open transaction. Old transactions block cleanup and cause bloat.",
+          "title": "Oldest snapshot XID age",
+          "description": "Number of transactions (XIDs) since the oldest active snapshot, held by a backend or replication slot. High values prevent VACUUM from cleaning up dead tuples and increase bloat/wraparound risk.",
           "links": [
             {
               "title": "'Replication lag' dashboard",
@@ -4281,15 +4517,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 100000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -4304,7 +4540,7 @@
         "kind": "Panel",
         "spec": {
           "id": 44,
-          "title": "PostgreSQL Version",
+          "title": "PostgreSQL version",
           "description": "The running PostgreSQL major version.",
           "links": [
             {
@@ -4449,15 +4685,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#C4162A"
+                        "color": "red"
                       },
                       {
                         "value": 14,
-                        "color": "#FA6400"
+                        "color": "orange"
                       },
                       {
                         "value": 18,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -4472,7 +4708,7 @@
         "kind": "Panel",
         "spec": {
           "id": 45,
-          "title": "Connections Used",
+          "title": "Connections used",
           "description": "Share of the connection limit currently in use.",
           "links": [
             {
@@ -4623,15 +4859,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 50,
-                        "color": "#FA6400"
+                        "color": "orange"
                       },
                       {
                         "value": 75,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -4646,7 +4882,7 @@
         "kind": "Panel",
         "spec": {
           "id": 46,
-          "title": "Replication Lag",
+          "title": "Replication lag",
           "description": "How far behind the furthest replica is, in bytes.",
           "links": [
             {
@@ -4788,15 +5024,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 1000000,
-                        "color": "#FA6400"
+                        "color": "orange"
                       },
                       {
                         "value": 10000000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -4811,7 +5047,7 @@
         "kind": "Panel",
         "spec": {
           "id": 47,
-          "title": "Transaction Freeze Age",
+          "title": "Transaction freeze age",
           "description": "Age since the oldest VACUUM FREEZE. Very high values risk transaction ID wraparound.",
           "links": [],
           "data": {
@@ -4954,15 +5190,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 100000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 500000000,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -5015,7 +5251,7 @@
         "kind": "Panel",
         "spec": {
           "id": 49,
-          "title": "New Connections",
+          "title": "New connections",
           "description": "Number of new sessions opened during the selected range.",
           "links": [],
           "data": {
@@ -5095,173 +5331,10 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 100,
-                        "color": "red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-50": {
-        "kind": "Panel",
-        "spec": {
-          "id": 50,
-          "title": "JIT Compilation",
-          "description": "Share of query time spent compiling queries before running them.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "editorMode": "code",
-                        "format": "table",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "365d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "stat_statements_jit",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "rawQuery": true,
-                        "rawSql": "SELECT (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 AS pct\n  FROM\n      (\n          SELECT time,\n                 (data->>'jit_generation_time')::float8 AS total_jit, \n                 lag((data->>'jit_generation_time')::float8) OVER w AS total_jit_lag,\n                 (data->>'total_time')::float8 AS total_time, \n                 lag((data->>'total_time')::float8) OVER w AS total_time_lag\n            FROM stat_statements\n           WHERE dbname = '$dbname' AND $__timeFilter(time)\n          WINDOW W AS (ORDER BY time)\n      )\n WHERE total_time > total_time_lag",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [],
-                              "type": "last"
-                            }
-                          ]
-                        ],
-                        "sql": {
-                          "columns": [
-                            {
-                              "parameters": [],
-                              "type": "function"
-                            }
-                          ],
-                          "groupBy": [
-                            {
-                              "property": {
-                                "type": "string"
-                              },
-                              "type": "groupBy"
-                            }
-                          ],
-                          "limit": 50
-                        },
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "maxDataPoints": 100
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "colorMode": "background_solid",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "/^pct$/",
-                  "limit": 1,
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "percent",
-                  "decimals": 2,
-                  "min": 0,
-                  "max": 100,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#28781e"
-                      },
-                      {
-                        "value": 1,
-                        "color": "orange"
-                      },
-                      {
-                        "value": 25,
                         "color": "red"
                       }
                     ]
@@ -5277,7 +5350,7 @@
         "kind": "Panel",
         "spec": {
           "id": 51,
-          "title": "Total Index Size",
+          "title": "Total index size",
           "description": "Combined size of all indexes in the selected database.",
           "links": [],
           "data": {
@@ -5521,15 +5594,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#d44a3a"
+                        "color": "red"
                       },
                       {
                         "value": 0.1,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 1,
-                        "color": "#28781e"
+                        "color": "green"
                       }
                     ]
                   }
@@ -5544,7 +5617,7 @@
         "kind": "Panel",
         "spec": {
           "id": 71,
-          "title": "Database Growth",
+          "title": "Database growth",
           "description": "Percent change in database size over the selected range.",
           "links": [
             {
@@ -5695,15 +5768,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10,
-                        "color": "#FA6400"
+                        "color": "orange"
                       },
                       {
                         "value": 50,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   }
@@ -5718,7 +5791,7 @@
         "kind": "Panel",
         "spec": {
           "id": 72,
-          "title": "Database Growth (Size)",
+          "title": "Database growth (size)",
           "description": "Change in database size over the selected range.",
           "links": [
             {
@@ -5869,7 +5942,7 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "transparent"
+                        "color": "green"
                       }
                     ]
                   }
@@ -5884,7 +5957,7 @@
         "kind": "Panel",
         "spec": {
           "id": 73,
-          "title": "Rows Inserted / min",
+          "title": "Rows inserted / min",
           "description": "Average rows inserted per minute.",
           "links": [
             {
@@ -6016,15 +6089,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 25,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   },
@@ -6040,7 +6113,7 @@
         "kind": "Panel",
         "spec": {
           "id": 74,
-          "title": "Rows Updated / min",
+          "title": "Rows updated / min",
           "description": "Average rows updated per minute.",
           "links": [
             {
@@ -6172,15 +6245,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 25,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   },
@@ -6196,7 +6269,7 @@
         "kind": "Panel",
         "spec": {
           "id": 75,
-          "title": "Rows Deleted / min",
+          "title": "Rows deleted / min",
           "description": "Average rows deleted per minute.",
           "links": [
             {
@@ -6328,15 +6401,15 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 10,
-                        "color": "rgba(237, 129, 40, 0.89)"
+                        "color": "orange"
                       },
                       {
                         "value": 25,
-                        "color": "#d44a3a"
+                        "color": "red"
                       }
                     ]
                   },
@@ -6352,7 +6425,7 @@
         "kind": "Panel",
         "spec": {
           "id": 79,
-          "title": "Peak Connections",
+          "title": "Peak connections",
           "description": "Highest number of connections seen in the selected range.",
           "links": [],
           "data": {
@@ -6432,7 +6505,7 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#28781e"
+                        "color": "green"
                       },
                       {
                         "value": 100,
@@ -6466,9 +6539,9 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Overall State",
+                        "title": "Overall state",
                         "collapse": false,
-                        "hideHeader": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6477,6 +6550,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-overall-state"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6489,7 +6575,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6502,7 +6588,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6522,6 +6608,7 @@
                       "spec": {
                         "title": "Autovacuum",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6530,6 +6617,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-autovacuum"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6542,7 +6642,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6555,7 +6655,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6568,7 +6668,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6581,7 +6681,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
+                                  "x": 19,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6599,8 +6699,9 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "WAL & Replication",
+                        "title": "WAL & replication",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6609,6 +6710,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-wal-replication"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6621,7 +6735,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6634,7 +6748,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6647,7 +6761,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6667,6 +6781,7 @@
                       "spec": {
                         "title": "Connections",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6675,6 +6790,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-connections"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6687,7 +6815,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6700,7 +6828,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6713,7 +6841,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6726,7 +6854,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
+                                  "x": 19,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6744,8 +6872,9 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Disk Usage",
+                        "title": "Disk usage",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6754,6 +6883,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-disk-usage"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6766,7 +6908,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6779,7 +6921,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6792,7 +6934,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6812,6 +6954,7 @@
                       "spec": {
                         "title": "Miscellaneous",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6820,6 +6963,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-miscellaneous"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6832,7 +6988,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6845,7 +7001,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6881,6 +7037,7 @@
                       "spec": {
                         "title": "Change rate",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6889,6 +7046,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-change-rate"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6901,7 +7071,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6914,7 +7084,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6927,7 +7097,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6940,7 +7110,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
+                                  "x": 19,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6960,6 +7130,7 @@
                       "spec": {
                         "title": "Transactions",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -6968,6 +7139,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-transactions"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6980,7 +7164,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -6993,7 +7177,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7013,6 +7197,7 @@
                       "spec": {
                         "title": "Queries",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -7021,6 +7206,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-queries"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7033,7 +7231,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7046,7 +7244,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7059,7 +7257,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 12,
+                                  "x": 15,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7072,26 +7270,13 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 16,
+                                  "x": 19,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-39"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 20,
-                                  "y": 0,
-                                  "width": 4,
-                                  "height": 3,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-50"
                                   }
                                 }
                               }
@@ -7105,6 +7290,7 @@
                       "spec": {
                         "title": "Tables and indexes",
                         "collapse": false,
+                        "hideHeader": true,
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -7113,6 +7299,19 @@
                                 "kind": "GridLayoutItem",
                                 "spec": {
                                   "x": 0,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "row-label-tables-indexes"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 3,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7125,7 +7324,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 4,
+                                  "x": 7,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
@@ -7138,7 +7337,7 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 8,
+                                  "x": 11,
                                   "y": 0,
                                   "width": 4,
                                   "height": 3,
