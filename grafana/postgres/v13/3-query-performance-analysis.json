@@ -1,0 +1,2042 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "query-performance-analysis"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "grafana"
+            },
+            "spec": {}
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true,
+          "legacyOptions": {
+            "type": "dashboard"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Enhanced PostgreSQL statement analysis dashboard with comprehensive table view and visual analytics",
+    "editable": true,
+    "elements": {
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Top $top statements by temp_blks_written per second (in bytes)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  temp_blks_written_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by temp_blks_written_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(temp_blks_written - temp_blks_written_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as temp_blks_written_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'temp_blks_written')::int8 as temp_blks_written, lag((data->>'temp_blks_written')::int8) over w as temp_blks_written_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and temp_blks_written_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "bytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 97,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"400\" />\n</a>",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "Top $top statements by execution time per call",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  time_per_call\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by time_per_call desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(t - t_lag) / nullif(sum(c - c_lag), 0) as time_per_call\n    from (\n      select\n        time,\n        tag_data->>'queryid' as queryid,\n        (data->>'total_time')::float8 as t, lag((data->>'total_time')::float8) over w as t_lag,\n        (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where c_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and time_per_call is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ms",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Enhanced Query Performance Analysis Table",
+          "description": "Comprehensive query performance analysis from pg_stat_statements.\n\n**Column Guide:**\n- **Query ID** - Internal PostgreSQL query identifier (click to drill down)\n- **Total Runtime** - Total cumulative execution time\n- **% DB Total** - Percentage of total database execution time\n- **Avg Runtime** - Average execution time per call\n- **Plan Time** - Total time spent planning queries\n- **Avg Plan Time** - Average planning time per call\n- **Calls** - Number of times executed\n- **Rows** - Total rows retrieved/affected\n- **Avg Rows** - Average rows per execution\n- **Shared Hit (MB)** - Buffer cache hits - data found in memory (higher is better)\n- **Shared Read (MB)** - Data read from disk into shared buffers (cache misses)\n- **Shared Written (MB)** - Data written from shared buffers to disk\n- **Temp Read (MB)** - Data read from temporary files (indicates memory pressure)\n- **Temp Written (MB)** - Data written to temporary files during large operations\n- **JIT %** - Percentage of total query execution time spent in JIT\n- **IO Time** - Time spent on disk I/O operations (requires track_io_timing)\n- **Users** - Database roles that executed this query\n- **Query** - Normalized SQL text with constants replaced by placeholders",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "-- Enhanced comprehensive query analysis (Fast mode)\nWITH query_stats AS (\n  select\n    tag_data->>'queryid' as queryid,\n    max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric) as total_runtime,\n    (max((data->>'total_time')::numeric) - min((data->>'total_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_runtime,\n    max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric) as plan_time,\n    (max((data->>'total_plan_time')::numeric) - min((data->>'total_plan_time')::numeric)) / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_plan_time,\n    max((data->>'calls')::int8) - min((data->>'calls')::int8) as calls,\n    max((data->>'rows')::int8) - min((data->>'rows')::int8) as rows,\n    (max((data->>'rows')::int8) - min((data->>'rows')::int8))::numeric / nullif(max((data->>'calls')::int8) - min((data->>'calls')::int8), 0) as avg_rows,\n    (max((data->>'shared_blks_hit')::int8) - min((data->>'shared_blks_hit')::int8)) * 8192 / 1024.0 / 1024.0 as shared_hit_mb,\n    (max((data->>'shared_blks_read')::int8) - min((data->>'shared_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as shared_read_mb,\n    (max((data->>'shared_blks_written')::int8) - min((data->>'shared_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as shared_written_mb,\n    (max((data->>'temp_blks_read')::int8) - min((data->>'temp_blks_read')::int8)) * 8192 / 1024.0 / 1024.0 as temp_read_mb,\n    (max((data->>'temp_blks_written')::int8) - min((data->>'temp_blks_written')::int8)) * 8192 / 1024.0 / 1024.0 as temp_written_mb,\n    (max((data->>'blk_read_time')::numeric) - min((data->>'blk_read_time')::numeric)) + \n    (max((data->>'blk_write_time')::numeric) - min((data->>'blk_write_time')::numeric)) as io_time,\n    (max((data->>'jit_generation_time')::numeric) - min((data->>'jit_generation_time')::numeric)) as jit_time,\n    case when length(tag_data->>'query') > 150 then (tag_data->>'query')::varchar(150) || '...' else tag_data->>'query' end as query\n  from stat_statements\n  where dbname = '$dbname'\n    and $__timeFilter(time)\n    and tag_data->>'query' ~* '$query_filter_regex'\n  group by tag_data->>'queryid', tag_data->>'query'\n  having max((data->>'calls')::int8) - min((data->>'calls')::int8) > 0\n),\nwith_percentages AS (\n  select \n    *,\n    100 * total_runtime / nullif((select sum(total_runtime) from query_stats), 0) as pct_db_total\n  from query_stats\n)\nselect\n  queryid,\n  total_runtime::numeric as \"Total Runtime\",\n  pct_db_total::numeric(5,1) as \"% DB Total\",\n  avg_runtime::numeric(10,2) as \"Avg Runtime\",\n  plan_time::numeric as \"Plan Time\",\n  avg_plan_time::numeric(10,2) as \"Avg Plan Time\",\n  calls as \"Calls\",\n  rows as \"Rows\",\n  avg_rows::numeric(10,1) as \"Avg Rows\",\n  shared_hit_mb::numeric(10,1) as \"Shared Hit\",\n  shared_read_mb::numeric(10,1) as \"Shared Read\",\n  shared_written_mb::numeric(10,1) as \"Shared Written\",\n  temp_read_mb::numeric(10,1) as \"Temp Read\",\n  temp_written_mb::numeric(10,1) as \"Temp Written\",\n  case when total_runtime::int8 = 0 then 0 else jit_time::numeric(10, 2) / total_runtime::int8 end as \"JIT %\",\n  io_time::numeric(10,1) as \"IO Time\",\n  (select data->>'users' from stat_statements where $__timeFilter(time) and dbname = '$dbname' and tag_data->>'queryid' = with_percentages.queryid order by time desc limit 1) as \"Users\",\n  query as \"Query\"\nfrom with_percentages\norder by total_runtime desc nulls last\nlimit $top",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Total Runtime"
+                  }
+                ]
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "queryid"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Query ID"
+                      },
+                      {
+                        "id": "unit",
+                        "value": "string"
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": true,
+                            "title": "Opens 'Single query details' dashboard for that queryid",
+                            "url": "/d/single-query-details?orgId=1&var-dbname=${dbname}&var-queryid=${__value.raw}&from=${__from}&to=${__to}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Total Runtime"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Avg Runtime"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Plan Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Avg Plan Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Calls"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 76
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Rows"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 73
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Avg Rows"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 86
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Shared Hit"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Shared Read"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Shared Written"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Temp Read"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Temp Written"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "IO Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "% DB Total"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Query ID"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 229
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "JIT Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "JIT %"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 114
+                      },
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Users"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Query"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.inspect",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Top $top statements by calls per second",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  calls_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by calls_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(c - c_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as calls_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'calls')::int8 as c, lag((data->>'calls')::int8) over w as c_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and calls_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "calls/s",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Top $top statements by execution time per second",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  time_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by time_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(t - t_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as time_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'total_time')::float8 as t, lag((data->>'total_time')::float8) over w as t_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and time_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ms",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Top $top statements by rows retrieved/affected per second",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  rows_per_sec\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by rows_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(rows - rows_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as rows_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'rows')::int8 as rows, lag((data->>'rows')::int8) over w as rows_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and rows_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "rowsps",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Top $top statements by shared_blks_hit per second (in bytes)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  blks_hit_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by blks_hit_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(blks_hit - blks_hit_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as blks_hit_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'shared_blks_hit')::int8 as blks_hit, lag((data->>'shared_blks_hit')::int8) over w as blks_hit_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and blks_hit_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "bytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 98,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Top $top statements by shared_blks_read per second (in bytes)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  blks_read_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by blks_read_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(blks_read - blks_read_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as blks_read_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'shared_blks_read')::int8 as blks_read, lag((data->>'shared_blks_read')::int8) over w as blks_read_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and blks_read_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "bytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.name}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Top $top statements by temp_blks_read per second (in bytes)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with baseline as (\n  select time\n  from stat_statements\n  where dbname = '$dbname' and time < $__timeFrom()::timestamptz\n  order by time desc\n  limit 1\n)\n\nselect\n  time,\n  queryid as metric,\n  temp_blks_read_per_sec * 8192\nfrom\n(\n  select \n    *,\n    row_number() over (partition by time order by temp_blks_read_per_sec desc nulls last) as rn\n  from\n  (\n    select\n      $__timeGroup(time, $agg_interval) as time,\n      queryid,\n      sum(temp_blks_read - temp_blks_read_lag) / nullif(extract(epoch from sum(time - time_lag)), 0) as temp_blks_read_per_sec\n    from (\n      select\n        tag_data->>'queryid' as queryid,\n        (data->>'temp_blks_read')::int8 as temp_blks_read, lag((data->>'temp_blks_read')::int8) over w as temp_blks_read_lag,\n        time, lag(time) over w as time_lag\n      from stat_statements\n      where time <= $__timeTo()::timestamptz\n        and time >= coalesce((select time from baseline), $__timeFrom()::timestamptz)\n        and dbname = '$dbname'\n        and tag_data->>'query' ~* '$query_filter_regex'\n      window w as (partition by tag_data->>'queryid' order by time)\n    )\n    where time_lag is not null\n    group by 1, 2\n  )\n)\nwhere rn <= $top and temp_blks_read_per_sec is not null\norder by time",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.3.4",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "bytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "links": [
+                    {
+                      "title": "View Query Details",
+                      "url": "/d/single-query-details/single-query-details?var-dbname=${dbname}&var-queryid=${__field.labels.queryid}&${__url_time_range}"
+                    }
+                  ],
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 98,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "vis": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Comprehensive Query Analysis Table (pg_stat_statements)",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 12,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Top $top queries visual analysis (pg_stat_statements)",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 8,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 8,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 16,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 16,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 24,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 24,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 32,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 32,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "pgwatch"
+    ],
+    "timeSettings": {
+      "timezone": "browser",
+      "from": "now-24h",
+      "to": "now",
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "3. Query Performance Analysis",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "dbname",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "label": "Database",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "pgwatch-metrics"
+            },
+            "spec": {
+              "__legacyStringValue": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'stat_statements' ORDER BY 1;"
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "definition": "",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "top",
+          "query": "5,10,15,20,30,50",
+          "current": {
+            "text": "10",
+            "value": "10"
+          },
+          "options": [
+            {
+              "selected": false,
+              "text": "5",
+              "value": "5"
+            },
+            {
+              "selected": true,
+              "text": "10",
+              "value": "10"
+            },
+            {
+              "selected": false,
+              "text": "15",
+              "value": "15"
+            },
+            {
+              "selected": false,
+              "text": "20",
+              "value": "20"
+            },
+            {
+              "selected": false,
+              "text": "30",
+              "value": "30"
+            },
+            {
+              "selected": false,
+              "text": "50",
+              "value": "50"
+            }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "label": "Top N",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "description": "Limit output to top N entries",
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "query_filter_regex",
+          "query": "^(?!.*pgwatch_generated),.*,^(?!.*SELECT),(UPDATE|DELETE|INSERT),UPDATE.*^(?!.*WHERE)",
+          "current": {
+            "text": ".*",
+            "value": ".*"
+          },
+          "options": [
+            {
+              "selected": false,
+              "text": "^(?!.*pgwatch_generated)",
+              "value": "^(?!.*pgwatch_generated)"
+            },
+            {
+              "selected": true,
+              "text": ".*",
+              "value": ".*"
+            },
+            {
+              "selected": false,
+              "text": "^(?!.*SELECT)",
+              "value": "^(?!.*SELECT)"
+            },
+            {
+              "selected": false,
+              "text": "(UPDATE|DELETE|INSERT)",
+              "value": "(UPDATE|DELETE|INSERT)"
+            },
+            {
+              "selected": false,
+              "text": "UPDATE.*^(?!.*WHERE)",
+              "value": "UPDATE.*^(?!.*WHERE)"
+            }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "label": "Filter RegEx",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "description": "Custom regex filter for queries. Examples: '.*' (all queries), '^(?!.*pgwatch_generated)' (exclude pgwatch_generated), '(SELECT|INSERT)' (include only SELECT/INSERT), '^(?!.*(SELECT|INSERT))' (exclude SELECT/INSERT), 'UPDATE.*^(?!.*WHERE)' (dangerous UPDATEs without WHERE - security risk).",
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "IntervalVariable",
+        "spec": {
+          "name": "agg_interval",
+          "query": "3m,6m,9m,12m,15m,30m",
+          "current": {
+            "text": "6m",
+            "value": "6m"
+          },
+          "options": [
+            {
+              "selected": false,
+              "text": "3m",
+              "value": "3m"
+            },
+            {
+              "selected": true,
+              "text": "6m",
+              "value": "6m"
+            },
+            {
+              "selected": false,
+              "text": "9m",
+              "value": "9m"
+            },
+            {
+              "selected": false,
+              "text": "12m",
+              "value": "12m"
+            },
+            {
+              "selected": false,
+              "text": "15m",
+              "value": "15m"
+            },
+            {
+              "selected": false,
+              "text": "30m",
+              "value": "30m"
+            }
+          ],
+          "auto": false,
+          "auto_min": "10s",
+          "auto_count": 30,
+          "refresh": "onTimeRangeChanged",
+          "label": "Aggregate Interval",
+          "hide": "dontHide",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
