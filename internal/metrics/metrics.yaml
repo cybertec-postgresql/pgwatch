@@ -4218,6 +4218,7 @@ presets:
         description: aiven database metrics
         metrics:
             archiver: 60
+            autovacuum_scores: 120            
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4278,6 +4279,7 @@ presets:
         description: similar to 'exhaustive' with stuff that's not accessible on Azure Database for PostgreSQL removed
         metrics:
             archiver: 60
+            autovacuum_scores: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4313,7 +4315,7 @@ presets:
         metrics:
             archiver: 60
             archiver_pending_count: 120
-            autovacuum_scores: 60
+            autovacuum_scores: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4346,7 +4348,7 @@ presets:
         metrics:
             archiver: 60
             archiver_pending_count: 120
-            autovacuum_scores: 60
+            autovacuum_scores: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4394,6 +4396,7 @@ presets:
         description: similar to 'exhaustive' with stuff not accessible on GCE managed PostgreSQL engine removed
         metrics:
             archiver: 60
+            autovacuum_scores: 120
             backends: 60
             bgwriter: 60
             checkpointer: 60
@@ -4445,6 +4448,7 @@ presets:
         description: similar to 'exhaustive' with stuff that's not accessible on AWS RDS removed
         metrics:
             archiver: 60
+            autovacuum_scores: 120
             archiver_pending_count: 120
             backends: 60
             bgwriter: 60
@@ -4471,7 +4475,7 @@ presets:
     standard:
         description: basic level + table, index, stat_statements stats
         metrics:
-            autovacuum_scores: 60
+            autovacuum_scores: 120
             cpu_load: 60
             db_size: 300
             db_stats: 60
@@ -4486,6 +4490,7 @@ presets:
         description: like exhaustive, but no PL/Python helpers
         metrics:
             archiver: 60
+            autovacuum_scores: 120
             archiver_pending_count: 120
             backends: 60
             bgwriter: 60
