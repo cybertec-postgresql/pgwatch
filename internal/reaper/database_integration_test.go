@@ -82,7 +82,7 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 	}
 	sr := NewDbConnReaper(r, md)
 
-	sr.executeBatch(ctx, []batchEntry{
+	_ = sr.executeBatch(ctx, []batchEntry{
 		{metricName: "integ_version", metric: metricDefs.MetricDefs["integ_version"], sql: "SELECT version() AS pg_version"},
 		{metricName: "integ_uptime", metric: metricDefs.MetricDefs["integ_uptime"], sql: "SELECT extract(epoch from now() - pg_postmaster_start_time())::int8 AS uptime_seconds"},
 	})
