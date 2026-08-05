@@ -126,9 +126,9 @@ func (sr *DbConnReaper) dispatchMetricData(ctx context.Context, name string, met
 
 // batchEntry holds the minimum info needed to execute and dispatch a metric query.
 type batchEntry struct {
-	name   string
-	metric metrics.Metric
-	sql    string
+	metricName string
+	metric     metrics.Metric
+	sql        string
 }
 
 // Run is the main loop for a single source. It replaces N per-metric goroutines
@@ -190,7 +190,7 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 					break
 				}
 				if _, degraded := sr.degradedMetrics[name]; degraded {
-					if err = sr.fetchMetric(ctx, batchEntry{name: name, metric: metric, sql: sql}); err != nil {
+					if err = sr.fetchMetric(ctx, batchEntry{metricName: name, metric: metric, sql: sql}); err != nil {
 						l.WithError(err).WithField("metric", name).Error("degraded metric fetch failed")
 					} else {
 						l.WithField("metric", name).Info("degraded metric recovered, returning to batch execution")
@@ -199,7 +199,7 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 					sr.lastFetch[name] = time.Now()
 					break
 				}
-				batch = append(batch, batchEntry{name: name, metric: metric, sql: sql})
+				batch = append(batch, batchEntry{metricName: name, metric: metric, sql: sql})
 			}
 			if err != nil {
 				l.WithError(err).WithField("metric", name).Error("failed to fetch metric")
@@ -220,7 +220,7 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 
 			now := time.Now()
 			for _, e := range batch {
-				sr.lastFetch[e.name] = now
+				sr.lastFetch[e.metricName] = now
 			}
 		}
 		select {
@@ -258,14 +258,14 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 			retries = append(retries, e)
 			continue
 		}
-		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.name, e.metric))
+		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric))
 	}
 
 	for _, e := range retries {
 		if err := sr.fetchMetric(ctx, e); err != nil {
-			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.name, err))
-			log.GetLogger(ctx).WithField("metric", e.name).Warning("metric degraded after repeated failures, switching to individual fetch")
-			sr.degradedMetrics[e.name] = struct{}{}
+		errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.metricName, err))
+		log.GetLogger(ctx).WithField("metric", e.metricName).Warning("metric degraded after repeated failures, switching to individual fetch")
+		sr.degradedMetrics[e.metricName] = struct{}{}
 		}
 	}
 	return errors.Join(errs...)
@@ -277,7 +277,7 @@ func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error
 	if err != nil {
 		return err
 	}
-	return sr.CollectAndDispatch(ctx, rows, entry.name, entry.metric)
+	return sr.CollectAndDispatch(ctx, rows, entry.metricName, entry.metric)
 }
 
 // CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.

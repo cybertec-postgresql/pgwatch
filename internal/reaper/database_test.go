@@ -624,8 +624,8 @@ func TestSourceReaper_ExecuteBatch(t *testing.T) {
 	eb.ExpectQuery("SELECT 2").WillReturnRows(rows2)
 
 	err = sr.executeBatch(ctx, []batchEntry{
-		{name: "batch_metric_1", metric: metricDefs.MetricDefs["batch_metric_1"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
-		{name: "batch_metric_2", metric: metricDefs.MetricDefs["batch_metric_2"], sql: "SELECT 2 as value, 200::bigint as epoch_ns"},
+		{metricName: "batch_metric_1", metric: metricDefs.MetricDefs["batch_metric_1"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
+		{metricName: "batch_metric_2", metric: metricDefs.MetricDefs["batch_metric_2"], sql: "SELECT 2 as value, 200::bigint as epoch_ns"},
 	})
 	assert.NoError(t, err)
 
@@ -849,8 +849,8 @@ func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
 	sr := NewDbConnReaper(r, md)
 
 	entries := []batchEntry{
-		{name: "good_metric", metric: metricDefs.MetricDefs["good_metric"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
-		{name: "bad_metric", metric: metricDefs.MetricDefs["bad_metric"], sql: "SELECT bad"},
+		{metricName: "good_metric", metric: metricDefs.MetricDefs["good_metric"], sql: "SELECT 1 as value, 100::bigint as epoch_ns"},
+		{metricName: "bad_metric", metric: metricDefs.MetricDefs["bad_metric"], sql: "SELECT bad"},
 	}
 
 	// batch: good_metric succeeds, bad_metric cascades → retry bad_metric individually → still fails
@@ -906,8 +906,8 @@ func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
 	sr := NewDbConnReaper(r, md)
 
 	entries := []batchEntry{
-		{name: "cascade_trigger", metric: metricDefs.MetricDefs["cascade_trigger"], sql: "SELECT fail"},
-		{name: "cascade_victim", metric: metricDefs.MetricDefs["cascade_victim"], sql: "SELECT 3 as value, 300::bigint as epoch_ns"},
+		{metricName: "cascade_trigger", metric: metricDefs.MetricDefs["cascade_trigger"], sql: "SELECT fail"},
+		{metricName: "cascade_victim", metric: metricDefs.MetricDefs["cascade_victim"], sql: "SELECT 3 as value, 300::bigint as epoch_ns"},
 	}
 
 	// batch: trigger fails, victim cascades → both retry individually
@@ -1034,7 +1034,7 @@ func TestSourceReaper_NonPostgresSequential(t *testing.T) {
 		AddRow(time.Now().UnixNano(), int64(42))
 	mock.ExpectQuery("SELECT seq_value").WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnRows(rows)
 
-	err = sr.fetchMetric(ctx, batchEntry{name: "seq_metric", metric: metricDefs.MetricDefs["seq_metric"], sql: "SELECT seq_value"})
+	err = sr.fetchMetric(ctx, batchEntry{metricName: "seq_metric", metric: metricDefs.MetricDefs["seq_metric"], sql: "SELECT seq_value"})
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
