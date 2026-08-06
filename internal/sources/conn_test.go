@@ -235,12 +235,9 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	})
 
 	t.Run("cached version", func(t *testing.T) {
-		md := &sources.DbConn{
-			RuntimeInfo: sources.RuntimeInfo{
-				LastCheckedOn: time.Now().Add(-time.Minute),
-				Version:       42,
-			},
-		}
+		md := sources.NewDbConn(sources.Source{})
+		md.SetLastCheckedForTesting(time.Now().Add(-time.Minute)) // within 5-minute TTL
+		md.Version = 42
 		err := md.FetchRuntimeInfo(ctx, false)
 		assert.NoError(t, err)
 		assert.Equal(t, 42, md.Version)
@@ -823,6 +820,43 @@ func TestRace_TryCreateMetricsHelpers(t *testing.T) {
 			_ = md.TryCreateMetricsHelpers(context.Background(), getSQLFn)
 		}
 	}()
+
+	wg.Wait()
+}
+
+// TestRace_FetchRuntimeInfoAtomicCache verifies that the atomic lastCheckedNs
+// fast path and double-checked lock in FetchRuntimeInfo are race-free under
+// concurrent calls from multiple goroutines.
+func TestRace_FetchRuntimeInfoAtomicCache(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{Kind: sources.SourcePgBouncer})
+	md.Conn = mock
+
+	const goroutines = 4
+	const iterations = 50
+
+	// Pre-seed enough mock responses for the worst-case where every call bypasses the cache.
+	for range goroutines * iterations {
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range iterations {
+				// Mix forced and cached calls to exercise both fast and slow paths.
+				_ = md.FetchRuntimeInfo(context.Background(), false)
+			}
+		}()
+	}
 
 	wg.Wait()
 }

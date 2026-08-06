@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
@@ -54,7 +55,6 @@ var _ SourceConn = (*DbConn)(nil)
 var _ SourceConn = (*PromConn)(nil)
 
 type RuntimeInfo struct {
-	LastCheckedOn    time.Time
 	IsInRecovery     bool
 	VersionStr       string
 	Version          int
@@ -76,6 +76,7 @@ type (
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
 		RuntimeInfo
+		lastCheckedNs atomic.Int64 // nanoseconds of last successful FetchRuntimeInfo; 0 = never
 		sync.RWMutex
 	}
 
@@ -231,15 +232,18 @@ func VersionToInt(version string) (v int) {
 }
 
 func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	// Fast path: check the atomic timestamp without acquiring any lock.
+	// This avoids lock contention when the cached value is still fresh.
+	if !forceRefetch && time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) < 5*time.Minute {
+		return nil
+	}
+
 	md.Lock()
 	defer md.Unlock()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-5)) { // use cached version for 5 min
-		return nil
-	}
 	switch md.Kind {
 	case SourcePgBouncer, SourcePgPool:
 		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
@@ -289,7 +293,7 @@ FROM
 		}
 
 	}
-	md.LastCheckedOn = time.Now()
+	md.lastCheckedNs.Store(time.Now().UnixNano())
 	return err
 }
 
