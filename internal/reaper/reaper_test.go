@@ -3,6 +3,7 @@ package reaper
 import (
 	"context"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
 	"sync"
@@ -634,6 +635,54 @@ func TestRace_CreateSourceHelpers(t *testing.T) {
 		defer wg.Done()
 		for range iterations {
 			r.CreateSourceHelpers(ctx, r.logger, md)
+		}
+	}()
+
+	wg.Wait()
+}
+
+// TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop's
+// RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and
+// MetricsStandby does not race against concurrent FetchRuntimeInfo writes.
+func TestRace_MainLoopRuntimeInfoSnapshot(t *testing.T) {
+	md := sources.NewDbConn(sources.Source{
+		Name: "race-test",
+		Kind: sources.SourcePostgres,
+	})
+
+	const iterations = 200
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.Lock()
+			md.IsInRecovery = !md.IsInRecovery
+			md.VersionStr = "PostgreSQL 16.0"
+			md.ApproxDbSize = 1024
+			md.Metrics = metrics.MetricIntervals{"cpu": 30}
+			md.MetricsStandby = metrics.MetricIntervals{"cpu": 60}
+			md.Unlock()
+		}
+	}()
+
+	// Reader: snapshot under RLock exactly as the main loop does after FetchRuntimeInfo.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.RLock()
+			_ = md.IsInRecovery
+			_ = md.VersionStr
+			_ = md.ApproxDbSize
+			if md.Metrics != nil {
+				_ = maps.Clone(md.Metrics)
+			}
+			if md.MetricsStandby != nil {
+				_ = maps.Clone(md.MetricsStandby)
+			}
+			md.RUnlock()
 		}
 	}()
 
