@@ -16,7 +16,7 @@ docker compose exec -T postgres psql -d pgwatch -v ON_ERROR_STOP=1 -c \
 INSERT INTO pgwatch.source 
     (name,                  dbtype,         preset_config,  connstr,                                                                    custom_tags) 
 VALUES 
-    ('demo',                'postgres',     'debug',        'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch',                        NULL),
+    ('demo',                'postgres',     'full',         'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch',                        NULL),
     ('demo_metrics',        'postgres',     'full',         'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch_metrics',                NULL), 
     ('demo_standby',        'postgres',     'full',         'postgresql://pgwatch:pgwatchadmin@postgres-standby/pgwatch',                NULL),
     ('demo_patroni',        'patroni',      'basic',        'etcd://etcd1:2379,etcd2:2379,etcd3:2379/service/demo',                     NULL),
