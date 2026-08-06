@@ -1258,15 +1258,6 @@
                 "graphMode": "none",
                 "justifyMode": "center",
                 "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
                 "textMode": "value_and_name",
                 "wideLayout": true
               },
@@ -2019,6 +2010,1044 @@
             }
           }
         }
+      },
+      "panel-27": {
+        "kind": "Panel",
+        "spec": {
+          "id": 27,
+          "title": "Patroni Version",
+          "description": "Patroni version reported by the node's /metrics endpoint",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_version')::float AS value\nFROM patroni_version\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-28": {
+        "kind": "Panel",
+        "spec": {
+          "id": 28,
+          "title": "Postmaster Start Time",
+          "description": "Postgres postmaster start time as a Unix timestamp. Older = longer uptime.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_postmaster_start_time')::float AS value\nFROM patroni_postmaster_start_time\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-29": {
+        "kind": "Panel",
+        "spec": {
+          "id": 29,
+          "title": "Postgres Server Version",
+          "description": "PostgreSQL server version reported by the node's /metrics endpoint",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_postgres_server_version')::float AS value\nFROM patroni_postgres_server_version\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-30": {
+        "kind": "Panel",
+        "spec": {
+          "id": 30,
+          "title": "Sync Standby",
+          "description": "1 if this replica is the synchronous standby",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_sync_standby')::float AS value\nFROM patroni_sync_standby\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "ASYNC",
+                          "color": "rgba(237, 129, 40, 0.89)",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "SYNC",
+                          "color": "#28781e",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-31": {
+        "kind": "Panel",
+        "spec": {
+          "id": 31,
+          "title": "Quorum Standby",
+          "description": "1 if this replica is a quorum standby",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_quorum_standby')::float AS value\nFROM patroni_quorum_standby\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "NO",
+                          "color": "rgba(237, 129, 40, 0.89)",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "YES",
+                          "color": "#28781e",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-32": {
+        "kind": "Panel",
+        "spec": {
+          "id": 32,
+          "title": "WAL Replayed Timestamp",
+          "description": "Unix timestamp of the last WAL record replayed on this replica",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_xlog_replayed_timestamp')::float AS value\nFROM patroni_xlog_replayed_timestamp\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "dateTimeAsIso",
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Value"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "auto"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-33": {
+        "kind": "Panel",
+        "spec": {
+          "id": 33,
+          "title": "WAL Replay Paused",
+          "description": "1 if WAL replay is paused on this replica",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_xlog_paused')::float AS value\nFROM patroni_xlog_paused\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "RUNNING",
+                          "color": "#28781e",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "PAUSED",
+                          "color": "#d44a3a",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#d44a3a"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-34": {
+        "kind": "Panel",
+        "spec": {
+          "id": 34,
+          "title": "Postgres Streaming",
+          "description": "1 if this node is streaming WAL from the primary",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "WITH latest_primary AS (\n  SELECT DISTINCT ON (dbname)\n    dbname,\n    (data->>'patroni_primary')::int AS is_primary\n  FROM patroni_primary\n  WHERE $__timeFilter(time) AND dbname IN ($dbname)\n  ORDER BY dbname, time DESC\n),\nlatest_streaming AS (\n  SELECT DISTINCT ON (dbname)\n    dbname,\n    (data->>'patroni_postgres_streaming')::int AS streaming\n  FROM patroni_postgres_streaming\n  WHERE $__timeFilter(time) AND dbname IN ($dbname)\n  ORDER BY dbname, time DESC\n)\nSELECT\n  now() AS time,\n  lp.dbname AS metric,\n  CASE\n    WHEN lp.is_primary = 1 THEN 0  -- PRIMARY: informational, never red\n    WHEN coalesce(ls.streaming, 0) = 1 THEN 1  -- STREAMING: good\n    ELSE 2                          -- NOT STREAMING: replica but not streaming -> red\n  END AS value\nFROM latest_primary lp\nLEFT JOIN latest_streaming ls USING (dbname)\nORDER BY lp.dbname\n",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time",
+                        "datasource": {
+                          "name": "pgwatch-metrics"
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "PRIMARY",
+                          "color": "#28781e",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "STREAMING",
+                          "color": "#28781e",
+                          "index": 1
+                        },
+                        "2": {
+                          "text": "NOT STREAMING",
+                          "color": "#d44a3a",
+                          "index": 2
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 2,
+                        "color": "#d44a3a"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-35": {
+        "kind": "Panel",
+        "spec": {
+          "id": 35,
+          "title": "In Archive Recovery",
+          "description": "1 if Postgres is in archive recovery (typical for replicas)",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_postgres_in_archive_recovery')::float AS value\nFROM patroni_postgres_in_archive_recovery\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "NO",
+                          "color": "#28781e",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "YES",
+                          "color": "rgba(237, 129, 40, 0.89)",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-36": {
+        "kind": "Panel",
+        "spec": {
+          "id": 36,
+          "title": "Failsafe Mode",
+          "description": "1 if Patroni failsafe mode is active (degraded: DCS connectivity issues)",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "groupBy": [],
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "rawQuery": true,
+                        "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_failsafe_mode_is_active')::float AS value\nFROM patroni_failsafe_mode_is_active\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+                        "resultFormat": "time_series",
+                        "tags": [],
+                        "timeColumn": "time"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.3.1",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "OFF",
+                          "color": "#28781e",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "ACTIVE",
+                          "color": "#d44a3a",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#d44a3a"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -2040,7 +3069,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 4,
-                        "height": 3,
+                        "height": 6,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-21"
@@ -2053,7 +3082,7 @@
                         "x": 4,
                         "y": 0,
                         "width": 4,
-                        "height": 3,
+                        "height": 6,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-22"
@@ -2066,7 +3095,7 @@
                         "x": 8,
                         "y": 0,
                         "width": 4,
-                        "height": 3,
+                        "height": 6,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-23"
@@ -2079,7 +3108,7 @@
                         "x": 12,
                         "y": 0,
                         "width": 4,
-                        "height": 3,
+                        "height": 6,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-24"
@@ -2090,7 +3119,7 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 3,
+                        "y": 6,
                         "width": 24,
                         "height": 8,
                         "element": {
@@ -2119,7 +3148,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 8,
-                        "height": 6,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-2"
@@ -2132,7 +3161,7 @@
                         "x": 8,
                         "y": 0,
                         "width": 8,
-                        "height": 6,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-3"
@@ -2145,7 +3174,7 @@
                         "x": 16,
                         "y": 0,
                         "width": 8,
-                        "height": 6,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-4"
@@ -2156,9 +3185,22 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 11,
-                        "width": 6,
-                        "height": 5,
+                        "y": 8,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-26"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 8,
+                        "width": 8,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-5"
@@ -2168,10 +3210,10 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 6,
-                        "y": 11,
-                        "width": 6,
-                        "height": 5,
+                        "x": 16,
+                        "y": 8,
+                        "width": 8,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-6"
@@ -2181,10 +3223,10 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 11,
-                        "width": 6,
-                        "height": 5,
+                        "x": 0,
+                        "y": 16,
+                        "width": 8,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-7"
@@ -2194,10 +3236,10 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 18,
-                        "y": 11,
-                        "width": 6,
-                        "height": 5,
+                        "x": 8,
+                        "y": 16,
+                        "width": 8,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-8"
@@ -2207,13 +3249,130 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 6,
-                        "width": 24,
-                        "height": 5,
+                        "x": 16,
+                        "y": 16,
+                        "width": 8,
+                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-26"
+                          "name": "panel-27"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 24,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-28"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 24,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-29"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 24,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-30"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 32,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-31"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 32,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-32"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 32,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-33"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 40,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-34"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 40,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-35"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 40,
+                        "width": 8,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-36"
                         }
                       }
                     }
@@ -2237,7 +3396,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 24,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-10"
@@ -2248,9 +3407,9 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 8,
+                        "y": 10,
                         "width": 12,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-11"
@@ -2261,9 +3420,9 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 12,
-                        "y": 8,
+                        "y": 10,
                         "width": 12,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-12"
@@ -2290,7 +3449,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 24,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-14"
@@ -2301,9 +3460,9 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 8,
+                        "y": 10,
                         "width": 24,
-                        "height": 4,
+                        "height": 5,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-15"
