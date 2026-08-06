@@ -35,7 +35,9 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	// check the "continuous_mydatabase"
 	db := dbs.GetMonitoredDatabase(md.Name + "_mydatabase")
 	assert.NotNil(t, db)
-	assert.Equal(t, "mydatabase", db.GetDatabaseName())
+	dbConn, ok := db.(*sources.DbConn)
+	assert.True(t, ok)
+	assert.Equal(t, "mydatabase", dbConn.GetDatabaseName())
 
 	//check unexpected database
 	db = dbs.GetMonitoredDatabase(md.Name + "_unexpected")

@@ -1,0 +1,1395 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Patroni cluster health, roles and replication monitoring. Requires prometheus-type sources configured in pgwatch.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 50,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 20,
+      "panels": [],
+      "title": "All Clusters Health",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+      "description": "Total number of Patroni clusters currently monitored",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "text", "value": null}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 3, "w": 6, "x": 0, "y": 1},
+      "id": 21,
+      "options": {
+        "colorMode": "value", "graphMode": "none", "justifyMode": "center",
+        "orientation": "horizontal", "percentChangeColorMode": "standard",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showPercentChange": false, "textMode": "auto", "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [{
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "format": "table", "rawQuery": true,
+        "rawSql": "SELECT count(DISTINCT tag_data->>'scope')::float AS value\nFROM patroni_primary\nWHERE $__timeFilter(time)",
+        "refId": "A", "resultFormat": "table"
+      }],
+      "title": "Clusters Monitored",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+      "description": "Clusters missing a leader lock (split-brain risk). Should be 0.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 3, "w": 6, "x": 6, "y": 1},
+      "id": 22,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "horizontal", "percentChangeColorMode": "standard",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showPercentChange": false, "textMode": "auto", "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [{
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "format": "table", "rawQuery": true,
+        "rawSql": "SELECT count(*)::float AS value\nFROM (\n  SELECT DISTINCT ON (tag_data->>'scope')\n    (data->>'patroni_cluster_unlocked')::int AS unlocked\n  FROM patroni_cluster_unlocked\n  WHERE $__timeFilter(time)\n  ORDER BY tag_data->>'scope', time DESC\n) latest\nWHERE unlocked = 1",
+        "refId": "A", "resultFormat": "table"
+      }],
+      "title": "Clusters Without Leader",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+      "description": "Clusters with auto-failover paused. Should be 0 in normal operation.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 3, "w": 6, "x": 12, "y": 1},
+      "id": 23,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "horizontal", "percentChangeColorMode": "standard",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showPercentChange": false, "textMode": "auto", "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [{
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "format": "table", "rawQuery": true,
+        "rawSql": "SELECT count(*)::float AS value\nFROM (\n  SELECT DISTINCT ON (tag_data->>'scope')\n    (data->>'patroni_is_paused')::int AS is_paused\n  FROM patroni_is_paused\n  WHERE $__timeFilter(time)\n  ORDER BY tag_data->>'scope', time DESC\n) latest\nWHERE is_paused = 1",
+        "refId": "A", "resultFormat": "table"
+      }],
+      "title": "Paused Clusters",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+      "description": "Nodes requiring a Postgres restart to apply configuration changes",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 3, "w": 6, "x": 18, "y": 1},
+      "id": 24,
+      "options": {
+        "colorMode": "background", "graphMode": "none", "justifyMode": "center",
+        "orientation": "horizontal", "percentChangeColorMode": "standard",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showPercentChange": false, "textMode": "auto", "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [{
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "format": "table", "rawQuery": true,
+        "rawSql": "SELECT count(*)::float AS value\nFROM (\n  SELECT DISTINCT ON (dbname)\n    (data->>'patroni_pending_restart')::int AS pending\n  FROM patroni_pending_restart\n  WHERE $__timeFilter(time)\n  ORDER BY dbname, time DESC\n) latest\nWHERE pending = 1",
+        "refId": "A", "resultFormat": "table"
+      }],
+      "title": "Nodes Pending Restart",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+      "description": "Per-cluster health summary. Use the Cluster variable above to filter the node detail panels below.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Has Leader"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [{"options": {"NO": {"color": "red", "index": 0}, "YES": {"color": "green", "index": 1}}, "type": "value"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Paused"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [{"options": {"NO": {"color": "green", "index": 0}, "YES": {"color": "yellow", "index": 1}}, "type": "value"}]}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Pending Restart"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [{"options": {"NO": {"color": "green", "index": 0}, "YES": {"color": "yellow", "index": 1}}, "type": "value"}]}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+      "id": 25,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {"countRows": false, "reducer": ["sum"], "show": false},
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [{
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "format": "table", "rawQuery": true,
+        "rawSql": "WITH latest_primary AS (\n  SELECT DISTINCT ON (dbname)\n    tag_data->>'scope' AS cluster,\n    dbname,\n    (data->>'patroni_primary')::int AS is_primary\n  FROM patroni_primary\n  WHERE $__timeFilter(time)\n  ORDER BY dbname, time DESC\n),\ncluster_unlocked AS (\n  SELECT tag_data->>'scope' AS cluster,\n    max((data->>'patroni_cluster_unlocked')::int) AS unlocked\n  FROM patroni_cluster_unlocked\n  WHERE $__timeFilter(time)\n  GROUP BY 1\n),\ncluster_paused AS (\n  SELECT tag_data->>'scope' AS cluster,\n    max((data->>'patroni_is_paused')::int) AS is_paused\n  FROM patroni_is_paused\n  WHERE $__timeFilter(time)\n  GROUP BY 1\n),\ncluster_pending AS (\n  SELECT tag_data->>'scope' AS cluster,\n    max((data->>'patroni_pending_restart')::int) AS pending_restart\n  FROM patroni_pending_restart\n  WHERE $__timeFilter(time)\n  GROUP BY 1\n)\nSELECT\n  lp.cluster AS \"Cluster\",\n  count(*) AS \"Nodes\",\n  sum(lp.is_primary)::int AS \"Primaries\",\n  CASE WHEN cu.unlocked = 0 THEN 'YES' ELSE 'NO' END AS \"Has Leader\",\n  CASE WHEN cp.is_paused = 1 THEN 'YES' ELSE 'NO' END AS \"Paused\",\n  CASE WHEN cpe.pending_restart = 1 THEN 'YES' ELSE 'NO' END AS \"Pending Restart\"\nFROM latest_primary lp\nLEFT JOIN cluster_unlocked cu USING (cluster)\nLEFT JOIN cluster_paused cp USING (cluster)\nLEFT JOIN cluster_pending cpe USING (cluster)\nGROUP BY lp.cluster, cu.unlocked, cp.is_paused, cpe.pending_restart\nORDER BY lp.cluster",
+        "refId": "A", "resultFormat": "table"
+      }],
+      "title": "Cluster Health Summary",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 12},
+      "id": 26,
+      "panels": [],
+      "title": "Node Detail — $cluster",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Current role of each Patroni node: PRIMARY (1) or REPLICA (0)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "blue",
+                  "index": 0,
+                  "text": "REPLICA"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "PRIMARY"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_primary')::float AS value\nFROM patroni_primary\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Node Role",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Whether Postgres process is running on each node (1 = running)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "STOPPED"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "RUNNING"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 13
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_postgres_running')::float AS value\nFROM patroni_postgres_running\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Postgres Running",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Whether the cluster has a distributed lock (leader). 0 = has leader (healthy), 1 = no leader (split-brain risk)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "HAS LEADER"
+                },
+                "1": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "NO LEADER"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_cluster_unlocked')::float AS value\nFROM patroni_cluster_unlocked\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Cluster Leader Lock",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Whether automatic failover is paused for the cluster (1 = paused)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "ACTIVE"
+                },
+                "1": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "PAUSED"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 19
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_is_paused')::float AS value\nFROM patroni_is_paused\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Failover State",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Node requires Postgres restart to apply configuration changes (1 = restart needed)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "OK"
+                },
+                "1": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "RESTART NEEDED"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 19
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_pending_restart')::float AS value\nFROM patroni_pending_restart\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Pending Restart",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Whether node is a standby leader (replica that manages the standby cluster, 1 = standby leader)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "text",
+                  "index": 0,
+                  "text": "NO"
+                },
+                "1": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "YES"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 19
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_standby_leader')::float AS value\nFROM patroni_standby_leader\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "Standby Leader",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "PostgreSQL WAL timeline number per node",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_postgres_timeline')::float AS value\nFROM patroni_postgres_timeline\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "WAL Timeline",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 9,
+      "panels": [],
+      "title": "WAL & Replication",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "WAL write location in bytes. Non-zero only on the primary node.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_xlog_location')::float AS value\nFROM patroni_xlog_location\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "WAL Write Location (Primary)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "WAL received vs replayed location on replica nodes in bytes",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_xlog_received_location')::float AS value\nFROM patroni_xlog_received_location\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "WAL Received Location (Replicas)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "WAL replayed location on replica nodes in bytes",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric, (data->>'patroni_xlog_replayed_location')::float AS value\nFROM patroni_xlog_replayed_location\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "WAL Replayed Location (Replicas)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 13,
+      "panels": [],
+      "title": "DCS Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "pgwatch-metrics"
+      },
+      "description": "Seconds since each node last successfully contacted the DCS (etcd/Consul/ZooKeeper). High values indicate DCS connectivity issues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line",
+              "steps": [
+                {
+                  "color": "transparent",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 30
+                }
+              ]
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "pgwatch-metrics"
+          },
+          "format": "time_series",
+          "group": [],
+          "groupBy": [],
+          "metricColumn": "none",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": true,
+          "rawSql": "SELECT time, dbname AS metric,\n  extract(epoch from now())::bigint - (data->>'patroni_dcs_last_seen')::bigint AS value\nFROM patroni_dcs_last_seen\nWHERE $__timeFilter(time) AND dbname IN ($dbname)\nORDER BY time",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "tags": [],
+          "timeColumn": "time"
+        }
+      ],
+      "title": "DCS Last Seen Age",
+      "type": "timeseries"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 15,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.0.0",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": [
+    "pgwatch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {"text": "All", "value": ["$__all"]},
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "definition": "",
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": "SELECT DISTINCT tag_data->>'scope' FROM patroni_primary WHERE tag_data IS NOT NULL ORDER BY 1",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {"text": "All", "value": ["$__all"]},
+        "datasource": {"type": "grafana-postgresql-datasource", "uid": "pgwatch-metrics"},
+        "definition": "",
+        "includeAll": true,
+        "label": "Node",
+        "multi": true,
+        "name": "dbname",
+        "options": [],
+        "query": "SELECT DISTINCT dbname FROM patroni_primary WHERE tag_data->>'scope' IN ($cluster) ORDER BY 1",
+        "refresh": 2,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Patroni Cluster Overview",
+  "uid": "patroni-overview",
+  "version": 1
+}

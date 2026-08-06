@@ -22,6 +22,7 @@ const (
 	SourcePgBouncer          Kind = "pgbouncer"
 	SourcePgPool             Kind = "pgpool"
 	SourcePatroni            Kind = "patroni"
+	SourcePrometheus         Kind = "prometheus"
 )
 
 var Kinds = []Kind{
@@ -30,6 +31,7 @@ var Kinds = []Kind{
 	SourcePgBouncer,
 	SourcePgPool,
 	SourcePatroni,
+	SourcePrometheus,
 }
 
 func (k Kind) IsValid() bool {

@@ -18,7 +18,7 @@ import (
 
 // setupIntegrationDB starts a real Postgres container and returns a SourceConn
 // with a live pgxpool connection. The caller must call tearDown when done.
-func setupIntegrationDB(t *testing.T) (*sources.SourceConn, func()) {
+func setupIntegrationDB(t *testing.T) (*sources.DbConn, func()) {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -33,7 +33,7 @@ func setupIntegrationDB(t *testing.T) (*sources.SourceConn, func()) {
 	pool, err := db.New(testutil.TestContext, connStr)
 	require.NoError(t, err, "failed to create connection pool")
 
-	md := sources.NewSourceConn(sources.Source{
+	md := sources.NewDbConn(sources.Source{
 		Name: "integration_test",
 		Kind: sources.SourcePostgres,
 	})
@@ -72,7 +72,7 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 		"integ_uptime":  60,
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -80,9 +80,9 @@ func TestIntegration_ExecuteBatch(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
-	sr.executeBatch(ctx, []batchEntry{
+	_ = sr.executeBatch(ctx, []batchEntry{
 		{metricName: "integ_version", metric: metricDefs.MetricDefs["integ_version"], sql: "SELECT version() AS pg_version"},
 		{metricName: "integ_uptime", metric: metricDefs.MetricDefs["integ_uptime"], sql: "SELECT extract(epoch from now() - pg_postmaster_start_time())::int8 AS uptime_seconds"},
 	})
@@ -135,7 +135,7 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 		"integ_run_size":    5,
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -143,13 +143,13 @@ func TestIntegration_SourceReaper_RunCollectsMetrics(t *testing.T) {
 		measurementCh:    make(chan metrics.MeasurementEnvelope, 20),
 		measurementCache: NewInstanceMetricCache(),
 	}
-	sr := NewSourceReaper(r, md)
+	sr := NewDbConnReaper(r, md)
 
 	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
 	done := make(chan struct{})
 	go func() {
-		sr.Run(ctx)
+		sr.Reap(ctx)
 		close(done)
 	}()
 
@@ -203,7 +203,7 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		}
 	}
 
-	r := &Reaper{
+	r := &reaper{
 		Options: &cmdopts.Options{
 			Metrics: metrics.CmdOpts{},
 			Sinks:   sinks.CmdOpts{},
@@ -233,9 +233,9 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			helperSetNodeStatus(state)
 
-			sr := NewSourceReaper(r, md)
+			sr := NewDbConnReaper(r, md)
 			go func() {
-				sr.Run(ctx)
+				sr.Reap(ctx)
 			}()
 
 			select {
@@ -260,9 +260,9 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 
 			helperSetNodeStatus(state)
 
-			sr := NewSourceReaper(r, md)
+			sr := NewDbConnReaper(r, md)
 			go func() {
-				sr.Run(ctx)
+				sr.Reap(ctx)
 			}()
 
 			time.Sleep(2 * time.Second)

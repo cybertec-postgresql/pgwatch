@@ -44,11 +44,11 @@ from pg_catalog.pg_tablespace where spcname !~ 'pg_.+'`
 
 var directlyFetchableOSMetrics = []string{metricPsutilCPU, metricPsutilDisk, metricPsutilDiskIoTotal, metricPsutilMem, metricCPULoad}
 
-func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool {
+func IsDirectlyFetchableMetric(md *sources.DbConn, metric string) bool {
 	return slices.Contains(directlyFetchableOSMetrics, metric) && md.IsClientOnSameHost()
 }
 
-func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error) {
+func (r *reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.DbConn, metricName string) (*metrics.MeasurementEnvelope, error) {
 	var data, pgDirs metrics.Measurements
 	var err error
 

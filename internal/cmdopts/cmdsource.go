@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 )
 
@@ -58,7 +59,11 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
 			mdb := sources.NewSourceConn(s)
-			e = mdb.Connect(context.Background(), cmd.owner.Sources)
+			// we don't want to log connection errors here, so we use a noop logger in the context
+			ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+			if e = mdb.Connect(ctx, cmd.owner.Sources); e == nil {
+				e = mdb.Ping(ctx)
+			}
 		}
 		if e != nil {
 			fmt.Printf("FAIL:\t%s (%s)\n", s.Name, e)
@@ -105,14 +110,19 @@ func (cmd *SourceResolveCommand) Execute(args []string) error {
 	}
 	var connstr url.URL
 	connstr.Scheme = "postgresql"
-	for _, s := range conns {
-		if s.ConnStr > "" {
-			fmt.Printf("%s=%s\n", s.Name, s.ConnStr)
+	for _, conn := range conns {
+		s, ok := conn.(*sources.DbConn)
+		if !ok {
+			continue
+		}
+		src := s.GetSource()
+		if src.ConnStr > "" {
+			fmt.Printf("%s=%s\n", src.Name, src.ConnStr)
 		} else {
 			connstr.Host = fmt.Sprintf("%s:%d", s.ConnConfig.ConnConfig.Host, s.ConnConfig.ConnConfig.Port)
 			connstr.User = url.UserPassword(s.ConnConfig.ConnConfig.User, s.ConnConfig.ConnConfig.Password)
 			connstr.Path = s.ConnConfig.ConnConfig.Database
-			fmt.Printf("%s=%s\n", s.Name, connstr.String())
+			fmt.Printf("%s=%s\n", src.Name, connstr.String())
 		}
 	}
 	cmd.owner.CompleteCommand(ExitCodeOK)

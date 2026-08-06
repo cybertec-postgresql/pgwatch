@@ -2,10 +2,16 @@ package sources
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"math"
+	"net/http"
+	"net/url"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -14,6 +20,7 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -31,6 +38,21 @@ const (
 	EnvGoogle        = "GOOGLE"
 )
 
+// SourceConn is the interface that all monitored source connection types must implement.
+type SourceConn interface {
+	Connect(ctx context.Context, opts CmdOpts) error
+	Ping(ctx context.Context) error
+	IsPostgresSource() bool
+	GetSource() Source
+	GetMetricInterval(name string) time.Duration
+	SetMetricIntervals(main, standby metrics.MetricIntervals)
+	Close()
+}
+
+// compile-time assertions
+var _ SourceConn = (*DbConn)(nil)
+var _ SourceConn = (*PromConn)(nil)
+
 type RuntimeInfo struct {
 	LastCheckedOn    time.Time
 	IsInRecovery     bool
@@ -45,11 +67,11 @@ type RuntimeInfo struct {
 	ChangeState      map[string]map[string]string // ["category"][object_identifier] = state
 }
 
-// SourceConn represents a single connection to monitor. Unlike source, it contains a database connection.
+// DbConn represents a single connection to monitor. Unlike source, it contains a database connection.
 // Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
 // will produce multiple monitored databases structs based on the discovered databases.
 type (
-	SourceConn struct {
+	DbConn struct {
 		Source
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
@@ -57,11 +79,11 @@ type (
 		sync.RWMutex
 	}
 
-	SourceConns []*SourceConn
+	SourceConns []SourceConn
 )
 
-func NewSourceConn(s Source) *SourceConn {
-	return &SourceConn{
+func NewDbConn(s Source) *DbConn {
+	return &DbConn{
 		Source: s,
 		RuntimeInfo: RuntimeInfo{
 			Extensions:  make(map[string]int),
@@ -70,8 +92,42 @@ func NewSourceConn(s Source) *SourceConn {
 	}
 }
 
+// NewSourceConn is a factory dispatcher that returns a SourceConn interface.
+func NewSourceConn(s Source) SourceConn {
+	switch s.Kind {
+	case SourcePrometheus:
+		return NewPromConn(s)
+	default:
+		return NewDbConn(s)
+	}
+}
+
+// GetSource returns a copy of the embedded Source.
+func (md *DbConn) GetSource() Source {
+	return md.Source
+}
+
+// SetMetricIntervals atomically sets metric intervals; nil means "no change".
+func (md *DbConn) SetMetricIntervals(main, standby metrics.MetricIntervals) {
+	md.Lock()
+	defer md.Unlock()
+	if main != nil {
+		md.Metrics = main
+	}
+	if standby != nil {
+		md.MetricsStandby = standby
+	}
+}
+
+// Close closes the connection if it is not nil.
+func (md *DbConn) Close() {
+	if md.Conn != nil {
+		md.Conn.Close()
+	}
+}
+
 // Ping will try to ping the server to ensure the connection is still alive
-func (md *SourceConn) Ping(ctx context.Context) (err error) {
+func (md *DbConn) Ping(ctx context.Context) (err error) {
 	if md.Kind == SourcePgBouncer {
 		// pgbouncer is very picky about the queries it accepts
 		_, err = md.Conn.Exec(ctx, "SHOW VERSION")
@@ -82,7 +138,7 @@ func (md *SourceConn) Ping(ctx context.Context) (err error) {
 
 // Connect will establish a connection to the database if it's not already connected.
 // If the connection is already established, it pings the server to ensure it's still alive.
-func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
+func (md *DbConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
 	if md.Conn == nil {
 		if err = md.ParseConfig(); err != nil {
 			return err
@@ -102,7 +158,7 @@ func (md *SourceConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
 }
 
 // ParseConfig will parse the connection string and store the result in the connection config
-func (md *SourceConn) ParseConfig() (err error) {
+func (md *DbConn) ParseConfig() (err error) {
 	if md.ConnConfig == nil {
 		md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr)
 		return
@@ -110,9 +166,9 @@ func (md *SourceConn) ParseConfig() (err error) {
 	return
 }
 
-// GetUniqueIdentifier returns a unique identifier for the host assuming SysId is the same for
+// GetClusterIdentifier returns a unique identifier for the host assuming SysId is the same for
 // primary and all replicas but connection information is different
-func (md *SourceConn) GetClusterIdentifier() string {
+func (md *DbConn) GetClusterIdentifier() string {
 	if err := md.ParseConfig(); err != nil {
 		return ""
 	}
@@ -120,7 +176,7 @@ func (md *SourceConn) GetClusterIdentifier() string {
 }
 
 // GetDatabaseName returns the database name from the connection string
-func (md *SourceConn) GetDatabaseName() string {
+func (md *DbConn) GetDatabaseName() string {
 	if err := md.ParseConfig(); err != nil {
 		return ""
 	}
@@ -128,7 +184,7 @@ func (md *SourceConn) GetDatabaseName() string {
 }
 
 // GetMetricInterval returns the metric interval for the connection
-func (md *SourceConn) GetMetricInterval(name string) time.Duration {
+func (md *DbConn) GetMetricInterval(name string) time.Duration {
 	md.RLock()
 	defer md.RUnlock()
 	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
@@ -138,13 +194,13 @@ func (md *SourceConn) GetMetricInterval(name string) time.Duration {
 }
 
 // IsClientOnSameHost checks if the pgwatch client is running on the same host as the PostgreSQL server
-func (md *SourceConn) IsClientOnSameHost() bool {
+func (md *DbConn) IsClientOnSameHost() bool {
 	ok, err := db.IsClientOnSameHost(md.Conn)
 	return ok && err == nil
 }
 
 // SetDatabaseName sets the database name in the connection config for resolved databases
-func (md *SourceConn) SetDatabaseName(name string) {
+func (md *DbConn) SetDatabaseName(name string) {
 	if err := md.ParseConfig(); err != nil {
 		return
 	}
@@ -152,7 +208,7 @@ func (md *SourceConn) SetDatabaseName(name string) {
 	md.ConnConfig.ConnConfig.Database = name
 }
 
-func (md *SourceConn) IsPostgresSource() bool {
+func (md *DbConn) IsPostgresSource() bool {
 	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
 }
 
@@ -171,7 +227,7 @@ func VersionToInt(version string) (v int) {
 	return
 }
 
-func (md *SourceConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
 	md.Lock()
 	defer md.Unlock()
 	if ctx.Err() != nil {
@@ -234,7 +290,7 @@ FROM
 	return err
 }
 
-func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
+func (md *DbConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
 	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&version); err != nil {
 		return
 	}
@@ -242,9 +298,9 @@ func (md *SourceConn) FetchVersion(ctx context.Context, sql string) (version str
 	return
 }
 
-// TryDiscoverPlatform tries to discover the platform based on the database version string and some special settings
+// DiscoverPlatform tries to discover the platform based on the database version string and some special settings
 // that are only available on certain platforms. Returns the platform name or "UNKNOWN" if not sure.
-func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
+func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
 	if md.ExecEnv != "" {
 		return md.ExecEnv // carry over as not likely to change ever
 	}
@@ -261,14 +317,14 @@ func (md *SourceConn) DiscoverPlatform(ctx context.Context) (platform string) {
 }
 
 // FetchApproxSize returns the approximate size of the database in bytes
-func (md *SourceConn) FetchApproxSize(ctx context.Context) (size int64) {
+func (md *DbConn) FetchApproxSize(ctx context.Context) (size int64) {
 	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
 	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
 	return
 }
 
 // FunctionExists checks if a function exists in the database
-func (md *SourceConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
+func (md *DbConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
 	sql := `select /* pgwatch_generated */ true 
 from 
 	pg_proc join pg_namespace n on pronamespace = n.oid 
@@ -279,16 +335,13 @@ where
 }
 
 // TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
-// With newer Postgres version can even succeed if the user is not a real superuser due to some cloud-specific
-// whitelisting or "trusted extensions"
-func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
 	md.RLock()
 	defer md.RUnlock()
 
 	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
 	CreatedExts := make([]string, 0)
 
-	// For security reasons don't allow to execute random strings but check that it's an existing extension
 	data, err := md.Conn.Query(ctx, sqlAvailableExts)
 	if err != nil {
 		return "", err
@@ -316,13 +369,13 @@ func (md *SourceConn) TryCreateMissingExtensions(ctx context.Context, extensions
 }
 
 // TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fetching helper" functions automatically
-func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
 	md.RLock()
 	defer md.RUnlock()
 	var sql string
-	metrics := maps.Clone(md.Metrics)
-	maps.Insert(metrics, maps.All(md.MetricsStandby))
-	for metricName := range metrics {
+	metricsMap := maps.Clone(md.Metrics)
+	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
+	for metricName := range metricsMap {
 		if sql = getSQLFn(metricName); sql == "" {
 			continue
 		}
@@ -333,11 +386,185 @@ func (md *SourceConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func
 	return
 }
 
-func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) *SourceConn {
+func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) SourceConn {
 	for _, md := range mds {
-		if md.Name == DBUniqueName {
+		if md.GetSource().Name == DBUniqueName {
 			return md
 		}
 	}
 	return nil
+}
+
+// RedactURL replaces the password in URL userinfo with "xxxxx".
+// If rawURL cannot be parsed or has no password, it is returned unchanged.
+func RedactURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	if u.User == nil {
+		return rawURL
+	}
+	if _, hasPass := u.User.Password(); !hasPass {
+		return rawURL
+	}
+	u.User = url.UserPassword(u.User.Username(), "xxxxx")
+	return u.String()
+}
+
+// promConnConfig holds the parsed Prometheus source connection parameters.
+// It is populated once by ParseConfig and reused by Connect and Ping.
+type promConnConfig struct {
+	URL       string
+	Userinfo  *url.Userinfo
+	TLSConfig *tls.Config
+}
+
+// PromConn represents a Prometheus source connection.
+type PromConn struct {
+	Source
+	connConfig *promConnConfig
+	HTTPClient *http.Client
+	sync.RWMutex
+}
+
+func NewPromConn(s Source) *PromConn {
+	return &PromConn{
+		Source: s,
+	}
+}
+
+// ParseConfig parses pc.ConnStr once and caches the result in pc.connConfig.
+// Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.
+func (pc *PromConn) ParseConfig() error {
+	if pc.connConfig != nil {
+		return nil
+	}
+	u, err := url.Parse(pc.ConnStr)
+	if err != nil {
+		return fmt.Errorf("parsing prometheus source URL: %w", err)
+	}
+	userinfo := u.User
+	u.User = nil
+
+	q := u.Query()
+	tlsRootCert := q.Get("tlsrootcert")
+	tlsSkipVerify := q.Get("tlsskipverify") == "true"
+	q.Del("tlsrootcert")
+	q.Del("tlsskipverify")
+	u.RawQuery = q.Encode()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: tlsSkipVerify} //nolint:gosec // intentional per config
+	if tlsRootCert != "" {
+		caCert, readErr := os.ReadFile(tlsRootCert)
+		if readErr != nil {
+			return fmt.Errorf("reading tlsrootcert %q: %w", tlsRootCert, readErr)
+		}
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(caCert)
+		tlsConfig.RootCAs = pool
+	}
+
+	pc.connConfig = &promConnConfig{
+		URL:       u.String(),
+		Userinfo:  userinfo,
+		TLSConfig: tlsConfig,
+	}
+	return nil
+}
+
+func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
+	pc.Lock()
+	if pc.HTTPClient == nil {
+		if err := pc.ParseConfig(); err != nil {
+			pc.Unlock()
+			return err
+		}
+		pc.HTTPClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: pc.connConfig.TLSConfig},
+			Timeout:   30 * time.Second,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	}
+	pc.Unlock()
+	return pc.Ping(ctx)
+}
+
+// Scrape executes a single GET request to the source's metrics endpoint with
+// Accept: text/plain and optional Basic Auth from the cached config.
+// The caller is responsible for closing resp.Body.
+// Connect must be called before Scrape.
+func (pc *PromConn) Scrape(ctx context.Context) (*http.Response, error) {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return nil, errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "text/plain")
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+	return client.Do(req)
+}
+
+func (pc *PromConn) Ping(ctx context.Context) error {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+	if err != nil {
+		return err
+	}
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("prometheus ping: unexpected status %s", resp.Status)
+	}
+	return nil
+}
+
+func (pc *PromConn) IsPostgresSource() bool                           { return false }
+func (pc *PromConn) GetSource() Source                                { return pc.Source }
+func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
+func (pc *PromConn) Close()                                           {}
+
+func (pc *PromConn) GetMetricInterval(name string) time.Duration {
+	pc.RLock()
+	defer pc.RUnlock()
+	return time.Duration(pc.Metrics[name]) * time.Second
+}
+
+func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
+	pc.Lock()
+	defer pc.Unlock()
+	if main != nil {
+		pc.Metrics = main
+	}
 }

@@ -42,7 +42,7 @@ type LogParser struct {
 	*LogConfig
 	ctx              context.Context
 	LogsMatchRegex   *regexp.Regexp
-	SourceConn       *sources.SourceConn
+	SourceConn       *sources.DbConn
 	Interval         time.Duration
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
@@ -59,7 +59,7 @@ type LogConfig struct {
 	ServerMessagesLang string
 }
 
-func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
+func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
@@ -140,7 +140,7 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogCon
 	return nil, err
 }
 
-func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {
+func checkHasRemotePrivileges(ctx context.Context, mdb *sources.DbConn, logsDirPath string) error {
 	var logFile string
 	err := mdb.Conn.QueryRow(ctx, "select name from pg_ls_logdir() limit 1").Scan(&logFile)
 	if err != nil && err != pgx.ErrNoRows {

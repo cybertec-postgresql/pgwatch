@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS pgwatch.source(
 	config_standby jsonb,
 	CONSTRAINT preset_or_custom_config CHECK (COALESCE(preset_config, config::text) IS NOT NULL AND (preset_config IS NULL OR config IS NULL)),
 	CONSTRAINT preset_or_custom_config_standby CHECK (preset_config_standby IS NULL OR config_standby IS NULL),
-	CHECK (dbtype IN ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'pgpool')),
+	CHECK (dbtype IN ('postgres', 'pgbouncer', 'postgres-continuous-discovery', 'patroni', 'pgpool', 'prometheus')),
 	CHECK ("group" ~ E'\\w+')
 );
 
@@ -84,4 +84,5 @@ INSERT INTO
     pgwatch.migration (id, version)
 VALUES
     (0,  '00179 Apply metrics migrations for v3'),
-    (1,  '00824 Refactor recommendations metrics to use metric_storage_name');
+    (1,  '00824 Refactor recommendations metrics to use metric_storage_name'),
+    (2,  '01405 Add prometheus to source dbtype check constraint');

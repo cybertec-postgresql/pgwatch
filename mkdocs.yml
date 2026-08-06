@@ -69,6 +69,7 @@ nav:
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
     - Implement Custom gRPC Sink: howto/implement_grpc_server.md
     - Reverse Proxy Setup: howto/reverse_proxy.md
+    - Monitoring a Prometheus Exporter: howto/monitor_prometheus_exporter.md
   - Reference:
     - CLI & Environment Variables: reference/cli_env.md
     - REST API: reference/rest.md
