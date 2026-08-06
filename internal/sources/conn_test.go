@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -693,4 +694,45 @@ func TestRedactURL(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// TestRace_GetClusterIdentifier verifies that concurrent FetchRuntimeInfo writes
+// and GetClusterIdentifier reads do not cause a data race.
+func TestRace_GetClusterIdentifier(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{
+		Kind:    sources.SourcePgBouncer,
+		ConnStr: "postgres://user:pass@localhost:5432/db",
+	})
+	md.Conn = mock
+
+	const iterations = 50
+	// FetchRuntimeInfo for pgbouncer needs one SHOW VERSION per forceRefetch=true call.
+	for range iterations {
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.FetchRuntimeInfo(context.Background(), true)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.GetClusterIdentifier()
+		}
+	}()
+
+	wg.Wait()
 }

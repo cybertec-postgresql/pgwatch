@@ -223,7 +223,10 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
-	if !monitoredSource.IsPostgresSource() || monitoredSource.IsInRecovery {
+	monitoredSource.RLock()
+	isInRecovery := monitoredSource.IsInRecovery
+	monitoredSource.RUnlock()
+	if !monitoredSource.IsPostgresSource() || isInRecovery {
 		return // no need to create anything for non-postgres sources
 	}
 
@@ -360,12 +363,16 @@ func (r *reaper) WriteMeasurements(ctx context.Context) {
 }
 
 func (r *reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.DbConn) {
+	md.RLock()
+	realDbname := md.RealDbname
+	systemIdentifier := md.SystemIdentifier
+	md.RUnlock()
 	for _, dr := range data {
-		if r.Sinks.RealDbnameField > "" && md.RealDbname > "" {
-			dr[r.Sinks.RealDbnameField] = md.RealDbname
+		if r.Sinks.RealDbnameField > "" && realDbname > "" {
+			dr[r.Sinks.RealDbnameField] = realDbname
 		}
-		if r.Sinks.SystemIdentifierField > "" && md.SystemIdentifier > "" {
-			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
+		if r.Sinks.SystemIdentifierField > "" && systemIdentifier > "" {
+			dr[r.Sinks.SystemIdentifierField] = systemIdentifier
 		}
 	}
 }

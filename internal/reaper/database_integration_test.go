@@ -226,10 +226,12 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		for _, state := range states {
 			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
-			md.IsInRecovery = true
-			if state == "standby" {
-				md.IsInRecovery = false
-			}
+		md.Lock()
+		md.IsInRecovery = true
+		if state == "standby" {
+			md.IsInRecovery = false
+		}
+		md.Unlock()
 
 			helperSetNodeStatus(state)
 
@@ -253,10 +255,12 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		for _, state := range states {
 			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
-			md.IsInRecovery = false
-			if state == "standby" {
-				md.IsInRecovery = true
-			}
+		md.Lock()
+		md.IsInRecovery = false
+		if state == "standby" {
+			md.IsInRecovery = true
+		}
+		md.Unlock()
 
 			helperSetNodeStatus(state)
 

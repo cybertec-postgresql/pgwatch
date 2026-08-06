@@ -967,7 +967,7 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		}
 		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 		sr := NewDbConnReaper(r, md)
-		sr.degradedMetrics[metricName] = struct{}{} // pre-seed: metric already degraded
+		sr.markDegraded(metricName) // pre-seed: metric already degraded
 
 		// Iteration 1: FetchRuntimeInfo + degraded individual fetch → fails → stays degraded
 		mock.ExpectQuery("select /\\* pgwatch_generated \\*/").WillReturnError(assert.AnError)
@@ -983,14 +983,14 @@ func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
 		// Run goroutine completes iteration 1 (pgxmock is in-memory, no real I/O) then
 		// blocks on time.After — the only durably-blocking operation in the loop.
 		synctest.Wait()
-		assert.Contains(t, sr.degradedMetrics, metricName, "should still be degraded after first failure")
+		assert.True(t, sr.isDegraded(metricName), "should still be degraded after first failure")
 
 		// Advance the fake clock past the interval to trigger iteration 2.
 		// The Run goroutine's time.After(30s) fires first; it runs iteration 2 and
 		// blocks again before the test goroutine's sleep finishes.
 		time.Sleep(time.Duration(metricInterval)*time.Second + time.Millisecond)
 		synctest.Wait()
-		assert.NotContains(t, sr.degradedMetrics, metricName, "should recover after successful fetchMetric")
+		assert.False(t, sr.isDegraded(metricName), "should recover after successful fetchMetric")
 
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

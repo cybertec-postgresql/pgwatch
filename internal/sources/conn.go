@@ -172,7 +172,10 @@ func (md *DbConn) GetClusterIdentifier() string {
 	if err := md.ParseConfig(); err != nil {
 		return ""
 	}
-	return fmt.Sprintf("%s:%s:%d", md.SystemIdentifier, md.ConnConfig.ConnConfig.Host, md.ConnConfig.ConnConfig.Port)
+	md.RLock()
+	sysID := md.SystemIdentifier
+	md.RUnlock()
+	return fmt.Sprintf("%s:%s:%d", sysID, md.ConnConfig.ConnConfig.Host, md.ConnConfig.ConnConfig.Port)
 }
 
 // GetDatabaseName returns the database name from the connection string
