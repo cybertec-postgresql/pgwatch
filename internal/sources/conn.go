@@ -339,11 +339,13 @@ where
 
 // TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+	// Snapshot the already-known extensions under RLock; release before doing any I/O.
 	md.RLock()
-	defer md.RUnlock()
+	knownExts := maps.Clone(md.Extensions)
+	md.RUnlock()
 
 	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
-	CreatedExts := make([]string, 0)
+	createdExts := make([]string, 0)
 
 	data, err := md.Conn.Query(ctx, sqlAvailableExts)
 	if err != nil {
@@ -355,7 +357,7 @@ func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []s
 	}
 
 	for _, extToCreate := range extensions {
-		if _, ok := md.Extensions[extToCreate]; ok {
+		if _, ok := knownExts[extToCreate]; ok {
 			continue
 		}
 		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
@@ -365,19 +367,21 @@ func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []s
 		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); e != nil {
 			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, e))
 		} else {
-			CreatedExts = append(CreatedExts, extToCreate)
+			createdExts = append(createdExts, extToCreate)
 		}
 	}
-	return strings.Join(CreatedExts, ","), err
+	return strings.Join(createdExts, ","), err
 }
 
 // TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fetching helper" functions automatically
 func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+	// Clone the metric map under RLock; release before doing any I/O.
 	md.RLock()
-	defer md.RUnlock()
-	var sql string
 	metricsMap := maps.Clone(md.Metrics)
 	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
+	md.RUnlock()
+
+	var sql string
 	for metricName := range metricsMap {
 		if sql = getSQLFn(metricName); sql == "" {
 			continue

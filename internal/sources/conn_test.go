@@ -736,3 +736,93 @@ func TestRace_GetClusterIdentifier(t *testing.T) {
 
 	wg.Wait()
 }
+
+// TestRace_TryCreateMissingExtensions verifies that concurrent FetchRuntimeInfo
+// writes to Extensions and TryCreateMissingExtensions reads do not race.
+func TestRace_TryCreateMissingExtensions(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{Kind: sources.SourcePostgres})
+	md.Conn = mock
+
+	const iterations = 50
+	// Each TryCreateMissingExtensions call queries available extensions then skips
+	// creation because "pg_stat_statements" will be in knownExts after the first write.
+	for range iterations {
+		mock.ExpectQuery("select name").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("pg_stat_statements"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate FetchRuntimeInfo updating Extensions under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.Lock()
+			md.Extensions = map[string]int{"pg_stat_statements": 10800}
+			md.Unlock()
+		}
+	}()
+
+	// Reader: TryCreateMissingExtensions snapshots Extensions under RLock then does I/O unlocked.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_, _ = md.TryCreateMissingExtensions(context.Background(), []string{"pg_stat_statements"})
+		}
+	}()
+
+	wg.Wait()
+}
+
+// TestRace_TryCreateMetricsHelpers verifies that concurrent SetMetricIntervals
+// writes and TryCreateMetricsHelpers reads do not race.
+func TestRace_TryCreateMetricsHelpers(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{
+		Kind:    sources.SourcePostgres,
+		Metrics: metrics.MetricIntervals{"metric1": 30},
+	})
+	md.Conn = mock
+
+	const iterations = 50
+	for range iterations {
+		mock.ExpectExec("CREATE FUNCTION metric1").
+			WillReturnResult(pgxmock.NewResult("CREATE", 1))
+	}
+
+	getSQLFn := func(metric string) string {
+		if metric == "metric1" {
+			return "CREATE FUNCTION metric1"
+		}
+		return ""
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate SetMetricIntervals updating Metrics under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.SetMetricIntervals(metrics.MetricIntervals{"metric1": 30}, nil)
+		}
+	}()
+
+	// Reader: TryCreateMetricsHelpers clones Metrics under RLock then does I/O unlocked.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.TryCreateMetricsHelpers(context.Background(), getSQLFn)
+		}
+	}()
+
+	wg.Wait()
+}
