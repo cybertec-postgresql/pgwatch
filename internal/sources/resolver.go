@@ -59,9 +59,9 @@ func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err e
 // ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
 func (s Source) ResolveDatabases() (SourceConns, error) {
 	switch s.Kind {
-	case SourcePatroni:
+	case SourcePatroniDiscovery:
 		return ResolveDatabasesFromPatroni(s)
-	case SourcePostgresContinuous:
+	case SourcePostgresDiscovery:
 		return ResolveDatabasesFromPostgres(s)
 	case SourcePrometheus:
 		return SourceConns{NewPromConn(s)}, nil

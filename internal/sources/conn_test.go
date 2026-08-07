@@ -159,8 +159,11 @@ func TestSourceConn_IsPostgresSource(t *testing.T) {
 	md.Kind = sources.SourcePgPool
 	assert.False(t, md.IsPostgresSource(), "IsPostgresSource() = true, want false")
 
-	md.Kind = sources.SourcePatroni
+	md.Kind = sources.SourcePatroniDiscovery
 	assert.True(t, md.IsPostgresSource(), "IsPostgresSource() = false, want true")
+
+	md.Kind = sources.SourcePrometheus
+	assert.False(t, md.IsPostgresSource(), "IsPostgresSource() = true, want false")
 }
 
 func TestSourceConn_Ping(t *testing.T) {
@@ -552,8 +555,8 @@ func TestDbConn_IsPostgresSource(t *testing.T) {
 		want bool
 	}{
 		{sources.SourcePostgres, true},
-		{sources.SourcePatroni, true},
-		{sources.SourcePostgresContinuous, true},
+		{sources.SourcePatroniDiscovery, true},
+		{sources.SourcePostgresDiscovery, true},
 		{sources.SourcePgBouncer, false},
 		{sources.SourcePgPool, false},
 	}

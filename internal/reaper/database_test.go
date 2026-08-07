@@ -24,7 +24,7 @@ func createTestSourceConn(t *testing.T) (*sources.DbConn, pgxmock.PgxPoolIface) 
 
 	md := &sources.DbConn{
 		Conn:   mock,
-		Source: sources.Source{Name: "testdb"},
+		Source: sources.Source{Name: "testdb", Kind: sources.SourcePostgres},
 		RuntimeInfo: sources.RuntimeInfo{
 			Version:     120000,
 			ChangeState: make(map[string]map[string]string),

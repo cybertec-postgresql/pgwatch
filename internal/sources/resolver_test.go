@@ -23,7 +23,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	// Create a new MonitoredDatabase instance
 	md := sources.Source{}
 	md.Name = "continuous"
-	md.Kind = sources.SourcePostgresContinuous
+	md.Kind = sources.SourcePostgresDiscovery
 	md.ConnStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
 	assert.NoError(t, err)
 
@@ -88,7 +88,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	md.OnlyIfMaster = true
 
 	t.Run("simple patroni discovery", func(t *testing.T) {
-		md.Kind = sources.SourcePatroni
+		md.Kind = sources.SourcePatroniDiscovery
 		md.ConnStr = "etcd://" + strings.TrimPrefix(endpoint, "http://")
 		md.ConnStr += "/service"
 		md.ConnStr += "/demo"
@@ -101,7 +101,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	})
 
 	t.Run("several endpoints patroni discovery", func(t *testing.T) {
-		md.Kind = sources.SourcePatroni
+		md.Kind = sources.SourcePatroniDiscovery
 		e := strings.TrimPrefix(endpoint, "http://")
 		md.ConnStr = "etcd://" + strings.Join([]string{e, e, e}, ",")
 		md.ConnStr += "/service"
@@ -115,7 +115,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 	})
 
 	t.Run("namespace patroni discovery", func(t *testing.T) {
-		md.Kind = sources.SourcePatroni
+		md.Kind = sources.SourcePatroniDiscovery
 		md.ConnStr = "etcd://" + strings.TrimPrefix(endpoint, "http://")
 
 		// Run ResolveDatabasesFromPatroni
@@ -129,7 +129,7 @@ func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
 func TestMonitoredDatabase_UnsupportedDCS(t *testing.T) {
 	md := sources.Source{}
 	md.Name = "continuous"
-	md.Kind = sources.SourcePatroni
+	md.Kind = sources.SourcePatroniDiscovery
 
 	md.ConnStr = "consul://foo"
 	_, err := md.ResolveDatabases()

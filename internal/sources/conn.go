@@ -212,7 +212,12 @@ func (md *DbConn) SetDatabaseName(name string) {
 }
 
 func (md *DbConn) IsPostgresSource() bool {
-	return md.Kind != SourcePgBouncer && md.Kind != SourcePgPool
+	switch md.Kind {
+	case SourcePostgres, SourcePatroniDiscovery, SourcePostgresDiscovery:
+		return true
+	default:
+		return false
+	}
 }
 
 // VersionToInt parses a given version and returns an integer  or
