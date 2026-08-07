@@ -134,7 +134,7 @@ func (r *reaper) Reap(ctx context.Context) {
 				md.RLock()
 				isInRecovery := md.IsInRecovery
 				versionStr := md.VersionStr
-				approxDbSize := md.ApproxDbSize
+				DBSizeMB := md.ApproxDbSize / 1048576
 				var metricsConfig metrics.MetricIntervals
 				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 					metricsConfig = maps.Clone(md.MetricsStandby)
@@ -156,7 +156,7 @@ func (r *reaper) Reap(ctx context.Context) {
 				r.CreateSourceHelpers(ctx, srcL, md)
 
 				if md.IsPostgresSource() {
-					DBSizeMB := approxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+					// only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
 						hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
