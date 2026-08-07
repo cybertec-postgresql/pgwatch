@@ -141,16 +141,16 @@ and send measurements to sinks.
 				<dd><a href="#GetPathUnderlyingDeviceID">func GetPathUnderlyingDeviceID(path string) (uint64, error)</a></dd>
 			
 				
-				<dd><a href="#IsDirectlyFetchableMetric">func IsDirectlyFetchableMetric(md *sources.SourceConn, metric string) bool</a></dd>
+				<dd><a href="#IsDirectlyFetchableMetric">func IsDirectlyFetchableMetric(md *sources.DbConn, metric string) bool</a></dd>
 			
 				
-				<dd><a href="#QueryMeasurements">func QueryMeasurements(ctx context.Context, md *sources.SourceConn, sql string, args ...any) (metrics.Measurements, error)</a></dd>
+				<dd><a href="#QueryMeasurements">func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error)</a></dd>
 			
 				
 				<dd><a href="#checkHasLocalPrivileges">func checkHasLocalPrivileges(logsDirPath string) error</a></dd>
 			
 				
-				<dd><a href="#checkHasRemotePrivileges">func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error</a></dd>
+				<dd><a href="#checkHasRemotePrivileges">func checkHasRemotePrivileges(ctx context.Context, mdb *sources.DbConn, logsDirPath string) error</a></dd>
 			
 				
 				<dd><a href="#cpuTotal">func cpuTotal(c cpu.TimesStat) float64</a></dd>
@@ -166,6 +166,9 @@ and send measurements to sinks.
 			
 				
 				<dd><a href="#init">func init()</a></dd>
+			
+				
+				<dd><a href="#promMetricValue">func promMetricValue(m *dto.Metric, mtype dto.MetricType) float64</a></dd>
 			
 				
 				<dd><a href="#severityToEnglish">func severityToEnglish(serverLang, errorSeverity string) string</a></dd>
@@ -206,6 +209,56 @@ and send measurements to sinks.
 				
 			
 				
+				<dd><a href="#DbConnReaper">type DbConnReaper</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewDbConnReaper">func NewDbConnReaper(r *reaper, md *sources.DbConn) *DbConnReaper</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.CollectAndDispatch">func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.Reap">func (sr *DbConnReaper) Reap(ctx context.Context)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.activeMetrics">func (sr *DbConnReaper) activeMetrics() map[string]time.Duration</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.cacheKey">func (sr *DbConnReaper) cacheKey(m metrics.Metric, name string) string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.calcTickInterval">func (sr *DbConnReaper) calcTickInterval() time.Duration</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.detectServerRestart">func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Measurements)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.dispatchMetricData">func (sr *DbConnReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.executeBatch">func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.fetchMetric">func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.fetchOSMetric">func (sr *DbConnReaper) fetchOSMetric(ctx context.Context, name string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.fetchSpecialMetric">func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.isRoleExcluded">func (sr *DbConnReaper) isRoleExcluded(m metrics.Metric) bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.runLogParser">func (sr *DbConnReaper) runLogParser(ctx context.Context) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DbConnReaper.sendEnvelope">func (sr *DbConnReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements)</a></dd>
+				
+			
+				
 				<dd><a href="#ExistingPartitionInfo">type ExistingPartitionInfo</a></dd>
 				
 				
@@ -236,7 +289,7 @@ and send measurements to sinks.
 				<dd><a href="#LogParser">type LogParser</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewLogParser">func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (lp *LogParser, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewLogParser">func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (lp *LogParser, err error)</a></dd>
 				
 				
 					
@@ -259,129 +312,111 @@ and send measurements to sinks.
 				
 			
 				
-				<dd><a href="#Reaper">type Reaper</a></dd>
+				<dd><a href="#PromReaper">type PromReaper</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewReaper">func NewReaper(ctx context.Context, opts *cmdopts.Options) (r *Reaper)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewPromSourceReaper">func NewPromSourceReaper(r *reaper, md *sources.PromConn) *PromReaper</a></dd>
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.AddSysinfoToMeasurements">func (r *Reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.SourceConn)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PromReaper.Reap">func (pr *PromReaper) Reap(ctx context.Context)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.CloseResourcesForRemovedMonitoredDBs">func (r *Reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PromReaper.ScrapeAll">func (pr *PromReaper) ScrapeAll(ctx context.Context) ([]metrics.MeasurementEnvelope, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.CreateSourceHelpers">func (r *Reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.SourceConn)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectConfigurationChanges">func (r *Reaper) DetectConfigurationChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectIndexChanges">func (r *Reaper) DetectIndexChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectPrivilegeChanges">func (r *Reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectSprocChanges">func (r *Reaper) DetectSprocChanges(ctx context.Context, md *sources.SourceConn) (changeCounts ChangeDetectionResults)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.DetectTableChanges">func (r *Reaper) DetectTableChanges(ctx context.Context, md *sources.SourceConn) ChangeDetectionResults</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.FetchStatsDirectlyFromOS">func (r *Reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.SourceConn, metricName string) (*metrics.MeasurementEnvelope, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.GetInstanceUpMeasurement">func (r *Reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.GetMeasurementCache">func (r *Reaper) GetMeasurementCache(key string) metrics.Measurements</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.GetObjectChangesMeasurement">func (r *Reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.SourceConn) (metrics.Measurements, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.LoadMetrics">func (r *Reaper) LoadMetrics() (err error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.LoadSources">func (r *Reaper) LoadSources(ctx context.Context) (err error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.PrintMemStats">func (r *Reaper) PrintMemStats()</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.Ready">func (r *Reaper) Ready() bool</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.Reap">func (r *Reaper) Reap(ctx context.Context)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.ShutdownOldWorkers">func (r *Reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteInstanceDown">func (r *Reaper) WriteInstanceDown(name string)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#Reaper.WriteMeasurements">func (r *Reaper) WriteMeasurements(ctx context.Context)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#PromReaper.calcScrapeInterval">func (pr *PromReaper) calcScrapeInterval() time.Duration</a></dd>
 				
 			
 				
-				<dd><a href="#SourceReaper">type SourceReaper</a></dd>
+				<dd><a href="#Readier">type Readier</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ReadierReaper">type ReadierReaper</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#NewSourceReaper">func NewSourceReaper(r *Reaper, md *sources.SourceConn) *SourceReaper</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#NewReaper">func NewReaper(ctx context.Context, opts *cmdopts.Options) ReadierReaper</a></dd>
 				
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.CollectAndDispatch">func (sr *SourceReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error</a></dd>
+			
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.Run">func (sr *SourceReaper) Run(ctx context.Context)</a></dd>
+				<dd><a href="#Reaper">type Reaper</a></dd>
 				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.activeMetrics">func (sr *SourceReaper) activeMetrics() map[string]time.Duration</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.cacheKey">func (sr *SourceReaper) cacheKey(m metrics.Metric, name string) string</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.calcTickInterval">func (sr *SourceReaper) calcTickInterval() time.Duration</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.detectServerRestart">func (sr *SourceReaper) detectServerRestart(ctx context.Context, data metrics.Measurements)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.dispatchMetricData">func (sr *SourceReaper) dispatchMetricData(ctx context.Context, name string, metric metrics.Metric, data metrics.Measurements)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.executeBatch">func (sr *SourceReaper) executeBatch(ctx context.Context, entries []batchEntry)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.fetchMetric">func (sr *SourceReaper) fetchMetric(ctx context.Context, entry batchEntry) error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.fetchMetrics">func (sr *SourceReaper) fetchMetrics(ctx context.Context, entries []batchEntry)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.fetchOSMetric">func (sr *SourceReaper) fetchOSMetric(ctx context.Context, name string) error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.fetchSpecialMetric">func (sr *SourceReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.isRoleExcluded">func (sr *SourceReaper) isRoleExcluded(m metrics.Metric) bool</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.runLogParser">func (sr *SourceReaper) runLogParser(ctx context.Context) error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#SourceReaper.sendEnvelope">func (sr *SourceReaper) sendEnvelope(ctx context.Context, name, storageName string, data metrics.Measurements)</a></dd>
 				
 			
 				
 				<dd><a href="#batchEntry">type batchEntry</a></dd>
 				
+				
+			
+				
+				<dd><a href="#reaper">type reaper</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#newReaper">func newReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.AddSysinfoToMeasurements">func (r *reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.DbConn)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.CloseResourcesForRemovedMonitoredDBs">func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.CreateSourceHelpers">func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.DbConn)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.DetectConfigurationChanges">func (r *reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.DetectIndexChanges">func (r *reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.DetectPrivilegeChanges">func (r *reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.DetectSprocChanges">func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.DetectTableChanges">func (r *reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.FetchStatsDirectlyFromOS">func (r *reaper) FetchStatsDirectlyFromOS(ctx context.Context, md *sources.DbConn, metricName string) (*metrics.MeasurementEnvelope, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.GetInstanceUpMeasurement">func (r *reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.GetMeasurementCache">func (r *reaper) GetMeasurementCache(key string) metrics.Measurements</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.GetObjectChangesMeasurement">func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.LoadMetrics">func (r *reaper) LoadMetrics() (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.LoadSources">func (r *reaper) LoadSources(ctx context.Context) (err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.PrintMemStats">func (r *reaper) PrintMemStats()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.Ready">func (r *reaper) Ready() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.Reap">func (r *reaper) Reap(ctx context.Context)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.ShutdownOldWorkers">func (r *reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.WriteInstanceDown">func (r *reaper) WriteInstanceDown(name string)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#reaper.WriteMeasurements">func (r *reaper) WriteMeasurements(ctx context.Context)</a></dd>
 				
 			
 			
@@ -411,13 +446,13 @@ and send measurements to sinks.
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html">metric.go</a>
 			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html">prometheus.go</a>
+			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil.go.html">psutil.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/psutil_linux.go.html">psutil_linux.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html">reaper.go</a>
-			
-				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html">source_reaper.go</a>
 			
 			</span>
 			</p>
@@ -455,6 +490,9 @@ and send measurements to sinks.
 				
 				<pre>const <span id="dbMetricJoinStr">dbMetricJoinStr</span> = &#34;¤¤¤&#34; <span class="comment">// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data</span>
 </pre>
+			
+				
+				<pre>const <span id="defaultScrapeInterval">defaultScrapeInterval</span> = 60 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a></pre>
 			
 				
 				<pre>const <span id="maxChunkSize">maxChunkSize</span> <a href="https://pkg.go.dev/builtin/#uint64">uint64</a> = 10 * 1024 * 1024 <span class="comment">// 10 MB</span>
@@ -496,10 +534,6 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 			
 				
 				<pre>var <span id="metricDefs">metricDefs</span> = <a href="#NewConcurrentMetricDefs">NewConcurrentMetricDefs</a>()</pre>
-			
-				
-				<pre>var <span id="metricsConfig">metricsConfig</span> <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MetricIntervals">MetricIntervals</a> <span class="comment">// set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state</span>
-</pre>
 			
 				<p>Constants and types
 
@@ -562,7 +596,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="GCDSlice">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L58">GCDSlice</a>
+			<h2 id="GCDSlice">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L62">GCDSlice</a>
 				<a class="permalink" href="#GCDSlice">&#xb6;</a>
 				
 				
@@ -660,7 +694,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 				
 				
 			</h2>
-			<pre>func IsDirectlyFetchableMetric(md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, metric <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			<pre>func IsDirectlyFetchableMetric(md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>, metric <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
 			
 			
 			
@@ -668,12 +702,12 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L17">QueryMeasurements</a>
+			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L367">QueryMeasurements</a>
 				<a class="permalink" href="#QueryMeasurements">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func QueryMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, sql <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<pre>func QueryMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>, sql <a href="https://pkg.go.dev/builtin/#string">string</a>, args ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
 			
 			
@@ -699,7 +733,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 				
 				
 			</h2>
-			<pre>func checkHasRemotePrivileges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<pre>func checkHasRemotePrivileges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>, logsDirPath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 			
 			
 			
@@ -770,6 +804,21 @@ so including them would double-count and skew percentage calculations.
 			</h2>
 			<pre>func init()</pre>
 			
+			
+			
+
+		
+			
+			
+			<h2 id="promMetricValue">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L163">promMetricValue</a>
+				<a class="permalink" href="#promMetricValue">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func promMetricValue(m *<a href="https://pkg.go.dev/github.com/prometheus/client_model/go/">dto</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_model/go/#Metric">Metric</a>, mtype <a href="https://pkg.go.dev/github.com/prometheus/client_model/go/">dto</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_model/go/#MetricType">MetricType</a>) <a href="https://pkg.go.dev/builtin/#float64">float64</a></pre>
+			<p>promMetricValue extracts the primary float64 sample value from a metric
+based on its family type.
+
 			
 			
 
@@ -940,6 +989,246 @@ so including them would double-count and skew percentage calculations.
 		
 			
 			
+			<h2 id="DbConnReaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L26">DbConnReaper</a>
+				<a class="permalink" href="#DbConnReaper">&#xb6;</a>
+				
+				
+			</h2>
+			<p>DbConnReaper manages metric collection for a single monitored database source.
+Instead of one goroutine per metric it runs a single GCD-based tick loop
+and batches SQL queries via pgx.Batch when the source is a real Postgres
+connection (non-pgbouncer, non-pgpool).
+
+			<pre>type DbConnReaper struct {
+<span id="DbConnReaper.reaper"></span>    reaper          *reaper
+<span id="DbConnReaper.md"></span>    md              *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>
+<span id="DbConnReaper.lastFetch"></span>    lastFetch       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
+<span id="DbConnReaper.lastUptimeS"></span>    lastUptimeS     <a href="https://pkg.go.dev/builtin/#int64">int64</a>               <span class="comment">// last seen postmaster_uptime_s for restart detection</span>
+<span id="DbConnReaper.degradedMetrics"></span>    degradedMetrics map[<a href="https://pkg.go.dev/builtin/#string">string</a>]struct{} <span class="comment">// metrics that failed individual retry; executed via fetchMetric until they recover</span>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewDbConnReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L35">NewDbConnReaper</a>
+					<a class="permalink" href="#NewDbConnReaper">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewDbConnReaper(r *reaper, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) *<a href="#DbConnReaper">DbConnReaper</a></pre>
+				<p>NewDbConnReaper creates a SourceReaper for the given source connection.
+
+				
+				
+			
+
+			
+				
+				<h3 id="DbConnReaper.CollectAndDispatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L284">CollectAndDispatch</a>
+					<a class="permalink" href="#DbConnReaper.CollectAndDispatch">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) CollectAndDispatch(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, rows pgx.<a href="#Rows">Rows</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.Reap">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L136">Reap</a>
+					<a class="permalink" href="#DbConnReaper.Reap">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) Reap(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
+				<p>Run is the main loop for a single source. It replaces N per-metric goroutines
+with one goroutine that batches SQL queries at GCD-aligned ticks.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.activeMetrics">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L47">activeMetrics</a>
+					<a class="permalink" href="#DbConnReaper.activeMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) activeMetrics() map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
+				<p>activeMetrics returns a snapshot copy of the currently active metric intervals
+based on the source&apos;s recovery state. Copying under the lock prevents data
+races when the caller iterates after the lock is released.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.cacheKey">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L86">cacheKey</a>
+					<a class="permalink" href="#DbConnReaper.cacheKey">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) cacheKey(m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				<p>cacheKey returns the instance-level cache key for the given metric.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.calcTickInterval">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L76">calcTickInterval</a>
+					<a class="permalink" href="#DbConnReaper.calcTickInterval">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) calcTickInterval() <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
+				<p>calcTickInterval computes GCD of all metric intervals with a minimum floor.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.detectServerRestart">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L343">detectServerRestart</a>
+					<a class="permalink" href="#DbConnReaper.detectServerRestart">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) detectServerRestart(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
+				<p>detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s
+in db_stats metric data and emits an object_changes measurement if detected.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.dispatchMetricData">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L117">dispatchMetricData</a>
+					<a class="permalink" href="#DbConnReaper.dispatchMetricData">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) dispatchMetricData(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
+				<p>dispatchMetricData handles the post-fetch workflow for a collected metric:
+caching, sysinfo enrichment, sending, and restart detection.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.executeBatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L241">executeBatch</a>
+					<a class="permalink" href="#DbConnReaper.executeBatch">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) executeBatch(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, entries []batchEntry) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching
+each result immediately as it arrives. If any query fails, PostgreSQL&apos;s
+extended protocol aborts all subsequent queries in the same sync boundary
+(cascade failure). Any entry that returns an error from the batch is retried
+individually via fetchMetric to isolate real failures from cascade failures.
+Entries that fail even after the individual retry are marked as degraded
+so that subsequent runs use fetchMetric for them until they recover.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.fetchMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L275">fetchMetric</a>
+					<a class="permalink" href="#DbConnReaper.fetchMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) fetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, entry batchEntry) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>fetchMetric executes a single SQL query and returns the resulting measurements.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.fetchOSMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L296">fetchOSMetric</a>
+					<a class="permalink" href="#DbConnReaper.fetchOSMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) fetchOSMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>fetchOSMetric handles gopsutil-based OS metrics.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.fetchSpecialMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L309">fetchSpecialMetric</a>
+					<a class="permalink" href="#DbConnReaper.fetchSpecialMetric">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) fetchSpecialMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name, storageName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>fetchSpecialMetric handles change_events and instance_up metrics.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.isRoleExcluded">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L96">isRoleExcluded</a>
+					<a class="permalink" href="#DbConnReaper.isRoleExcluded">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) isRoleExcluded(m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				<p>isRoleExcluded returns true if the metric should be skipped based on the
+source&apos;s recovery state (e.g. primary-only metric on a standby).
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.runLogParser">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L330">runLogParser</a>
+					<a class="permalink" href="#DbConnReaper.runLogParser">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) runLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>runLogParser launches the server log event counts parser.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConnReaper.sendEnvelope">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L104">sendEnvelope</a>
+					<a class="permalink" href="#DbConnReaper.sendEnvelope">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sr *<a href="#DbConnReaper">DbConnReaper</a>) sendEnvelope(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name, storageName <a href="https://pkg.go.dev/builtin/#string">string</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
+				<p>sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the
+measurement channel.
+
+				
+				
+				
+			
+		
+			
+			
 			<h2 id="ExistingPartitionInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L72">ExistingPartitionInfo</a>
 				<a class="permalink" href="#ExistingPartitionInfo">&#xb6;</a>
 				
@@ -1077,7 +1366,7 @@ so including them would double-count and skew percentage calculations.
     *<a href="#LogConfig">LogConfig</a>
 <span id="LogParser.ctx"></span>    ctx              <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
 <span id="LogParser.LogsMatchRegex"></span>    LogsMatchRegex   *<a href="https://pkg.go.dev/regexp/">regexp</a>.<a href="https://pkg.go.dev/regexp/#Regexp">Regexp</a>
-<span id="LogParser.SourceConn"></span>    SourceConn       *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>
+<span id="LogParser.SourceConn"></span>    SourceConn       *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>
 <span id="LogParser.Interval"></span>    Interval         <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>
 <span id="LogParser.StoreCh"></span>    StoreCh          chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
 <span id="LogParser.eventCounts"></span>    eventCounts      map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#int64">int64</a> <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
@@ -1102,7 +1391,7 @@ so including them would double-count and skew percentage calculations.
 					
 					
 				</h3>
-				<pre>func NewLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, storeCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (lp *<a href="#LogParser">LogParser</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func NewLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, mdb *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>, storeCh chan&lt;- <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>) (lp *<a href="#LogParser">LogParser</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -1185,23 +1474,18 @@ so including them would double-count and skew percentage calculations.
 		
 			
 			
-			<h2 id="Reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L32">Reaper</a>
-				<a class="permalink" href="#Reaper">&#xb6;</a>
+			<h2 id="PromReaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L24">PromReaper</a>
+				<a class="permalink" href="#PromReaper">&#xb6;</a>
 				
 				
 			</h2>
-			<p>Reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
+			<p>PromReaper drives metric scraping for a single Prometheus source.
+It runs a GCD-based tick loop and applies per-family emit-interval gating.
 
-			<pre>type Reaper struct {
-    *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/#Options">Options</a>
-<span id="Reaper.ready"></span>    ready                <a href="https://pkg.go.dev/sync/atomic/">atomic</a>.<a href="https://pkg.go.dev/sync/atomic/#Bool">Bool</a>
-<span id="Reaper.measurementCh"></span>    measurementCh        chan <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
-<span id="Reaper.measurementCache"></span>    measurementCache     *<a href="#InstanceMetricCache">InstanceMetricCache</a>
-<span id="Reaper.logger"></span>    logger               <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>
-<span id="Reaper.monitoredSources"></span>    monitoredSources     <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConns">SourceConns</a>
-<span id="Reaper.prevLoopMonitoredDBs"></span>    prevLoopMonitoredDBs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConns">SourceConns</a>
-<span id="Reaper.cancelFuncs"></span>    cancelFuncs          map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#CancelFunc">CancelFunc</a> <span class="comment">// [sourceName]cancel() — one per source</span>
-<span id="Reaper.sourceReapers"></span>    sourceReapers        map[<a href="https://pkg.go.dev/builtin/#string">string</a>]*<a href="#SourceReaper">SourceReaper</a>      <span class="comment">// [sourceName] — active SourceReaper instances</span>
+			<pre>type PromReaper struct {
+<span id="PromReaper.reaper"></span>    reaper      *reaper
+<span id="PromReaper.md"></span>    md          *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#PromConn">PromConn</a>
+<span id="PromReaper.lastEmitted"></span>    lastEmitted map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
 }
 </pre>
 
@@ -1215,296 +1499,145 @@ so including them would double-count and skew percentage calculations.
 
 			
 				
-				<h3 id="NewReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L45">NewReaper</a>
+				<h3 id="NewPromSourceReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L31">NewPromSourceReaper</a>
+					<a class="permalink" href="#NewPromSourceReaper">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewPromSourceReaper(r *reaper, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#PromConn">PromConn</a>) *<a href="#PromReaper">PromReaper</a></pre>
+				<p>NewPromSourceReaper creates a PromReaper for the given Prometheus source.
+
+				
+				
+			
+
+			
+				
+				<h3 id="PromReaper.Reap">func (*PromReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L59">Reap</a>
+					<a class="permalink" href="#PromReaper.Reap">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (pr *<a href="#PromReaper">PromReaper</a>) Reap(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
+				<p>Reap is the main loop for a Prometheus source. It scrapes all metric families
+on every GCD tick and emits envelopes that have passed their per-family interval.
+
+				
+				
+				
+			
+				
+				<h3 id="PromReaper.ScrapeAll">func (*PromReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L106">ScrapeAll</a>
+					<a class="permalink" href="#PromReaper.ScrapeAll">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (pr *<a href="#PromReaper">PromReaper</a>) ScrapeAll(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) ([]<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ScrapeAll fetches Prometheus exposition metrics from pr.md and returns one
+MeasurementEnvelope per metric family. Each sample becomes one Measurement
+with tag_&lt;label&gt; columns (skipping __name__), a value column named after the
+family, and epoch_ns set from the sample timestamp (ms→ns) or time.Now().
+
+				
+				
+				
+			
+				
+				<h3 id="PromReaper.calcScrapeInterval">func (*PromReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/prometheus.go.html#L42">calcScrapeInterval</a>
+					<a class="permalink" href="#PromReaper.calcScrapeInterval">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (pr *<a href="#PromReaper">PromReaper</a>) calcScrapeInterval() <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
+				<p>calcScrapeInterval returns the GCD of all configured metric intervals.
+Defaults to defaultScrapeInterval when no metrics are configured (scrape-all mode).
+Individual intervals below minTickInterval are floored to minTickInterval.
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Readier">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L34">Readier</a>
+				<a class="permalink" href="#Readier">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type Readier interface {
+    Ready() <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ReadierReaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L38">ReadierReaper</a>
+				<a class="permalink" href="#ReadierReaper">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type ReadierReaper interface {
+    <a href="#Reaper">Reaper</a>
+    <a href="#Readier">Readier</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L55">NewReaper</a>
 					<a class="permalink" href="#NewReaper">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewReaper(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/#Options">Options</a>) (r *<a href="#Reaper">Reaper</a>)</pre>
-				<p>NewReaper creates a new Reaper instance
+				<pre>func NewReaper(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/#Options">Options</a>) <a href="#ReadierReaper">ReadierReaper</a></pre>
+				
+				
+				
+			
 
-				
-				
-			
-
-			
-				
-				<h3 id="Reaper.AddSysinfoToMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L338">AddSysinfoToMeasurements</a>
-					<a class="permalink" href="#Reaper.AddSysinfoToMeasurements">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) AddSysinfoToMeasurements(data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.CloseResourcesForRemovedMonitoredDBs">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L444">CloseResourcesForRemovedMonitoredDBs</a>
-					<a class="permalink" href="#Reaper.CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.CreateSourceHelpers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L197">CreateSourceHelpers</a>
-					<a class="permalink" href="#Reaper.CreateSourceHelpers">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) CreateSourceHelpers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, srcL <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>, monitoredSource *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>)</pre>
-				<p>CreateSourceHelpers creates the extensions and metric helpers for the monitored source
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.DetectConfigurationChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L344">DetectConfigurationChanges</a>
-					<a class="permalink" href="#Reaper.DetectConfigurationChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectConfigurationChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.DetectIndexChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L188">DetectIndexChanges</a>
-					<a class="permalink" href="#Reaper.DetectIndexChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectIndexChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.DetectPrivilegeChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L267">DetectPrivilegeChanges</a>
-					<a class="permalink" href="#Reaper.DetectPrivilegeChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectPrivilegeChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.DetectSprocChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L33">DetectSprocChanges</a>
-					<a class="permalink" href="#Reaper.DetectSprocChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectSprocChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) (changeCounts <a href="#ChangeDetectionResults">ChangeDetectionResults</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.DetectTableChanges">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L109">DetectTableChanges</a>
-					<a class="permalink" href="#Reaper.DetectTableChanges">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) DetectTableChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.FetchStatsDirectlyFromOS">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L51">FetchStatsDirectlyFromOS</a>
-					<a class="permalink" href="#Reaper.FetchStatsDirectlyFromOS">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) FetchStatsDirectlyFromOS(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.GetInstanceUpMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L415">GetInstanceUpMeasurement</a>
-					<a class="permalink" href="#Reaper.GetInstanceUpMeasurement">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) GetInstanceUpMeasurement(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>GetInstanceUpMeasurement returns a single measurement with &quot;instance_up&quot; metric
-used to detect if the instance is up or down
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.GetMeasurementCache">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L319">GetMeasurementCache</a>
-					<a class="permalink" href="#Reaper.GetMeasurementCache">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) GetMeasurementCache(key <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a></pre>
-				<p>GetMeasurementCache returns the instance-level metric cache
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.GetObjectChangesMeasurement">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L429">GetObjectChangesMeasurement</a>
-					<a class="permalink" href="#Reaper.GetObjectChangesMeasurement">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) GetObjectChangesMeasurement(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.LoadMetrics">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L78">LoadMetrics</a>
-					<a class="permalink" href="#Reaper.LoadMetrics">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) LoadMetrics() (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>LoadMetrics loads metric definitions from the reader
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.LoadSources">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L264">LoadSources</a>
-					<a class="permalink" href="#Reaper.LoadSources">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) LoadSources(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>LoadSources loads sources from the reader
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.PrintMemStats">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L63">PrintMemStats</a>
-					<a class="permalink" href="#Reaper.PrintMemStats">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) PrintMemStats()</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.Ready">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L59">Ready</a>
-					<a class="permalink" href="#Reaper.Ready">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) Ready() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
-				<p>Ready() returns true if the service is healthy and operating correctly
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.Reap">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L78">Reap</a>
-					<a class="permalink" href="#Reaper.Reap">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) Reap(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
-				<p>Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements
-from the sources and storing them to the sinks. It also manages the lifecycle of
-the metric gatherers. In case of a source or metric definition change, it will
-start or stop the gatherers accordingly.
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.ShutdownOldWorkers">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L231">ShutdownOldWorkers</a>
-					<a class="permalink" href="#Reaper.ShutdownOldWorkers">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) ShutdownOldWorkers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, hostsToShutDown map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="Reaper.WriteInstanceDown">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L307">WriteInstanceDown</a>
-					<a class="permalink" href="#Reaper.WriteInstanceDown">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteInstanceDown(name <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
-				<p>WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
-
-				
-				
-				
-			
-				
-				<h3 id="Reaper.WriteMeasurements">func (*Reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L324">WriteMeasurements</a>
-					<a class="permalink" href="#Reaper.WriteMeasurements">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (r *<a href="#Reaper">Reaper</a>) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
-				<p>WriteMeasurements() writes the metrics to the sinks
-
-				
-				
-				
 			
 		
 			
 			
-			<h2 id="SourceReaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L21">SourceReaper</a>
-				<a class="permalink" href="#SourceReaper">&#xb6;</a>
+			<h2 id="Reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L30">Reaper</a>
+				<a class="permalink" href="#Reaper">&#xb6;</a>
 				
 				
 			</h2>
-			<p>SourceReaper manages metric collection for a single monitored source.
-Instead of one goroutine per metric it runs a single GCD-based tick loop
-and batches SQL queries via pgx.Batch when the source is a real Postgres
-connection (non-pgbouncer, non-pgpool).
-
-			<pre>type SourceReaper struct {
-<span id="SourceReaper.reaper"></span>    reaper          *<a href="#Reaper">Reaper</a>
-<span id="SourceReaper.md"></span>    md              *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>
-<span id="SourceReaper.lastFetch"></span>    lastFetch       map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Time">Time</a>
-<span id="SourceReaper.lastUptimeS"></span>    lastUptimeS     <a href="https://pkg.go.dev/builtin/#int64">int64</a>               <span class="comment">// last seen postmaster_uptime_s for restart detection</span>
-<span id="SourceReaper.degradedMetrics"></span>    degradedMetrics map[<a href="https://pkg.go.dev/builtin/#string">string</a>]struct{} <span class="comment">// metrics that failed individual retry; executed via fetchMetric until they recover</span>
-}
-</pre>
+			
+			<pre>type Reaper interface {
+    Reap(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)
+}</pre>
 
 			
 
+			
+				
+				<pre>var <span id="_">_</span> <a href="#Reaper">Reaper</a> = (*<a href="#DbConnReaper">DbConnReaper</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>)</pre>
+			
+				
+				<pre>var <span id="_">_</span> <a href="#Reaper">Reaper</a> = (*<a href="#PromReaper">PromReaper</a>)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>)</pre>
 			
 
 			
@@ -1512,238 +1645,12 @@ connection (non-pgbouncer, non-pgpool).
 			
 
 			
-				
-				<h3 id="NewSourceReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L30">NewSourceReaper</a>
-					<a class="permalink" href="#NewSourceReaper">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func NewSourceReaper(r *<a href="#Reaper">Reaper</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConn">SourceConn</a>) *<a href="#SourceReaper">SourceReaper</a></pre>
-				<p>NewSourceReaper creates a SourceReaper for the given source connection.
 
-				
-				
-			
-
-			
-				
-				<h3 id="SourceReaper.CollectAndDispatch">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L303">CollectAndDispatch</a>
-					<a class="permalink" href="#SourceReaper.CollectAndDispatch">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) CollectAndDispatch(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, rows pgx.<a href="#Rows">Rows</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.Run">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L132">Run</a>
-					<a class="permalink" href="#SourceReaper.Run">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) Run(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
-				<p>Run is the main loop for a single source. It replaces N per-metric goroutines
-with one goroutine that batches SQL queries at GCD-aligned ticks.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.activeMetrics">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L43">activeMetrics</a>
-					<a class="permalink" href="#SourceReaper.activeMetrics">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) activeMetrics() map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
-				<p>activeMetrics returns a snapshot copy of the currently active metric intervals
-based on the source&apos;s recovery state. Copying under the lock prevents data
-races when the caller iterates after the lock is released.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.cacheKey">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L82">cacheKey</a>
-					<a class="permalink" href="#SourceReaper.cacheKey">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) cacheKey(m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
-				<p>cacheKey returns the instance-level cache key for the given metric.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.calcTickInterval">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L72">calcTickInterval</a>
-					<a class="permalink" href="#SourceReaper.calcTickInterval">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) calcTickInterval() <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a></pre>
-				<p>calcTickInterval computes GCD of all metric intervals with a minimum floor.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.detectServerRestart">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L362">detectServerRestart</a>
-					<a class="permalink" href="#SourceReaper.detectServerRestart">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) detectServerRestart(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
-				<p>detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s
-in db_stats metric data and emits an object_changes measurement if detected.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.dispatchMetricData">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L113">dispatchMetricData</a>
-					<a class="permalink" href="#SourceReaper.dispatchMetricData">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) dispatchMetricData(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>, metric <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
-				<p>dispatchMetricData handles the post-fetch workflow for a collected metric:
-caching, sysinfo enrichment, sending, and restart detection.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.executeBatch">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L236">executeBatch</a>
-					<a class="permalink" href="#SourceReaper.executeBatch">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) executeBatch(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, entries []batchEntry)</pre>
-				<p>executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching
-each result immediately as it arrives. If any query fails, PostgreSQL&apos;s
-extended protocol aborts all subsequent queries in the same sync boundary
-(cascade failure). Any entry that returns an error from the batch is retried
-individually via fetchMetric to isolate real failures from cascade failures.
-Entries that fail even after the individual retry are marked as degraded
-so that subsequent runs use fetchMetric for them until they recover.
-<p>Failures are logged per-metric as they happen.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.fetchMetric">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L294">fetchMetric</a>
-					<a class="permalink" href="#SourceReaper.fetchMetric">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) fetchMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, entry batchEntry) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>fetchMetric executes a single SQL query and returns the resulting measurements.
-pgx tracer errors are suppressed because the caller logs a single, accurate
-message (with the metric name) on failure; the raw SQL/args dump is only
-emitted at debug level.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.fetchMetrics">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L278">fetchMetrics</a>
-					<a class="permalink" href="#SourceReaper.fetchMetrics">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) fetchMetrics(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, entries []batchEntry)</pre>
-				<p>fetchMetrics fetches a batch of entries individually, marking any that fail
-as degraded so subsequent runs will continue to use individual fetching for them.
-Each failure is logged on its own line with the metric name attached.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.fetchOSMetric">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L315">fetchOSMetric</a>
-					<a class="permalink" href="#SourceReaper.fetchOSMetric">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) fetchOSMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>fetchOSMetric handles gopsutil-based OS metrics.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.fetchSpecialMetric">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L328">fetchSpecialMetric</a>
-					<a class="permalink" href="#SourceReaper.fetchSpecialMetric">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) fetchSpecialMetric(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name, storageName <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>fetchSpecialMetric handles change_events and instance_up metrics.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.isRoleExcluded">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L92">isRoleExcluded</a>
-					<a class="permalink" href="#SourceReaper.isRoleExcluded">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) isRoleExcluded(m <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Metric">Metric</a>) <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
-				<p>isRoleExcluded returns true if the metric should be skipped based on the
-source&apos;s recovery state (e.g. primary-only metric on a standby).
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.runLogParser">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L349">runLogParser</a>
-					<a class="permalink" href="#SourceReaper.runLogParser">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) runLogParser(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				<p>runLogParser launches the server log event counts parser.
-
-				
-				
-				
-			
-				
-				<h3 id="SourceReaper.sendEnvelope">func (*SourceReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L100">sendEnvelope</a>
-					<a class="permalink" href="#SourceReaper.sendEnvelope">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (sr *<a href="#SourceReaper">SourceReaper</a>) sendEnvelope(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, name, storageName <a href="https://pkg.go.dev/builtin/#string">string</a>, data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>)</pre>
-				<p>sendEnvelope adds sysinfo and dispatches a MeasurementEnvelope to the
-measurement channel.
-
-				
-				
-				
 			
 		
 			
 			
-			<h2 id="batchEntry">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper.go.html#L124">batchEntry</a>
+			<h2 id="batchEntry">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L128">batchEntry</a>
 				<a class="permalink" href="#batchEntry">&#xb6;</a>
 				
 				
@@ -1767,6 +1674,303 @@ measurement channel.
 
 			
 
+			
+		
+			
+			
+			<h2 id="reaper">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L44">reaper</a>
+				<a class="permalink" href="#reaper">&#xb6;</a>
+				
+				
+			</h2>
+			<p>reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
+
+			<pre>type reaper struct {
+    *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/#Options">Options</a>
+<span id="reaper.ready"></span>    ready                <a href="https://pkg.go.dev/sync/atomic/">atomic</a>.<a href="https://pkg.go.dev/sync/atomic/#Bool">Bool</a>
+<span id="reaper.measurementCh"></span>    measurementCh        chan <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>
+<span id="reaper.measurementCache"></span>    measurementCache     *<a href="#InstanceMetricCache">InstanceMetricCache</a>
+<span id="reaper.logger"></span>    logger               <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>
+<span id="reaper.monitoredSources"></span>    monitoredSources     <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConns">SourceConns</a>
+<span id="reaper.prevLoopMonitoredDBs"></span>    prevLoopMonitoredDBs <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#SourceConns">SourceConns</a>
+<span id="reaper.cancelFuncs"></span>    cancelFuncs          map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#CancelFunc">CancelFunc</a> <span class="comment">// [sourceName]cancel() — one per source</span>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="newReaper">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L59">newReaper</a>
+					<a class="permalink" href="#newReaper">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func newReaper(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/">cmdopts</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/#Options">Options</a>) (r *reaper)</pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="reaper.AddSysinfoToMeasurements">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L360">AddSysinfoToMeasurements</a>
+					<a class="permalink" href="#reaper.AddSysinfoToMeasurements">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) AddSysinfoToMeasurements(data <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.CloseResourcesForRemovedMonitoredDBs">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L795">CloseResourcesForRemovedMonitoredDBs</a>
+					<a class="permalink" href="#reaper.CloseResourcesForRemovedMonitoredDBs">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.CreateSourceHelpers">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L220">CreateSourceHelpers</a>
+					<a class="permalink" href="#reaper.CreateSourceHelpers">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) CreateSourceHelpers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, srcL <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a>, monitoredSource *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>)</pre>
+				<p>CreateSourceHelpers creates the extensions and metric helpers for the monitored source
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.DetectConfigurationChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L694">DetectConfigurationChanges</a>
+					<a class="permalink" href="#reaper.DetectConfigurationChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) DetectConfigurationChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.DetectIndexChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L538">DetectIndexChanges</a>
+					<a class="permalink" href="#reaper.DetectIndexChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) DetectIndexChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.DetectPrivilegeChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L617">DetectPrivilegeChanges</a>
+					<a class="permalink" href="#reaper.DetectPrivilegeChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) DetectPrivilegeChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.DetectSprocChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L383">DetectSprocChanges</a>
+					<a class="permalink" href="#reaper.DetectSprocChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) DetectSprocChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) (changeCounts <a href="#ChangeDetectionResults">ChangeDetectionResults</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.DetectTableChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L459">DetectTableChanges</a>
+					<a class="permalink" href="#reaper.DetectTableChanges">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) DetectTableChanges(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) <a href="#ChangeDetectionResults">ChangeDetectionResults</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.FetchStatsDirectlyFromOS">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/file.go.html#L51">FetchStatsDirectlyFromOS</a>
+					<a class="permalink" href="#reaper.FetchStatsDirectlyFromOS">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) FetchStatsDirectlyFromOS(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>, metricName <a href="https://pkg.go.dev/builtin/#string">string</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.GetInstanceUpMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L765">GetInstanceUpMeasurement</a>
+					<a class="permalink" href="#reaper.GetInstanceUpMeasurement">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) GetInstanceUpMeasurement(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>GetInstanceUpMeasurement returns a single measurement with &quot;instance_up&quot; metric
+used to detect if the instance is up or down
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.GetMeasurementCache">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L341">GetMeasurementCache</a>
+					<a class="permalink" href="#reaper.GetMeasurementCache">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) GetMeasurementCache(key <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a></pre>
+				<p>GetMeasurementCache returns the instance-level metric cache
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.GetObjectChangesMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database.go.html#L779">GetObjectChangesMeasurement</a>
+					<a class="permalink" href="#reaper.GetObjectChangesMeasurement">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) GetObjectChangesMeasurement(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, md *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#DbConn">DbConn</a>) (<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#Measurements">Measurements</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.LoadMetrics">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/metric.go.html#L78">LoadMetrics</a>
+					<a class="permalink" href="#reaper.LoadMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) LoadMetrics() (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>LoadMetrics loads metric definitions from the reader
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.LoadSources">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L286">LoadSources</a>
+					<a class="permalink" href="#reaper.LoadSources">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) LoadSources(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>LoadSources loads sources from the reader
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.PrintMemStats">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L76">PrintMemStats</a>
+					<a class="permalink" href="#reaper.PrintMemStats">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) PrintMemStats()</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.Ready">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L72">Ready</a>
+					<a class="permalink" href="#reaper.Ready">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) Ready() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				<p>Ready() returns true if the service is healthy and operating correctly
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.Reap">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L91">Reap</a>
+					<a class="permalink" href="#reaper.Reap">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) Reap(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
+				<p>Reap() starts the main monitoring loop. It is responsible for fetching metrics measurements
+from the sources and storing them to the sinks. It also manages the lifecycle of
+the metric gatherers. In case of a source or metric definition change, it will
+start or stop the gatherers accordingly.
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.ShutdownOldWorkers">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L254">ShutdownOldWorkers</a>
+					<a class="permalink" href="#reaper.ShutdownOldWorkers">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) ShutdownOldWorkers(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, hostsToShutDown map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#bool">bool</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="reaper.WriteInstanceDown">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L329">WriteInstanceDown</a>
+					<a class="permalink" href="#reaper.WriteInstanceDown">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) WriteInstanceDown(name <a href="https://pkg.go.dev/builtin/#string">string</a>)</pre>
+				<p>WriteInstanceDown writes instance_up = 0 metric to sinks for the given source
+
+				
+				
+				
+			
+				
+				<h3 id="reaper.WriteMeasurements">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/reaper.go.html#L346">WriteMeasurements</a>
+					<a class="permalink" href="#reaper.WriteMeasurements">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *reaper) WriteMeasurements(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>)</pre>
+				<p>WriteMeasurements() writes the metrics to the sinks
+
+				
+				
+				
 			
 		
 	

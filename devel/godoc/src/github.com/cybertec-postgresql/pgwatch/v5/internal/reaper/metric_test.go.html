@@ -105,12 +105,12 @@
 <span id="L48" class="ln">    48  </span>
 <span id="L49" class="ln">    49  </span>func TestReaper_FetchStatsDirectlyFromOS(t *testing.T) {
 <span id="L50" class="ln">    50  </span>	a := assert.New(t)
-<span id="L51" class="ln">    51  </span>	r := &amp;Reaper{Options: &amp;cmdopts.Options{}}
+<span id="L51" class="ln">    51  </span>	r := &amp;reaper{Options: &amp;cmdopts.Options{}}
 <span id="L52" class="ln">    52  </span>	t.Run(&#34;metrics directly fetchable when on same host&#34;, func(*testing.T) {
 <span id="L53" class="ln">    53  </span>		conn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 <span id="L54" class="ln">    54  </span>		expq := conn.ExpectQuery(&#34;SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL&#34;)
 <span id="L55" class="ln">    55  </span>		expq.Times(uint(len(directlyFetchableOSMetrics)))
-<span id="L56" class="ln">    56  </span>		md := &amp;sources.SourceConn{Conn: conn}
+<span id="L56" class="ln">    56  </span>		md := &amp;sources.DbConn{Conn: conn}
 <span id="L57" class="ln">    57  </span>		for _, m := range directlyFetchableOSMetrics {
 <span id="L58" class="ln">    58  </span>			expq.WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
 <span id="L59" class="ln">    59  </span>			a.True(IsDirectlyFetchableMetric(md, m), &#34;Expected %s to be directly fetchable&#34;, m)
@@ -124,7 +124,7 @@
 <span id="L67" class="ln">    67  </span>		remoteConn, _ := pgxmock.NewPool(pgxmock.QueryMatcherOption(pgxmock.QueryMatcherEqual))
 <span id="L68" class="ln">    68  </span>		remoteConn.ExpectQuery(&#34;SELECT COALESCE(inet_client_addr(), inet_server_addr()) IS NULL&#34;).
 <span id="L69" class="ln">    69  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(false))
-<span id="L70" class="ln">    70  </span>		remoteMd := &amp;sources.SourceConn{Conn: remoteConn}
+<span id="L70" class="ln">    70  </span>		remoteMd := &amp;sources.DbConn{Conn: remoteConn}
 <span id="L71" class="ln">    71  </span>		a.False(IsDirectlyFetchableMetric(remoteMd, metricCPULoad),
 <span id="L72" class="ln">    72  </span>			&#34;cpu_load should not be directly fetchable when pgwatch is not on the same host as PostgreSQL&#34;)
 <span id="L73" class="ln">    73  </span>	})
@@ -183,7 +183,7 @@
 <span id="L126" class="ln">   126  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 <span id="L127" class="ln">   127  </span>
 <span id="L128" class="ln">   128  </span>	t.Run(&#34;returns error from GetMetrics&#34;, func(t *testing.T) {
-<span id="L129" class="ln">   129  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L129" class="ln">   129  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L130" class="ln">   130  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L131" class="ln">   131  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) {
 <span id="L132" class="ln">   132  </span>					return nil, assert.AnError
@@ -198,7 +198,7 @@
 <span id="L141" class="ln">   141  </span>			MetricDefs: metrics.MetricDefs{&#34;m1&#34;: {Description: &#34;M1&#34;}},
 <span id="L142" class="ln">   142  </span>			PresetDefs: metrics.PresetDefs{&#34;p1&#34;: {Description: &#34;P1&#34;, Metrics: metrics.MetricIntervals{&#34;m1&#34;: 1.0}}},
 <span id="L143" class="ln">   143  </span>		}
-<span id="L144" class="ln">   144  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L144" class="ln">   144  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L145" class="ln">   145  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L146" class="ln">   146  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 <span id="L147" class="ln">   147  </span>			},
@@ -220,7 +220,7 @@
 <span id="L163" class="ln">   163  </span>			PresetDefs: metrics.PresetDefs{},
 <span id="L164" class="ln">   164  </span>		}
 <span id="L165" class="ln">   165  </span>		mock := &amp;mockDefinerWriter{}
-<span id="L166" class="ln">   166  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L166" class="ln">   166  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L167" class="ln">   167  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L168" class="ln">   168  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 <span id="L169" class="ln">   169  </span>			},
@@ -237,7 +237,7 @@
 <span id="L180" class="ln">   180  </span>			PresetDefs: metrics.PresetDefs{},
 <span id="L181" class="ln">   181  </span>		}
 <span id="L182" class="ln">   182  </span>		mock := &amp;mockDefinerWriter{defineErr: assert.AnError}
-<span id="L183" class="ln">   183  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L183" class="ln">   183  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L184" class="ln">   184  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L185" class="ln">   185  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 <span id="L186" class="ln">   186  </span>			},
@@ -258,13 +258,13 @@
 <span id="L201" class="ln">   201  </span>				&#34;standby1&#34;: {Metrics: metrics.MetricIntervals{&#34;m2&#34;: 20.0}},
 <span id="L202" class="ln">   202  </span>			},
 <span id="L203" class="ln">   203  </span>		}
-<span id="L204" class="ln">   204  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L204" class="ln">   204  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L205" class="ln">   205  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L206" class="ln">   206  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 <span id="L207" class="ln">   207  </span>			},
 <span id="L208" class="ln">   208  </span>		})
 <span id="L209" class="ln">   209  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L210" class="ln">   210  </span>			sources.NewSourceConn(sources.Source{
+<span id="L210" class="ln">   210  </span>			sources.NewDbConn(sources.Source{
 <span id="L211" class="ln">   211  </span>				Name:                 &#34;src1&#34;,
 <span id="L212" class="ln">   212  </span>				PresetMetrics:        &#34;preset1&#34;,
 <span id="L213" class="ln">   213  </span>				PresetMetricsStandby: &#34;standby1&#34;,
@@ -272,7 +272,7 @@
 <span id="L215" class="ln">   215  </span>		}
 <span id="L216" class="ln">   216  </span>		assert.NoError(t, r.LoadMetrics())
 <span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span>		sc := r.monitoredSources[0]
+<span id="L218" class="ln">   218  </span>		sc := r.monitoredSources[0].(*sources.DbConn)
 <span id="L219" class="ln">   219  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;m1&#34;: 10.0}, sc.Metrics)
 <span id="L220" class="ln">   220  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;m2&#34;: 20.0}, sc.MetricsStandby)
 <span id="L221" class="ln">   221  </span>	})
@@ -283,19 +283,19 @@
 <span id="L226" class="ln">   226  </span>			MetricDefs: metrics.MetricDefs{&#34;cpu&#34;: {Description: &#34;CPU&#34;}},
 <span id="L227" class="ln">   227  </span>			PresetDefs: metrics.PresetDefs{},
 <span id="L228" class="ln">   228  </span>		}
-<span id="L229" class="ln">   229  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L229" class="ln">   229  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L230" class="ln">   230  </span>			MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
 <span id="L231" class="ln">   231  </span>				GetMetricsFunc: func() (*metrics.Metrics, error) { return defs, nil },
 <span id="L232" class="ln">   232  </span>			},
 <span id="L233" class="ln">   233  </span>		})
 <span id="L234" class="ln">   234  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L235" class="ln">   235  </span>			sources.NewSourceConn(sources.Source{
+<span id="L235" class="ln">   235  </span>			sources.NewDbConn(sources.Source{
 <span id="L236" class="ln">   236  </span>				Name:    &#34;src2&#34;,
 <span id="L237" class="ln">   237  </span>				Metrics: customMetrics,
 <span id="L238" class="ln">   238  </span>			}),
 <span id="L239" class="ln">   239  </span>		}
 <span id="L240" class="ln">   240  </span>		assert.NoError(t, r.LoadMetrics())
-<span id="L241" class="ln">   241  </span>		assert.Equal(t, customMetrics, r.monitoredSources[0].Metrics, &#34;custom metrics should be unchanged&#34;)
+<span id="L241" class="ln">   241  </span>		assert.Equal(t, customMetrics, r.monitoredSources[0].(*sources.DbConn).Metrics, &#34;custom metrics should be unchanged&#34;)
 <span id="L242" class="ln">   242  </span>	})
 <span id="L243" class="ln">   243  </span>
 <span id="L244" class="ln">   244  </span>	<span class="comment">// Regression test for https://github.com/cybertec-postgresql/pgwatch/issues/1091</span>
@@ -318,7 +318,7 @@
 <span id="L261" class="ln">   261  </span>			PresetMetrics: &#34;test_preset&#34;,
 <span id="L262" class="ln">   262  </span>		}
 <span id="L263" class="ln">   263  </span>		getMetricsFn := func() (*metrics.Metrics, error) { return initialDefs, nil }
-<span id="L264" class="ln">   264  </span>		r := NewReaper(ctx, &amp;cmdopts.Options{
+<span id="L264" class="ln">   264  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
 <span id="L265" class="ln">   265  </span>			SourcesReaderWriter: &amp;testutil.MockSourcesReaderWriter{
 <span id="L266" class="ln">   266  </span>				GetSourcesFunc: func() (sources.Sources, error) { return sources.Sources{src}, nil },
 <span id="L267" class="ln">   267  </span>			},
@@ -329,14 +329,14 @@
 <span id="L272" class="ln">   272  </span>		})
 <span id="L273" class="ln">   273  </span>		require.NoError(t, r.LoadSources(ctx))
 <span id="L274" class="ln">   274  </span>		require.NoError(t, r.LoadMetrics())
-<span id="L275" class="ln">   275  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 1}, r.monitoredSources[0].Metrics)
+<span id="L275" class="ln">   275  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 1}, r.monitoredSources[0].(*sources.DbConn).Metrics)
 <span id="L276" class="ln">   276  </span>
 <span id="L277" class="ln">   277  </span>		<span class="comment">// Attach a mock connection so CloseResourcesForRemovedMonitoredDBs doesn&#39;t panic</span>
 <span id="L278" class="ln">   278  </span>		<span class="comment">// when the custom_tags change triggers a full source restart.</span>
 <span id="L279" class="ln">   279  </span>		mockConn, err := pgxmock.NewPool()
 <span id="L280" class="ln">   280  </span>		require.NoError(t, err)
 <span id="L281" class="ln">   281  </span>		mockConn.ExpectClose()
-<span id="L282" class="ln">   282  </span>		r.monitoredSources[0].Conn = mockConn
+<span id="L282" class="ln">   282  </span>		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
 <span id="L283" class="ln">   283  </span>
 <span id="L284" class="ln">   284  </span>		<span class="comment">// Simulate what happens between two Reap iterations:</span>
 <span id="L285" class="ln">   285  </span>		<span class="comment">// 1. source custom_tags change triggers restart</span>
@@ -352,7 +352,7 @@
 <span id="L295" class="ln">   295  </span>
 <span id="L296" class="ln">   296  </span>		require.NoError(t, r.LoadSources(ctx))
 <span id="L297" class="ln">   297  </span>		require.NoError(t, r.LoadMetrics())
-<span id="L298" class="ln">   298  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 2}, r.monitoredSources[0].Metrics,
+<span id="L298" class="ln">   298  </span>		assert.Equal(t, metrics.MetricIntervals{&#34;test_metric&#34;: 2}, r.monitoredSources[0].(*sources.DbConn).Metrics,
 <span id="L299" class="ln">   299  </span>			&#34;preset interval should be updated after source config change triggered a restart&#34;)
 <span id="L300" class="ln">   300  </span>	})
 <span id="L301" class="ln">   301  </span>}

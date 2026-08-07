@@ -129,6 +129,9 @@ and will not be included in production binaries.
 				<dd><a href="#LoadServerTLSCredentials">func LoadServerTLSCredentials() (credentials.TransportCredentials, error)</a></dd>
 			
 				
+				<dd><a href="#NewFakeExporter">func NewFakeExporter(t *testing.T, body string) *httptest.Server</a></dd>
+			
+				
 				<dd><a href="#SetupEtcdContainer">func SetupEtcdContainer() (*etcd.EtcdContainer, func(), error)</a></dd>
 			
 				
@@ -207,6 +210,20 @@ and will not be included in production binaries.
 					<dd>&nbsp; &nbsp; <a href="#Receiver.UpdateMeasurements">func (receiver *Receiver) UpdateMeasurements(_ context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error)</a></dd>
 				
 			
+				
+				<dd><a href="#SafeBuffer">type SafeBuffer</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewTestLogger">func NewTestLogger(t *testing.T, level logrus.Level) (context.Context, *SafeBuffer)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SafeBuffer.String">func (b *SafeBuffer) String() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SafeBuffer.Write">func (b *SafeBuffer) Write(p []byte) (int, error)</a></dd>
+				
+			
 			
 			</dl>
 			</div><!-- #manual-nav -->
@@ -219,6 +236,10 @@ and will not be included in production binaries.
 			<span style="font-size:90%">
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/doc.go.html">doc.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/http.go.html">http.go</a>
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/log.go.html">log.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html">mocks.go</a>
 			
@@ -370,6 +391,23 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 			</h2>
 			<pre>func LoadServerTLSCredentials() (<a href="https://pkg.go.dev/google.golang.org/grpc/credentials/">credentials</a>.<a href="https://pkg.go.dev/google.golang.org/grpc/credentials/#TransportCredentials">TransportCredentials</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
+			
+			
+
+		
+			
+			
+			<h2 id="NewFakeExporter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/http.go.html#L13">NewFakeExporter</a>
+				<a class="permalink" href="#NewFakeExporter">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func NewFakeExporter(t *<a href="https://pkg.go.dev/testing/">testing</a>.<a href="https://pkg.go.dev/testing/#T">T</a>, body <a href="https://pkg.go.dev/builtin/#string">string</a>) *<a href="https://pkg.go.dev/net/http/httptest/">httptest</a>.<a href="https://pkg.go.dev/net/http/httptest/#Server">Server</a></pre>
+			<p>NewFakeExporter starts an httptest.Server that responds to any request with
+the provided Prometheus exposition-format body and Content-Type
+&quot;text/plain; version=0.0.4&quot;. The server is automatically closed when the
+test finishes via t.Cleanup.
+
 			
 			
 
@@ -717,6 +755,77 @@ This is useful for testing log parsing functionality with server_log_event_count
 					
 				</h3>
 				<pre>func (receiver *<a href="#Receiver">Receiver</a>) UpdateMeasurements(_ <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, msg *<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#MeasurementEnvelope">MeasurementEnvelope</a>) (*<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#Reply">Reply</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="SafeBuffer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/log.go.html#L15">SafeBuffer</a>
+				<a class="permalink" href="#SafeBuffer">&#xb6;</a>
+				
+				
+			</h2>
+			<p>SafeBuffer is a goroutine-safe string buffer that satisfies io.Writer.
+Use String() to read the accumulated output.
+
+			<pre>type SafeBuffer struct {
+<span id="SafeBuffer.mu"></span>    mu <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Mutex">Mutex</a>
+<span id="SafeBuffer.sb"></span>    sb <a href="https://pkg.go.dev/strings/">strings</a>.<a href="https://pkg.go.dev/strings/#Builder">Builder</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewTestLogger">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/log.go.html#L40">NewTestLogger</a>
+					<a class="permalink" href="#NewTestLogger">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewTestLogger(t *<a href="https://pkg.go.dev/testing/">testing</a>.<a href="https://pkg.go.dev/testing/#T">T</a>, level <a href="https://pkg.go.dev/github.com/sirupsen/logrus/">logrus</a>.<a href="https://pkg.go.dev/github.com/sirupsen/logrus/#Level">Level</a>) (<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, *<a href="#SafeBuffer">SafeBuffer</a>)</pre>
+				<p>NewTestLogger creates a capturing logger at the given level, injects it into
+a context derived from t.Context(), and returns both the context and the
+output buffer. Use the buffer in assertions to verify log output:
+<pre>ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
+doSomething(ctx)
+assert.Contains(t, out.String(), &quot;expected warning&quot;)
+</pre>
+
+				
+				
+			
+
+			
+				
+				<h3 id="SafeBuffer.String">func (*SafeBuffer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/log.go.html#L27">String</a>
+					<a class="permalink" href="#SafeBuffer.String">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#SafeBuffer">SafeBuffer</a>) String() <a href="https://pkg.go.dev/builtin/#string">string</a></pre>
+				<p>String returns a snapshot of the accumulated log output.
+
+				
+				
+				
+			
+				
+				<h3 id="SafeBuffer.Write">func (*SafeBuffer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/log.go.html#L20">Write</a>
+					<a class="permalink" href="#SafeBuffer.Write">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#SafeBuffer">SafeBuffer</a>) Write(p []<a href="https://pkg.go.dev/builtin/#byte">byte</a>) (<a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				

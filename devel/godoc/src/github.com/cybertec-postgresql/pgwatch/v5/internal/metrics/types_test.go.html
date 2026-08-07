@@ -327,6 +327,34 @@
 <span id="L270" class="ln">   270  </span>	assert.ErrorContains(t, err, &#34;values error&#34;)
 <span id="L271" class="ln">   271  </span>}
 <span id="L272" class="ln">   272  </span>
+<span id="L273" class="ln">   273  </span>func TestMeasurementEnvelope_SourceKind(t *testing.T) {
+<span id="L274" class="ln">   274  </span>	tests := []struct {
+<span id="L275" class="ln">   275  </span>		name string
+<span id="L276" class="ln">   276  </span>		env  MeasurementEnvelope
+<span id="L277" class="ln">   277  </span>		want string
+<span id="L278" class="ln">   278  </span>	}{
+<span id="L279" class="ln">   279  </span>		{
+<span id="L280" class="ln">   280  </span>			name: &#34;explicit source kind&#34;,
+<span id="L281" class="ln">   281  </span>			env: MeasurementEnvelope{
+<span id="L282" class="ln">   282  </span>				SourceKind: &#34;prometheus&#34;,
+<span id="L283" class="ln">   283  </span>			},
+<span id="L284" class="ln">   284  </span>			want: &#34;prometheus&#34;,
+<span id="L285" class="ln">   285  </span>		},
+<span id="L286" class="ln">   286  </span>		{
+<span id="L287" class="ln">   287  </span>			name: &#34;zero value source kind&#34;,
+<span id="L288" class="ln">   288  </span>			env:  MeasurementEnvelope{},
+<span id="L289" class="ln">   289  </span>			want: &#34;&#34;,
+<span id="L290" class="ln">   290  </span>		},
+<span id="L291" class="ln">   291  </span>	}
+<span id="L292" class="ln">   292  </span>
+<span id="L293" class="ln">   293  </span>	for _, tt := range tests {
+<span id="L294" class="ln">   294  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L295" class="ln">   295  </span>			assert.NotNil(t, t.Context())
+<span id="L296" class="ln">   296  </span>			assert.Equal(t, tt.want, tt.env.SourceKind)
+<span id="L297" class="ln">   297  </span>		})
+<span id="L298" class="ln">   298  </span>	}
+<span id="L299" class="ln">   299  </span>}
+<span id="L300" class="ln">   300  </span>
 </pre><p></p>
 
 <div id="footer">

@@ -122,7 +122,7 @@
 <span id="L65" class="ln">    65  </span>}
 <span id="L66" class="ln">    66  </span>
 <span id="L67" class="ln">    67  </span><span class="comment">// MigrationsCount is the total number of migrations in pgwatch.migration table</span>
-<span id="L68" class="ln">    68  </span>const MigrationsCount = 2
+<span id="L68" class="ln">    68  </span>const MigrationsCount = 3
 <span id="L69" class="ln">    69  </span>
 <span id="L70" class="ln">    70  </span><span class="comment">// migrations holds function returning all upgrade migrations needed</span>
 <span id="L71" class="ln">    71  </span>var migrations func() migrator.Option = func() migrator.Option {
@@ -210,18 +210,29 @@
 <span id="L153" class="ln">   153  </span>			},
 <span id="L154" class="ln">   154  </span>		},
 <span id="L155" class="ln">   155  </span>
-<span id="L156" class="ln">   156  </span>		<span class="comment">// adding new migration here, update &#34;pgwatch&#34;.&#34;migration&#34; in &#34;postgres_schema.sql&#34;</span>
-<span id="L157" class="ln">   157  </span>		<span class="comment">// and &#34;dbapi&#34; variable in main.go!</span>
-<span id="L158" class="ln">   158  </span>
-<span id="L159" class="ln">   159  </span>		<span class="comment">// &amp;migrator.Migration{</span>
-<span id="L160" class="ln">   160  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
-<span id="L161" class="ln">   161  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
-<span id="L162" class="ln">   162  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
-<span id="L163" class="ln">   163  </span>		<span class="comment">// 	},</span>
-<span id="L164" class="ln">   164  </span>		<span class="comment">// },</span>
-<span id="L165" class="ln">   165  </span>	)
-<span id="L166" class="ln">   166  </span>}
+<span id="L156" class="ln">   156  </span>		&amp;migrator.Migration{
+<span id="L157" class="ln">   157  </span>			Name: &#34;01405 Add prometheus to source dbtype check constraint&#34;,
+<span id="L158" class="ln">   158  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L159" class="ln">   159  </span>				_, err := tx.Exec(ctx, `
+<span id="L160" class="ln">   160  </span>					ALTER TABLE pgwatch.source
+<span id="L161" class="ln">   161  </span>						DROP CONSTRAINT IF EXISTS source_dbtype_check,
+<span id="L162" class="ln">   162  </span>						ADD CHECK (dbtype IN (&#39;postgres&#39;, &#39;pgbouncer&#39;, &#39;postgres-continuous-discovery&#39;, &#39;patroni&#39;, &#39;pgpool&#39;, &#39;prometheus&#39;));
+<span id="L163" class="ln">   163  </span>				`)
+<span id="L164" class="ln">   164  </span>				return err
+<span id="L165" class="ln">   165  </span>			},
+<span id="L166" class="ln">   166  </span>		},
 <span id="L167" class="ln">   167  </span>
+<span id="L168" class="ln">   168  </span>		<span class="comment">// adding new migration here, update &#34;pgwatch&#34;.&#34;migration&#34; in &#34;postgres_schema.sql&#34;!</span>
+<span id="L169" class="ln">   169  </span>
+<span id="L170" class="ln">   170  </span>		<span class="comment">// &amp;migrator.Migration{</span>
+<span id="L171" class="ln">   171  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
+<span id="L172" class="ln">   172  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
+<span id="L173" class="ln">   173  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
+<span id="L174" class="ln">   174  </span>		<span class="comment">// 	},</span>
+<span id="L175" class="ln">   175  </span>		<span class="comment">// },</span>
+<span id="L176" class="ln">   176  </span>	)
+<span id="L177" class="ln">   177  </span>}
+<span id="L178" class="ln">   178  </span>
 </pre><p></p>
 
 <div id="footer">

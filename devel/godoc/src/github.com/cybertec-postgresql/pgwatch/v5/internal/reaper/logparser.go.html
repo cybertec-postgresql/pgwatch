@@ -99,7 +99,7 @@
 <span id="L42" class="ln">    42  </span>	*LogConfig
 <span id="L43" class="ln">    43  </span>	ctx              context.Context
 <span id="L44" class="ln">    44  </span>	LogsMatchRegex   *regexp.Regexp
-<span id="L45" class="ln">    45  </span>	SourceConn       *sources.SourceConn
+<span id="L45" class="ln">    45  </span>	SourceConn       *sources.DbConn
 <span id="L46" class="ln">    46  </span>	Interval         time.Duration
 <span id="L47" class="ln">    47  </span>	StoreCh          chan&lt;- metrics.MeasurementEnvelope
 <span id="L48" class="ln">    48  </span>	eventCounts      map[string]int64 <span class="comment">// for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send</span>
@@ -116,7 +116,7 @@
 <span id="L59" class="ln">    59  </span>	ServerMessagesLang string
 <span id="L60" class="ln">    60  </span>}
 <span id="L61" class="ln">    61  </span>
-<span id="L62" class="ln">    62  </span>func NewLogParser(ctx context.Context, mdb *sources.SourceConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
+<span id="L62" class="ln">    62  </span>func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan&lt;- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
 <span id="L63" class="ln">    63  </span>
 <span id="L64" class="ln">    64  </span>	logger := log.GetLogger(ctx).WithField(&#34;source&#34;, mdb.Name).WithField(&#34;metric&#34;, specialMetricServerLogEventCounts)
 <span id="L65" class="ln">    65  </span>	ctx = log.WithLogger(ctx, logger)
@@ -197,7 +197,7 @@
 <span id="L140" class="ln">   140  </span>	return nil, err
 <span id="L141" class="ln">   141  </span>}
 <span id="L142" class="ln">   142  </span>
-<span id="L143" class="ln">   143  </span>func checkHasRemotePrivileges(ctx context.Context, mdb *sources.SourceConn, logsDirPath string) error {
+<span id="L143" class="ln">   143  </span>func checkHasRemotePrivileges(ctx context.Context, mdb *sources.DbConn, logsDirPath string) error {
 <span id="L144" class="ln">   144  </span>	var logFile string
 <span id="L145" class="ln">   145  </span>	err := mdb.Conn.QueryRow(ctx, &#34;select name from pg_ls_logdir() limit 1&#34;).Scan(&amp;logFile)
 <span id="L146" class="ln">   146  </span>	if err != nil &amp;&amp; err != pgx.ErrNoRows {

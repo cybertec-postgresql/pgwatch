@@ -60,477 +60,1042 @@
 <span id="L3" class="ln">     3  </span>import (
 <span id="L4" class="ln">     4  </span>	&#34;context&#34;
 <span id="L5" class="ln">     5  </span>	&#34;testing&#34;
-<span id="L6" class="ln">     6  </span>	&#34;time&#34;
-<span id="L7" class="ln">     7  </span>
-<span id="L8" class="ln">     8  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/metrics&#34;
-<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sources&#34;
-<span id="L10" class="ln">    10  </span>	pgxmock &#34;github.com/pashagolub/pgxmock/v4&#34;
-<span id="L11" class="ln">    11  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L12" class="ln">    12  </span>	&#34;github.com/stretchr/testify/require&#34;
-<span id="L13" class="ln">    13  </span>)
-<span id="L14" class="ln">    14  </span>
-<span id="L15" class="ln">    15  </span><span class="comment">// Helper function to create a test SourceConn with pgxmock</span>
-<span id="L16" class="ln">    16  </span>func createTestSourceConn(t *testing.T) (*sources.SourceConn, pgxmock.PgxPoolIface) {
-<span id="L17" class="ln">    17  </span>	mock, err := pgxmock.NewPool()
-<span id="L18" class="ln">    18  </span>	require.NoError(t, err)
+<span id="L6" class="ln">     6  </span>	&#34;testing/synctest&#34;
+<span id="L7" class="ln">     7  </span>	&#34;time&#34;
+<span id="L8" class="ln">     8  </span>
+<span id="L9" class="ln">     9  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts&#34;
+<span id="L10" class="ln">    10  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
+<span id="L11" class="ln">    11  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/metrics&#34;
+<span id="L12" class="ln">    12  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sinks&#34;
+<span id="L13" class="ln">    13  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sources&#34;
+<span id="L14" class="ln">    14  </span>	&#34;github.com/jackc/pgx/v5&#34;
+<span id="L15" class="ln">    15  </span>	pgxmock &#34;github.com/pashagolub/pgxmock/v4&#34;
+<span id="L16" class="ln">    16  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L17" class="ln">    17  </span>	&#34;github.com/stretchr/testify/require&#34;
+<span id="L18" class="ln">    18  </span>)
 <span id="L19" class="ln">    19  </span>
-<span id="L20" class="ln">    20  </span>	md := &amp;sources.SourceConn{
-<span id="L21" class="ln">    21  </span>		Conn:   mock,
-<span id="L22" class="ln">    22  </span>		Source: sources.Source{Name: &#34;testdb&#34;},
-<span id="L23" class="ln">    23  </span>		RuntimeInfo: sources.RuntimeInfo{
-<span id="L24" class="ln">    24  </span>			Version:     120000,
-<span id="L25" class="ln">    25  </span>			ChangeState: make(map[string]map[string]string),
-<span id="L26" class="ln">    26  </span>		},
-<span id="L27" class="ln">    27  </span>	}
-<span id="L28" class="ln">    28  </span>	return md, mock
-<span id="L29" class="ln">    29  </span>}
-<span id="L30" class="ln">    30  </span>
-<span id="L31" class="ln">    31  </span>func TestDetectSprocChanges(t *testing.T) {
-<span id="L32" class="ln">    32  </span>	ctx := context.Background()
-<span id="L33" class="ln">    33  </span>
-<span id="L34" class="ln">    34  </span>	<span class="comment">// Set up simple test metric (instead of complex real one)</span>
-<span id="L35" class="ln">    35  </span>	metricDefs.MetricDefs[&#34;sproc_hashes&#34;] = metrics.Metric{
-<span id="L36" class="ln">    36  </span>		SQLs: map[int]string{
-<span id="L37" class="ln">    37  </span>			120000: &#34;SELECT&#34;,
-<span id="L38" class="ln">    38  </span>		},
-<span id="L39" class="ln">    39  </span>	}
-<span id="L40" class="ln">    40  </span>
-<span id="L41" class="ln">    41  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
-<span id="L42" class="ln">    42  </span>	md, mock := createTestSourceConn(t)
-<span id="L43" class="ln">    43  </span>	defer mock.Close()
-<span id="L44" class="ln">    44  </span>
-<span id="L45" class="ln">    45  </span>	reaper := &amp;Reaper{
-<span id="L46" class="ln">    46  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
-<span id="L47" class="ln">    47  </span>	}
-<span id="L48" class="ln">    48  </span>
-<span id="L49" class="ln">    49  </span>	<span class="comment">// First run - establish baseline</span>
-<span id="L50" class="ln">    50  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L51" class="ln">    51  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;hash1&#34;, time.Now().UnixNano()).
-<span id="L52" class="ln">    52  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
-<span id="L53" class="ln">    53  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
-<span id="L54" class="ln">    54  </span>
-<span id="L55" class="ln">    55  </span>	result := reaper.DetectSprocChanges(ctx, md)
-<span id="L56" class="ln">    56  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
-<span id="L57" class="ln">    57  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L58" class="ln">    58  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L20" class="ln">    20  </span><span class="comment">// Helper function to create a test SourceConn with pgxmock</span>
+<span id="L21" class="ln">    21  </span>func createTestSourceConn(t *testing.T) (*sources.DbConn, pgxmock.PgxPoolIface) {
+<span id="L22" class="ln">    22  </span>	mock, err := pgxmock.NewPool()
+<span id="L23" class="ln">    23  </span>	require.NoError(t, err)
+<span id="L24" class="ln">    24  </span>
+<span id="L25" class="ln">    25  </span>	md := &amp;sources.DbConn{
+<span id="L26" class="ln">    26  </span>		Conn:   mock,
+<span id="L27" class="ln">    27  </span>		Source: sources.Source{Name: &#34;testdb&#34;},
+<span id="L28" class="ln">    28  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L29" class="ln">    29  </span>			Version:     120000,
+<span id="L30" class="ln">    30  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L31" class="ln">    31  </span>		},
+<span id="L32" class="ln">    32  </span>	}
+<span id="L33" class="ln">    33  </span>	return md, mock
+<span id="L34" class="ln">    34  </span>}
+<span id="L35" class="ln">    35  </span>
+<span id="L36" class="ln">    36  </span>func TestDetectSprocChanges(t *testing.T) {
+<span id="L37" class="ln">    37  </span>	ctx := context.Background()
+<span id="L38" class="ln">    38  </span>
+<span id="L39" class="ln">    39  </span>	<span class="comment">// Set up simple test metric (instead of complex real one)</span>
+<span id="L40" class="ln">    40  </span>	metricDefs.MetricDefs[&#34;sproc_hashes&#34;] = metrics.Metric{
+<span id="L41" class="ln">    41  </span>		SQLs: map[int]string{
+<span id="L42" class="ln">    42  </span>			120000: &#34;SELECT&#34;,
+<span id="L43" class="ln">    43  </span>		},
+<span id="L44" class="ln">    44  </span>	}
+<span id="L45" class="ln">    45  </span>
+<span id="L46" class="ln">    46  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
+<span id="L47" class="ln">    47  </span>	md, mock := createTestSourceConn(t)
+<span id="L48" class="ln">    48  </span>	defer mock.Close()
+<span id="L49" class="ln">    49  </span>
+<span id="L50" class="ln">    50  </span>	reaper := &amp;reaper{
+<span id="L51" class="ln">    51  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L52" class="ln">    52  </span>	}
+<span id="L53" class="ln">    53  </span>
+<span id="L54" class="ln">    54  </span>	<span class="comment">// First run - establish baseline</span>
+<span id="L55" class="ln">    55  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L56" class="ln">    56  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;hash1&#34;, time.Now().UnixNano()).
+<span id="L57" class="ln">    57  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
+<span id="L58" class="ln">    58  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
 <span id="L59" class="ln">    59  </span>
-<span id="L60" class="ln">    60  </span>	<span class="comment">// State should now be populated</span>
-<span id="L61" class="ln">    61  </span>	assert.NotEmpty(t, md.ChangeState[&#34;sproc_hashes&#34;])
-<span id="L62" class="ln">    62  </span>
-<span id="L63" class="ln">    63  </span>	<span class="comment">// Second run - detect altered sproc (different hash for func1)</span>
-<span id="L64" class="ln">    64  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L65" class="ln">    65  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L66" class="ln">    66  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
-<span id="L67" class="ln">    67  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
-<span id="L68" class="ln">    68  </span>
-<span id="L69" class="ln">    69  </span>	result = reaper.DetectSprocChanges(ctx, md)
-<span id="L70" class="ln">    70  </span>	assert.Equal(t, 0, result.Created)
-<span id="L71" class="ln">    71  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// func1 was altered</span>
-<span id="L72" class="ln">    72  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L60" class="ln">    60  </span>	result := reaper.DetectSprocChanges(ctx, md)
+<span id="L61" class="ln">    61  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
+<span id="L62" class="ln">    62  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L63" class="ln">    63  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L64" class="ln">    64  </span>
+<span id="L65" class="ln">    65  </span>	<span class="comment">// State should now be populated</span>
+<span id="L66" class="ln">    66  </span>	assert.NotEmpty(t, md.ChangeState[&#34;sproc_hashes&#34;])
+<span id="L67" class="ln">    67  </span>
+<span id="L68" class="ln">    68  </span>	<span class="comment">// Second run - detect altered sproc (different hash for func1)</span>
+<span id="L69" class="ln">    69  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L70" class="ln">    70  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L71" class="ln">    71  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
+<span id="L72" class="ln">    72  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
 <span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>	<span class="comment">// Third run - detect new sproc (func3 added)</span>
-<span id="L75" class="ln">    75  </span>	newSprocRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L76" class="ln">    76  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L77" class="ln">    77  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano()).
-<span id="L78" class="ln">    78  </span>		AddRow(&#34;func3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// new sproc</span>
-<span id="L79" class="ln">    79  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newSprocRows)
-<span id="L80" class="ln">    80  </span>
-<span id="L81" class="ln">    81  </span>	result = reaper.DetectSprocChanges(ctx, md)
-<span id="L82" class="ln">    82  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// func3 was created</span>
-<span id="L83" class="ln">    83  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L84" class="ln">    84  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L74" class="ln">    74  </span>	result = reaper.DetectSprocChanges(ctx, md)
+<span id="L75" class="ln">    75  </span>	assert.Equal(t, 0, result.Created)
+<span id="L76" class="ln">    76  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// func1 was altered</span>
+<span id="L77" class="ln">    77  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L78" class="ln">    78  </span>
+<span id="L79" class="ln">    79  </span>	<span class="comment">// Third run - detect new sproc (func3 added)</span>
+<span id="L80" class="ln">    80  </span>	newSprocRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L81" class="ln">    81  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L82" class="ln">    82  </span>		AddRow(&#34;func2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano()).
+<span id="L83" class="ln">    83  </span>		AddRow(&#34;func3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// new sproc</span>
+<span id="L84" class="ln">    84  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newSprocRows)
 <span id="L85" class="ln">    85  </span>
-<span id="L86" class="ln">    86  </span>	<span class="comment">// Verify measurement is sent</span>
-<span id="L87" class="ln">    87  </span>	select {
-<span id="L88" class="ln">    88  </span>	case &lt;-reaper.measurementCh:
-<span id="L89" class="ln">    89  </span>		<span class="comment">// Good, measurement was sent</span>
-<span id="L90" class="ln">    90  </span>	default:
-<span id="L91" class="ln">    91  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
-<span id="L92" class="ln">    92  </span>	}
-<span id="L93" class="ln">    93  </span>
-<span id="L94" class="ln">    94  </span>	<span class="comment">// Fourth run - detect dropped sproc (func2 removed)</span>
-<span id="L95" class="ln">    95  </span>	droppedSprocRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L96" class="ln">    96  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L97" class="ln">    97  </span>		AddRow(&#34;func3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// func2 dropped</span>
-<span id="L98" class="ln">    98  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedSprocRows)
-<span id="L99" class="ln">    99  </span>
-<span id="L100" class="ln">   100  </span>	result = reaper.DetectSprocChanges(ctx, md)
-<span id="L101" class="ln">   101  </span>	assert.Equal(t, 0, result.Created)
-<span id="L102" class="ln">   102  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L103" class="ln">   103  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// func2 was dropped</span>
+<span id="L86" class="ln">    86  </span>	result = reaper.DetectSprocChanges(ctx, md)
+<span id="L87" class="ln">    87  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// func3 was created</span>
+<span id="L88" class="ln">    88  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L89" class="ln">    89  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L90" class="ln">    90  </span>
+<span id="L91" class="ln">    91  </span>	<span class="comment">// Verify measurement is sent</span>
+<span id="L92" class="ln">    92  </span>	select {
+<span id="L93" class="ln">    93  </span>	case &lt;-reaper.measurementCh:
+<span id="L94" class="ln">    94  </span>		<span class="comment">// Good, measurement was sent</span>
+<span id="L95" class="ln">    95  </span>	default:
+<span id="L96" class="ln">    96  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
+<span id="L97" class="ln">    97  </span>	}
+<span id="L98" class="ln">    98  </span>
+<span id="L99" class="ln">    99  </span>	<span class="comment">// Fourth run - detect dropped sproc (func2 removed)</span>
+<span id="L100" class="ln">   100  </span>	droppedSprocRows := pgxmock.NewRows([]string{&#34;tag_sproc&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L101" class="ln">   101  </span>		AddRow(&#34;func1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L102" class="ln">   102  </span>		AddRow(&#34;func3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// func2 dropped</span>
+<span id="L103" class="ln">   103  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedSprocRows)
 <span id="L104" class="ln">   104  </span>
-<span id="L105" class="ln">   105  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L106" class="ln">   106  </span>}
-<span id="L107" class="ln">   107  </span>
-<span id="L108" class="ln">   108  </span>func TestDetectTableChanges(t *testing.T) {
-<span id="L109" class="ln">   109  </span>	ctx := context.Background()
-<span id="L110" class="ln">   110  </span>
-<span id="L111" class="ln">   111  </span>	<span class="comment">// Set up simple test metric</span>
-<span id="L112" class="ln">   112  </span>	metricDefs.MetricDefs[&#34;table_hashes&#34;] = metrics.Metric{
-<span id="L113" class="ln">   113  </span>		SQLs: map[int]string{
-<span id="L114" class="ln">   114  </span>			120000: &#34;SELECT&#34;,
-<span id="L115" class="ln">   115  </span>		},
-<span id="L116" class="ln">   116  </span>	}
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
-<span id="L119" class="ln">   119  </span>	md, mock := createTestSourceConn(t)
-<span id="L120" class="ln">   120  </span>	defer mock.Close()
-<span id="L121" class="ln">   121  </span>
-<span id="L122" class="ln">   122  </span>	reaper := &amp;Reaper{
-<span id="L123" class="ln">   123  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
-<span id="L124" class="ln">   124  </span>	}
-<span id="L125" class="ln">   125  </span>
-<span id="L126" class="ln">   126  </span>	<span class="comment">// First run - establish baseline</span>
-<span id="L127" class="ln">   127  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L128" class="ln">   128  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;hash1&#34;, time.Now().UnixNano()).
-<span id="L129" class="ln">   129  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
-<span id="L130" class="ln">   130  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
-<span id="L131" class="ln">   131  </span>
-<span id="L132" class="ln">   132  </span>	result := reaper.DetectTableChanges(ctx, md)
-<span id="L133" class="ln">   133  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
-<span id="L134" class="ln">   134  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L135" class="ln">   135  </span>	assert.Equal(t, 0, result.Dropped)
-<span id="L136" class="ln">   136  </span>	assert.NotEmpty(t, md.ChangeState[&#34;table_hashes&#34;])
-<span id="L137" class="ln">   137  </span>
-<span id="L138" class="ln">   138  </span>	<span class="comment">// Second run - detect altered table (different hash for table1)</span>
-<span id="L139" class="ln">   139  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L140" class="ln">   140  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L141" class="ln">   141  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
-<span id="L142" class="ln">   142  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
-<span id="L143" class="ln">   143  </span>
-<span id="L144" class="ln">   144  </span>	result = reaper.DetectTableChanges(ctx, md)
-<span id="L145" class="ln">   145  </span>	assert.Equal(t, 0, result.Created)
-<span id="L146" class="ln">   146  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// table1 was altered</span>
-<span id="L147" class="ln">   147  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L105" class="ln">   105  </span>	result = reaper.DetectSprocChanges(ctx, md)
+<span id="L106" class="ln">   106  </span>	assert.Equal(t, 0, result.Created)
+<span id="L107" class="ln">   107  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L108" class="ln">   108  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// func2 was dropped</span>
+<span id="L109" class="ln">   109  </span>
+<span id="L110" class="ln">   110  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L111" class="ln">   111  </span>}
+<span id="L112" class="ln">   112  </span>
+<span id="L113" class="ln">   113  </span>func TestDetectTableChanges(t *testing.T) {
+<span id="L114" class="ln">   114  </span>	ctx := context.Background()
+<span id="L115" class="ln">   115  </span>
+<span id="L116" class="ln">   116  </span>	<span class="comment">// Set up simple test metric</span>
+<span id="L117" class="ln">   117  </span>	metricDefs.MetricDefs[&#34;table_hashes&#34;] = metrics.Metric{
+<span id="L118" class="ln">   118  </span>		SQLs: map[int]string{
+<span id="L119" class="ln">   119  </span>			120000: &#34;SELECT&#34;,
+<span id="L120" class="ln">   120  </span>		},
+<span id="L121" class="ln">   121  </span>	}
+<span id="L122" class="ln">   122  </span>
+<span id="L123" class="ln">   123  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
+<span id="L124" class="ln">   124  </span>	md, mock := createTestSourceConn(t)
+<span id="L125" class="ln">   125  </span>	defer mock.Close()
+<span id="L126" class="ln">   126  </span>
+<span id="L127" class="ln">   127  </span>	reaper := &amp;reaper{
+<span id="L128" class="ln">   128  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L129" class="ln">   129  </span>	}
+<span id="L130" class="ln">   130  </span>
+<span id="L131" class="ln">   131  </span>	<span class="comment">// First run - establish baseline</span>
+<span id="L132" class="ln">   132  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L133" class="ln">   133  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;hash1&#34;, time.Now().UnixNano()).
+<span id="L134" class="ln">   134  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
+<span id="L135" class="ln">   135  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
+<span id="L136" class="ln">   136  </span>
+<span id="L137" class="ln">   137  </span>	result := reaper.DetectTableChanges(ctx, md)
+<span id="L138" class="ln">   138  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
+<span id="L139" class="ln">   139  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L140" class="ln">   140  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L141" class="ln">   141  </span>	assert.NotEmpty(t, md.ChangeState[&#34;table_hashes&#34;])
+<span id="L142" class="ln">   142  </span>
+<span id="L143" class="ln">   143  </span>	<span class="comment">// Second run - detect altered table (different hash for table1)</span>
+<span id="L144" class="ln">   144  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L145" class="ln">   145  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L146" class="ln">   146  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano())
+<span id="L147" class="ln">   147  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
 <span id="L148" class="ln">   148  </span>
-<span id="L149" class="ln">   149  </span>	<span class="comment">// Third run - detect new table (table3 added)</span>
-<span id="L150" class="ln">   150  </span>	newTableRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L151" class="ln">   151  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L152" class="ln">   152  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano()).
-<span id="L153" class="ln">   153  </span>		AddRow(&#34;table3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// new table</span>
-<span id="L154" class="ln">   154  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newTableRows)
-<span id="L155" class="ln">   155  </span>
-<span id="L156" class="ln">   156  </span>	result = reaper.DetectTableChanges(ctx, md)
-<span id="L157" class="ln">   157  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// table3 was created</span>
-<span id="L158" class="ln">   158  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L159" class="ln">   159  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L149" class="ln">   149  </span>	result = reaper.DetectTableChanges(ctx, md)
+<span id="L150" class="ln">   150  </span>	assert.Equal(t, 0, result.Created)
+<span id="L151" class="ln">   151  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// table1 was altered</span>
+<span id="L152" class="ln">   152  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L153" class="ln">   153  </span>
+<span id="L154" class="ln">   154  </span>	<span class="comment">// Third run - detect new table (table3 added)</span>
+<span id="L155" class="ln">   155  </span>	newTableRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L156" class="ln">   156  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L157" class="ln">   157  </span>		AddRow(&#34;table2&#34;, &#34;456&#34;, &#34;hash2&#34;, time.Now().UnixNano()).
+<span id="L158" class="ln">   158  </span>		AddRow(&#34;table3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// new table</span>
+<span id="L159" class="ln">   159  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newTableRows)
 <span id="L160" class="ln">   160  </span>
-<span id="L161" class="ln">   161  </span>	<span class="comment">// Verify measurement is sent</span>
-<span id="L162" class="ln">   162  </span>	select {
-<span id="L163" class="ln">   163  </span>	case msg := &lt;-reaper.measurementCh:
-<span id="L164" class="ln">   164  </span>		assert.Equal(t, &#34;table_changes&#34;, msg.MetricName)
-<span id="L165" class="ln">   165  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
-<span id="L166" class="ln">   166  </span>	default:
-<span id="L167" class="ln">   167  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
-<span id="L168" class="ln">   168  </span>	}
-<span id="L169" class="ln">   169  </span>
-<span id="L170" class="ln">   170  </span>	<span class="comment">// Fourth run - detect dropped table (table2 removed)</span>
-<span id="L171" class="ln">   171  </span>	droppedTableRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
-<span id="L172" class="ln">   172  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
-<span id="L173" class="ln">   173  </span>		AddRow(&#34;table3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// table2 dropped</span>
-<span id="L174" class="ln">   174  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedTableRows)
-<span id="L175" class="ln">   175  </span>
-<span id="L176" class="ln">   176  </span>	result = reaper.DetectTableChanges(ctx, md)
-<span id="L177" class="ln">   177  </span>	assert.Equal(t, 0, result.Created)
-<span id="L178" class="ln">   178  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L179" class="ln">   179  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// table2 was dropped</span>
+<span id="L161" class="ln">   161  </span>	result = reaper.DetectTableChanges(ctx, md)
+<span id="L162" class="ln">   162  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// table3 was created</span>
+<span id="L163" class="ln">   163  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L164" class="ln">   164  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L165" class="ln">   165  </span>
+<span id="L166" class="ln">   166  </span>	<span class="comment">// Verify measurement is sent</span>
+<span id="L167" class="ln">   167  </span>	select {
+<span id="L168" class="ln">   168  </span>	case msg := &lt;-reaper.measurementCh:
+<span id="L169" class="ln">   169  </span>		assert.Equal(t, &#34;table_changes&#34;, msg.MetricName)
+<span id="L170" class="ln">   170  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
+<span id="L171" class="ln">   171  </span>	default:
+<span id="L172" class="ln">   172  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
+<span id="L173" class="ln">   173  </span>	}
+<span id="L174" class="ln">   174  </span>
+<span id="L175" class="ln">   175  </span>	<span class="comment">// Fourth run - detect dropped table (table2 removed)</span>
+<span id="L176" class="ln">   176  </span>	droppedTableRows := pgxmock.NewRows([]string{&#34;tag_table&#34;, &#34;tag_oid&#34;, &#34;md5&#34;, &#34;epoch_ns&#34;}).
+<span id="L177" class="ln">   177  </span>		AddRow(&#34;table1&#34;, &#34;123&#34;, &#34;new_hash&#34;, time.Now().UnixNano()).
+<span id="L178" class="ln">   178  </span>		AddRow(&#34;table3&#34;, &#34;789&#34;, &#34;hash3&#34;, time.Now().UnixNano()) <span class="comment">// table2 dropped</span>
+<span id="L179" class="ln">   179  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedTableRows)
 <span id="L180" class="ln">   180  </span>
-<span id="L181" class="ln">   181  </span>	<span class="comment">// Check that table2 was removed from state</span>
-<span id="L182" class="ln">   182  </span>	_, exists := md.ChangeState[&#34;table_hashes&#34;][&#34;table2&#34;]
-<span id="L183" class="ln">   183  </span>	assert.False(t, exists)
-<span id="L184" class="ln">   184  </span>
-<span id="L185" class="ln">   185  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L186" class="ln">   186  </span>}
-<span id="L187" class="ln">   187  </span>
-<span id="L188" class="ln">   188  </span>func TestDetectIndexChanges(t *testing.T) {
-<span id="L189" class="ln">   189  </span>	ctx := context.Background()
-<span id="L190" class="ln">   190  </span>
-<span id="L191" class="ln">   191  </span>	<span class="comment">// Set up simple test metric</span>
-<span id="L192" class="ln">   192  </span>	metricDefs.MetricDefs[&#34;index_hashes&#34;] = metrics.Metric{
-<span id="L193" class="ln">   193  </span>		SQLs: map[int]string{
-<span id="L194" class="ln">   194  </span>			120000: &#34;SELECT&#34;,
-<span id="L195" class="ln">   195  </span>		},
-<span id="L196" class="ln">   196  </span>	}
-<span id="L197" class="ln">   197  </span>
-<span id="L198" class="ln">   198  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
-<span id="L199" class="ln">   199  </span>	md, mock := createTestSourceConn(t)
-<span id="L200" class="ln">   200  </span>	defer mock.Close()
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>	reaper := &amp;Reaper{
-<span id="L203" class="ln">   203  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
-<span id="L204" class="ln">   204  </span>	}
-<span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>	<span class="comment">// First run - establish baseline</span>
-<span id="L207" class="ln">   207  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
-<span id="L208" class="ln">   208  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;t&#34;, time.Now().UnixNano()).
-<span id="L209" class="ln">   209  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano())
-<span id="L210" class="ln">   210  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
-<span id="L211" class="ln">   211  </span>
-<span id="L212" class="ln">   212  </span>	result := reaper.DetectIndexChanges(ctx, md)
-<span id="L213" class="ln">   213  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
-<span id="L214" class="ln">   214  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L215" class="ln">   215  </span>	assert.Equal(t, 0, result.Dropped)
-<span id="L216" class="ln">   216  </span>	assert.NotEmpty(t, md.ChangeState[&#34;index_hashes&#34;])
-<span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span>	<span class="comment">// Second run - detect altered index (is_valid changed for idx1)</span>
-<span id="L219" class="ln">   219  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
-<span id="L220" class="ln">   220  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()). <span class="comment">// now invalid</span>
-<span id="L221" class="ln">   221  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano())
-<span id="L222" class="ln">   222  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
-<span id="L223" class="ln">   223  </span>
-<span id="L224" class="ln">   224  </span>	result = reaper.DetectIndexChanges(ctx, md)
-<span id="L225" class="ln">   225  </span>	assert.Equal(t, 0, result.Created)
-<span id="L226" class="ln">   226  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// idx1 was altered</span>
-<span id="L227" class="ln">   227  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L181" class="ln">   181  </span>	result = reaper.DetectTableChanges(ctx, md)
+<span id="L182" class="ln">   182  </span>	assert.Equal(t, 0, result.Created)
+<span id="L183" class="ln">   183  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L184" class="ln">   184  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// table2 was dropped</span>
+<span id="L185" class="ln">   185  </span>
+<span id="L186" class="ln">   186  </span>	<span class="comment">// Check that table2 was removed from state</span>
+<span id="L187" class="ln">   187  </span>	_, exists := md.ChangeState[&#34;table_hashes&#34;][&#34;table2&#34;]
+<span id="L188" class="ln">   188  </span>	assert.False(t, exists)
+<span id="L189" class="ln">   189  </span>
+<span id="L190" class="ln">   190  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L191" class="ln">   191  </span>}
+<span id="L192" class="ln">   192  </span>
+<span id="L193" class="ln">   193  </span>func TestDetectIndexChanges(t *testing.T) {
+<span id="L194" class="ln">   194  </span>	ctx := context.Background()
+<span id="L195" class="ln">   195  </span>
+<span id="L196" class="ln">   196  </span>	<span class="comment">// Set up simple test metric</span>
+<span id="L197" class="ln">   197  </span>	metricDefs.MetricDefs[&#34;index_hashes&#34;] = metrics.Metric{
+<span id="L198" class="ln">   198  </span>		SQLs: map[int]string{
+<span id="L199" class="ln">   199  </span>			120000: &#34;SELECT&#34;,
+<span id="L200" class="ln">   200  </span>		},
+<span id="L201" class="ln">   201  </span>	}
+<span id="L202" class="ln">   202  </span>
+<span id="L203" class="ln">   203  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
+<span id="L204" class="ln">   204  </span>	md, mock := createTestSourceConn(t)
+<span id="L205" class="ln">   205  </span>	defer mock.Close()
+<span id="L206" class="ln">   206  </span>
+<span id="L207" class="ln">   207  </span>	reaper := &amp;reaper{
+<span id="L208" class="ln">   208  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L209" class="ln">   209  </span>	}
+<span id="L210" class="ln">   210  </span>
+<span id="L211" class="ln">   211  </span>	<span class="comment">// First run - establish baseline</span>
+<span id="L212" class="ln">   212  </span>	initialRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
+<span id="L213" class="ln">   213  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;t&#34;, time.Now().UnixNano()).
+<span id="L214" class="ln">   214  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano())
+<span id="L215" class="ln">   215  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
+<span id="L216" class="ln">   216  </span>
+<span id="L217" class="ln">   217  </span>	result := reaper.DetectIndexChanges(ctx, md)
+<span id="L218" class="ln">   218  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
+<span id="L219" class="ln">   219  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L220" class="ln">   220  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L221" class="ln">   221  </span>	assert.NotEmpty(t, md.ChangeState[&#34;index_hashes&#34;])
+<span id="L222" class="ln">   222  </span>
+<span id="L223" class="ln">   223  </span>	<span class="comment">// Second run - detect altered index (is_valid changed for idx1)</span>
+<span id="L224" class="ln">   224  </span>	modifiedRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
+<span id="L225" class="ln">   225  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()). <span class="comment">// now invalid</span>
+<span id="L226" class="ln">   226  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano())
+<span id="L227" class="ln">   227  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(modifiedRows)
 <span id="L228" class="ln">   228  </span>
-<span id="L229" class="ln">   229  </span>	<span class="comment">// Third run - detect new index (idx3 added)</span>
-<span id="L230" class="ln">   230  </span>	newIndexRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
-<span id="L231" class="ln">   231  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()).
-<span id="L232" class="ln">   232  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano()).
-<span id="L233" class="ln">   233  </span>		AddRow(&#34;idx3&#34;, &#34;table2&#34;, &#34;hash3&#34;, &#34;t&#34;, time.Now().UnixNano()) <span class="comment">// new index</span>
-<span id="L234" class="ln">   234  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newIndexRows)
-<span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>	result = reaper.DetectIndexChanges(ctx, md)
-<span id="L237" class="ln">   237  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// idx3 was created</span>
-<span id="L238" class="ln">   238  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L239" class="ln">   239  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L229" class="ln">   229  </span>	result = reaper.DetectIndexChanges(ctx, md)
+<span id="L230" class="ln">   230  </span>	assert.Equal(t, 0, result.Created)
+<span id="L231" class="ln">   231  </span>	assert.Equal(t, 1, result.Altered) <span class="comment">// idx1 was altered</span>
+<span id="L232" class="ln">   232  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L233" class="ln">   233  </span>
+<span id="L234" class="ln">   234  </span>	<span class="comment">// Third run - detect new index (idx3 added)</span>
+<span id="L235" class="ln">   235  </span>	newIndexRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
+<span id="L236" class="ln">   236  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()).
+<span id="L237" class="ln">   237  </span>		AddRow(&#34;idx2&#34;, &#34;table1&#34;, &#34;hash2&#34;, &#34;t&#34;, time.Now().UnixNano()).
+<span id="L238" class="ln">   238  </span>		AddRow(&#34;idx3&#34;, &#34;table2&#34;, &#34;hash3&#34;, &#34;t&#34;, time.Now().UnixNano()) <span class="comment">// new index</span>
+<span id="L239" class="ln">   239  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newIndexRows)
 <span id="L240" class="ln">   240  </span>
-<span id="L241" class="ln">   241  </span>	<span class="comment">// Verify measurement is sent</span>
-<span id="L242" class="ln">   242  </span>	select {
-<span id="L243" class="ln">   243  </span>	case msg := &lt;-reaper.measurementCh:
-<span id="L244" class="ln">   244  </span>		assert.Equal(t, &#34;index_changes&#34;, msg.MetricName)
-<span id="L245" class="ln">   245  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
-<span id="L246" class="ln">   246  </span>	default:
-<span id="L247" class="ln">   247  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
-<span id="L248" class="ln">   248  </span>	}
-<span id="L249" class="ln">   249  </span>
-<span id="L250" class="ln">   250  </span>	<span class="comment">// Fourth run - detect dropped index (idx2 removed)</span>
-<span id="L251" class="ln">   251  </span>	droppedIndexRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
-<span id="L252" class="ln">   252  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()).
-<span id="L253" class="ln">   253  </span>		AddRow(&#34;idx3&#34;, &#34;table2&#34;, &#34;hash3&#34;, &#34;t&#34;, time.Now().UnixNano()) <span class="comment">// idx2 dropped</span>
-<span id="L254" class="ln">   254  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedIndexRows)
-<span id="L255" class="ln">   255  </span>
-<span id="L256" class="ln">   256  </span>	result = reaper.DetectIndexChanges(ctx, md)
-<span id="L257" class="ln">   257  </span>	assert.Equal(t, 0, result.Created)
-<span id="L258" class="ln">   258  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L259" class="ln">   259  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// idx2 was dropped</span>
+<span id="L241" class="ln">   241  </span>	result = reaper.DetectIndexChanges(ctx, md)
+<span id="L242" class="ln">   242  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// idx3 was created</span>
+<span id="L243" class="ln">   243  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L244" class="ln">   244  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L245" class="ln">   245  </span>
+<span id="L246" class="ln">   246  </span>	<span class="comment">// Verify measurement is sent</span>
+<span id="L247" class="ln">   247  </span>	select {
+<span id="L248" class="ln">   248  </span>	case msg := &lt;-reaper.measurementCh:
+<span id="L249" class="ln">   249  </span>		assert.Equal(t, &#34;index_changes&#34;, msg.MetricName)
+<span id="L250" class="ln">   250  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
+<span id="L251" class="ln">   251  </span>	default:
+<span id="L252" class="ln">   252  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
+<span id="L253" class="ln">   253  </span>	}
+<span id="L254" class="ln">   254  </span>
+<span id="L255" class="ln">   255  </span>	<span class="comment">// Fourth run - detect dropped index (idx2 removed)</span>
+<span id="L256" class="ln">   256  </span>	droppedIndexRows := pgxmock.NewRows([]string{&#34;tag_index&#34;, &#34;table&#34;, &#34;md5&#34;, &#34;is_valid&#34;, &#34;epoch_ns&#34;}).
+<span id="L257" class="ln">   257  </span>		AddRow(&#34;idx1&#34;, &#34;table1&#34;, &#34;hash1&#34;, &#34;f&#34;, time.Now().UnixNano()).
+<span id="L258" class="ln">   258  </span>		AddRow(&#34;idx3&#34;, &#34;table2&#34;, &#34;hash3&#34;, &#34;t&#34;, time.Now().UnixNano()) <span class="comment">// idx2 dropped</span>
+<span id="L259" class="ln">   259  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(droppedIndexRows)
 <span id="L260" class="ln">   260  </span>
-<span id="L261" class="ln">   261  </span>	<span class="comment">// Check that idx2 was removed from state</span>
-<span id="L262" class="ln">   262  </span>	_, exists := md.ChangeState[&#34;index_hashes&#34;][&#34;idx2&#34;]
-<span id="L263" class="ln">   263  </span>	assert.False(t, exists)
-<span id="L264" class="ln">   264  </span>
-<span id="L265" class="ln">   265  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L266" class="ln">   266  </span>}
-<span id="L267" class="ln">   267  </span>
-<span id="L268" class="ln">   268  </span>func TestDetectPrivilegeChanges(t *testing.T) {
-<span id="L269" class="ln">   269  </span>	ctx := context.Background()
-<span id="L270" class="ln">   270  </span>
-<span id="L271" class="ln">   271  </span>	<span class="comment">// Set up simple test metric</span>
-<span id="L272" class="ln">   272  </span>	metricDefs.MetricDefs[&#34;privilege_changes&#34;] = metrics.Metric{
-<span id="L273" class="ln">   273  </span>		SQLs: map[int]string{
-<span id="L274" class="ln">   274  </span>			120000: &#34;SELECT&#34;,
-<span id="L275" class="ln">   275  </span>		},
-<span id="L276" class="ln">   276  </span>	}
-<span id="L277" class="ln">   277  </span>
-<span id="L278" class="ln">   278  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
-<span id="L279" class="ln">   279  </span>	md, mock := createTestSourceConn(t)
-<span id="L280" class="ln">   280  </span>	defer mock.Close()
-<span id="L281" class="ln">   281  </span>
-<span id="L282" class="ln">   282  </span>	reaper := &amp;Reaper{
-<span id="L283" class="ln">   283  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
-<span id="L284" class="ln">   284  </span>	}
-<span id="L285" class="ln">   285  </span>
-<span id="L286" class="ln">   286  </span>	<span class="comment">// First run - establish baseline</span>
-<span id="L287" class="ln">   287  </span>	initialRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
-<span id="L288" class="ln">   288  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
-<span id="L289" class="ln">   289  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano())
-<span id="L290" class="ln">   290  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
-<span id="L291" class="ln">   291  </span>
-<span id="L292" class="ln">   292  </span>	result := reaper.DetectPrivilegeChanges(ctx, md)
-<span id="L293" class="ln">   293  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
-<span id="L294" class="ln">   294  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L295" class="ln">   295  </span>	assert.Equal(t, 0, result.Dropped)
-<span id="L296" class="ln">   296  </span>	assert.NotEmpty(t, md.ChangeState[&#34;object_privileges&#34;])
-<span id="L297" class="ln">   297  </span>
-<span id="L298" class="ln">   298  </span>	<span class="comment">// Second run - detect new privilege grant (user1 gets INSERT privilege on table1)</span>
-<span id="L299" class="ln">   299  </span>	newPrivilegeRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
-<span id="L300" class="ln">   300  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
-<span id="L301" class="ln">   301  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;INSERT&#34;, time.Now().UnixNano()). <span class="comment">// new privilege</span>
-<span id="L302" class="ln">   302  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano())
-<span id="L303" class="ln">   303  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newPrivilegeRows)
-<span id="L304" class="ln">   304  </span>
-<span id="L305" class="ln">   305  </span>	result = reaper.DetectPrivilegeChanges(ctx, md)
-<span id="L306" class="ln">   306  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// new privilege was granted</span>
-<span id="L307" class="ln">   307  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L308" class="ln">   308  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L261" class="ln">   261  </span>	result = reaper.DetectIndexChanges(ctx, md)
+<span id="L262" class="ln">   262  </span>	assert.Equal(t, 0, result.Created)
+<span id="L263" class="ln">   263  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L264" class="ln">   264  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// idx2 was dropped</span>
+<span id="L265" class="ln">   265  </span>
+<span id="L266" class="ln">   266  </span>	<span class="comment">// Check that idx2 was removed from state</span>
+<span id="L267" class="ln">   267  </span>	_, exists := md.ChangeState[&#34;index_hashes&#34;][&#34;idx2&#34;]
+<span id="L268" class="ln">   268  </span>	assert.False(t, exists)
+<span id="L269" class="ln">   269  </span>
+<span id="L270" class="ln">   270  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L271" class="ln">   271  </span>}
+<span id="L272" class="ln">   272  </span>
+<span id="L273" class="ln">   273  </span>func TestDetectPrivilegeChanges(t *testing.T) {
+<span id="L274" class="ln">   274  </span>	ctx := context.Background()
+<span id="L275" class="ln">   275  </span>
+<span id="L276" class="ln">   276  </span>	<span class="comment">// Set up simple test metric</span>
+<span id="L277" class="ln">   277  </span>	metricDefs.MetricDefs[&#34;privilege_changes&#34;] = metrics.Metric{
+<span id="L278" class="ln">   278  </span>		SQLs: map[int]string{
+<span id="L279" class="ln">   279  </span>			120000: &#34;SELECT&#34;,
+<span id="L280" class="ln">   280  </span>		},
+<span id="L281" class="ln">   281  </span>	}
+<span id="L282" class="ln">   282  </span>
+<span id="L283" class="ln">   283  </span>	<span class="comment">// Create single connection and reaper to maintain state across calls</span>
+<span id="L284" class="ln">   284  </span>	md, mock := createTestSourceConn(t)
+<span id="L285" class="ln">   285  </span>	defer mock.Close()
+<span id="L286" class="ln">   286  </span>
+<span id="L287" class="ln">   287  </span>	reaper := &amp;reaper{
+<span id="L288" class="ln">   288  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L289" class="ln">   289  </span>	}
+<span id="L290" class="ln">   290  </span>
+<span id="L291" class="ln">   291  </span>	<span class="comment">// First run - establish baseline</span>
+<span id="L292" class="ln">   292  </span>	initialRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
+<span id="L293" class="ln">   293  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
+<span id="L294" class="ln">   294  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano())
+<span id="L295" class="ln">   295  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
+<span id="L296" class="ln">   296  </span>
+<span id="L297" class="ln">   297  </span>	result := reaper.DetectPrivilegeChanges(ctx, md)
+<span id="L298" class="ln">   298  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
+<span id="L299" class="ln">   299  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L300" class="ln">   300  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L301" class="ln">   301  </span>	assert.NotEmpty(t, md.ChangeState[&#34;object_privileges&#34;])
+<span id="L302" class="ln">   302  </span>
+<span id="L303" class="ln">   303  </span>	<span class="comment">// Second run - detect new privilege grant (user1 gets INSERT privilege on table1)</span>
+<span id="L304" class="ln">   304  </span>	newPrivilegeRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
+<span id="L305" class="ln">   305  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
+<span id="L306" class="ln">   306  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;INSERT&#34;, time.Now().UnixNano()). <span class="comment">// new privilege</span>
+<span id="L307" class="ln">   307  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano())
+<span id="L308" class="ln">   308  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newPrivilegeRows)
 <span id="L309" class="ln">   309  </span>
-<span id="L310" class="ln">   310  </span>	<span class="comment">// Verify measurement is sent</span>
-<span id="L311" class="ln">   311  </span>	select {
-<span id="L312" class="ln">   312  </span>	case msg := &lt;-reaper.measurementCh:
-<span id="L313" class="ln">   313  </span>		assert.Equal(t, &#34;privilege_changes&#34;, msg.MetricName)
-<span id="L314" class="ln">   314  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
-<span id="L315" class="ln">   315  </span>	default:
-<span id="L316" class="ln">   316  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
-<span id="L317" class="ln">   317  </span>	}
-<span id="L318" class="ln">   318  </span>
-<span id="L319" class="ln">   319  </span>	<span class="comment">// Third run - detect privilege revoke (user1 loses INSERT privilege on table1)</span>
-<span id="L320" class="ln">   320  </span>	revokedPrivilegeRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
-<span id="L321" class="ln">   321  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
-<span id="L322" class="ln">   322  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano()) <span class="comment">// user1 INSERT privilege revoked</span>
-<span id="L323" class="ln">   323  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(revokedPrivilegeRows)
-<span id="L324" class="ln">   324  </span>
-<span id="L325" class="ln">   325  </span>	result = reaper.DetectPrivilegeChanges(ctx, md)
-<span id="L326" class="ln">   326  </span>	assert.Equal(t, 0, result.Created)
-<span id="L327" class="ln">   327  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L328" class="ln">   328  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// privilege was revoked</span>
+<span id="L310" class="ln">   310  </span>	result = reaper.DetectPrivilegeChanges(ctx, md)
+<span id="L311" class="ln">   311  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// new privilege was granted</span>
+<span id="L312" class="ln">   312  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L313" class="ln">   313  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L314" class="ln">   314  </span>
+<span id="L315" class="ln">   315  </span>	<span class="comment">// Verify measurement is sent</span>
+<span id="L316" class="ln">   316  </span>	select {
+<span id="L317" class="ln">   317  </span>	case msg := &lt;-reaper.measurementCh:
+<span id="L318" class="ln">   318  </span>		assert.Equal(t, &#34;privilege_changes&#34;, msg.MetricName)
+<span id="L319" class="ln">   319  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
+<span id="L320" class="ln">   320  </span>	default:
+<span id="L321" class="ln">   321  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
+<span id="L322" class="ln">   322  </span>	}
+<span id="L323" class="ln">   323  </span>
+<span id="L324" class="ln">   324  </span>	<span class="comment">// Third run - detect privilege revoke (user1 loses INSERT privilege on table1)</span>
+<span id="L325" class="ln">   325  </span>	revokedPrivilegeRows := pgxmock.NewRows([]string{&#34;object_type&#34;, &#34;tag_role&#34;, &#34;tag_object&#34;, &#34;privilege_type&#34;, &#34;epoch_ns&#34;}).
+<span id="L326" class="ln">   326  </span>		AddRow(&#34;table&#34;, &#34;user1&#34;, &#34;table1&#34;, &#34;SELECT&#34;, time.Now().UnixNano()).
+<span id="L327" class="ln">   327  </span>		AddRow(&#34;table&#34;, &#34;user2&#34;, &#34;table2&#34;, &#34;INSERT&#34;, time.Now().UnixNano()) <span class="comment">// user1 INSERT privilege revoked</span>
+<span id="L328" class="ln">   328  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(revokedPrivilegeRows)
 <span id="L329" class="ln">   329  </span>
-<span id="L330" class="ln">   330  </span>	<span class="comment">// Check that revoked privilege was removed from state</span>
-<span id="L331" class="ln">   331  </span>	_, exists := md.ChangeState[&#34;object_privileges&#34;][&#34;table#:#user1#:#table1#:#INSERT&#34;]
-<span id="L332" class="ln">   332  </span>	assert.False(t, exists)
-<span id="L333" class="ln">   333  </span>
-<span id="L334" class="ln">   334  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L335" class="ln">   335  </span>}
-<span id="L336" class="ln">   336  </span>
-<span id="L337" class="ln">   337  </span>func TestDetectConfigurationChanges(t *testing.T) {
-<span id="L338" class="ln">   338  </span>	ctx := context.Background()
-<span id="L339" class="ln">   339  </span>
-<span id="L340" class="ln">   340  </span>	<span class="comment">// Set up simple test metric</span>
-<span id="L341" class="ln">   341  </span>	metricDefs.MetricDefs[&#34;configuration_hashes&#34;] = metrics.Metric{
-<span id="L342" class="ln">   342  </span>		SQLs: map[int]string{
-<span id="L343" class="ln">   343  </span>			120000: &#34;SELECT&#34;,
-<span id="L344" class="ln">   344  </span>		},
-<span id="L345" class="ln">   345  </span>	}
-<span id="L346" class="ln">   346  </span>
-<span id="L347" class="ln">   347  </span>	<span class="comment">// Create direct mock connection without transaction expectations</span>
-<span id="L348" class="ln">   348  </span>	mock, err := pgxmock.NewPool()
-<span id="L349" class="ln">   349  </span>	require.NoError(t, err)
-<span id="L350" class="ln">   350  </span>	defer mock.Close()
+<span id="L330" class="ln">   330  </span>	result = reaper.DetectPrivilegeChanges(ctx, md)
+<span id="L331" class="ln">   331  </span>	assert.Equal(t, 0, result.Created)
+<span id="L332" class="ln">   332  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L333" class="ln">   333  </span>	assert.Equal(t, 1, result.Dropped) <span class="comment">// privilege was revoked</span>
+<span id="L334" class="ln">   334  </span>
+<span id="L335" class="ln">   335  </span>	<span class="comment">// Check that revoked privilege was removed from state</span>
+<span id="L336" class="ln">   336  </span>	_, exists := md.ChangeState[&#34;object_privileges&#34;][&#34;table#:#user1#:#table1#:#INSERT&#34;]
+<span id="L337" class="ln">   337  </span>	assert.False(t, exists)
+<span id="L338" class="ln">   338  </span>
+<span id="L339" class="ln">   339  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L340" class="ln">   340  </span>}
+<span id="L341" class="ln">   341  </span>
+<span id="L342" class="ln">   342  </span>func TestDetectConfigurationChanges(t *testing.T) {
+<span id="L343" class="ln">   343  </span>	ctx := context.Background()
+<span id="L344" class="ln">   344  </span>
+<span id="L345" class="ln">   345  </span>	<span class="comment">// Set up simple test metric</span>
+<span id="L346" class="ln">   346  </span>	metricDefs.MetricDefs[&#34;configuration_hashes&#34;] = metrics.Metric{
+<span id="L347" class="ln">   347  </span>		SQLs: map[int]string{
+<span id="L348" class="ln">   348  </span>			120000: &#34;SELECT&#34;,
+<span id="L349" class="ln">   349  </span>		},
+<span id="L350" class="ln">   350  </span>	}
 <span id="L351" class="ln">   351  </span>
-<span id="L352" class="ln">   352  </span>	md := &amp;sources.SourceConn{
-<span id="L353" class="ln">   353  </span>		Conn:   mock,
-<span id="L354" class="ln">   354  </span>		Source: sources.Source{Name: &#34;testdb&#34;},
-<span id="L355" class="ln">   355  </span>		RuntimeInfo: sources.RuntimeInfo{
-<span id="L356" class="ln">   356  </span>			Version:     120000,
-<span id="L357" class="ln">   357  </span>			ChangeState: make(map[string]map[string]string),
-<span id="L358" class="ln">   358  </span>		},
-<span id="L359" class="ln">   359  </span>	}
-<span id="L360" class="ln">   360  </span>
-<span id="L361" class="ln">   361  </span>	reaper := &amp;Reaper{
-<span id="L362" class="ln">   362  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
-<span id="L363" class="ln">   363  </span>	}
-<span id="L364" class="ln">   364  </span>
-<span id="L365" class="ln">   365  </span>	<span class="comment">// First run - establish baseline configuration</span>
-<span id="L366" class="ln">   366  </span>	initialRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
-<span id="L367" class="ln">   367  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;100&#34;).
-<span id="L368" class="ln">   368  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;128MB&#34;)
-<span id="L369" class="ln">   369  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
-<span id="L370" class="ln">   370  </span>
-<span id="L371" class="ln">   371  </span>	result := reaper.DetectConfigurationChanges(ctx, md)
-<span id="L372" class="ln">   372  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
-<span id="L373" class="ln">   373  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L374" class="ln">   374  </span>	assert.Equal(t, 0, result.Dropped)
-<span id="L375" class="ln">   375  </span>	assert.NotEmpty(t, md.ChangeState[&#34;configuration_hashes&#34;])
-<span id="L376" class="ln">   376  </span>
-<span id="L377" class="ln">   377  </span>	<span class="comment">// Second run - detect new configuration setting</span>
-<span id="L378" class="ln">   378  </span>	newSettingRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
-<span id="L379" class="ln">   379  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;100&#34;).
-<span id="L380" class="ln">   380  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;128MB&#34;).
-<span id="L381" class="ln">   381  </span>		AddRow(time.Now().UnixNano(), &#34;work_mem&#34;, &#34;4MB&#34;) <span class="comment">// new setting</span>
-<span id="L382" class="ln">   382  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newSettingRows)
-<span id="L383" class="ln">   383  </span>
-<span id="L384" class="ln">   384  </span>	result = reaper.DetectConfigurationChanges(ctx, md)
-<span id="L385" class="ln">   385  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// new setting was added</span>
-<span id="L386" class="ln">   386  </span>	assert.Equal(t, 0, result.Altered)
-<span id="L387" class="ln">   387  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L352" class="ln">   352  </span>	<span class="comment">// Create direct mock connection without transaction expectations</span>
+<span id="L353" class="ln">   353  </span>	mock, err := pgxmock.NewPool()
+<span id="L354" class="ln">   354  </span>	require.NoError(t, err)
+<span id="L355" class="ln">   355  </span>	defer mock.Close()
+<span id="L356" class="ln">   356  </span>
+<span id="L357" class="ln">   357  </span>	md := &amp;sources.DbConn{
+<span id="L358" class="ln">   358  </span>		Conn:   mock,
+<span id="L359" class="ln">   359  </span>		Source: sources.Source{Name: &#34;testdb&#34;},
+<span id="L360" class="ln">   360  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L361" class="ln">   361  </span>			Version:     120000,
+<span id="L362" class="ln">   362  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L363" class="ln">   363  </span>		},
+<span id="L364" class="ln">   364  </span>	}
+<span id="L365" class="ln">   365  </span>
+<span id="L366" class="ln">   366  </span>	reaper := &amp;reaper{
+<span id="L367" class="ln">   367  </span>		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L368" class="ln">   368  </span>	}
+<span id="L369" class="ln">   369  </span>
+<span id="L370" class="ln">   370  </span>	<span class="comment">// First run - establish baseline configuration</span>
+<span id="L371" class="ln">   371  </span>	initialRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
+<span id="L372" class="ln">   372  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;100&#34;).
+<span id="L373" class="ln">   373  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;128MB&#34;)
+<span id="L374" class="ln">   374  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(initialRows)
+<span id="L375" class="ln">   375  </span>
+<span id="L376" class="ln">   376  </span>	result := reaper.DetectConfigurationChanges(ctx, md)
+<span id="L377" class="ln">   377  </span>	assert.Equal(t, 0, result.Created) <span class="comment">// First run should not count anything as created</span>
+<span id="L378" class="ln">   378  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L379" class="ln">   379  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L380" class="ln">   380  </span>	assert.NotEmpty(t, md.ChangeState[&#34;configuration_hashes&#34;])
+<span id="L381" class="ln">   381  </span>
+<span id="L382" class="ln">   382  </span>	<span class="comment">// Second run - detect new configuration setting</span>
+<span id="L383" class="ln">   383  </span>	newSettingRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
+<span id="L384" class="ln">   384  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;100&#34;).
+<span id="L385" class="ln">   385  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;128MB&#34;).
+<span id="L386" class="ln">   386  </span>		AddRow(time.Now().UnixNano(), &#34;work_mem&#34;, &#34;4MB&#34;) <span class="comment">// new setting</span>
+<span id="L387" class="ln">   387  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(newSettingRows)
 <span id="L388" class="ln">   388  </span>
-<span id="L389" class="ln">   389  </span>	<span class="comment">// Verify measurement is sent</span>
-<span id="L390" class="ln">   390  </span>	select {
-<span id="L391" class="ln">   391  </span>	case msg := &lt;-reaper.measurementCh:
-<span id="L392" class="ln">   392  </span>		assert.Equal(t, &#34;configuration_changes&#34;, msg.MetricName)
-<span id="L393" class="ln">   393  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
-<span id="L394" class="ln">   394  </span>	default:
-<span id="L395" class="ln">   395  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
-<span id="L396" class="ln">   396  </span>	}
-<span id="L397" class="ln">   397  </span>
-<span id="L398" class="ln">   398  </span>	<span class="comment">// Third run - detect configuration change</span>
-<span id="L399" class="ln">   399  </span>	changedValueRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
-<span id="L400" class="ln">   400  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;200&#34;).  <span class="comment">// changed value</span>
-<span id="L401" class="ln">   401  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;256MB&#34;). <span class="comment">// changed value</span>
-<span id="L402" class="ln">   402  </span>		AddRow(time.Now().UnixNano(), &#34;work_mem&#34;, &#34;4MB&#34;)
-<span id="L403" class="ln">   403  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(changedValueRows)
-<span id="L404" class="ln">   404  </span>
-<span id="L405" class="ln">   405  </span>	result = reaper.DetectConfigurationChanges(ctx, md)
-<span id="L406" class="ln">   406  </span>	assert.Equal(t, 0, result.Created)
-<span id="L407" class="ln">   407  </span>	assert.Equal(t, 2, result.Altered) <span class="comment">// two settings were changed</span>
-<span id="L408" class="ln">   408  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L389" class="ln">   389  </span>	result = reaper.DetectConfigurationChanges(ctx, md)
+<span id="L390" class="ln">   390  </span>	assert.Equal(t, 1, result.Created) <span class="comment">// new setting was added</span>
+<span id="L391" class="ln">   391  </span>	assert.Equal(t, 0, result.Altered)
+<span id="L392" class="ln">   392  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L393" class="ln">   393  </span>
+<span id="L394" class="ln">   394  </span>	<span class="comment">// Verify measurement is sent</span>
+<span id="L395" class="ln">   395  </span>	select {
+<span id="L396" class="ln">   396  </span>	case msg := &lt;-reaper.measurementCh:
+<span id="L397" class="ln">   397  </span>		assert.Equal(t, &#34;configuration_changes&#34;, msg.MetricName)
+<span id="L398" class="ln">   398  </span>		assert.Equal(t, &#34;testdb&#34;, msg.DBName)
+<span id="L399" class="ln">   399  </span>	default:
+<span id="L400" class="ln">   400  </span>		t.Error(&#34;Expected measurement to be sent&#34;)
+<span id="L401" class="ln">   401  </span>	}
+<span id="L402" class="ln">   402  </span>
+<span id="L403" class="ln">   403  </span>	<span class="comment">// Third run - detect configuration change</span>
+<span id="L404" class="ln">   404  </span>	changedValueRows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;setting&#34;, &#34;value&#34;}).
+<span id="L405" class="ln">   405  </span>		AddRow(time.Now().UnixNano(), &#34;max_connections&#34;, &#34;200&#34;).  <span class="comment">// changed value</span>
+<span id="L406" class="ln">   406  </span>		AddRow(time.Now().UnixNano(), &#34;shared_buffers&#34;, &#34;256MB&#34;). <span class="comment">// changed value</span>
+<span id="L407" class="ln">   407  </span>		AddRow(time.Now().UnixNano(), &#34;work_mem&#34;, &#34;4MB&#34;)
+<span id="L408" class="ln">   408  </span>	mock.ExpectQuery(&#34;SELECT&#34;).WillReturnRows(changedValueRows)
 <span id="L409" class="ln">   409  </span>
-<span id="L410" class="ln">   410  </span>	<span class="comment">// Check that state was updated</span>
-<span id="L411" class="ln">   411  </span>	assert.Equal(t, &#34;200&#34;, md.ChangeState[&#34;configuration_hashes&#34;][&#34;max_connections&#34;])
-<span id="L412" class="ln">   412  </span>	assert.Equal(t, &#34;256MB&#34;, md.ChangeState[&#34;configuration_hashes&#34;][&#34;shared_buffers&#34;])
-<span id="L413" class="ln">   413  </span>
-<span id="L414" class="ln">   414  </span>	assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L415" class="ln">   415  </span>}
-<span id="L416" class="ln">   416  </span>
-<span id="L417" class="ln">   417  </span>func TestGetInstanceUpMeasurement(t *testing.T) {
-<span id="L418" class="ln">   418  </span>	ctx := context.Background()
-<span id="L419" class="ln">   419  </span>	reaper := &amp;Reaper{}
-<span id="L420" class="ln">   420  </span>
-<span id="L421" class="ln">   421  </span>	testCases := []struct {
-<span id="L422" class="ln">   422  </span>		name            string
-<span id="L423" class="ln">   423  </span>		pingError       error
-<span id="L424" class="ln">   424  </span>		expectedUpValue int
-<span id="L425" class="ln">   425  </span>	}{
-<span id="L426" class="ln">   426  </span>		{
-<span id="L427" class="ln">   427  </span>			name:            &#34;connection is up&#34;,
-<span id="L428" class="ln">   428  </span>			pingError:       nil,
-<span id="L429" class="ln">   429  </span>			expectedUpValue: 1,
-<span id="L430" class="ln">   430  </span>		},
+<span id="L410" class="ln">   410  </span>	result = reaper.DetectConfigurationChanges(ctx, md)
+<span id="L411" class="ln">   411  </span>	assert.Equal(t, 0, result.Created)
+<span id="L412" class="ln">   412  </span>	assert.Equal(t, 2, result.Altered) <span class="comment">// two settings were changed</span>
+<span id="L413" class="ln">   413  </span>	assert.Equal(t, 0, result.Dropped)
+<span id="L414" class="ln">   414  </span>
+<span id="L415" class="ln">   415  </span>	<span class="comment">// Check that state was updated</span>
+<span id="L416" class="ln">   416  </span>	assert.Equal(t, &#34;200&#34;, md.ChangeState[&#34;configuration_hashes&#34;][&#34;max_connections&#34;])
+<span id="L417" class="ln">   417  </span>	assert.Equal(t, &#34;256MB&#34;, md.ChangeState[&#34;configuration_hashes&#34;][&#34;shared_buffers&#34;])
+<span id="L418" class="ln">   418  </span>
+<span id="L419" class="ln">   419  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L420" class="ln">   420  </span>}
+<span id="L421" class="ln">   421  </span>
+<span id="L422" class="ln">   422  </span>func TestGetInstanceUpMeasurement(t *testing.T) {
+<span id="L423" class="ln">   423  </span>	ctx := context.Background()
+<span id="L424" class="ln">   424  </span>	reaper := &amp;reaper{}
+<span id="L425" class="ln">   425  </span>
+<span id="L426" class="ln">   426  </span>	testCases := []struct {
+<span id="L427" class="ln">   427  </span>		name            string
+<span id="L428" class="ln">   428  </span>		pingError       error
+<span id="L429" class="ln">   429  </span>		expectedUpValue int
+<span id="L430" class="ln">   430  </span>	}{
 <span id="L431" class="ln">   431  </span>		{
-<span id="L432" class="ln">   432  </span>			name:            &#34;connection is down&#34;,
-<span id="L433" class="ln">   433  </span>			pingError:       assert.AnError,
-<span id="L434" class="ln">   434  </span>			expectedUpValue: 0,
+<span id="L432" class="ln">   432  </span>			name:            &#34;connection is up&#34;,
+<span id="L433" class="ln">   433  </span>			pingError:       nil,
+<span id="L434" class="ln">   434  </span>			expectedUpValue: 1,
 <span id="L435" class="ln">   435  </span>		},
 <span id="L436" class="ln">   436  </span>		{
-<span id="L437" class="ln">   437  </span>			name:            &#34;connection timeout&#34;,
-<span id="L438" class="ln">   438  </span>			pingError:       context.DeadlineExceeded,
+<span id="L437" class="ln">   437  </span>			name:            &#34;connection is down&#34;,
+<span id="L438" class="ln">   438  </span>			pingError:       assert.AnError,
 <span id="L439" class="ln">   439  </span>			expectedUpValue: 0,
 <span id="L440" class="ln">   440  </span>		},
-<span id="L441" class="ln">   441  </span>	}
-<span id="L442" class="ln">   442  </span>
-<span id="L443" class="ln">   443  </span>	for _, tc := range testCases {
-<span id="L444" class="ln">   444  </span>		t.Run(tc.name, func(t *testing.T) {
-<span id="L445" class="ln">   445  </span>			md, mock := createTestSourceConn(t)
-<span id="L446" class="ln">   446  </span>			defer mock.Close()
+<span id="L441" class="ln">   441  </span>		{
+<span id="L442" class="ln">   442  </span>			name:            &#34;connection timeout&#34;,
+<span id="L443" class="ln">   443  </span>			pingError:       context.DeadlineExceeded,
+<span id="L444" class="ln">   444  </span>			expectedUpValue: 0,
+<span id="L445" class="ln">   445  </span>		},
+<span id="L446" class="ln">   446  </span>	}
 <span id="L447" class="ln">   447  </span>
-<span id="L448" class="ln">   448  </span>			<span class="comment">// Setup ping expectation</span>
-<span id="L449" class="ln">   449  </span>			if tc.pingError == nil {
-<span id="L450" class="ln">   450  </span>				mock.ExpectPing()
-<span id="L451" class="ln">   451  </span>			} else {
-<span id="L452" class="ln">   452  </span>				mock.ExpectPing().WillReturnError(tc.pingError)
-<span id="L453" class="ln">   453  </span>			}
-<span id="L454" class="ln">   454  </span>
-<span id="L455" class="ln">   455  </span>			measurements, err := reaper.GetInstanceUpMeasurement(ctx, md)
-<span id="L456" class="ln">   456  </span>
-<span id="L457" class="ln">   457  </span>			<span class="comment">// Should never return an error</span>
-<span id="L458" class="ln">   458  </span>			assert.NoError(t, err)
-<span id="L459" class="ln">   459  </span>			require.NotNil(t, measurements)
-<span id="L460" class="ln">   460  </span>			require.Len(t, measurements, 1)
+<span id="L448" class="ln">   448  </span>	for _, tc := range testCases {
+<span id="L449" class="ln">   449  </span>		t.Run(tc.name, func(t *testing.T) {
+<span id="L450" class="ln">   450  </span>			md, mock := createTestSourceConn(t)
+<span id="L451" class="ln">   451  </span>			defer mock.Close()
+<span id="L452" class="ln">   452  </span>
+<span id="L453" class="ln">   453  </span>			<span class="comment">// Setup ping expectation</span>
+<span id="L454" class="ln">   454  </span>			if tc.pingError == nil {
+<span id="L455" class="ln">   455  </span>				mock.ExpectPing()
+<span id="L456" class="ln">   456  </span>			} else {
+<span id="L457" class="ln">   457  </span>				mock.ExpectPing().WillReturnError(tc.pingError)
+<span id="L458" class="ln">   458  </span>			}
+<span id="L459" class="ln">   459  </span>
+<span id="L460" class="ln">   460  </span>			measurements, err := reaper.GetInstanceUpMeasurement(ctx, md)
 <span id="L461" class="ln">   461  </span>
-<span id="L462" class="ln">   462  </span>			<span class="comment">// Check instance_up metric value</span>
-<span id="L463" class="ln">   463  </span>			measurement := measurements[0]
-<span id="L464" class="ln">   464  </span>			assert.Contains(t, measurement, &#34;instance_up&#34;)
-<span id="L465" class="ln">   465  </span>			assert.Equal(t, tc.expectedUpValue, measurement[&#34;instance_up&#34;])
+<span id="L462" class="ln">   462  </span>			<span class="comment">// Should never return an error</span>
+<span id="L463" class="ln">   463  </span>			assert.NoError(t, err)
+<span id="L464" class="ln">   464  </span>			require.NotNil(t, measurements)
+<span id="L465" class="ln">   465  </span>			require.Len(t, measurements, 1)
 <span id="L466" class="ln">   466  </span>
-<span id="L467" class="ln">   467  </span>			<span class="comment">// Verify epoch is set and valid</span>
-<span id="L468" class="ln">   468  </span>			assert.Contains(t, measurement, metrics.EpochColumnName)
-<span id="L469" class="ln">   469  </span>			assert.Greater(t, measurement[metrics.EpochColumnName].(int64), int64(0))
-<span id="L470" class="ln">   470  </span>			assert.LessOrEqual(t, measurement[metrics.EpochColumnName].(int64), time.Now().UnixNano())
+<span id="L467" class="ln">   467  </span>			<span class="comment">// Check instance_up metric value</span>
+<span id="L468" class="ln">   468  </span>			measurement := measurements[0]
+<span id="L469" class="ln">   469  </span>			assert.Contains(t, measurement, &#34;instance_up&#34;)
+<span id="L470" class="ln">   470  </span>			assert.Equal(t, tc.expectedUpValue, measurement[&#34;instance_up&#34;])
 <span id="L471" class="ln">   471  </span>
-<span id="L472" class="ln">   472  </span>			assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L473" class="ln">   473  </span>		})
-<span id="L474" class="ln">   474  </span>	}
-<span id="L475" class="ln">   475  </span>}
+<span id="L472" class="ln">   472  </span>			<span class="comment">// Verify epoch is set and valid</span>
+<span id="L473" class="ln">   473  </span>			assert.Contains(t, measurement, metrics.EpochColumnName)
+<span id="L474" class="ln">   474  </span>			assert.Greater(t, measurement[metrics.EpochColumnName].(int64), int64(0))
+<span id="L475" class="ln">   475  </span>			assert.LessOrEqual(t, measurement[metrics.EpochColumnName].(int64), time.Now().UnixNano())
 <span id="L476" class="ln">   476  </span>
+<span id="L477" class="ln">   477  </span>			assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L478" class="ln">   478  </span>		})
+<span id="L479" class="ln">   479  </span>	}
+<span id="L480" class="ln">   480  </span>}
+<span id="L481" class="ln">   481  </span>
+<span id="L482" class="ln">   482  </span>func TestGCDSlice(t *testing.T) {
+<span id="L483" class="ln">   483  </span>	tests := []struct {
+<span id="L484" class="ln">   484  </span>		name string
+<span id="L485" class="ln">   485  </span>		vals []int
+<span id="L486" class="ln">   486  </span>		want int
+<span id="L487" class="ln">   487  </span>	}{
+<span id="L488" class="ln">   488  </span>		{&#34;empty&#34;, nil, 0},
+<span id="L489" class="ln">   489  </span>		{&#34;single&#34;, []int{30}, 30},
+<span id="L490" class="ln">   490  </span>		{&#34;exhaustive preset intervals&#34;, []int{30, 60, 120, 180, 300, 600, 900, 3600, 7200}, 30},
+<span id="L491" class="ln">   491  </span>		{&#34;coprime&#34;, []int{7, 11, 13}, 1},
+<span id="L492" class="ln">   492  </span>		{&#34;all same&#34;, []int{60, 60, 60}, 60},
+<span id="L493" class="ln">   493  </span>		{&#34;basic preset&#34;, []int{60, 120}, 60},
+<span id="L494" class="ln">   494  </span>	}
+<span id="L495" class="ln">   495  </span>	for _, tc := range tests {
+<span id="L496" class="ln">   496  </span>		t.Run(tc.name, func(t *testing.T) {
+<span id="L497" class="ln">   497  </span>			assert.Equal(t, tc.want, GCDSlice(tc.vals))
+<span id="L498" class="ln">   498  </span>		})
+<span id="L499" class="ln">   499  </span>	}
+<span id="L500" class="ln">   500  </span>}
+<span id="L501" class="ln">   501  </span>
+<span id="L502" class="ln">   502  </span>func TestCalcTickInterval(t *testing.T) {
+<span id="L503" class="ln">   503  </span>	t.Run(&#34;exhaustive preset GCD is 30s&#34;, func(t *testing.T) {
+<span id="L504" class="ln">   504  </span>		sr := &amp;DbConnReaper{
+<span id="L505" class="ln">   505  </span>			md: &amp;sources.DbConn{
+<span id="L506" class="ln">   506  </span>				Source: sources.Source{
+<span id="L507" class="ln">   507  </span>					Metrics: metrics.MetricIntervals{&#34;m1&#34;: 30, &#34;m2&#34;: 60, &#34;m3&#34;: 120, &#34;m4&#34;: 300},
+<span id="L508" class="ln">   508  </span>				},
+<span id="L509" class="ln">   509  </span>			},
+<span id="L510" class="ln">   510  </span>		}
+<span id="L511" class="ln">   511  </span>		assert.Equal(t, 30*time.Second, sr.calcTickInterval())
+<span id="L512" class="ln">   512  </span>	})
+<span id="L513" class="ln">   513  </span>
+<span id="L514" class="ln">   514  </span>	t.Run(&#34;GCD floors to minimum 1s&#34;, func(t *testing.T) {
+<span id="L515" class="ln">   515  </span>		sr := &amp;DbConnReaper{
+<span id="L516" class="ln">   516  </span>			md: &amp;sources.DbConn{
+<span id="L517" class="ln">   517  </span>				Source: sources.Source{
+<span id="L518" class="ln">   518  </span>					Metrics: metrics.MetricIntervals{&#34;m1&#34;: 3, &#34;m2&#34;: 7},
+<span id="L519" class="ln">   519  </span>				},
+<span id="L520" class="ln">   520  </span>			},
+<span id="L521" class="ln">   521  </span>		}
+<span id="L522" class="ln">   522  </span>		assert.Equal(t, time.Second, sr.calcTickInterval())
+<span id="L523" class="ln">   523  </span>	})
+<span id="L524" class="ln">   524  </span>
+<span id="L525" class="ln">   525  </span>	t.Run(&#34;single metric&#34;, func(t *testing.T) {
+<span id="L526" class="ln">   526  </span>		sr := &amp;DbConnReaper{
+<span id="L527" class="ln">   527  </span>			md: &amp;sources.DbConn{
+<span id="L528" class="ln">   528  </span>				Source: sources.Source{
+<span id="L529" class="ln">   529  </span>					Metrics: metrics.MetricIntervals{&#34;m1&#34;: 60},
+<span id="L530" class="ln">   530  </span>				},
+<span id="L531" class="ln">   531  </span>			},
+<span id="L532" class="ln">   532  </span>		}
+<span id="L533" class="ln">   533  </span>		assert.Equal(t, 60*time.Second, sr.calcTickInterval())
+<span id="L534" class="ln">   534  </span>	})
+<span id="L535" class="ln">   535  </span>
+<span id="L536" class="ln">   536  </span>	t.Run(&#34;empty metrics&#34;, func(t *testing.T) {
+<span id="L537" class="ln">   537  </span>		sr := &amp;DbConnReaper{
+<span id="L538" class="ln">   538  </span>			md: &amp;sources.DbConn{
+<span id="L539" class="ln">   539  </span>				Source: sources.Source{
+<span id="L540" class="ln">   540  </span>					Metrics: metrics.MetricIntervals{},
+<span id="L541" class="ln">   541  </span>				},
+<span id="L542" class="ln">   542  </span>			},
+<span id="L543" class="ln">   543  </span>		}
+<span id="L544" class="ln">   544  </span>		assert.Equal(t, time.Second, sr.calcTickInterval())
+<span id="L545" class="ln">   545  </span>	})
+<span id="L546" class="ln">   546  </span>
+<span id="L547" class="ln">   547  </span>	t.Run(&#34;standby metrics when in recovery&#34;, func(t *testing.T) {
+<span id="L548" class="ln">   548  </span>		sr := &amp;DbConnReaper{
+<span id="L549" class="ln">   549  </span>			md: &amp;sources.DbConn{
+<span id="L550" class="ln">   550  </span>				Source: sources.Source{
+<span id="L551" class="ln">   551  </span>					Metrics:        metrics.MetricIntervals{&#34;m1&#34;: 30, &#34;m2&#34;: 60},
+<span id="L552" class="ln">   552  </span>					MetricsStandby: metrics.MetricIntervals{&#34;m1&#34;: 120},
+<span id="L553" class="ln">   553  </span>				},
+<span id="L554" class="ln">   554  </span>				RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
+<span id="L555" class="ln">   555  </span>			},
+<span id="L556" class="ln">   556  </span>		}
+<span id="L557" class="ln">   557  </span>		assert.Equal(t, 120*time.Second, sr.calcTickInterval())
+<span id="L558" class="ln">   558  </span>	})
+<span id="L559" class="ln">   559  </span>}
+<span id="L560" class="ln">   560  </span>
+<span id="L561" class="ln">   561  </span>func TestNewSourceReaper(t *testing.T) {
+<span id="L562" class="ln">   562  </span>	r := &amp;reaper{
+<span id="L563" class="ln">   563  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L564" class="ln">   564  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L565" class="ln">   565  </span>	}
+<span id="L566" class="ln">   566  </span>	md := &amp;sources.DbConn{
+<span id="L567" class="ln">   567  </span>		Source: sources.Source{
+<span id="L568" class="ln">   568  </span>			Name:    &#34;testdb&#34;,
+<span id="L569" class="ln">   569  </span>			Kind:    sources.SourcePostgres,
+<span id="L570" class="ln">   570  </span>			Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 30, &#34;mem&#34;: 60, &#34;disk&#34;: 120},
+<span id="L571" class="ln">   571  </span>		},
+<span id="L572" class="ln">   572  </span>	}
+<span id="L573" class="ln">   573  </span>	sr := NewDbConnReaper(r, md)
+<span id="L574" class="ln">   574  </span>
+<span id="L575" class="ln">   575  </span>	assert.NotNil(t, sr.lastFetch)
+<span id="L576" class="ln">   576  </span>	assert.Empty(t, sr.lastFetch)
+<span id="L577" class="ln">   577  </span>	assert.Equal(t, r, sr.reaper)
+<span id="L578" class="ln">   578  </span>	assert.Equal(t, md, sr.md)
+<span id="L579" class="ln">   579  </span>}
+<span id="L580" class="ln">   580  </span>
+<span id="L581" class="ln">   581  </span>func TestSourceReaper_ExecuteBatch(t *testing.T) {
+<span id="L582" class="ln">   582  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L583" class="ln">   583  </span>
+<span id="L584" class="ln">   584  </span>	metricDefs.MetricDefs[&#34;batch_metric_1&#34;] = metrics.Metric{
+<span id="L585" class="ln">   585  </span>		SQLs: metrics.SQLs{0: &#34;SELECT 1 as value, 100::bigint as epoch_ns&#34;},
+<span id="L586" class="ln">   586  </span>	}
+<span id="L587" class="ln">   587  </span>	metricDefs.MetricDefs[&#34;batch_metric_2&#34;] = metrics.Metric{
+<span id="L588" class="ln">   588  </span>		SQLs: metrics.SQLs{0: &#34;SELECT 2 as value, 200::bigint as epoch_ns&#34;},
+<span id="L589" class="ln">   589  </span>	}
+<span id="L590" class="ln">   590  </span>
+<span id="L591" class="ln">   591  </span>	mock, err := pgxmock.NewPool()
+<span id="L592" class="ln">   592  </span>	require.NoError(t, err)
+<span id="L593" class="ln">   593  </span>	defer mock.Close()
+<span id="L594" class="ln">   594  </span>
+<span id="L595" class="ln">   595  </span>	md := &amp;sources.DbConn{
+<span id="L596" class="ln">   596  </span>		Source: sources.Source{
+<span id="L597" class="ln">   597  </span>			Name:    &#34;test_source&#34;,
+<span id="L598" class="ln">   598  </span>			Kind:    sources.SourcePostgres,
+<span id="L599" class="ln">   599  </span>			Metrics: metrics.MetricIntervals{&#34;batch_metric_1&#34;: 30, &#34;batch_metric_2&#34;: 30},
+<span id="L600" class="ln">   600  </span>		},
+<span id="L601" class="ln">   601  </span>		Conn: mock,
+<span id="L602" class="ln">   602  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L603" class="ln">   603  </span>			Version:     120000,
+<span id="L604" class="ln">   604  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L605" class="ln">   605  </span>		},
+<span id="L606" class="ln">   606  </span>	}
+<span id="L607" class="ln">   607  </span>
+<span id="L608" class="ln">   608  </span>	r := &amp;reaper{
+<span id="L609" class="ln">   609  </span>		Options: &amp;cmdopts.Options{
+<span id="L610" class="ln">   610  </span>			Metrics: metrics.CmdOpts{},
+<span id="L611" class="ln">   611  </span>			Sinks:   sinks.CmdOpts{},
+<span id="L612" class="ln">   612  </span>		},
+<span id="L613" class="ln">   613  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L614" class="ln">   614  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L615" class="ln">   615  </span>	}
+<span id="L616" class="ln">   616  </span>	sr := NewDbConnReaper(r, md)
+<span id="L617" class="ln">   617  </span>
+<span id="L618" class="ln">   618  </span>	rows1 := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).
+<span id="L619" class="ln">   619  </span>		AddRow(time.Now().UnixNano(), int64(100))
+<span id="L620" class="ln">   620  </span>	rows2 := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).
+<span id="L621" class="ln">   621  </span>		AddRow(time.Now().UnixNano(), int64(200))
+<span id="L622" class="ln">   622  </span>	eb := mock.ExpectBatch()
+<span id="L623" class="ln">   623  </span>	eb.ExpectQuery(&#34;SELECT 1&#34;).WillReturnRows(rows1)
+<span id="L624" class="ln">   624  </span>	eb.ExpectQuery(&#34;SELECT 2&#34;).WillReturnRows(rows2)
+<span id="L625" class="ln">   625  </span>
+<span id="L626" class="ln">   626  </span>	err = sr.executeBatch(ctx, []batchEntry{
+<span id="L627" class="ln">   627  </span>		{metricName: &#34;batch_metric_1&#34;, metric: metricDefs.MetricDefs[&#34;batch_metric_1&#34;], sql: &#34;SELECT 1 as value, 100::bigint as epoch_ns&#34;},
+<span id="L628" class="ln">   628  </span>		{metricName: &#34;batch_metric_2&#34;, metric: metricDefs.MetricDefs[&#34;batch_metric_2&#34;], sql: &#34;SELECT 2 as value, 200::bigint as epoch_ns&#34;},
+<span id="L629" class="ln">   629  </span>	})
+<span id="L630" class="ln">   630  </span>	assert.NoError(t, err)
+<span id="L631" class="ln">   631  </span>
+<span id="L632" class="ln">   632  </span>	received := 0
+<span id="L633" class="ln">   633  </span>	for {
+<span id="L634" class="ln">   634  </span>		select {
+<span id="L635" class="ln">   635  </span>		case msg := &lt;-r.measurementCh:
+<span id="L636" class="ln">   636  </span>			assert.Equal(t, &#34;test_source&#34;, msg.DBName)
+<span id="L637" class="ln">   637  </span>			assert.True(t, msg.MetricName == &#34;batch_metric_1&#34; || msg.MetricName == &#34;batch_metric_2&#34;)
+<span id="L638" class="ln">   638  </span>			received++
+<span id="L639" class="ln">   639  </span>		default:
+<span id="L640" class="ln">   640  </span>			goto done
+<span id="L641" class="ln">   641  </span>		}
+<span id="L642" class="ln">   642  </span>	}
+<span id="L643" class="ln">   643  </span>done:
+<span id="L644" class="ln">   644  </span>	assert.Equal(t, 2, received, &#34;should have received 2 measurement envelopes&#34;)
+<span id="L645" class="ln">   645  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L646" class="ln">   646  </span>}
+<span id="L647" class="ln">   647  </span>
+<span id="L648" class="ln">   648  </span>func TestSourceReaper_RunOneIteration(t *testing.T) {
+<span id="L649" class="ln">   649  </span>	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+<span id="L650" class="ln">   650  </span>
+<span id="L651" class="ln">   651  </span>	metricDefs.MetricDefs[&#34;run_test_metric&#34;] = metrics.Metric{
+<span id="L652" class="ln">   652  </span>		SQLs: metrics.SQLs{0: &#34;SELECT run_test&#34;},
+<span id="L653" class="ln">   653  </span>	}
+<span id="L654" class="ln">   654  </span>
+<span id="L655" class="ln">   655  </span>	mock, err := pgxmock.NewPool()
+<span id="L656" class="ln">   656  </span>	require.NoError(t, err)
+<span id="L657" class="ln">   657  </span>	defer mock.Close()
+<span id="L658" class="ln">   658  </span>
+<span id="L659" class="ln">   659  </span>	md := &amp;sources.DbConn{
+<span id="L660" class="ln">   660  </span>		Source: sources.Source{
+<span id="L661" class="ln">   661  </span>			Name:    &#34;run_source&#34;,
+<span id="L662" class="ln">   662  </span>			Kind:    sources.SourcePostgres,
+<span id="L663" class="ln">   663  </span>			Metrics: metrics.MetricIntervals{&#34;run_test_metric&#34;: 5},
+<span id="L664" class="ln">   664  </span>		},
+<span id="L665" class="ln">   665  </span>		Conn: mock,
+<span id="L666" class="ln">   666  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L667" class="ln">   667  </span>			Version:     120000,
+<span id="L668" class="ln">   668  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L669" class="ln">   669  </span>		},
+<span id="L670" class="ln">   670  </span>	}
+<span id="L671" class="ln">   671  </span>
+<span id="L672" class="ln">   672  </span>	r := &amp;reaper{
+<span id="L673" class="ln">   673  </span>		Options: &amp;cmdopts.Options{
+<span id="L674" class="ln">   674  </span>			Metrics: metrics.CmdOpts{},
+<span id="L675" class="ln">   675  </span>			Sinks:   sinks.CmdOpts{},
+<span id="L676" class="ln">   676  </span>		},
+<span id="L677" class="ln">   677  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L678" class="ln">   678  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L679" class="ln">   679  </span>	}
+<span id="L680" class="ln">   680  </span>	sr := NewDbConnReaper(r, md)
+<span id="L681" class="ln">   681  </span>
+<span id="L682" class="ln">   682  </span>	<span class="comment">// FetchRuntimeInfo sends a query</span>
+<span id="L683" class="ln">   683  </span>	mock.ExpectQuery(&#34;select /\\* pgwatch_generated \\*/&#34;).
+<span id="L684" class="ln">   684  </span>		WillReturnError(assert.AnError)
+<span id="L685" class="ln">   685  </span>
+<span id="L686" class="ln">   686  </span>	rows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).
+<span id="L687" class="ln">   687  </span>		AddRow(time.Now().UnixNano(), int64(42))
+<span id="L688" class="ln">   688  </span>	eb := mock.ExpectBatch()
+<span id="L689" class="ln">   689  </span>	eb.ExpectQuery(&#34;SELECT run_test&#34;).WillReturnRows(rows)
+<span id="L690" class="ln">   690  </span>
+<span id="L691" class="ln">   691  </span>	go func() {
+<span id="L692" class="ln">   692  </span>		time.Sleep(200 * time.Millisecond)
+<span id="L693" class="ln">   693  </span>		cancel()
+<span id="L694" class="ln">   694  </span>	}()
+<span id="L695" class="ln">   695  </span>
+<span id="L696" class="ln">   696  </span>	sr.Reap(ctx)
+<span id="L697" class="ln">   697  </span>
+<span id="L698" class="ln">   698  </span>	select {
+<span id="L699" class="ln">   699  </span>	case msg := &lt;-r.measurementCh:
+<span id="L700" class="ln">   700  </span>		assert.Equal(t, &#34;run_source&#34;, msg.DBName)
+<span id="L701" class="ln">   701  </span>		assert.Equal(t, &#34;run_test_metric&#34;, msg.MetricName)
+<span id="L702" class="ln">   702  </span>	case &lt;-time.After(time.Second):
+<span id="L703" class="ln">   703  </span>		t.Error(&#34;Expected measurement but timed out&#34;)
+<span id="L704" class="ln">   704  </span>	}
+<span id="L705" class="ln">   705  </span>}
+<span id="L706" class="ln">   706  </span>
+<span id="L707" class="ln">   707  </span>func TestSourceReaper_DetectServerRestart(t *testing.T) {
+<span id="L708" class="ln">   708  </span>	sr := &amp;DbConnReaper{
+<span id="L709" class="ln">   709  </span>		reaper: &amp;reaper{
+<span id="L710" class="ln">   710  </span>			measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+<span id="L711" class="ln">   711  </span>		},
+<span id="L712" class="ln">   712  </span>		md: &amp;sources.DbConn{
+<span id="L713" class="ln">   713  </span>			Source: sources.Source{Name: &#34;restart_test&#34;},
+<span id="L714" class="ln">   714  </span>		},
+<span id="L715" class="ln">   715  </span>	}
+<span id="L716" class="ln">   716  </span>
+<span id="L717" class="ln">   717  </span>	<span class="comment">// First observation — establish baseline</span>
+<span id="L718" class="ln">   718  </span>	data := metrics.Measurements{
+<span id="L719" class="ln">   719  </span>		{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;postmaster_uptime_s&#34;: int64(1000)},
+<span id="L720" class="ln">   720  </span>	}
+<span id="L721" class="ln">   721  </span>	sr.detectServerRestart(t.Context(), data)
+<span id="L722" class="ln">   722  </span>	assert.Equal(t, int64(1000), sr.lastUptimeS)
+<span id="L723" class="ln">   723  </span>	select {
+<span id="L724" class="ln">   724  </span>	case &lt;-sr.reaper.measurementCh:
+<span id="L725" class="ln">   725  </span>		t.Error(&#34;should not emit restart event on first observation&#34;)
+<span id="L726" class="ln">   726  </span>	default:
+<span id="L727" class="ln">   727  </span>	}
+<span id="L728" class="ln">   728  </span>
+<span id="L729" class="ln">   729  </span>	<span class="comment">// Second observation — uptime increased (normal)</span>
+<span id="L730" class="ln">   730  </span>	data = metrics.Measurements{
+<span id="L731" class="ln">   731  </span>		{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;postmaster_uptime_s&#34;: int64(2000)},
+<span id="L732" class="ln">   732  </span>	}
+<span id="L733" class="ln">   733  </span>	sr.detectServerRestart(t.Context(), data)
+<span id="L734" class="ln">   734  </span>	assert.Equal(t, int64(2000), sr.lastUptimeS)
+<span id="L735" class="ln">   735  </span>	select {
+<span id="L736" class="ln">   736  </span>	case &lt;-sr.reaper.measurementCh:
+<span id="L737" class="ln">   737  </span>		t.Error(&#34;should not emit restart event when uptime increases&#34;)
+<span id="L738" class="ln">   738  </span>	default:
+<span id="L739" class="ln">   739  </span>	}
+<span id="L740" class="ln">   740  </span>
+<span id="L741" class="ln">   741  </span>	<span class="comment">// Third observation — uptime decreased (restart!)</span>
+<span id="L742" class="ln">   742  </span>	data = metrics.Measurements{
+<span id="L743" class="ln">   743  </span>		{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;postmaster_uptime_s&#34;: int64(10)},
+<span id="L744" class="ln">   744  </span>	}
+<span id="L745" class="ln">   745  </span>	sr.detectServerRestart(t.Context(), data)
+<span id="L746" class="ln">   746  </span>	assert.Equal(t, int64(10), sr.lastUptimeS)
+<span id="L747" class="ln">   747  </span>	select {
+<span id="L748" class="ln">   748  </span>	case msg := &lt;-sr.reaper.measurementCh:
+<span id="L749" class="ln">   749  </span>		assert.Equal(t, &#34;object_changes&#34;, msg.MetricName)
+<span id="L750" class="ln">   750  </span>		assert.Contains(t, msg.Data[0][&#34;details&#34;], &#34;restart&#34;)
+<span id="L751" class="ln">   751  </span>	default:
+<span id="L752" class="ln">   752  </span>		t.Error(&#34;expected restart event&#34;)
+<span id="L753" class="ln">   753  </span>	}
+<span id="L754" class="ln">   754  </span>}
+<span id="L755" class="ln">   755  </span>
+<span id="L756" class="ln">   756  </span>func TestSourceReaper_FetchSpecialMetric(t *testing.T) {
+<span id="L757" class="ln">   757  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L758" class="ln">   758  </span>
+<span id="L759" class="ln">   759  </span>	newSR := func(t *testing.T) (*DbConnReaper, *sources.DbConn, pgxmock.PgxPoolIface) {
+<span id="L760" class="ln">   760  </span>		t.Helper()
+<span id="L761" class="ln">   761  </span>		md, mock := createTestSourceConn(t)
+<span id="L762" class="ln">   762  </span>		r := &amp;reaper{
+<span id="L763" class="ln">   763  </span>			Options: &amp;cmdopts.Options{
+<span id="L764" class="ln">   764  </span>				Metrics: metrics.CmdOpts{},
+<span id="L765" class="ln">   765  </span>				Sinks:   sinks.CmdOpts{},
+<span id="L766" class="ln">   766  </span>			},
+<span id="L767" class="ln">   767  </span>			measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L768" class="ln">   768  </span>			measurementCache: NewInstanceMetricCache(),
+<span id="L769" class="ln">   769  </span>		}
+<span id="L770" class="ln">   770  </span>		return NewDbConnReaper(r, md), md, mock
+<span id="L771" class="ln">   771  </span>	}
+<span id="L772" class="ln">   772  </span>
+<span id="L773" class="ln">   773  </span>	sr, _, mock := newSR(t)
+<span id="L774" class="ln">   774  </span>	defer mock.Close()
+<span id="L775" class="ln">   775  </span>
+<span id="L776" class="ln">   776  </span>	t.Run(&#34;instance_up dispatches measurement on ping success&#34;, func(t *testing.T) {
+<span id="L777" class="ln">   777  </span>		mock.ExpectPing()
+<span id="L778" class="ln">   778  </span>		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp, &#34;&#34;))
+<span id="L779" class="ln">   779  </span>		select {
+<span id="L780" class="ln">   780  </span>		case msg := &lt;-sr.reaper.measurementCh:
+<span id="L781" class="ln">   781  </span>			assert.Equal(t, specialMetricInstanceUp, msg.MetricName)
+<span id="L782" class="ln">   782  </span>			assert.Len(t, msg.Data, 1)
+<span id="L783" class="ln">   783  </span>			assert.Equal(t, 1, msg.Data[0][specialMetricInstanceUp])
+<span id="L784" class="ln">   784  </span>		default:
+<span id="L785" class="ln">   785  </span>			t.Error(&#34;expected measurement for instance_up&#34;)
+<span id="L786" class="ln">   786  </span>		}
+<span id="L787" class="ln">   787  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L788" class="ln">   788  </span>	})
+<span id="L789" class="ln">   789  </span>
+<span id="L790" class="ln">   790  </span>	t.Run(&#34;instance_up uses storage name when set&#34;, func(t *testing.T) {
+<span id="L791" class="ln">   791  </span>		mock.ExpectPing()
+<span id="L792" class="ln">   792  </span>		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricInstanceUp, &#34;infra_up&#34;))
+<span id="L793" class="ln">   793  </span>		select {
+<span id="L794" class="ln">   794  </span>		case msg := &lt;-sr.reaper.measurementCh:
+<span id="L795" class="ln">   795  </span>			assert.Equal(t, &#34;infra_up&#34;, msg.MetricName)
+<span id="L796" class="ln">   796  </span>		default:
+<span id="L797" class="ln">   797  </span>			t.Error(&#34;expected measurement&#34;)
+<span id="L798" class="ln">   798  </span>		}
+<span id="L799" class="ln">   799  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L800" class="ln">   800  </span>	})
+<span id="L801" class="ln">   801  </span>
+<span id="L802" class="ln">   802  </span>	t.Run(&#34;change_events dispatches no measurement when no hash defs present&#34;, func(t *testing.T) {
+<span id="L803" class="ln">   803  </span>		<span class="comment">// Doesn&#39;t contain additional defs for any of {&#34;sproc_hashes&#34;, &#34;table_hashes&#34;, &#34;index_hashes&#34;, &#34;configuration_hashes&#34;, &#34;privilege_hashes&#34;}</span>
+<span id="L804" class="ln">   804  </span>		metricDefs.MetricDefs[specialMetricChangeEvents] = metrics.Metric{}
+<span id="L805" class="ln">   805  </span>		assert.NoError(t, sr.fetchSpecialMetric(ctx, specialMetricChangeEvents, &#34;&#34;))
+<span id="L806" class="ln">   806  </span>		select {
+<span id="L807" class="ln">   807  </span>		case &lt;-sr.reaper.measurementCh:
+<span id="L808" class="ln">   808  </span>			t.Error(&#34;expected no measurement when no changes detected&#34;)
+<span id="L809" class="ln">   809  </span>		default:
+<span id="L810" class="ln">   810  </span>		}
+<span id="L811" class="ln">   811  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L812" class="ln">   812  </span>	})
+<span id="L813" class="ln">   813  </span>}
+<span id="L814" class="ln">   814  </span>
+<span id="L815" class="ln">   815  </span>func TestSourceReaper_ExecuteBatch_DegradedOnPersistentFailure(t *testing.T) {
+<span id="L816" class="ln">   816  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L817" class="ln">   817  </span>
+<span id="L818" class="ln">   818  </span>	metricDefs.MetricDefs[&#34;good_metric&#34;] = metrics.Metric{
+<span id="L819" class="ln">   819  </span>		SQLs: metrics.SQLs{0: &#34;SELECT 1 as value, 100::bigint as epoch_ns&#34;},
+<span id="L820" class="ln">   820  </span>	}
+<span id="L821" class="ln">   821  </span>	metricDefs.MetricDefs[&#34;bad_metric&#34;] = metrics.Metric{
+<span id="L822" class="ln">   822  </span>		SQLs: metrics.SQLs{0: &#34;SELECT bad&#34;},
+<span id="L823" class="ln">   823  </span>	}
+<span id="L824" class="ln">   824  </span>
+<span id="L825" class="ln">   825  </span>	mock, err := pgxmock.NewPool()
+<span id="L826" class="ln">   826  </span>	require.NoError(t, err)
+<span id="L827" class="ln">   827  </span>	defer mock.Close()
+<span id="L828" class="ln">   828  </span>
+<span id="L829" class="ln">   829  </span>	md := &amp;sources.DbConn{
+<span id="L830" class="ln">   830  </span>		Source: sources.Source{
+<span id="L831" class="ln">   831  </span>			Name:    &#34;degrade_test&#34;,
+<span id="L832" class="ln">   832  </span>			Kind:    sources.SourcePostgres,
+<span id="L833" class="ln">   833  </span>			Metrics: metrics.MetricIntervals{&#34;good_metric&#34;: 30, &#34;bad_metric&#34;: 30},
+<span id="L834" class="ln">   834  </span>		},
+<span id="L835" class="ln">   835  </span>		Conn: mock,
+<span id="L836" class="ln">   836  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L837" class="ln">   837  </span>			Version:     120000,
+<span id="L838" class="ln">   838  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L839" class="ln">   839  </span>		},
+<span id="L840" class="ln">   840  </span>	}
+<span id="L841" class="ln">   841  </span>	r := &amp;reaper{
+<span id="L842" class="ln">   842  </span>		Options: &amp;cmdopts.Options{
+<span id="L843" class="ln">   843  </span>			Metrics: metrics.CmdOpts{},
+<span id="L844" class="ln">   844  </span>			Sinks:   sinks.CmdOpts{},
+<span id="L845" class="ln">   845  </span>		},
+<span id="L846" class="ln">   846  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L847" class="ln">   847  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L848" class="ln">   848  </span>	}
+<span id="L849" class="ln">   849  </span>	sr := NewDbConnReaper(r, md)
+<span id="L850" class="ln">   850  </span>
+<span id="L851" class="ln">   851  </span>	entries := []batchEntry{
+<span id="L852" class="ln">   852  </span>		{metricName: &#34;good_metric&#34;, metric: metricDefs.MetricDefs[&#34;good_metric&#34;], sql: &#34;SELECT 1 as value, 100::bigint as epoch_ns&#34;},
+<span id="L853" class="ln">   853  </span>		{metricName: &#34;bad_metric&#34;, metric: metricDefs.MetricDefs[&#34;bad_metric&#34;], sql: &#34;SELECT bad&#34;},
+<span id="L854" class="ln">   854  </span>	}
+<span id="L855" class="ln">   855  </span>
+<span id="L856" class="ln">   856  </span>	<span class="comment">// batch: good_metric succeeds, bad_metric cascades → retry bad_metric individually → still fails</span>
+<span id="L857" class="ln">   857  </span>	rows1 := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).AddRow(time.Now().UnixNano(), int64(1))
+<span id="L858" class="ln">   858  </span>	eb := mock.ExpectBatch()
+<span id="L859" class="ln">   859  </span>	eb.ExpectQuery(&#34;SELECT 1&#34;).WillReturnRows(rows1)
+<span id="L860" class="ln">   860  </span>	eb.ExpectQuery(&#34;SELECT bad&#34;).WillReturnError(assert.AnError) <span class="comment">// cascade</span>
+<span id="L861" class="ln">   861  </span>	<span class="comment">// individual retry of bad_metric</span>
+<span id="L862" class="ln">   862  </span>	mock.ExpectQuery(&#34;SELECT bad&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+<span id="L863" class="ln">   863  </span>
+<span id="L864" class="ln">   864  </span>	err = sr.executeBatch(ctx, entries)
+<span id="L865" class="ln">   865  </span>	assert.Error(t, err)
+<span id="L866" class="ln">   866  </span>	assert.Contains(t, sr.degradedMetrics, &#34;bad_metric&#34;, &#34;bad_metric should be degraded after persistent failure&#34;)
+<span id="L867" class="ln">   867  </span>	assert.NotContains(t, sr.degradedMetrics, &#34;good_metric&#34;, &#34;good_metric should not be degraded&#34;)
+<span id="L868" class="ln">   868  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L869" class="ln">   869  </span>}
+<span id="L870" class="ln">   870  </span>
+<span id="L871" class="ln">   871  </span>func TestSourceReaper_ExecuteBatch_CascadeRecovery(t *testing.T) {
+<span id="L872" class="ln">   872  </span>	<span class="comment">// A metric that errors in the batch but succeeds on individual retry must NOT be marked degraded.</span>
+<span id="L873" class="ln">   873  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L874" class="ln">   874  </span>
+<span id="L875" class="ln">   875  </span>	metricDefs.MetricDefs[&#34;cascade_victim&#34;] = metrics.Metric{
+<span id="L876" class="ln">   876  </span>		SQLs: metrics.SQLs{0: &#34;SELECT 3 as value, 300::bigint as epoch_ns&#34;},
+<span id="L877" class="ln">   877  </span>	}
+<span id="L878" class="ln">   878  </span>	metricDefs.MetricDefs[&#34;cascade_trigger&#34;] = metrics.Metric{
+<span id="L879" class="ln">   879  </span>		SQLs: metrics.SQLs{0: &#34;SELECT fail&#34;},
+<span id="L880" class="ln">   880  </span>	}
+<span id="L881" class="ln">   881  </span>
+<span id="L882" class="ln">   882  </span>	mock, err := pgxmock.NewPool()
+<span id="L883" class="ln">   883  </span>	require.NoError(t, err)
+<span id="L884" class="ln">   884  </span>	defer mock.Close()
+<span id="L885" class="ln">   885  </span>
+<span id="L886" class="ln">   886  </span>	md := &amp;sources.DbConn{
+<span id="L887" class="ln">   887  </span>		Source: sources.Source{
+<span id="L888" class="ln">   888  </span>			Name:    &#34;cascade_test&#34;,
+<span id="L889" class="ln">   889  </span>			Kind:    sources.SourcePostgres,
+<span id="L890" class="ln">   890  </span>			Metrics: metrics.MetricIntervals{&#34;cascade_trigger&#34;: 30, &#34;cascade_victim&#34;: 30},
+<span id="L891" class="ln">   891  </span>		},
+<span id="L892" class="ln">   892  </span>		Conn: mock,
+<span id="L893" class="ln">   893  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L894" class="ln">   894  </span>			Version:     120000,
+<span id="L895" class="ln">   895  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L896" class="ln">   896  </span>		},
+<span id="L897" class="ln">   897  </span>	}
+<span id="L898" class="ln">   898  </span>	r := &amp;reaper{
+<span id="L899" class="ln">   899  </span>		Options: &amp;cmdopts.Options{
+<span id="L900" class="ln">   900  </span>			Metrics: metrics.CmdOpts{},
+<span id="L901" class="ln">   901  </span>			Sinks:   sinks.CmdOpts{},
+<span id="L902" class="ln">   902  </span>		},
+<span id="L903" class="ln">   903  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L904" class="ln">   904  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L905" class="ln">   905  </span>	}
+<span id="L906" class="ln">   906  </span>	sr := NewDbConnReaper(r, md)
+<span id="L907" class="ln">   907  </span>
+<span id="L908" class="ln">   908  </span>	entries := []batchEntry{
+<span id="L909" class="ln">   909  </span>		{metricName: &#34;cascade_trigger&#34;, metric: metricDefs.MetricDefs[&#34;cascade_trigger&#34;], sql: &#34;SELECT fail&#34;},
+<span id="L910" class="ln">   910  </span>		{metricName: &#34;cascade_victim&#34;, metric: metricDefs.MetricDefs[&#34;cascade_victim&#34;], sql: &#34;SELECT 3 as value, 300::bigint as epoch_ns&#34;},
+<span id="L911" class="ln">   911  </span>	}
+<span id="L912" class="ln">   912  </span>
+<span id="L913" class="ln">   913  </span>	<span class="comment">// batch: trigger fails, victim cascades → both retry individually</span>
+<span id="L914" class="ln">   914  </span>	<span class="comment">// trigger fails individually (real error), victim succeeds individually (was only a cascade)</span>
+<span id="L915" class="ln">   915  </span>	eb := mock.ExpectBatch()
+<span id="L916" class="ln">   916  </span>	eb.ExpectQuery(&#34;SELECT fail&#34;).WillReturnError(assert.AnError)
+<span id="L917" class="ln">   917  </span>	eb.ExpectQuery(&#34;SELECT 3&#34;).WillReturnError(assert.AnError) <span class="comment">// cascade in batch</span>
+<span id="L918" class="ln">   918  </span>	<span class="comment">// individual retries</span>
+<span id="L919" class="ln">   919  </span>	mock.ExpectQuery(&#34;SELECT fail&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+<span id="L920" class="ln">   920  </span>	mock.ExpectQuery(&#34;SELECT 3&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L921" class="ln">   921  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).AddRow(time.Now().UnixNano(), int64(3)))
+<span id="L922" class="ln">   922  </span>
+<span id="L923" class="ln">   923  </span>	err = sr.executeBatch(ctx, entries)
+<span id="L924" class="ln">   924  </span>	assert.Error(t, err, &#34;cascade_trigger error should propagate&#34;)
+<span id="L925" class="ln">   925  </span>	assert.Contains(t, sr.degradedMetrics, &#34;cascade_trigger&#34;, &#34;real-failure metric should be degraded&#34;)
+<span id="L926" class="ln">   926  </span>	assert.NotContains(t, sr.degradedMetrics, &#34;cascade_victim&#34;, &#34;cascade-only victim must not be degraded&#34;)
+<span id="L927" class="ln">   927  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L928" class="ln">   928  </span>}
+<span id="L929" class="ln">   929  </span>
+<span id="L930" class="ln">   930  </span>func TestSourceReaper_DegradedMetricRecovery(t *testing.T) {
+<span id="L931" class="ln">   931  </span>	<span class="comment">// Uses the real Run loop (via synctest fake clock) to verify the full degraded→recovered</span>
+<span id="L932" class="ln">   932  </span>	<span class="comment">// lifecycle: iteration 1 the degraded metric fails individually (stays degraded),</span>
+<span id="L933" class="ln">   933  </span>	<span class="comment">// iteration 2 it succeeds (removed from degradedMetrics).</span>
+<span id="L934" class="ln">   934  </span>	synctest.Test(t, func(t *testing.T) {
+<span id="L935" class="ln">   935  </span>		const (
+<span id="L936" class="ln">   936  </span>			metricName     = &#34;recovering_metric_real&#34;
+<span id="L937" class="ln">   937  </span>			metricInterval = 30
+<span id="L938" class="ln">   938  </span>		)
+<span id="L939" class="ln">   939  </span>
+<span id="L940" class="ln">   940  </span>		metricDefs.MetricDefs[metricName] = metrics.Metric{
+<span id="L941" class="ln">   941  </span>			SQLs: metrics.SQLs{0: &#34;SELECT 7 as value, 700::bigint as epoch_ns&#34;},
+<span id="L942" class="ln">   942  </span>		}
+<span id="L943" class="ln">   943  </span>
+<span id="L944" class="ln">   944  </span>		mock, err := pgxmock.NewPool()
+<span id="L945" class="ln">   945  </span>		require.NoError(t, err)
+<span id="L946" class="ln">   946  </span>		defer mock.Close()
+<span id="L947" class="ln">   947  </span>
+<span id="L948" class="ln">   948  </span>		md := &amp;sources.DbConn{
+<span id="L949" class="ln">   949  </span>			Source: sources.Source{
+<span id="L950" class="ln">   950  </span>				Name:    &#34;recovery_src&#34;,
+<span id="L951" class="ln">   951  </span>				Kind:    sources.SourcePostgres,
+<span id="L952" class="ln">   952  </span>				Metrics: metrics.MetricIntervals{metricName: metricInterval},
+<span id="L953" class="ln">   953  </span>			},
+<span id="L954" class="ln">   954  </span>			Conn: mock,
+<span id="L955" class="ln">   955  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L956" class="ln">   956  </span>				Version:     120000,
+<span id="L957" class="ln">   957  </span>				ChangeState: make(map[string]map[string]string),
+<span id="L958" class="ln">   958  </span>			},
+<span id="L959" class="ln">   959  </span>		}
+<span id="L960" class="ln">   960  </span>		r := &amp;reaper{
+<span id="L961" class="ln">   961  </span>			Options: &amp;cmdopts.Options{
+<span id="L962" class="ln">   962  </span>				Metrics: metrics.CmdOpts{},
+<span id="L963" class="ln">   963  </span>				Sinks:   sinks.CmdOpts{},
+<span id="L964" class="ln">   964  </span>			},
+<span id="L965" class="ln">   965  </span>			measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L966" class="ln">   966  </span>			measurementCache: NewInstanceMetricCache(),
+<span id="L967" class="ln">   967  </span>		}
+<span id="L968" class="ln">   968  </span>		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L969" class="ln">   969  </span>		sr := NewDbConnReaper(r, md)
+<span id="L970" class="ln">   970  </span>		sr.degradedMetrics[metricName] = struct{}{} <span class="comment">// pre-seed: metric already degraded</span>
+<span id="L971" class="ln">   971  </span>
+<span id="L972" class="ln">   972  </span>		<span class="comment">// Iteration 1: FetchRuntimeInfo + degraded individual fetch → fails → stays degraded</span>
+<span id="L973" class="ln">   973  </span>		mock.ExpectQuery(&#34;select /\\* pgwatch_generated \\*/&#34;).WillReturnError(assert.AnError)
+<span id="L974" class="ln">   974  </span>		mock.ExpectQuery(&#34;SELECT 7&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnError(assert.AnError)
+<span id="L975" class="ln">   975  </span>
+<span id="L976" class="ln">   976  </span>		<span class="comment">// Iteration 2: FetchRuntimeInfo + degraded individual fetch → succeeds → recovered</span>
+<span id="L977" class="ln">   977  </span>		mock.ExpectQuery(&#34;select /\\* pgwatch_generated \\*/&#34;).WillReturnError(assert.AnError)
+<span id="L978" class="ln">   978  </span>		mock.ExpectQuery(&#34;SELECT 7&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).
+<span id="L979" class="ln">   979  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).AddRow(int64(700_000_000_000), int64(7)))
+<span id="L980" class="ln">   980  </span>
+<span id="L981" class="ln">   981  </span>		go sr.Reap(ctx)
+<span id="L982" class="ln">   982  </span>
+<span id="L983" class="ln">   983  </span>		<span class="comment">// Run goroutine completes iteration 1 (pgxmock is in-memory, no real I/O) then</span>
+<span id="L984" class="ln">   984  </span>		<span class="comment">// blocks on time.After — the only durably-blocking operation in the loop.</span>
+<span id="L985" class="ln">   985  </span>		synctest.Wait()
+<span id="L986" class="ln">   986  </span>		assert.Contains(t, sr.degradedMetrics, metricName, &#34;should still be degraded after first failure&#34;)
+<span id="L987" class="ln">   987  </span>
+<span id="L988" class="ln">   988  </span>		<span class="comment">// Advance the fake clock past the interval to trigger iteration 2.</span>
+<span id="L989" class="ln">   989  </span>		<span class="comment">// The Run goroutine&#39;s time.After(30s) fires first; it runs iteration 2 and</span>
+<span id="L990" class="ln">   990  </span>		<span class="comment">// blocks again before the test goroutine&#39;s sleep finishes.</span>
+<span id="L991" class="ln">   991  </span>		time.Sleep(time.Duration(metricInterval)*time.Second + time.Millisecond)
+<span id="L992" class="ln">   992  </span>		synctest.Wait()
+<span id="L993" class="ln">   993  </span>		assert.NotContains(t, sr.degradedMetrics, metricName, &#34;should recover after successful fetchMetric&#34;)
+<span id="L994" class="ln">   994  </span>
+<span id="L995" class="ln">   995  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L996" class="ln">   996  </span>	})
+<span id="L997" class="ln">   997  </span>}
+<span id="L998" class="ln">   998  </span>
+<span id="L999" class="ln">   999  </span>func TestSourceReaper_NonPostgresSequential(t *testing.T) {
+<span id="L1000" class="ln">  1000  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L1001" class="ln">  1001  </span>
+<span id="L1002" class="ln">  1002  </span>	metricDefs.MetricDefs[&#34;seq_metric&#34;] = metrics.Metric{
+<span id="L1003" class="ln">  1003  </span>		SQLs: metrics.SQLs{0: &#34;SELECT seq_value&#34;},
+<span id="L1004" class="ln">  1004  </span>	}
+<span id="L1005" class="ln">  1005  </span>
+<span id="L1006" class="ln">  1006  </span>	mock, err := pgxmock.NewPool()
+<span id="L1007" class="ln">  1007  </span>	require.NoError(t, err)
+<span id="L1008" class="ln">  1008  </span>	defer mock.Close()
+<span id="L1009" class="ln">  1009  </span>
+<span id="L1010" class="ln">  1010  </span>	md := &amp;sources.DbConn{
+<span id="L1011" class="ln">  1011  </span>		Source: sources.Source{
+<span id="L1012" class="ln">  1012  </span>			Name:    &#34;seq_test_src&#34;,
+<span id="L1013" class="ln">  1013  </span>			Kind:    sources.SourcePostgres,
+<span id="L1014" class="ln">  1014  </span>			Metrics: metrics.MetricIntervals{&#34;seq_metric&#34;: 30},
+<span id="L1015" class="ln">  1015  </span>		},
+<span id="L1016" class="ln">  1016  </span>		Conn: mock,
+<span id="L1017" class="ln">  1017  </span>		RuntimeInfo: sources.RuntimeInfo{
+<span id="L1018" class="ln">  1018  </span>			Version:     120000,
+<span id="L1019" class="ln">  1019  </span>			ChangeState: make(map[string]map[string]string),
+<span id="L1020" class="ln">  1020  </span>		},
+<span id="L1021" class="ln">  1021  </span>	}
+<span id="L1022" class="ln">  1022  </span>
+<span id="L1023" class="ln">  1023  </span>	r := &amp;reaper{
+<span id="L1024" class="ln">  1024  </span>		Options: &amp;cmdopts.Options{
+<span id="L1025" class="ln">  1025  </span>			Metrics: metrics.CmdOpts{},
+<span id="L1026" class="ln">  1026  </span>			Sinks:   sinks.CmdOpts{},
+<span id="L1027" class="ln">  1027  </span>		},
+<span id="L1028" class="ln">  1028  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+<span id="L1029" class="ln">  1029  </span>		measurementCache: NewInstanceMetricCache(),
+<span id="L1030" class="ln">  1030  </span>	}
+<span id="L1031" class="ln">  1031  </span>	sr := NewDbConnReaper(r, md)
+<span id="L1032" class="ln">  1032  </span>
+<span id="L1033" class="ln">  1033  </span>	rows := pgxmock.NewRows([]string{&#34;epoch_ns&#34;, &#34;value&#34;}).
+<span id="L1034" class="ln">  1034  </span>		AddRow(time.Now().UnixNano(), int64(42))
+<span id="L1035" class="ln">  1035  </span>	mock.ExpectQuery(&#34;SELECT seq_value&#34;).WithArgs(pgx.QueryExecModeSimpleProtocol).WillReturnRows(rows)
+<span id="L1036" class="ln">  1036  </span>
+<span id="L1037" class="ln">  1037  </span>	err = sr.fetchMetric(ctx, batchEntry{metricName: &#34;seq_metric&#34;, metric: metricDefs.MetricDefs[&#34;seq_metric&#34;], sql: &#34;SELECT seq_value&#34;})
+<span id="L1038" class="ln">  1038  </span>	assert.NoError(t, err)
+<span id="L1039" class="ln">  1039  </span>	assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L1040" class="ln">  1040  </span>}
+<span id="L1041" class="ln">  1041  </span>
 </pre><p></p>
 
 <div id="footer">

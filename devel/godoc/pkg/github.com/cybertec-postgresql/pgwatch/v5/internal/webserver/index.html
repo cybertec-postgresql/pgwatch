@@ -151,7 +151,7 @@
 				
 			
 				
-				<dd><a href="#ReadyChecker">type ReadyChecker</a></dd>
+				<dd><a href="#Readier">type Readier</a></dd>
 				
 				
 			
@@ -159,7 +159,7 @@
 				<dd><a href="#WebUIServer">type WebUIServer</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Init">func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc ReadyChecker) (_ *WebUIServer, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Init">func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc Readier) (_ *WebUIServer, err error)</a></dd>
 				
 				
 					
@@ -537,13 +537,13 @@ sticky sessions at the load balancer.
 		
 			
 			
-			<h2 id="ReadyChecker">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/webserver.go.html#L35">ReadyChecker</a>
-				<a class="permalink" href="#ReadyChecker">&#xb6;</a>
+			<h2 id="Readier">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/webserver/webserver.go.html#L35">Readier</a>
+				<a class="permalink" href="#Readier">&#xb6;</a>
 				
 				
 			</h2>
 			
-			<pre>type ReadyChecker interface {
+			<pre>type Readier interface {
     Ready() <a href="https://pkg.go.dev/builtin/#bool">bool</a>
 }</pre>
 
@@ -576,7 +576,7 @@ sticky sessions at the load balancer.
 <span id="WebUIServer.indexHTML"></span>    indexHTML           []<a href="https://pkg.go.dev/builtin/#byte">byte</a> <span class="comment">// pre-rendered index.html content</span>
 <span id="WebUIServer.metricsReaderWriter"></span>    metricsReaderWriter <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#ReaderWriter">ReaderWriter</a>
 <span id="WebUIServer.sourcesReaderWriter"></span>    sourcesReaderWriter <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#ReaderWriter">ReaderWriter</a>
-<span id="WebUIServer.readyChecker"></span>    readyChecker        <a href="#ReadyChecker">ReadyChecker</a>
+<span id="WebUIServer.readyChecker"></span>    readyChecker        <a href="#Readier">Readier</a>
 }
 </pre>
 
@@ -595,7 +595,7 @@ sticky sessions at the load balancer.
 					
 					
 				</h3>
-				<pre>func Init(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts <a href="#CmdOpts">CmdOpts</a>, mrw <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#ReaderWriter">ReaderWriter</a>, rc <a href="#ReadyChecker">ReadyChecker</a>) (_ *<a href="#WebUIServer">WebUIServer</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func Init(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, opts <a href="#CmdOpts">CmdOpts</a>, mrw <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#ReaderWriter">ReaderWriter</a>, srw <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/">sources</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/#ReaderWriter">ReaderWriter</a>, rc <a href="#Readier">Readier</a>) (_ *<a href="#WebUIServer">WebUIServer</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
 				
 				

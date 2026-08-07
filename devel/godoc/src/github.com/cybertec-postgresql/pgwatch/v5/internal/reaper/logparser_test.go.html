@@ -82,7 +82,7 @@
 <span id="L25" class="ln">    25  </span>	require.NoError(t, err)
 <span id="L26" class="ln">    26  </span>	defer mock.Close()
 <span id="L27" class="ln">    27  </span>
-<span id="L28" class="ln">    28  </span>	sourceConn := &amp;sources.SourceConn{
+<span id="L28" class="ln">    28  </span>	sourceConn := &amp;sources.DbConn{
 <span id="L29" class="ln">    29  </span>		Source: sources.Source{
 <span id="L30" class="ln">    30  </span>			Name:    &#34;test-source&#34;,
 <span id="L31" class="ln">    31  </span>			Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60.0},
@@ -248,7 +248,7 @@
 <span id="L191" class="ln">   191  </span>					WillReturnError(assert.AnError)
 <span id="L192" class="ln">   192  </span>			}
 <span id="L193" class="ln">   193  </span>
-<span id="L194" class="ln">   194  </span>			sourceConn := &amp;sources.SourceConn{
+<span id="L194" class="ln">   194  </span>			sourceConn := &amp;sources.DbConn{
 <span id="L195" class="ln">   195  </span>				Source: sources.Source{
 <span id="L196" class="ln">   196  </span>					Name: &#34;test-source&#34;,
 <span id="L197" class="ln">   197  </span>				},
@@ -278,7 +278,7 @@
 <span id="L221" class="ln">   221  </span>}
 <span id="L222" class="ln">   222  </span>
 <span id="L223" class="ln">   223  </span>func TestEventCountsToMetricStoreMessages(t *testing.T) {
-<span id="L224" class="ln">   224  </span>	mdb := &amp;sources.SourceConn{
+<span id="L224" class="ln">   224  </span>	mdb := &amp;sources.DbConn{
 <span id="L225" class="ln">   225  </span>		Source: sources.Source{
 <span id="L226" class="ln">   226  </span>			Name:       &#34;test-db&#34;,
 <span id="L227" class="ln">   227  </span>			Kind:       sources.SourcePostgres,
@@ -473,7 +473,7 @@
 <span id="L416" class="ln">   416  </span>		pgxmock.NewRows([]string{&#34;is_unix_socket&#34;}).AddRow(true))
 <span id="L417" class="ln">   417  </span>
 <span id="L418" class="ln">   418  </span>	<span class="comment">// Create a SourceConn for testing</span>
-<span id="L419" class="ln">   419  </span>	sourceConn := &amp;sources.SourceConn{
+<span id="L419" class="ln">   419  </span>	sourceConn := &amp;sources.DbConn{
 <span id="L420" class="ln">   420  </span>		Source: sources.Source{
 <span id="L421" class="ln">   421  </span>			Name: &#34;test-source&#34;,
 <span id="L422" class="ln">   422  </span>		},
@@ -650,7 +650,7 @@
 <span id="L593" class="ln">   593  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
 <span id="L594" class="ln">   594  </span>				AddRow(logFileName, int32(len(logContent)), time.Now()))
 <span id="L595" class="ln">   595  </span>
-<span id="L596" class="ln">   596  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L596" class="ln">   596  </span>		sourceConn := &amp;sources.DbConn{
 <span id="L597" class="ln">   597  </span>			Source: sources.Source{
 <span id="L598" class="ln">   598  </span>				Name:    &#34;test-source&#34;,
 <span id="L599" class="ln">   599  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, <span class="comment">// 60s interval - won&#39;t trigger during test</span>
@@ -711,7 +711,7 @@
 <span id="L654" class="ln">   654  </span>		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like &#39;%csv&#39; order by modification desc limit 1;`).
 <span id="L655" class="ln">   655  </span>			WillReturnError(assert.AnError)
 <span id="L656" class="ln">   656  </span>
-<span id="L657" class="ln">   657  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L657" class="ln">   657  </span>		sourceConn := &amp;sources.DbConn{
 <span id="L658" class="ln">   658  </span>			Source: sources.Source{
 <span id="L659" class="ln">   659  </span>				Name:    &#34;test-source&#34;,
 <span id="L660" class="ln">   660  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},
@@ -775,7 +775,7 @@
 <span id="L718" class="ln">   718  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;, &#34;size&#34;, &#34;modification&#34;}).
 <span id="L719" class="ln">   719  </span>				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
 <span id="L720" class="ln">   720  </span>
-<span id="L721" class="ln">   721  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L721" class="ln">   721  </span>		sourceConn := &amp;sources.DbConn{
 <span id="L722" class="ln">   722  </span>			Source: sources.Source{
 <span id="L723" class="ln">   723  </span>				Name:    &#34;test-source&#34;,
 <span id="L724" class="ln">   724  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 60}, <span class="comment">// Long interval</span>
@@ -844,7 +844,7 @@
 <span id="L787" class="ln">   787  </span>			WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
 <span id="L788" class="ln">   788  </span>			WillReturnError(assert.AnError)
 <span id="L789" class="ln">   789  </span>
-<span id="L790" class="ln">   790  </span>		sourceConn := &amp;sources.SourceConn{
+<span id="L790" class="ln">   790  </span>		sourceConn := &amp;sources.DbConn{
 <span id="L791" class="ln">   791  </span>			Source: sources.Source{
 <span id="L792" class="ln">   792  </span>				Name:    &#34;test-source&#34;,
 <span id="L793" class="ln">   793  </span>				Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1},

@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#375EAB"/>
 
-  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/source_reaper_integration_test.go - GoPages</title>
+  <title>src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper/database_integration_test.go - GoPages</title>
 
 <link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
 
@@ -38,7 +38,7 @@
 
   <h1>
     Source file
-    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper">reaper</a>/<span class="text-muted">source_reaper_integration_test.go</span>
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5">v5</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/reaper">reaper</a>/<span class="text-muted">database_integration_test.go</span>
   </h1>
 
 
@@ -75,7 +75,7 @@
 <span id="L18" class="ln">    18  </span>
 <span id="L19" class="ln">    19  </span><span class="comment">// setupIntegrationDB starts a real Postgres container and returns a SourceConn</span>
 <span id="L20" class="ln">    20  </span><span class="comment">// with a live pgxpool connection. The caller must call tearDown when done.</span>
-<span id="L21" class="ln">    21  </span>func setupIntegrationDB(t *testing.T) (*sources.SourceConn, func()) {
+<span id="L21" class="ln">    21  </span>func setupIntegrationDB(t *testing.T) (*sources.DbConn, func()) {
 <span id="L22" class="ln">    22  </span>	t.Helper()
 <span id="L23" class="ln">    23  </span>	if testing.Short() {
 <span id="L24" class="ln">    24  </span>		t.Skip(&#34;skipping integration test in short mode&#34;)
@@ -90,7 +90,7 @@
 <span id="L33" class="ln">    33  </span>	pool, err := db.New(testutil.TestContext, connStr)
 <span id="L34" class="ln">    34  </span>	require.NoError(t, err, &#34;failed to create connection pool&#34;)
 <span id="L35" class="ln">    35  </span>
-<span id="L36" class="ln">    36  </span>	md := sources.NewSourceConn(sources.Source{
+<span id="L36" class="ln">    36  </span>	md := sources.NewDbConn(sources.Source{
 <span id="L37" class="ln">    37  </span>		Name: &#34;integration_test&#34;,
 <span id="L38" class="ln">    38  </span>		Kind: sources.SourcePostgres,
 <span id="L39" class="ln">    39  </span>	})
@@ -129,7 +129,7 @@
 <span id="L72" class="ln">    72  </span>		&#34;integ_uptime&#34;:  60,
 <span id="L73" class="ln">    73  </span>	}
 <span id="L74" class="ln">    74  </span>
-<span id="L75" class="ln">    75  </span>	r := &amp;Reaper{
+<span id="L75" class="ln">    75  </span>	r := &amp;reaper{
 <span id="L76" class="ln">    76  </span>		Options: &amp;cmdopts.Options{
 <span id="L77" class="ln">    77  </span>			Metrics: metrics.CmdOpts{},
 <span id="L78" class="ln">    78  </span>			Sinks:   sinks.CmdOpts{},
@@ -137,9 +137,9 @@
 <span id="L80" class="ln">    80  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
 <span id="L81" class="ln">    81  </span>		measurementCache: NewInstanceMetricCache(),
 <span id="L82" class="ln">    82  </span>	}
-<span id="L83" class="ln">    83  </span>	sr := NewSourceReaper(r, md)
+<span id="L83" class="ln">    83  </span>	sr := NewDbConnReaper(r, md)
 <span id="L84" class="ln">    84  </span>
-<span id="L85" class="ln">    85  </span>	sr.executeBatch(ctx, []batchEntry{
+<span id="L85" class="ln">    85  </span>	_ = sr.executeBatch(ctx, []batchEntry{
 <span id="L86" class="ln">    86  </span>		{metricName: &#34;integ_version&#34;, metric: metricDefs.MetricDefs[&#34;integ_version&#34;], sql: &#34;SELECT version() AS pg_version&#34;},
 <span id="L87" class="ln">    87  </span>		{metricName: &#34;integ_uptime&#34;, metric: metricDefs.MetricDefs[&#34;integ_uptime&#34;], sql: &#34;SELECT extract(epoch from now() - pg_postmaster_start_time())::int8 AS uptime_seconds&#34;},
 <span id="L88" class="ln">    88  </span>	})
@@ -192,7 +192,7 @@
 <span id="L135" class="ln">   135  </span>		&#34;integ_run_size&#34;:    5,
 <span id="L136" class="ln">   136  </span>	}
 <span id="L137" class="ln">   137  </span>
-<span id="L138" class="ln">   138  </span>	r := &amp;Reaper{
+<span id="L138" class="ln">   138  </span>	r := &amp;reaper{
 <span id="L139" class="ln">   139  </span>		Options: &amp;cmdopts.Options{
 <span id="L140" class="ln">   140  </span>			Metrics: metrics.CmdOpts{},
 <span id="L141" class="ln">   141  </span>			Sinks:   sinks.CmdOpts{},
@@ -200,13 +200,13 @@
 <span id="L143" class="ln">   143  </span>		measurementCh:    make(chan metrics.MeasurementEnvelope, 20),
 <span id="L144" class="ln">   144  </span>		measurementCache: NewInstanceMetricCache(),
 <span id="L145" class="ln">   145  </span>	}
-<span id="L146" class="ln">   146  </span>	sr := NewSourceReaper(r, md)
+<span id="L146" class="ln">   146  </span>	sr := NewDbConnReaper(r, md)
 <span id="L147" class="ln">   147  </span>
 <span id="L148" class="ln">   148  </span>	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 <span id="L149" class="ln">   149  </span>
 <span id="L150" class="ln">   150  </span>	done := make(chan struct{})
 <span id="L151" class="ln">   151  </span>	go func() {
-<span id="L152" class="ln">   152  </span>		sr.Run(ctx)
+<span id="L152" class="ln">   152  </span>		sr.Reap(ctx)
 <span id="L153" class="ln">   153  </span>		close(done)
 <span id="L154" class="ln">   154  </span>	}()
 <span id="L155" class="ln">   155  </span>
@@ -260,7 +260,7 @@
 <span id="L203" class="ln">   203  </span>		}
 <span id="L204" class="ln">   204  </span>	}
 <span id="L205" class="ln">   205  </span>
-<span id="L206" class="ln">   206  </span>	r := &amp;Reaper{
+<span id="L206" class="ln">   206  </span>	r := &amp;reaper{
 <span id="L207" class="ln">   207  </span>		Options: &amp;cmdopts.Options{
 <span id="L208" class="ln">   208  </span>			Metrics: metrics.CmdOpts{},
 <span id="L209" class="ln">   209  </span>			Sinks:   sinks.CmdOpts{},
@@ -290,9 +290,9 @@
 <span id="L233" class="ln">   233  </span>
 <span id="L234" class="ln">   234  </span>			helperSetNodeStatus(state)
 <span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>			sr := NewSourceReaper(r, md)
+<span id="L236" class="ln">   236  </span>			sr := NewDbConnReaper(r, md)
 <span id="L237" class="ln">   237  </span>			go func() {
-<span id="L238" class="ln">   238  </span>				sr.Run(ctx)
+<span id="L238" class="ln">   238  </span>				sr.Reap(ctx)
 <span id="L239" class="ln">   239  </span>			}()
 <span id="L240" class="ln">   240  </span>
 <span id="L241" class="ln">   241  </span>			select {
@@ -317,9 +317,9 @@
 <span id="L260" class="ln">   260  </span>
 <span id="L261" class="ln">   261  </span>			helperSetNodeStatus(state)
 <span id="L262" class="ln">   262  </span>
-<span id="L263" class="ln">   263  </span>			sr := NewSourceReaper(r, md)
+<span id="L263" class="ln">   263  </span>			sr := NewDbConnReaper(r, md)
 <span id="L264" class="ln">   264  </span>			go func() {
-<span id="L265" class="ln">   265  </span>				sr.Run(ctx)
+<span id="L265" class="ln">   265  </span>				sr.Reap(ctx)
 <span id="L266" class="ln">   266  </span>			}()
 <span id="L267" class="ln">   267  </span>
 <span id="L268" class="ln">   268  </span>			time.Sleep(2 * time.Second)

@@ -70,7 +70,7 @@
 <span id="L13" class="ln">    13  </span>)
 <span id="L14" class="ln">    14  </span>
 <span id="L15" class="ln">    15  </span><span class="comment">// the number of entries in the sample.sources.yaml file</span>
-<span id="L16" class="ln">    16  </span>const sampleEntriesNumber = 4
+<span id="L16" class="ln">    16  </span>const sampleEntriesNumber = 5
 <span id="L17" class="ln">    17  </span>
 <span id="L18" class="ln">    18  </span>const (
 <span id="L19" class="ln">    19  </span>	contribDir = &#34;../../contrib/&#34;
@@ -474,6 +474,93 @@
 <span id="L417" class="ln">   417  </span>	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: &#34;x&#34;}))
 <span id="L418" class="ln">   418  </span>}
 <span id="L419" class="ln">   419  </span>
+<span id="L420" class="ln">   420  </span><span class="comment">// T048: full REQ-033 YAML example (two prometheus sources, one with TLS URL + custom_tags,</span>
+<span id="L421" class="ln">   421  </span><span class="comment">// one in scrape-all mode) must unmarshal and pass Validate() without error.</span>
+<span id="L422" class="ln">   422  </span>func TestYAML_PrometheusREQ033Example(t *testing.T) {
+<span id="L423" class="ln">   423  </span>	a := assert.New(t)
+<span id="L424" class="ln">   424  </span>	tmpFile := filepath.Join(t.TempDir(), &#34;req033.sources.yaml&#34;)
+<span id="L425" class="ln">   425  </span>	yamlContent := `
+<span id="L426" class="ln">   426  </span>- name: postgres-exporter-prod
+<span id="L427" class="ln">   427  </span>  kind: prometheus
+<span id="L428" class="ln">   428  </span>  conn_str: &#34;https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem&#34;
+<span id="L429" class="ln">   429  </span>  is_enabled: true
+<span id="L430" class="ln">   430  </span>  custom_metrics:
+<span id="L431" class="ln">   431  </span>    pg_stat_activity_count: 30
+<span id="L432" class="ln">   432  </span>    pg_stat_bgwriter_checkpoints_timed: 60
+<span id="L433" class="ln">   433  </span>  custom_tags:
+<span id="L434" class="ln">   434  </span>    env: production
+<span id="L435" class="ln">   435  </span>
+<span id="L436" class="ln">   436  </span>- name: node-exporter-prod
+<span id="L437" class="ln">   437  </span>  kind: prometheus
+<span id="L438" class="ln">   438  </span>  conn_str: &#34;http://localhost:9100/metrics&#34;
+<span id="L439" class="ln">   439  </span>  is_enabled: true
+<span id="L440" class="ln">   440  </span>`
+<span id="L441" class="ln">   441  </span>	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L442" class="ln">   442  </span>	a.NoError(err)
+<span id="L443" class="ln">   443  </span>
+<span id="L444" class="ln">   444  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L445" class="ln">   445  </span>	a.NoError(err)
+<span id="L446" class="ln">   446  </span>
+<span id="L447" class="ln">   447  </span>	srcs, err := yamlrw.GetSources()
+<span id="L448" class="ln">   448  </span>	a.NoError(err)
+<span id="L449" class="ln">   449  </span>
+<span id="L450" class="ln">   450  </span>	srcs, err = srcs.Validate()
+<span id="L451" class="ln">   451  </span>	a.NoError(err)
+<span id="L452" class="ln">   452  </span>	if !a.Len(srcs, 2) {
+<span id="L453" class="ln">   453  </span>		return
+<span id="L454" class="ln">   454  </span>	}
+<span id="L455" class="ln">   455  </span>
+<span id="L456" class="ln">   456  </span>	prod := srcs[0]
+<span id="L457" class="ln">   457  </span>	a.Equal(sources.SourcePrometheus, prod.Kind)
+<span id="L458" class="ln">   458  </span>	a.Equal(&#34;postgres-exporter-prod&#34;, prod.Name)
+<span id="L459" class="ln">   459  </span>	a.Equal(&#34;https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem&#34;, prod.ConnStr)
+<span id="L460" class="ln">   460  </span>	a.Equal(&#34;production&#34;, prod.CustomTags[&#34;env&#34;])
+<span id="L461" class="ln">   461  </span>	a.Equal(30, prod.Metrics[&#34;pg_stat_activity_count&#34;])
+<span id="L462" class="ln">   462  </span>	a.Equal(60, prod.Metrics[&#34;pg_stat_bgwriter_checkpoints_timed&#34;])
+<span id="L463" class="ln">   463  </span>
+<span id="L464" class="ln">   464  </span>	scrapeAll := srcs[1]
+<span id="L465" class="ln">   465  </span>	a.Equal(sources.SourcePrometheus, scrapeAll.Kind)
+<span id="L466" class="ln">   466  </span>	a.Equal(&#34;node-exporter-prod&#34;, scrapeAll.Name)
+<span id="L467" class="ln">   467  </span>	a.Empty(scrapeAll.Metrics)
+<span id="L468" class="ln">   468  </span>}
+<span id="L469" class="ln">   469  </span>
+<span id="L470" class="ln">   470  </span>func TestYAML_PrometheusSourceRoundTrip(t *testing.T) {
+<span id="L471" class="ln">   471  </span>	a := assert.New(t)
+<span id="L472" class="ln">   472  </span>	tmpFile := filepath.Join(t.TempDir(), &#34;prometheus.sources.yaml&#34;)
+<span id="L473" class="ln">   473  </span>	yamlContent := `
+<span id="L474" class="ln">   474  </span>- name: my-postgres-exporter
+<span id="L475" class="ln">   475  </span>  kind: prometheus
+<span id="L476" class="ln">   476  </span>  conn_str: &#34;http://localhost:9187/metrics&#34;
+<span id="L477" class="ln">   477  </span>  custom_metrics:
+<span id="L478" class="ln">   478  </span>    pg_stat_activity_count: 30
+<span id="L479" class="ln">   479  </span>  custom_tags:
+<span id="L480" class="ln">   480  </span>    env: production
+<span id="L481" class="ln">   481  </span>  is_enabled: true
+<span id="L482" class="ln">   482  </span>`
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L485" class="ln">   485  </span>	a.NoError(err)
+<span id="L486" class="ln">   486  </span>
+<span id="L487" class="ln">   487  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L488" class="ln">   488  </span>	a.NoError(err)
+<span id="L489" class="ln">   489  </span>
+<span id="L490" class="ln">   490  </span>	srcs, err := yamlrw.GetSources()
+<span id="L491" class="ln">   491  </span>	a.NoError(err)
+<span id="L492" class="ln">   492  </span>
+<span id="L493" class="ln">   493  </span>	srcs, err = srcs.Validate()
+<span id="L494" class="ln">   494  </span>	a.NoError(err)
+<span id="L495" class="ln">   495  </span>	if !a.Len(srcs, 1) {
+<span id="L496" class="ln">   496  </span>		return
+<span id="L497" class="ln">   497  </span>	}
+<span id="L498" class="ln">   498  </span>
+<span id="L499" class="ln">   499  </span>	src := srcs[0]
+<span id="L500" class="ln">   500  </span>	a.Equal(sources.SourcePrometheus, src.Kind)
+<span id="L501" class="ln">   501  </span>	a.Equal(&#34;http://localhost:9187/metrics&#34;, src.ConnStr)
+<span id="L502" class="ln">   502  </span>	a.Contains(src.Metrics, &#34;pg_stat_activity_count&#34;)
+<span id="L503" class="ln">   503  </span>	a.Equal(30, src.Metrics[&#34;pg_stat_activity_count&#34;])
+<span id="L504" class="ln">   504  </span>	a.Equal(&#34;production&#34;, src.CustomTags[&#34;env&#34;])
+<span id="L505" class="ln">   505  </span>}
+<span id="L506" class="ln">   506  </span>
 </pre><p></p>
 
 <div id="footer">

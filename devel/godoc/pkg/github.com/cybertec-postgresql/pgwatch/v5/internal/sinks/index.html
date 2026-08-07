@@ -1357,7 +1357,7 @@ regardless of Go map iteration order.
 
 			
 				
-				<h3 id="PrometheusWriter.AddCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L164">AddCacheEntry</a>
+				<h3 id="PrometheusWriter.AddCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L165">AddCacheEntry</a>
 					<a class="permalink" href="#PrometheusWriter.AddCacheEntry">&#xb6;</a>
 					
 					
@@ -1369,7 +1369,7 @@ regardless of Go map iteration order.
 				
 			
 				
-				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L202">Collect</a>
+				<h3 id="PrometheusWriter.Collect">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L203">Collect</a>
 					<a class="permalink" href="#PrometheusWriter.Collect">&#xb6;</a>
 					
 					
@@ -1397,7 +1397,7 @@ background Write() calls update it
 				
 			
 				
-				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L196">Describe</a>
+				<h3 id="PrometheusWriter.Describe">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L197">Describe</a>
 					<a class="permalink" href="#PrometheusWriter.Describe">&#xb6;</a>
 					
 					
@@ -1411,7 +1411,7 @@ collector&quot; per the prometheus.Collector contract
 				
 			
 				
-				<h3 id="PrometheusWriter.InitCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L176">InitCacheEntry</a>
+				<h3 id="PrometheusWriter.InitCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L177">InitCacheEntry</a>
 					<a class="permalink" href="#PrometheusWriter.InitCacheEntry">&#xb6;</a>
 					
 					
@@ -1436,7 +1436,7 @@ collector&quot; per the prometheus.Collector contract
 				
 			
 				
-				<h3 id="PrometheusWriter.PurgeCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L184">PurgeCacheEntry</a>
+				<h3 id="PrometheusWriter.PurgeCacheEntry">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L185">PurgeCacheEntry</a>
 					<a class="permalink" href="#PrometheusWriter.PurgeCacheEntry">&#xb6;</a>
 					
 					
@@ -1475,7 +1475,7 @@ allowing the writer to purge or initialize cache entries as needed
 				
 			
 				
-				<h3 id="PrometheusWriter.WritePromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L249">WritePromMetrics</a>
+				<h3 id="PrometheusWriter.WritePromMetrics">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L256">WritePromMetrics</a>
 					<a class="permalink" href="#PrometheusWriter.WritePromMetrics">&#xb6;</a>
 					
 					
@@ -1483,13 +1483,18 @@ allowing the writer to purge or initialize cache entries as needed
 				<pre>func (promw *<a href="#PrometheusWriter">PrometheusWriter</a>) WritePromMetrics(msg <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MeasurementEnvelope">MeasurementEnvelope</a>, ch chan&lt;- <a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/">prometheus</a>.<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/#Metric">Metric</a>) (written <a href="https://pkg.go.dev/builtin/#int">int</a>, errorCount <a href="https://pkg.go.dev/builtin/#int">int</a>)</pre>
 				<p>WritePromMetrics converts a MeasurementEnvelope into Prometheus const metrics
 and sends them directly to ch. Returns the count of metrics written and errors encountered.
+<p>For prom-sourced envelopes (SourceKind == &quot;prometheus&quot;) the original family
+name is used as the fully-qualified metric name with no pgwatch namespace
+prefix, and each measurement&apos;s own epoch_ns is used as the timestamp.
+For all other sources the existing namespace+family+field naming and a
+single envelope-level timestamp are applied.
 
 				
 				
 				
 			
 				
-				<h3 id="PrometheusWriter.snapshotCache">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L239">snapshotCache</a>
+				<h3 id="PrometheusWriter.snapshotCache">func (*PrometheusWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/prometheus.go.html#L240">snapshotCache</a>
 					<a class="permalink" href="#PrometheusWriter.snapshotCache">&#xb6;</a>
 					
 					

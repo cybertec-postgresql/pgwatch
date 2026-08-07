@@ -132,7 +132,7 @@
 <span id="L75" class="ln">    75  </span>}
 <span id="L76" class="ln">    76  </span>
 <span id="L77" class="ln">    77  </span><span class="comment">// LoadMetrics loads metric definitions from the reader</span>
-<span id="L78" class="ln">    78  </span>func (r *Reaper) LoadMetrics() (err error) {
+<span id="L78" class="ln">    78  </span>func (r *reaper) LoadMetrics() (err error) {
 <span id="L79" class="ln">    79  </span>	var newDefs *metrics.Metrics
 <span id="L80" class="ln">    80  </span>	if newDefs, err = r.MetricsReaderWriter.GetMetrics(); err != nil {
 <span id="L81" class="ln">    81  </span>		return
@@ -155,20 +155,21 @@
 <span id="L98" class="ln">    98  </span>		}(), &#34;metrics and presets refreshed&#34;)
 <span id="L99" class="ln">    99  </span>	<span class="comment">// update the monitored sources with real metric definitions from presets</span>
 <span id="L100" class="ln">   100  </span>	for _, md := range r.monitoredSources {
-<span id="L101" class="ln">   101  </span>		if md.PresetMetrics &gt; &#34;&#34; {
-<span id="L102" class="ln">   102  </span>			md.Lock()
-<span id="L103" class="ln">   103  </span>			md.Metrics = metricDefs.GetPresetMetrics(md.PresetMetrics)
-<span id="L104" class="ln">   104  </span>			md.Unlock()
+<span id="L101" class="ln">   101  </span>		var main, standby metrics.MetricIntervals
+<span id="L102" class="ln">   102  </span>		src := md.GetSource()
+<span id="L103" class="ln">   103  </span>		if src.PresetMetrics &gt; &#34;&#34; {
+<span id="L104" class="ln">   104  </span>			main = metricDefs.GetPresetMetrics(src.PresetMetrics)
 <span id="L105" class="ln">   105  </span>		}
-<span id="L106" class="ln">   106  </span>		if md.PresetMetricsStandby &gt; &#34;&#34; {
-<span id="L107" class="ln">   107  </span>			md.Lock()
-<span id="L108" class="ln">   108  </span>			md.MetricsStandby = metricDefs.GetPresetMetrics(md.PresetMetricsStandby)
-<span id="L109" class="ln">   109  </span>			md.Unlock()
-<span id="L110" class="ln">   110  </span>		}
-<span id="L111" class="ln">   111  </span>	}
-<span id="L112" class="ln">   112  </span>	return
-<span id="L113" class="ln">   113  </span>}
-<span id="L114" class="ln">   114  </span>
+<span id="L106" class="ln">   106  </span>		if src.PresetMetricsStandby &gt; &#34;&#34; {
+<span id="L107" class="ln">   107  </span>			standby = metricDefs.GetPresetMetrics(src.PresetMetricsStandby)
+<span id="L108" class="ln">   108  </span>		}
+<span id="L109" class="ln">   109  </span>		if main != nil || standby != nil {
+<span id="L110" class="ln">   110  </span>			md.SetMetricIntervals(main, standby)
+<span id="L111" class="ln">   111  </span>		}
+<span id="L112" class="ln">   112  </span>	}
+<span id="L113" class="ln">   113  </span>	return
+<span id="L114" class="ln">   114  </span>}
+<span id="L115" class="ln">   115  </span>
 </pre><p></p>
 
 <div id="footer">

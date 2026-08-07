@@ -230,70 +230,71 @@
 <span id="L173" class="ln">   173  </span>type MeasurementEnvelope struct {
 <span id="L174" class="ln">   174  </span>	DBName     string
 <span id="L175" class="ln">   175  </span>	MetricName string
-<span id="L176" class="ln">   176  </span>	CustomTags map[string]string
-<span id="L177" class="ln">   177  </span>	Data       Measurements
-<span id="L178" class="ln">   178  </span>}
-<span id="L179" class="ln">   179  </span>
-<span id="L180" class="ln">   180  </span>type Metrics struct {
-<span id="L181" class="ln">   181  </span>	MetricDefs MetricDefs `yaml:&#34;metrics,omitempty&#34;`
-<span id="L182" class="ln">   182  </span>	PresetDefs PresetDefs `yaml:&#34;presets,omitempty&#34;`
-<span id="L183" class="ln">   183  </span>}
-<span id="L184" class="ln">   184  </span>
-<span id="L185" class="ln">   185  </span><span class="comment">// FilterByNames returns a new Metrics struct containing only the specified metrics and/or presets.</span>
-<span id="L186" class="ln">   186  </span><span class="comment">// When a preset is requested, it includes both the preset definition and all its metrics.</span>
-<span id="L187" class="ln">   187  </span><span class="comment">// If names is empty, returns a full copy of all metrics and presets.</span>
-<span id="L188" class="ln">   188  </span><span class="comment">// Returns an error if any name is not found.</span>
-<span id="L189" class="ln">   189  </span>func (m *Metrics) FilterByNames(names []string) (*Metrics, error) {
-<span id="L190" class="ln">   190  </span>	result := &amp;Metrics{
-<span id="L191" class="ln">   191  </span>		MetricDefs: make(MetricDefs),
-<span id="L192" class="ln">   192  </span>		PresetDefs: make(PresetDefs),
-<span id="L193" class="ln">   193  </span>	}
-<span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>	<span class="comment">// If no names provided, return full copy</span>
-<span id="L196" class="ln">   196  </span>	if len(names) == 0 {
-<span id="L197" class="ln">   197  </span>		maps.Copy(result.MetricDefs, m.MetricDefs)
-<span id="L198" class="ln">   198  </span>		maps.Copy(result.PresetDefs, m.PresetDefs)
-<span id="L199" class="ln">   199  </span>		return result, nil
-<span id="L200" class="ln">   200  </span>	}
-<span id="L201" class="ln">   201  </span>
-<span id="L202" class="ln">   202  </span>	for _, name := range names {
-<span id="L203" class="ln">   203  </span>		if preset, ok := m.PresetDefs[name]; ok {
-<span id="L204" class="ln">   204  </span>			result.PresetDefs[name] = preset
-<span id="L205" class="ln">   205  </span>			<span class="comment">// Include all metrics from the preset</span>
-<span id="L206" class="ln">   206  </span>			for metricName := range preset.Metrics {
-<span id="L207" class="ln">   207  </span>				if metric, exists := m.MetricDefs[metricName]; exists {
-<span id="L208" class="ln">   208  </span>					result.MetricDefs[metricName] = metric
-<span id="L209" class="ln">   209  </span>				}
-<span id="L210" class="ln">   210  </span>			}
-<span id="L211" class="ln">   211  </span>		} else if metric, ok := m.MetricDefs[name]; ok {
-<span id="L212" class="ln">   212  </span>			result.MetricDefs[name] = metric
-<span id="L213" class="ln">   213  </span>		} else {
-<span id="L214" class="ln">   214  </span>			return nil, fmt.Errorf(&#34;metric or preset &#39;%s&#39; not found&#34;, name)
-<span id="L215" class="ln">   215  </span>		}
-<span id="L216" class="ln">   216  </span>	}
-<span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span>	return result, nil
-<span id="L219" class="ln">   219  </span>}
-<span id="L220" class="ln">   220  </span>
-<span id="L221" class="ln">   221  </span>type Reader interface {
-<span id="L222" class="ln">   222  </span>	GetMetrics() (*Metrics, error)
-<span id="L223" class="ln">   223  </span>}
-<span id="L224" class="ln">   224  </span>
-<span id="L225" class="ln">   225  </span>type Writer interface {
-<span id="L226" class="ln">   226  </span>	WriteMetrics(metricDefs *Metrics) error
-<span id="L227" class="ln">   227  </span>	DeleteMetric(metricName string) error
-<span id="L228" class="ln">   228  </span>	DeletePreset(presetName string) error
-<span id="L229" class="ln">   229  </span>	UpdateMetric(metricName string, metric Metric) error
-<span id="L230" class="ln">   230  </span>	UpdatePreset(presetName string, preset Preset) error
-<span id="L231" class="ln">   231  </span>	CreateMetric(metricName string, metric Metric) error
-<span id="L232" class="ln">   232  </span>	CreatePreset(presetName string, preset Preset) error
-<span id="L233" class="ln">   233  </span>}
-<span id="L234" class="ln">   234  </span>
-<span id="L235" class="ln">   235  </span>type ReaderWriter interface {
-<span id="L236" class="ln">   236  </span>	Reader
-<span id="L237" class="ln">   237  </span>	Writer
-<span id="L238" class="ln">   238  </span>}
-<span id="L239" class="ln">   239  </span>
+<span id="L176" class="ln">   176  </span>	SourceKind string
+<span id="L177" class="ln">   177  </span>	CustomTags map[string]string
+<span id="L178" class="ln">   178  </span>	Data       Measurements
+<span id="L179" class="ln">   179  </span>}
+<span id="L180" class="ln">   180  </span>
+<span id="L181" class="ln">   181  </span>type Metrics struct {
+<span id="L182" class="ln">   182  </span>	MetricDefs MetricDefs `yaml:&#34;metrics,omitempty&#34;`
+<span id="L183" class="ln">   183  </span>	PresetDefs PresetDefs `yaml:&#34;presets,omitempty&#34;`
+<span id="L184" class="ln">   184  </span>}
+<span id="L185" class="ln">   185  </span>
+<span id="L186" class="ln">   186  </span><span class="comment">// FilterByNames returns a new Metrics struct containing only the specified metrics and/or presets.</span>
+<span id="L187" class="ln">   187  </span><span class="comment">// When a preset is requested, it includes both the preset definition and all its metrics.</span>
+<span id="L188" class="ln">   188  </span><span class="comment">// If names is empty, returns a full copy of all metrics and presets.</span>
+<span id="L189" class="ln">   189  </span><span class="comment">// Returns an error if any name is not found.</span>
+<span id="L190" class="ln">   190  </span>func (m *Metrics) FilterByNames(names []string) (*Metrics, error) {
+<span id="L191" class="ln">   191  </span>	result := &amp;Metrics{
+<span id="L192" class="ln">   192  </span>		MetricDefs: make(MetricDefs),
+<span id="L193" class="ln">   193  </span>		PresetDefs: make(PresetDefs),
+<span id="L194" class="ln">   194  </span>	}
+<span id="L195" class="ln">   195  </span>
+<span id="L196" class="ln">   196  </span>	<span class="comment">// If no names provided, return full copy</span>
+<span id="L197" class="ln">   197  </span>	if len(names) == 0 {
+<span id="L198" class="ln">   198  </span>		maps.Copy(result.MetricDefs, m.MetricDefs)
+<span id="L199" class="ln">   199  </span>		maps.Copy(result.PresetDefs, m.PresetDefs)
+<span id="L200" class="ln">   200  </span>		return result, nil
+<span id="L201" class="ln">   201  </span>	}
+<span id="L202" class="ln">   202  </span>
+<span id="L203" class="ln">   203  </span>	for _, name := range names {
+<span id="L204" class="ln">   204  </span>		if preset, ok := m.PresetDefs[name]; ok {
+<span id="L205" class="ln">   205  </span>			result.PresetDefs[name] = preset
+<span id="L206" class="ln">   206  </span>			<span class="comment">// Include all metrics from the preset</span>
+<span id="L207" class="ln">   207  </span>			for metricName := range preset.Metrics {
+<span id="L208" class="ln">   208  </span>				if metric, exists := m.MetricDefs[metricName]; exists {
+<span id="L209" class="ln">   209  </span>					result.MetricDefs[metricName] = metric
+<span id="L210" class="ln">   210  </span>				}
+<span id="L211" class="ln">   211  </span>			}
+<span id="L212" class="ln">   212  </span>		} else if metric, ok := m.MetricDefs[name]; ok {
+<span id="L213" class="ln">   213  </span>			result.MetricDefs[name] = metric
+<span id="L214" class="ln">   214  </span>		} else {
+<span id="L215" class="ln">   215  </span>			return nil, fmt.Errorf(&#34;metric or preset &#39;%s&#39; not found&#34;, name)
+<span id="L216" class="ln">   216  </span>		}
+<span id="L217" class="ln">   217  </span>	}
+<span id="L218" class="ln">   218  </span>
+<span id="L219" class="ln">   219  </span>	return result, nil
+<span id="L220" class="ln">   220  </span>}
+<span id="L221" class="ln">   221  </span>
+<span id="L222" class="ln">   222  </span>type Reader interface {
+<span id="L223" class="ln">   223  </span>	GetMetrics() (*Metrics, error)
+<span id="L224" class="ln">   224  </span>}
+<span id="L225" class="ln">   225  </span>
+<span id="L226" class="ln">   226  </span>type Writer interface {
+<span id="L227" class="ln">   227  </span>	WriteMetrics(metricDefs *Metrics) error
+<span id="L228" class="ln">   228  </span>	DeleteMetric(metricName string) error
+<span id="L229" class="ln">   229  </span>	DeletePreset(presetName string) error
+<span id="L230" class="ln">   230  </span>	UpdateMetric(metricName string, metric Metric) error
+<span id="L231" class="ln">   231  </span>	UpdatePreset(presetName string, preset Preset) error
+<span id="L232" class="ln">   232  </span>	CreateMetric(metricName string, metric Metric) error
+<span id="L233" class="ln">   233  </span>	CreatePreset(presetName string, preset Preset) error
+<span id="L234" class="ln">   234  </span>}
+<span id="L235" class="ln">   235  </span>
+<span id="L236" class="ln">   236  </span>type ReaderWriter interface {
+<span id="L237" class="ln">   237  </span>	Reader
+<span id="L238" class="ln">   238  </span>	Writer
+<span id="L239" class="ln">   239  </span>}
+<span id="L240" class="ln">   240  </span>
 </pre><p></p>
 
 <div id="footer">

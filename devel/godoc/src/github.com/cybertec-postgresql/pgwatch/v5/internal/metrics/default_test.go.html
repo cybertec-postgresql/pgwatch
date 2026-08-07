@@ -100,6 +100,29 @@
 <span id="L43" class="ln">    43  </span>	assert.NoError(t, err, &#34;GetMetrics should return default metrics&#34;)
 <span id="L44" class="ln">    44  </span>}
 <span id="L45" class="ln">    45  </span>
+<span id="L46" class="ln">    46  </span><span class="comment">// T047: preset postgres-exporter-basic is resolvable and contains the required metric families.</span>
+<span id="L47" class="ln">    47  </span>func TestDefaultMetrics_PostgresExporterBasicPreset(t *testing.T) {
+<span id="L48" class="ln">    48  </span>	m := metrics.GetDefaultMetrics()
+<span id="L49" class="ln">    49  </span>	if !assert.NotNil(t, m, &#34;GetDefaultMetrics must not return nil&#34;) {
+<span id="L50" class="ln">    50  </span>		return
+<span id="L51" class="ln">    51  </span>	}
+<span id="L52" class="ln">    52  </span>
+<span id="L53" class="ln">    53  </span>	preset, ok := m.PresetDefs[&#34;postgres-exporter-basic&#34;]
+<span id="L54" class="ln">    54  </span>	if !assert.True(t, ok, &#34;preset &#39;postgres-exporter-basic&#39; must exist in default metrics&#34;) {
+<span id="L55" class="ln">    55  </span>		return
+<span id="L56" class="ln">    56  </span>	}
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span>	requiredFamilies := []string{
+<span id="L59" class="ln">    59  </span>		&#34;pg_stat_activity_count&#34;,
+<span id="L60" class="ln">    60  </span>		&#34;pg_stat_bgwriter_checkpoints_timed&#34;,
+<span id="L61" class="ln">    61  </span>		&#34;pg_stat_replication_pg_wal_lsn_diff&#34;,
+<span id="L62" class="ln">    62  </span>	}
+<span id="L63" class="ln">    63  </span>	for _, family := range requiredFamilies {
+<span id="L64" class="ln">    64  </span>		assert.Contains(t, preset.Metrics, family,
+<span id="L65" class="ln">    65  </span>			&#34;preset &#39;postgres-exporter-basic&#39; must include metric family %q&#34;, family)
+<span id="L66" class="ln">    66  </span>	}
+<span id="L67" class="ln">    67  </span>}
+<span id="L68" class="ln">    68  </span>
 </pre><p></p>
 
 <div id="footer">

@@ -419,7 +419,7 @@
 			
 				<p>MigrationsCount is the total number of migrations in pgwatch.migration table
 
-				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 2</pre>
+				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 3</pre>
 			
 		
 		
@@ -559,6 +559,18 @@
                             &#34;reco_superusers&#34;: 93600
                         }$reco_metrics$::jsonb
                     WHERE config_standby ? &#39;recommendations&#39;;
+                `)
+                return err
+            },
+        },
+
+        &amp;<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration">Migration</a>{
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Name">Name</a>: &#34;01405 Add prometheus to source dbtype check constraint&#34;,
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Func">Func</a>: func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, tx pgx.<a href="#Tx">Tx</a>) <a href="https://pkg.go.dev/builtin/#error">error</a> {
+                _, err := tx.<a href="#Exec">Exec</a>(ctx, `
+                    ALTER TABLE pgwatch.source
+                        DROP CONSTRAINT IF EXISTS source_dbtype_check,
+                        ADD CHECK (dbtype IN (&#39;postgres&#39;, &#39;pgbouncer&#39;, &#39;postgres-continuous-discovery&#39;, &#39;patroni&#39;, &#39;pgpool&#39;, &#39;prometheus&#39;));
                 `)
                 return err
             },
@@ -790,6 +802,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 			<pre>type MeasurementEnvelope struct {
 <span id="MeasurementEnvelope.DBName"></span>    DBName     <a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="MeasurementEnvelope.MetricName"></span>    MetricName <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="MeasurementEnvelope.SourceKind"></span>    SourceKind <a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="MeasurementEnvelope.CustomTags"></span>    CustomTags map[<a href="https://pkg.go.dev/builtin/#string">string</a>]<a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="MeasurementEnvelope.Data"></span>    Data       <a href="#Measurements">Measurements</a>
 }
@@ -1021,7 +1034,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 		
 			
 			
-			<h2 id="Metrics">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L180">Metrics</a>
+			<h2 id="Metrics">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L181">Metrics</a>
 				<a class="permalink" href="#Metrics">&#xb6;</a>
 				
 				
@@ -1056,7 +1069,7 @@ pgwatch.metric and pgwatch.preset tables in the ConfigDB.
 
 			
 				
-				<h3 id="Metrics.FilterByNames">func (*Metrics) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L189">FilterByNames</a>
+				<h3 id="Metrics.FilterByNames">func (*Metrics) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L190">FilterByNames</a>
 					<a class="permalink" href="#Metrics.FilterByNames">&#xb6;</a>
 					
 					
@@ -1124,7 +1137,7 @@ Returns an error if any name is not found.
 		
 			
 			
-			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L221">Reader</a>
+			<h2 id="Reader">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L222">Reader</a>
 				<a class="permalink" href="#Reader">&#xb6;</a>
 				
 				
@@ -1148,7 +1161,7 @@ Returns an error if any name is not found.
 		
 			
 			
-			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L235">ReaderWriter</a>
+			<h2 id="ReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L236">ReaderWriter</a>
 				<a class="permalink" href="#ReaderWriter">&#xb6;</a>
 				
 				
@@ -1240,7 +1253,7 @@ Returns an error if any name is not found.
 		
 			
 			
-			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L225">Writer</a>
+			<h2 id="Writer">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/types.go.html#L226">Writer</a>
 				<a class="permalink" href="#Writer">&#xb6;</a>
 				
 				
