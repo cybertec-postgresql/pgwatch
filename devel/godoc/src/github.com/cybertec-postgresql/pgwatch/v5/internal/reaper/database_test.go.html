@@ -1024,7 +1024,7 @@
 <span id="L967" class="ln">   967  </span>		}
 <span id="L968" class="ln">   968  </span>		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 <span id="L969" class="ln">   969  </span>		sr := NewDbConnReaper(r, md)
-<span id="L970" class="ln">   970  </span>		sr.degradedMetrics[metricName] = struct{}{} <span class="comment">// pre-seed: metric already degraded</span>
+<span id="L970" class="ln">   970  </span>		sr.markDegraded(metricName) <span class="comment">// pre-seed: metric already degraded</span>
 <span id="L971" class="ln">   971  </span>
 <span id="L972" class="ln">   972  </span>		<span class="comment">// Iteration 1: FetchRuntimeInfo + degraded individual fetch → fails → stays degraded</span>
 <span id="L973" class="ln">   973  </span>		mock.ExpectQuery(&#34;select /\\* pgwatch_generated \\*/&#34;).WillReturnError(assert.AnError)
@@ -1040,14 +1040,14 @@
 <span id="L983" class="ln">   983  </span>		<span class="comment">// Run goroutine completes iteration 1 (pgxmock is in-memory, no real I/O) then</span>
 <span id="L984" class="ln">   984  </span>		<span class="comment">// blocks on time.After — the only durably-blocking operation in the loop.</span>
 <span id="L985" class="ln">   985  </span>		synctest.Wait()
-<span id="L986" class="ln">   986  </span>		assert.Contains(t, sr.degradedMetrics, metricName, &#34;should still be degraded after first failure&#34;)
+<span id="L986" class="ln">   986  </span>		assert.True(t, sr.isDegraded(metricName), &#34;should still be degraded after first failure&#34;)
 <span id="L987" class="ln">   987  </span>
 <span id="L988" class="ln">   988  </span>		<span class="comment">// Advance the fake clock past the interval to trigger iteration 2.</span>
 <span id="L989" class="ln">   989  </span>		<span class="comment">// The Run goroutine&#39;s time.After(30s) fires first; it runs iteration 2 and</span>
 <span id="L990" class="ln">   990  </span>		<span class="comment">// blocks again before the test goroutine&#39;s sleep finishes.</span>
 <span id="L991" class="ln">   991  </span>		time.Sleep(time.Duration(metricInterval)*time.Second + time.Millisecond)
 <span id="L992" class="ln">   992  </span>		synctest.Wait()
-<span id="L993" class="ln">   993  </span>		assert.NotContains(t, sr.degradedMetrics, metricName, &#34;should recover after successful fetchMetric&#34;)
+<span id="L993" class="ln">   993  </span>		assert.False(t, sr.isDegraded(metricName), &#34;should recover after successful fetchMetric&#34;)
 <span id="L994" class="ln">   994  </span>
 <span id="L995" class="ln">   995  </span>		assert.NoError(t, mock.ExpectationsWereMet())
 <span id="L996" class="ln">   996  </span>	})

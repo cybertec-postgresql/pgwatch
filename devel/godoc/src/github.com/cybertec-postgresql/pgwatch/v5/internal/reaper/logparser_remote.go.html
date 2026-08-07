@@ -176,7 +176,7 @@
 <span id="L119" class="ln">   119  </span>					}
 <span id="L120" class="ln">   120  </span>
 <span id="L121" class="ln">   121  </span>					databaseName := result[&#34;database_name&#34;]
-<span id="L122" class="ln">   122  </span>					if lp.SourceConn.RealDbname == databaseName {
+<span id="L122" class="ln">   122  </span>				if lp.realDbname == databaseName {
 <span id="L123" class="ln">   123  </span>						lp.eventCounts[errorSeverity]++
 <span id="L124" class="ln">   124  </span>					}
 <span id="L125" class="ln">   125  </span>					lp.eventCountsTotal[errorSeverity]++

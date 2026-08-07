@@ -205,7 +205,7 @@
 <span id="L148" class="ln">   148  </span>					time.Sleep(time.Minute)
 <span id="L149" class="ln">   149  </span>					break
 <span id="L150" class="ln">   150  </span>				}
-<span id="L151" class="ln">   151  </span>				if lp.SourceConn.RealDbname == databaseName {
+<span id="L151" class="ln">   151  </span>			if lp.realDbname == databaseName {
 <span id="L152" class="ln">   152  </span>					lp.eventCounts[errorSeverity]++
 <span id="L153" class="ln">   153  </span>				}
 <span id="L154" class="ln">   154  </span>				lp.eventCountsTotal[errorSeverity]++

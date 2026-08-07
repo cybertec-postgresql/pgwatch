@@ -283,60 +283,64 @@
 <span id="L226" class="ln">   226  </span>		for _, state := range states {
 <span id="L227" class="ln">   227  </span>			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 <span id="L228" class="ln">   228  </span>
-<span id="L229" class="ln">   229  </span>			md.IsInRecovery = true
-<span id="L230" class="ln">   230  </span>			if state == &#34;standby&#34; {
-<span id="L231" class="ln">   231  </span>				md.IsInRecovery = false
-<span id="L232" class="ln">   232  </span>			}
-<span id="L233" class="ln">   233  </span>
-<span id="L234" class="ln">   234  </span>			helperSetNodeStatus(state)
+<span id="L229" class="ln">   229  </span>		md.Lock()
+<span id="L230" class="ln">   230  </span>		md.IsInRecovery = true
+<span id="L231" class="ln">   231  </span>		if state == &#34;standby&#34; {
+<span id="L232" class="ln">   232  </span>			md.IsInRecovery = false
+<span id="L233" class="ln">   233  </span>		}
+<span id="L234" class="ln">   234  </span>		md.Unlock()
 <span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>			sr := NewDbConnReaper(r, md)
-<span id="L237" class="ln">   237  </span>			go func() {
-<span id="L238" class="ln">   238  </span>				sr.Reap(ctx)
-<span id="L239" class="ln">   239  </span>			}()
-<span id="L240" class="ln">   240  </span>
-<span id="L241" class="ln">   241  </span>			select {
-<span id="L242" class="ln">   242  </span>			case msg := &lt;-r.measurementCh:
-<span id="L243" class="ln">   243  </span>				t.Errorf(&#34;Expected no measurement for primary-only metrics on standby, but got: %s&#34;, msg.MetricName)
-<span id="L244" class="ln">   244  </span>			case &lt;-time.After(2 * time.Second):
-<span id="L245" class="ln">   245  </span>			}
-<span id="L246" class="ln">   246  </span>
-<span id="L247" class="ln">   247  </span>			cancel()
-<span id="L248" class="ln">   248  </span>		}
-<span id="L249" class="ln">   249  </span>	})
-<span id="L250" class="ln">   250  </span>
-<span id="L251" class="ln">   251  </span>	t.Run(&#34;primary-only/standby-only metrics get executed when node is primary/standby&#34;, func(t *testing.T) {
-<span id="L252" class="ln">   252  </span>		states := []string{&#34;primary&#34;, &#34;standby&#34;, &#34;&#34;} <span class="comment">// &#34;&#34; =&gt; should fetch all as well</span>
-<span id="L253" class="ln">   253  </span>		for _, state := range states {
-<span id="L254" class="ln">   254  </span>			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
-<span id="L255" class="ln">   255  </span>
-<span id="L256" class="ln">   256  </span>			md.IsInRecovery = false
-<span id="L257" class="ln">   257  </span>			if state == &#34;standby&#34; {
-<span id="L258" class="ln">   258  </span>				md.IsInRecovery = true
-<span id="L259" class="ln">   259  </span>			}
-<span id="L260" class="ln">   260  </span>
-<span id="L261" class="ln">   261  </span>			helperSetNodeStatus(state)
-<span id="L262" class="ln">   262  </span>
-<span id="L263" class="ln">   263  </span>			sr := NewDbConnReaper(r, md)
-<span id="L264" class="ln">   264  </span>			go func() {
-<span id="L265" class="ln">   265  </span>				sr.Reap(ctx)
-<span id="L266" class="ln">   266  </span>			}()
-<span id="L267" class="ln">   267  </span>
-<span id="L268" class="ln">   268  </span>			time.Sleep(2 * time.Second)
-<span id="L269" class="ln">   269  </span>			assert.GreaterOrEqual(t, len(r.measurementCh), 3)
-<span id="L270" class="ln">   270  </span>			cancel()
+<span id="L236" class="ln">   236  </span>			helperSetNodeStatus(state)
+<span id="L237" class="ln">   237  </span>
+<span id="L238" class="ln">   238  </span>			sr := NewDbConnReaper(r, md)
+<span id="L239" class="ln">   239  </span>			go func() {
+<span id="L240" class="ln">   240  </span>				sr.Reap(ctx)
+<span id="L241" class="ln">   241  </span>			}()
+<span id="L242" class="ln">   242  </span>
+<span id="L243" class="ln">   243  </span>			select {
+<span id="L244" class="ln">   244  </span>			case msg := &lt;-r.measurementCh:
+<span id="L245" class="ln">   245  </span>				t.Errorf(&#34;Expected no measurement for primary-only metrics on standby, but got: %s&#34;, msg.MetricName)
+<span id="L246" class="ln">   246  </span>			case &lt;-time.After(2 * time.Second):
+<span id="L247" class="ln">   247  </span>			}
+<span id="L248" class="ln">   248  </span>
+<span id="L249" class="ln">   249  </span>			cancel()
+<span id="L250" class="ln">   250  </span>		}
+<span id="L251" class="ln">   251  </span>	})
+<span id="L252" class="ln">   252  </span>
+<span id="L253" class="ln">   253  </span>	t.Run(&#34;primary-only/standby-only metrics get executed when node is primary/standby&#34;, func(t *testing.T) {
+<span id="L254" class="ln">   254  </span>		states := []string{&#34;primary&#34;, &#34;standby&#34;, &#34;&#34;} <span class="comment">// &#34;&#34; =&gt; should fetch all as well</span>
+<span id="L255" class="ln">   255  </span>		for _, state := range states {
+<span id="L256" class="ln">   256  </span>			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+<span id="L257" class="ln">   257  </span>
+<span id="L258" class="ln">   258  </span>		md.Lock()
+<span id="L259" class="ln">   259  </span>		md.IsInRecovery = false
+<span id="L260" class="ln">   260  </span>		if state == &#34;standby&#34; {
+<span id="L261" class="ln">   261  </span>			md.IsInRecovery = true
+<span id="L262" class="ln">   262  </span>		}
+<span id="L263" class="ln">   263  </span>		md.Unlock()
+<span id="L264" class="ln">   264  </span>
+<span id="L265" class="ln">   265  </span>			helperSetNodeStatus(state)
+<span id="L266" class="ln">   266  </span>
+<span id="L267" class="ln">   267  </span>			sr := NewDbConnReaper(r, md)
+<span id="L268" class="ln">   268  </span>			go func() {
+<span id="L269" class="ln">   269  </span>				sr.Reap(ctx)
+<span id="L270" class="ln">   270  </span>			}()
 <span id="L271" class="ln">   271  </span>
-<span id="L272" class="ln">   272  </span>			for range len(r.measurementCh) {
-<span id="L273" class="ln">   273  </span>				<span class="comment">// empty channel to ensure correctness in subsequent runs</span>
-<span id="L274" class="ln">   274  </span>				select {
-<span id="L275" class="ln">   275  </span>				case &lt;-r.measurementCh:
-<span id="L276" class="ln">   276  </span>				default:
-<span id="L277" class="ln">   277  </span>				}
-<span id="L278" class="ln">   278  </span>			}
-<span id="L279" class="ln">   279  </span>		}
-<span id="L280" class="ln">   280  </span>	})
-<span id="L281" class="ln">   281  </span>}
-<span id="L282" class="ln">   282  </span>
+<span id="L272" class="ln">   272  </span>			time.Sleep(2 * time.Second)
+<span id="L273" class="ln">   273  </span>			assert.GreaterOrEqual(t, len(r.measurementCh), 3)
+<span id="L274" class="ln">   274  </span>			cancel()
+<span id="L275" class="ln">   275  </span>
+<span id="L276" class="ln">   276  </span>			for range len(r.measurementCh) {
+<span id="L277" class="ln">   277  </span>				<span class="comment">// empty channel to ensure correctness in subsequent runs</span>
+<span id="L278" class="ln">   278  </span>				select {
+<span id="L279" class="ln">   279  </span>				case &lt;-r.measurementCh:
+<span id="L280" class="ln">   280  </span>				default:
+<span id="L281" class="ln">   281  </span>				}
+<span id="L282" class="ln">   282  </span>			}
+<span id="L283" class="ln">   283  </span>		}
+<span id="L284" class="ln">   284  </span>	})
+<span id="L285" class="ln">   285  </span>}
+<span id="L286" class="ln">   286  </span>
 </pre><p></p>
 
 <div id="footer">
