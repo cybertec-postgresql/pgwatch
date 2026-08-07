@@ -137,12 +137,8 @@ func (r *reaper) Reap(ctx context.Context) {
 				versionStr := md.VersionStr
 				approxDbSize := md.ApproxDbSize
 				var metricsMain, metricsStandby metrics.MetricIntervals
-				if md.Metrics != nil {
-					metricsMain = maps.Clone(md.Metrics)
-				}
-				if md.MetricsStandby != nil {
-					metricsStandby = maps.Clone(md.MetricsStandby)
-				}
+				metricsMain = maps.Clone(md.Metrics)
+				metricsStandby = maps.Clone(md.MetricsStandby)
 				md.RUnlock()
 
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
