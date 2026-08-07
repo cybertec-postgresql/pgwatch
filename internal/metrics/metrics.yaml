@@ -1817,6 +1817,36 @@ metrics:
                   r.su >= 10
         node_status: primary
         storage_name: "recommendations"
+    recovery:
+        description: >
+            This metric collects recovery statistics from the PostgreSQL 19 `pg_stat_recovery` view.
+            It exposes the startup process replay state, including the last replayed and currently replaying WAL locations
+            with their timelines, the recovery pause state, whether promotion has been triggered, and the timestamp of the
+            last replayed transaction. The replay lag field reports the WAL byte distance between the currently-replaying
+            record end and the last fully-replayed record end. The view returns no rows when the server is not in recovery,
+            so no data is emitted on primaries.
+        sqls:
+            19: |
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  pause_state as tag_pause_state,
+                  promote_triggered as promote_triggered_int,
+                  last_replayed_tli,
+                  replay_end_tli,
+                  coalesce(pg_wal_lsn_diff(replay_end_lsn, last_replayed_end_lsn)::int8, 0) as replay_lag_b,
+                  extract(epoch from (now() - recovery_last_xact_time))::int8 as seconds_since_last_xact,
+                  extract(epoch from (now() - current_chunk_start_time))::int8 as seconds_since_current_chunk
+                from
+                  pg_stat_recovery
+        gauges:
+            - promote_triggered_int
+            - last_replayed_tli
+            - replay_end_tli
+            - replay_lag_b
+            - seconds_since_last_xact
+            - seconds_since_current_chunk
+        node_status: standby
+        is_instance_level: true
     replication:
         description: >
             This metric collects replication statistics from the `pg_stat_replication` view.
@@ -4232,8 +4262,6 @@ metrics:
                 where
                   name ~ '[0-9A-F]{24}.ready';
 
-    
-
 presets:
     aiven:
         description: aiven database metrics
@@ -4350,6 +4378,7 @@ presets:
             locks: 60
             locks_mode: 60
             postgres_role: 120
+            recovery: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4397,6 +4426,7 @@ presets:
             reco_partial_index_candidates: 79200
             reco_sprocs_wo_search_path: 86400
             reco_superusers: 93600
+            recovery: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4525,6 +4555,7 @@ presets:
             locks: 60
             locks_mode: 60
             postgres_role: 120
+            recovery: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4619,6 +4650,7 @@ presets:
             reco_partial_index_candidates: 30
             reco_sprocs_wo_search_path: 30
             reco_superusers: 30
+            recovery: 30
             replication: 30
             replication_slot_stats: 30
             replication_slots: 30
