@@ -25,7 +25,6 @@ const (
 var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
-var metricsConfig metrics.MetricIntervals                 // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
@@ -136,7 +135,7 @@ func (r *reaper) Reap(ctx context.Context) {
 					}
 					continue
 				}
-
+				var metricsConfig metrics.MetricIntervals
 				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 					metricsConfig = md.MetricsStandby
 				} else {
