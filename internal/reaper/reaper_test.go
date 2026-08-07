@@ -570,7 +570,7 @@ func TestReaper_PrintMemStats(t *testing.T) {
 
 // TestRace_AddSysinfoToMeasurements verifies no data race between concurrent
 // RuntimeInfo writes (simulating FetchRuntimeInfo) and AddSysinfoToMeasurements reads.
-func TestRace_AddSysinfoToMeasurements(t *testing.T) {
+func TestRace_AddSysinfoToMeasurements(*testing.T) {
 	r := &reaper{
 		Options: &cmdopts.Options{
 			Sinks: sinks.CmdOpts{
@@ -644,7 +644,7 @@ func TestRace_CreateSourceHelpers(t *testing.T) {
 // TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop's
 // RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and
 // MetricsStandby does not race against concurrent FetchRuntimeInfo writes.
-func TestRace_MainLoopRuntimeInfoSnapshot(t *testing.T) {
+func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
 	md := sources.NewDbConn(sources.Source{
 		Name: "race-test",
 		Kind: sources.SourcePostgres,
