@@ -2106,6 +2106,27 @@ metrics:
                   and s.pid != pg_backend_pid()
                   and now() - s.query_start > '100ms'::interval
                 group by s.query
+    stat_lock:
+        description: >
+            This metric collects cumulative per-lock-type statistics from the `pg_stat_lock` view.
+            It exposes the number of waits, total wait time in milliseconds, and fast-path lock pool exceeded count
+            for each lock type. Useful for spotting relation/tuple lock contention and fast-path saturation.
+        sqls:
+            19: |-
+                SELECT /* pgwatch_generated */
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    locktype::text as tag_locktype,
+                    waits::int8 as waits,
+                    (wait_time)::float8 as wait_time_ms,
+                    fastpath_exceeded::int8 as fastpath_exceeded,
+                    extract(epoch from (now() - stats_reset))::int8 as stats_reset_s
+                FROM
+                    pg_stat_lock
+        gauges:
+            - wait_time_ms
+            - fastpath_exceeded
+            - stats_reset_s
+        is_instance_level: true
     stat_io:
         description: >
             This metric collects I/O statistics from the `pg_stat_io` view.
@@ -4379,6 +4400,7 @@ presets:
             locks_mode: 60
             postgres_role: 120
             recovery: 30
+            stat_lock: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4427,6 +4449,7 @@ presets:
             reco_sprocs_wo_search_path: 86400
             reco_superusers: 93600
             recovery: 30
+            stat_lock: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4556,6 +4579,7 @@ presets:
             locks_mode: 60
             postgres_role: 120
             recovery: 30
+            stat_lock: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -4651,6 +4675,7 @@ presets:
             reco_sprocs_wo_search_path: 30
             reco_superusers: 30
             recovery: 30
+            stat_lock: 30
             replication: 30
             replication_slot_stats: 30
             replication_slots: 30
