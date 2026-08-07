@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
@@ -824,4 +825,50 @@ incomplete line without proper fields
 			// Also acceptable: no measurement sent at all
 		}
 	})
+}
+
+// TestRace_LogParserRealDbname verifies that concurrent FetchRuntimeInfo writes to
+// RealDbname and logparser reads of lp.realDbname do not cause a data race.
+// lp.realDbname is snapshotted at LogParser construction time, so only the
+// constructor call itself must be protected (via RLock in NewLogParser).
+func TestRace_LogParserRealDbname(t *testing.T) {
+	md := sources.NewDbConn(sources.Source{Name: "race-test"})
+
+	// Construct a LogParser directly (no DB needed) reusing the internal struct.
+	lp := &LogParser{
+		LogConfig:        &LogConfig{},
+		ctx:              t.Context(),
+		LogsMatchRegex:   regexp.MustCompile(csvLogDefaultRegEx),
+		SourceConn:       md,
+		realDbname:       "initial",
+		Interval:         time.Second,
+		StoreCh:          make(chan metrics.MeasurementEnvelope, 1),
+		eventCounts:      make(map[string]int64),
+		eventCountsTotal: make(map[string]int64),
+		fileOffsets:      make(map[string]uint64),
+	}
+
+	const iterations = 200
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate FetchRuntimeInfo updating RealDbname under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.Lock()
+			md.RealDbname = "updateddb"
+			md.Unlock()
+		}
+	}()
+
+	// Reader: logparser reads lp.realDbname (a plain string copy, no lock needed after construction).
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = lp.realDbname
+		}
+	}()
+
+	wg.Wait()
 }

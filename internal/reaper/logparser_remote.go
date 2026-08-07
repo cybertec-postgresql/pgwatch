@@ -119,7 +119,7 @@ func (lp *LogParser) parseLogsRemote() error {
 					}
 
 					databaseName := result["database_name"]
-					if lp.SourceConn.RealDbname == databaseName {
+				if lp.realDbname == databaseName {
 						lp.eventCounts[errorSeverity]++
 					}
 					lp.eventCountsTotal[errorSeverity]++

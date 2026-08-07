@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
@@ -54,7 +55,6 @@ var _ SourceConn = (*DbConn)(nil)
 var _ SourceConn = (*PromConn)(nil)
 
 type RuntimeInfo struct {
-	LastCheckedOn    time.Time
 	IsInRecovery     bool
 	VersionStr       string
 	Version          int
@@ -76,6 +76,7 @@ type (
 		Conn       db.PgxPoolIface
 		ConnConfig *pgxpool.Config
 		RuntimeInfo
+		lastCheckedNs atomic.Int64 // nanoseconds of last successful FetchRuntimeInfo; 0 = never
 		sync.RWMutex
 	}
 
@@ -172,6 +173,8 @@ func (md *DbConn) GetClusterIdentifier() string {
 	if err := md.ParseConfig(); err != nil {
 		return ""
 	}
+	md.RLock()
+	defer md.RUnlock()
 	return fmt.Sprintf("%s:%s:%d", md.SystemIdentifier, md.ConnConfig.ConnConfig.Host, md.ConnConfig.ConnConfig.Port)
 }
 
@@ -228,15 +231,18 @@ func VersionToInt(version string) (v int) {
 }
 
 func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	// Fast path: check the atomic timestamp without acquiring any lock.
+	// This avoids lock contention when the cached value is still fresh.
+	if !forceRefetch && time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) < 5*time.Minute {
+		return nil
+	}
+
 	md.Lock()
 	defer md.Unlock()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	if !forceRefetch && md.LastCheckedOn.After(time.Now().Add(time.Minute*-5)) { // use cached version for 5 min
-		return nil
-	}
 	switch md.Kind {
 	case SourcePgBouncer, SourcePgPool:
 		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
@@ -286,7 +292,7 @@ FROM
 		}
 
 	}
-	md.LastCheckedOn = time.Now()
+	md.lastCheckedNs.Store(time.Now().UnixNano())
 	return err
 }
 
@@ -336,11 +342,13 @@ where
 
 // TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
 func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+	// Snapshot the already-known extensions under RLock; release before doing any I/O.
 	md.RLock()
-	defer md.RUnlock()
+	knownExts := maps.Clone(md.Extensions)
+	md.RUnlock()
 
 	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
-	CreatedExts := make([]string, 0)
+	createdExts := make([]string, 0)
 
 	data, err := md.Conn.Query(ctx, sqlAvailableExts)
 	if err != nil {
@@ -352,7 +360,7 @@ func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []s
 	}
 
 	for _, extToCreate := range extensions {
-		if _, ok := md.Extensions[extToCreate]; ok {
+		if _, ok := knownExts[extToCreate]; ok {
 			continue
 		}
 		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
@@ -362,19 +370,21 @@ func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []s
 		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); e != nil {
 			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, e))
 		} else {
-			CreatedExts = append(CreatedExts, extToCreate)
+			createdExts = append(createdExts, extToCreate)
 		}
 	}
-	return strings.Join(CreatedExts, ","), err
+	return strings.Join(createdExts, ","), err
 }
 
 // TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fetching helper" functions automatically
 func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+	// Clone the metric map under RLock; release before doing any I/O.
 	md.RLock()
-	defer md.RUnlock()
-	var sql string
 	metricsMap := maps.Clone(md.Metrics)
 	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
+	md.RUnlock()
+
+	var sql string
 	for metricName := range metricsMap {
 		if sql = getSQLFn(metricName); sql == "" {
 			continue

@@ -148,7 +148,7 @@ func (lp *LogParser) parseLogsLocal() error {
 					time.Sleep(time.Minute)
 					break
 				}
-				if lp.SourceConn.RealDbname == databaseName {
+			if lp.realDbname == databaseName {
 					lp.eventCounts[errorSeverity]++
 				}
 				lp.eventCountsTotal[errorSeverity]++

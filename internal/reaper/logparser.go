@@ -43,6 +43,7 @@ type LogParser struct {
 	ctx              context.Context
 	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.DbConn
+	realDbname       string // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
 	Interval         time.Duration
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
@@ -83,10 +84,14 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 
 	logger.Debugf("Considering log files in folder: %s", cfg.Directory)
 
+	mdb.RLock()
+	realDbname := mdb.RealDbname
+	mdb.RUnlock()
 	return &LogParser{
 		ctx:              ctx,
 		LogsMatchRegex:   logsRegex,
 		SourceConn:       mdb,
+		realDbname:       realDbname,
 		Interval:         mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:          storeCh,
 		LogConfig:        cfg,

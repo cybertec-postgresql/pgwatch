@@ -2,6 +2,7 @@ package reaper
 
 import (
 	"context"
+	"maps"
 	"runtime"
 	"slices"
 	"strings"
@@ -126,8 +127,24 @@ func (r *reaper) Reap(ctx context.Context) {
 					srcL.WithError(err).Error("could not start metric gathering")
 					continue
 				}
-				srcL.WithField("recovery", md.IsInRecovery).Infof("Connect OK. Version: %s", md.VersionStr)
-				if md.IsInRecovery && md.OnlyIfMaster {
+
+				// Snapshot mutable RuntimeInfo fields under RLock so subsequent reads
+				// in this iteration are consistent and race-free against the per-source
+				// DbConnReaper goroutine calling FetchRuntimeInfo concurrently.
+				md.RLock()
+				isInRecovery := md.IsInRecovery
+				versionStr := md.VersionStr
+				DBSizeMB := md.ApproxDbSize / 1048576
+				var metricsConfig metrics.MetricIntervals
+				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+					metricsConfig = maps.Clone(md.MetricsStandby)
+				} else {
+					metricsConfig = maps.Clone(md.Metrics)
+				}
+				md.RUnlock()
+
+				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
+				if isInRecovery && md.OnlyIfMaster {
 					srcL.Info("not added to monitoring due to 'master only' property")
 					if md.IsPostgresSource() {
 						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
@@ -135,17 +152,11 @@ func (r *reaper) Reap(ctx context.Context) {
 					}
 					continue
 				}
-				var metricsConfig metrics.MetricIntervals
-				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-					metricsConfig = md.MetricsStandby
-				} else {
-					metricsConfig = md.Metrics
-				}
 
 				r.CreateSourceHelpers(ctx, srcL, md)
 
 				if md.IsPostgresSource() {
-					DBSizeMB := md.ApproxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+					// only remove from monitoring when we're certain it's under the threshold
 					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
 						hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
@@ -163,7 +174,7 @@ func (r *reaper) Reap(ctx context.Context) {
 						// else: standby without a dedicated standby config keeps primary config, no warn
 					}
 				}
-				hostLastKnownStatusInRecovery[src.Name] = md.IsInRecovery
+				hostLastKnownStatusInRecovery[src.Name] = isInRecovery
 
 				// Sync metric names with sinks for the active config
 				for metricName := range metricsConfig {
@@ -221,7 +232,10 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
-	if !monitoredSource.IsPostgresSource() || monitoredSource.IsInRecovery {
+	monitoredSource.RLock()
+	isInRecovery := monitoredSource.IsInRecovery
+	monitoredSource.RUnlock()
+	if !monitoredSource.IsPostgresSource() || isInRecovery {
 		return // no need to create anything for non-postgres sources
 	}
 
@@ -358,12 +372,16 @@ func (r *reaper) WriteMeasurements(ctx context.Context) {
 }
 
 func (r *reaper) AddSysinfoToMeasurements(data metrics.Measurements, md *sources.DbConn) {
+	md.RLock()
+	realDbname := md.RealDbname
+	systemIdentifier := md.SystemIdentifier
+	md.RUnlock()
 	for _, dr := range data {
-		if r.Sinks.RealDbnameField > "" && md.RealDbname > "" {
-			dr[r.Sinks.RealDbnameField] = md.RealDbname
+		if r.Sinks.RealDbnameField > "" && realDbname > "" {
+			dr[r.Sinks.RealDbnameField] = realDbname
 		}
-		if r.Sinks.SystemIdentifierField > "" && md.SystemIdentifier > "" {
-			dr[r.Sinks.SystemIdentifierField] = md.SystemIdentifier
+		if r.Sinks.SystemIdentifierField > "" && systemIdentifier > "" {
+			dr[r.Sinks.SystemIdentifierField] = systemIdentifier
 		}
 	}
 }

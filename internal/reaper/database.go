@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
@@ -24,10 +25,12 @@ var _ Reaper = (*DbConnReaper)(nil)
 // and batches SQL queries via pgx.Batch when the source is a real Postgres
 // connection (non-pgbouncer, non-pgpool).
 type DbConnReaper struct {
-	reaper          *reaper
-	md              *sources.DbConn
-	lastFetch       map[string]time.Time
-	lastUptimeS     int64               // last seen postmaster_uptime_s for restart detection
+	reaper      *reaper
+	md          *sources.DbConn
+	lastFetch   map[string]time.Time
+	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
+
+	degradedMu      sync.RWMutex
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
 }
 
@@ -39,6 +42,28 @@ func NewDbConnReaper(r *reaper, md *sources.DbConn) *DbConnReaper {
 		lastFetch:       make(map[string]time.Time),
 		degradedMetrics: make(map[string]struct{}),
 	}
+}
+
+// isDegraded reports whether the named metric is in the degraded set.
+func (sr *DbConnReaper) isDegraded(name string) bool {
+	sr.degradedMu.RLock()
+	_, ok := sr.degradedMetrics[name]
+	sr.degradedMu.RUnlock()
+	return ok
+}
+
+// markDegraded adds name to the degraded set.
+func (sr *DbConnReaper) markDegraded(name string) {
+	sr.degradedMu.Lock()
+	sr.degradedMetrics[name] = struct{}{}
+	sr.degradedMu.Unlock()
+}
+
+// clearDegraded removes name from the degraded set.
+func (sr *DbConnReaper) clearDegraded(name string) {
+	sr.degradedMu.Lock()
+	delete(sr.degradedMetrics, name)
+	sr.degradedMu.Unlock()
 }
 
 // activeMetrics returns a snapshot copy of the currently active metric intervals
@@ -189,12 +214,12 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 					sr.lastFetch[name] = time.Now()
 					break
 				}
-				if _, degraded := sr.degradedMetrics[name]; degraded {
+				if sr.isDegraded(name) {
 					if err = sr.fetchMetric(ctx, batchEntry{metricName: name, metric: metric, sql: sql}); err != nil {
 						l.WithError(err).WithField("metric", name).Error("degraded metric fetch failed")
 					} else {
 						l.WithField("metric", name).Info("degraded metric recovered, returning to batch execution")
-						delete(sr.degradedMetrics, name)
+						sr.clearDegraded(name)
 					}
 					sr.lastFetch[name] = time.Now()
 					break
@@ -263,9 +288,9 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 
 	for _, e := range retries {
 		if err := sr.fetchMetric(ctx, e); err != nil {
-		errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.metricName, err))
-		log.GetLogger(ctx).WithField("metric", e.metricName).Warning("metric degraded after repeated failures, switching to individual fetch")
-		sr.degradedMetrics[e.metricName] = struct{}{}
+			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.metricName, err))
+			log.GetLogger(ctx).WithField("metric", e.metricName).Warning("metric degraded after repeated failures, switching to individual fetch")
+			sr.markDegraded(e.metricName)
 		}
 	}
 	return errors.Join(errs...)

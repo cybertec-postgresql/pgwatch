@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -234,12 +235,9 @@ func TestSourceConn_FetchRuntimeInfo(t *testing.T) {
 	})
 
 	t.Run("cached version", func(t *testing.T) {
-		md := &sources.DbConn{
-			RuntimeInfo: sources.RuntimeInfo{
-				LastCheckedOn: time.Now().Add(-time.Minute),
-				Version:       42,
-			},
-		}
+		md := sources.NewDbConn(sources.Source{})
+		md.SetLastCheckedForTesting(time.Now().Add(-time.Minute)) // within 5-minute TTL
+		md.Version = 42
 		err := md.FetchRuntimeInfo(ctx, false)
 		assert.NoError(t, err)
 		assert.Equal(t, 42, md.Version)
@@ -693,4 +691,172 @@ func TestRedactURL(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// TestRace_GetClusterIdentifier verifies that concurrent FetchRuntimeInfo writes
+// and GetClusterIdentifier reads do not cause a data race.
+func TestRace_GetClusterIdentifier(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{
+		Kind:    sources.SourcePgBouncer,
+		ConnStr: "postgres://user:pass@localhost:5432/db",
+	})
+	md.Conn = mock
+
+	const iterations = 50
+	// FetchRuntimeInfo for pgbouncer needs one SHOW VERSION per forceRefetch=true call.
+	for range iterations {
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.FetchRuntimeInfo(context.Background(), true)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.GetClusterIdentifier()
+		}
+	}()
+
+	wg.Wait()
+}
+
+// TestRace_TryCreateMissingExtensions verifies that concurrent FetchRuntimeInfo
+// writes to Extensions and TryCreateMissingExtensions reads do not race.
+func TestRace_TryCreateMissingExtensions(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{Kind: sources.SourcePostgres})
+	md.Conn = mock
+
+	const iterations = 50
+	// Each TryCreateMissingExtensions call queries available extensions then skips
+	// creation because "pg_stat_statements" will be in knownExts after the first write.
+	for range iterations {
+		mock.ExpectQuery("select name").
+			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("pg_stat_statements"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate FetchRuntimeInfo updating Extensions under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.Lock()
+			md.Extensions = map[string]int{"pg_stat_statements": 10800}
+			md.Unlock()
+		}
+	}()
+
+	// Reader: TryCreateMissingExtensions snapshots Extensions under RLock then does I/O unlocked.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_, _ = md.TryCreateMissingExtensions(context.Background(), []string{"pg_stat_statements"})
+		}
+	}()
+
+	wg.Wait()
+}
+
+// TestRace_TryCreateMetricsHelpers verifies that concurrent SetMetricIntervals
+// writes and TryCreateMetricsHelpers reads do not race.
+func TestRace_TryCreateMetricsHelpers(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{
+		Kind:    sources.SourcePostgres,
+		Metrics: metrics.MetricIntervals{"metric1": 30},
+	})
+	md.Conn = mock
+
+	const iterations = 50
+	for range iterations {
+		mock.ExpectExec("CREATE FUNCTION metric1").
+			WillReturnResult(pgxmock.NewResult("CREATE", 1))
+	}
+
+	getSQLFn := func(metric string) string {
+		if metric == "metric1" {
+			return "CREATE FUNCTION metric1"
+		}
+		return ""
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Writer: simulate SetMetricIntervals updating Metrics under Lock.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			md.SetMetricIntervals(metrics.MetricIntervals{"metric1": 30}, nil)
+		}
+	}()
+
+	// Reader: TryCreateMetricsHelpers clones Metrics under RLock then does I/O unlocked.
+	go func() {
+		defer wg.Done()
+		for range iterations {
+			_ = md.TryCreateMetricsHelpers(context.Background(), getSQLFn)
+		}
+	}()
+
+	wg.Wait()
+}
+
+// TestRace_FetchRuntimeInfoAtomicCache verifies that the atomic lastCheckedNs
+// fast path and double-checked lock in FetchRuntimeInfo are race-free under
+// concurrent calls from multiple goroutines.
+func TestRace_FetchRuntimeInfoAtomicCache(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	md := sources.NewDbConn(sources.Source{Kind: sources.SourcePgBouncer})
+	md.Conn = mock
+
+	const goroutines = 4
+	const iterations = 50
+
+	// Pre-seed enough mock responses for the worst-case where every call bypasses the cache.
+	for range goroutines * iterations {
+		mock.ExpectQuery("SHOW VERSION").
+			WithArgs(pgx.QueryExecModeSimpleProtocol).
+			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("PgBouncer 1.12.0"))
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range iterations {
+				// Mix forced and cached calls to exercise both fast and slow paths.
+				_ = md.FetchRuntimeInfo(context.Background(), false)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
