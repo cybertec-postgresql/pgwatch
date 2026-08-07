@@ -78,16 +78,21 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "12.3.1",
+            "version": "13.0.2",
             "spec": {
               "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
                 "legend": {
                   "calcs": [
                     "lastNotNull",
-                    "max"
+                    "max",
+                    "mean"
                   ],
                   "displayMode": "table",
-                  "placement": "right",
+                  "placement": "bottom",
                   "showLegend": true,
                   "sortBy": "Max",
                   "sortDesc": true
@@ -100,41 +105,36 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "short",
-                  "min": 0,
-                  "custom": {
-                    "drawStyle": "line",
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "fillOpacity": 10,
-                    "showPoints": "never",
-                    "spanNulls": true,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "axisPlacement": "auto",
-                    "axisLabel": "waits/s",
-                    "scaleDistribution": {
-                      "type": "linear"
-                    }
-                  },
+                  "unit": "wps",
                   "color": {
                     "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 60,
+                    "lineWidth": 1,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "spanNulls": true,
+                    "gradientMode": "none"
                   },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
+                        "value": 0,
                         "color": "#28781e"
                       },
                       {
-                        "value": 10,
+                        "value": 50,
                         "color": "rgba(237, 129, 40, 0.89)"
                       },
                       {
-                        "value": 100,
+                        "value": 200,
                         "color": "#d44a3a"
                       }
                     ]
@@ -185,14 +185,13 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "12.3.1",
+            "version": "13.1.1",
             "spec": {
               "options": {
                 "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
+                "graphMode": "area",
+                "justifyMode": "center",
                 "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -200,29 +199,36 @@
                   "fields": "",
                   "values": false
                 },
-                "showPercentChange": false,
-                "text": {},
-                "textMode": "auto",
-                "wideLayout": true
+                "textMode": "auto"
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "ms",
                   "decimals": 2,
-                  "min": 0,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
+                        "value": 0,
                         "color": "#28781e"
                       },
                       {
-                        "value": 50,
+                        "value": 10,
                         "color": "rgba(237, 129, 40, 0.89)"
                       },
                       {
-                        "value": 200,
+                        "value": 100,
                         "color": "#d44a3a"
                       }
                     ]
@@ -258,8 +264,8 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "sum(rate(pgwatch_stat_lock_wait_time_ms{dbname=~\"$dbname\"}[$__range]))",
-                        "legendFormat": "total wait"
+                        "expr": "sum by (locktype) (rate(pgwatch_stat_lock_fastpath_exceeded{dbname=~\"$dbname\"}[$__range]))",
+                        "legendFormat": "{{locktype}}"
                       }
                     },
                     "refId": "A",
@@ -274,49 +280,64 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "12.3.1",
+            "version": "13.0.2",
             "spec": {
               "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
                 "legend": {
                   "calcs": [
                     "lastNotNull",
                     "max"
                   ],
-                  "displayMode": "table",
-                  "placement": "right",
+                  "displayMode": "list",
+                  "placement": "bottom",
                   "showLegend": true,
                   "sortBy": "Max",
                   "sortDesc": true
                 },
                 "tooltip": {
-                  "hideZeros": false,
+                  "hideZeros": true,
                   "mode": "single",
                   "sort": "none"
                 }
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "ms",
-                  "min": 0,
+                  "unit": "short",
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
                     "drawStyle": "line",
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "fillOpacity": 15,
-                    "showPoints": "never",
-                    "spanNulls": true,
+                    "fillOpacity": 0,
+                    "lineWidth": 2,
                     "stacking": {
                       "group": "A",
                       "mode": "none"
                     },
+                    "showPoints": "never",
                     "axisPlacement": "auto",
-                    "axisLabel": "ms/s",
-                    "scaleDistribution": {
-                      "type": "linear"
-                    }
+                    "spanNulls": true
                   },
-                  "color": {
-                    "mode": "palette-classic"
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 10000,
+                        "color": "#d44a3a"
+                      }
+                    ]
                   }
                 },
                 "overrides": []
@@ -346,8 +367,8 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "sum(pgwatch_stat_lock_waits{dbname=~\"$dbname\"})",
-                        "legendFormat": "cumulative waits"
+                        "expr": "sum by (locktype) (pgwatch_stat_lock_waits{dbname=~\"$dbname\"})",
+                        "legendFormat": "{{locktype}}"
                       }
                     },
                     "refId": "A",
@@ -362,49 +383,56 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "12.3.1",
+            "version": "13.0.2",
             "spec": {
               "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
                 "legend": {
                   "calcs": [
                     "lastNotNull",
                     "max"
                   ],
-                  "displayMode": "table",
-                  "placement": "right",
+                  "displayMode": "list",
+                  "placement": "bottom",
                   "showLegend": true,
-                  "sortBy": "Max",
+                  "sortBy": "Last *",
                   "sortDesc": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
-                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
                     "drawStyle": "line",
-                    "lineInterpolation": "stepAfter",
+                    "fillOpacity": 10,
                     "lineWidth": 1,
-                    "fillOpacity": 5,
-                    "showPoints": "never",
-                    "spanNulls": true,
                     "stacking": {
                       "group": "A",
                       "mode": "none"
                     },
+                    "showPoints": "never",
                     "axisPlacement": "auto",
-                    "axisLabel": "waits",
-                    "scaleDistribution": {
-                      "type": "linear"
-                    }
+                    "spanNulls": true
                   },
-                  "color": {
-                    "mode": "palette-classic"
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
                   }
                 },
                 "overrides": []
@@ -450,16 +478,21 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "12.3.1",
+            "version": "13.0.2",
             "spec": {
               "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
                 "legend": {
                   "calcs": [
                     "lastNotNull",
-                    "max"
+                    "max",
+                    "mean"
                   ],
-                  "displayMode": "table",
-                  "placement": "right",
+                  "displayMode": "list",
+                  "placement": "bottom",
                   "showLegend": true,
                   "sortBy": "Max",
                   "sortDesc": true
@@ -472,41 +505,36 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "short",
-                  "min": 0,
-                  "custom": {
-                    "drawStyle": "line",
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "fillOpacity": 15,
-                    "showPoints": "never",
-                    "spanNulls": true,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "axisPlacement": "auto",
-                    "axisLabel": "exceeded/s",
-                    "scaleDistribution": {
-                      "type": "linear"
-                    }
-                  },
+                  "unit": "ms",
                   "color": {
                     "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 30,
+                    "lineWidth": 1,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "spanNulls": true,
+                    "gradientMode": "opacity"
                   },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
+                        "value": 0,
                         "color": "#28781e"
                       },
                       {
-                        "value": 5,
+                        "value": 100,
                         "color": "rgba(237, 129, 40, 0.89)"
                       },
                       {
-                        "value": 50,
+                        "value": 1000,
                         "color": "#d44a3a"
                       }
                     ]
@@ -540,7 +568,7 @@
                       },
                       "spec": {
                         "expr": "max(pgwatch_stat_lock_stats_reset_s{dbname=~\"$dbname\"})",
-                        "legendFormat": "reset age",
+                        "legendFormat": "",
                         "instant": true
                       }
                     },
@@ -556,14 +584,13 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "12.3.1",
+            "version": "13.1.1",
             "spec": {
               "options": {
                 "colorMode": "value",
                 "graphMode": "none",
-                "justifyMode": "auto",
+                "justifyMode": "center",
                 "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -571,22 +598,36 @@
                   "fields": "",
                   "values": false
                 },
-                "showPercentChange": false,
-                "text": {},
-                "textMode": "auto",
-                "wideLayout": true
+                "textMode": "value_and_name"
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "s",
-                  "decimals": 0,
-                  "min": 0,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
+                        "value": 0,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 86400,
                         "color": "#28781e"
+                      },
+                      {
+                        "value": 604800,
+                        "color": "rgba(237, 129, 40, 0.89)"
                       }
                     ]
                   },
@@ -621,7 +662,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (locktype) (pgwatch_stat_lock_waits{dbname=~\"$dbname\"}))",
+                        "expr": "sum by (locktype) (pgwatch_stat_lock_waits{dbname=~\"$dbname\"})",
                         "legendFormat": "{{locktype}}",
                         "instant": true
                       }
@@ -638,17 +679,9 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "piechart",
-            "version": "12.3.1",
+            "version": "13.0.0",
             "spec": {
               "options": {
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "pieType": "donut",
                 "displayLabels": [
                   "name",
                   "percent"
@@ -661,19 +694,42 @@
                     "value"
                   ]
                 },
+                "pieType": "donut",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
                 "tooltip": {
-                  "mode": "single"
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
                 }
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
-                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
+                        "value": 0,
                         "color": "#28781e"
                       }
                     ]
@@ -888,7 +944,6 @@
           ],
           "multi": false,
           "includeAll": false,
-          "label": "Aggregation interval",
           "hide": "dontHide",
           "skipUrlSync": false,
           "allowCustomValue": true

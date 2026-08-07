@@ -67,7 +67,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT to_timestamp($__timeGroup(time, $agg_interval)) AS time,\n       COALESCE(tag_data->>'locktype', 'unknown') AS locktype,\n       (max((data->>'waits')::bigint) - lag(max((data->>'waits')::bigint)) OVER (PARTITION BY COALESCE(tag_data->>'locktype', 'unknown') ORDER BY to_timestamp($__timeGroup(time, $agg_interval)))) / NULLIF(extract(epoch FROM (to_timestamp($__timeGroup(time, $agg_interval)) - lag(to_timestamp($__timeGroup(time, $agg_interval))) OVER (PARTITION BY COALESCE(tag_data->>'locktype', 'unknown') ORDER BY to_timestamp($__timeGroup(time, $agg_interval))))), 0) AS \"waits_per_sec\"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1, 2\n ORDER BY 1",
+                        "rawSql": "SELECT to_timestamp($__timeGroup(time, $agg_interval)) AS time,\n       COALESCE(tag_data->>'locktype', 'unknown') AS metric,\n       (max((data->>'waits')::bigint) - lag(max((data->>'waits')::bigint)) OVER (PARTITION BY COALESCE(tag_data->>'locktype', 'unknown') ORDER BY to_timestamp($__timeGroup(time, $agg_interval)))) / NULLIF(extract(epoch FROM (to_timestamp($__timeGroup(time, $agg_interval)) - lag(to_timestamp($__timeGroup(time, $agg_interval))) OVER (PARTITION BY COALESCE(tag_data->>'locktype', 'unknown') ORDER BY to_timestamp($__timeGroup(time, $agg_interval))))), 0) AS value\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1, 2\n ORDER BY 1",
                         "select": [
                           [
                             {
@@ -227,7 +227,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval),\n       CASE WHEN sum((data->>'waits')::bigint) = 0 THEN NULL\n            ELSE sum((data->>'wait_time_ms')::float8) / sum((data->>'waits')::bigint)\n       END AS \" \"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1\n ORDER BY 1",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval) AS time,\n       COALESCE(sum((data->>'wait_time_ms')::float8) / NULLIF(sum((data->>'waits')::bigint), 0), 0) AS \" \"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1\n ORDER BY 1",
                         "select": [
                           [
                             {
@@ -830,11 +830,11 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "format": "table",
+                        "format": "time_series",
                         "group": [],
-                        "metricColumn": "none",
+                        "metricColumn": "time",
                         "rawQuery": true,
-                        "rawSql": "SELECT COALESCE(tag_data->>'locktype', 'unknown') AS locktype,\n       sum((data->>'waits')::bigint) AS \" \"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1\n ORDER BY 2 DESC",
+                        "rawSql": "SELECT now() AS time,\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='advisory' THEN (data->>'waits')::bigint ELSE 0 END) AS \"advisory\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='applytransaction' THEN (data->>'waits')::bigint ELSE 0 END) AS \"applytransaction\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='extend' THEN (data->>'waits')::bigint ELSE 0 END) AS \"extend\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='frozenid' THEN (data->>'waits')::bigint ELSE 0 END) AS \"frozenid\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='object' THEN (data->>'waits')::bigint ELSE 0 END) AS \"object\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='page' THEN (data->>'waits')::bigint ELSE 0 END) AS \"page\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='relation' THEN (data->>'waits')::bigint ELSE 0 END) AS \"relation\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='spectoken' THEN (data->>'waits')::bigint ELSE 0 END) AS \"spectoken\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='transactionid' THEN (data->>'waits')::bigint ELSE 0 END) AS \"transactionid\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='tuple' THEN (data->>'waits')::bigint ELSE 0 END) AS \"tuple\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='userlock' THEN (data->>'waits')::bigint ELSE 0 END) AS \"userlock\",\n       SUM(CASE WHEN COALESCE(tag_data->>'locktype','unknown')='virtualxid' THEN (data->>'waits')::bigint ELSE 0 END) AS \"virtualxid\"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n",
                         "select": [
                           [
                             {
@@ -860,12 +860,10 @@
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "transformations": []
             }
           },
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "piechart",
             "version": "13.0.0",
             "spec": {
