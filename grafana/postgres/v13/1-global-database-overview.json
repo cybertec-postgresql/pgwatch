@@ -520,6 +520,157 @@
           }
         }
       },
+      "panel-41": {
+        "kind": "Panel",
+        "spec": {
+          "id": 41,
+          "title": "Lock waits/sec by type (PG19+)",
+          "description": "Per-lock-type wait rate from the `pg_stat_lock` view (PostgreSQL 19+). See the Lock details dashboard for deeper drill-down.",
+          "links": [
+            {
+              "title": "'Lock details' dashboard",
+              "url": "/d/lock-details?$__all_variables",
+              "targetBlank": true
+            }
+          ],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "group": [],
+                        "metricColumn": "none",
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval),\n       COALESCE(tag_data->>'locktype', 'unknown') AS locktype,\n       sum((data->>'waits')::bigint) AS \" \"\n  FROM stat_lock\n WHERE dbname IN ($dbname) AND $__timeFilter(time)\n GROUP BY 1, 2\n ORDER BY 1",
+                        "select": [
+                          [
+                            {
+                              "params": [
+                                "value"
+                              ],
+                              "type": "column"
+                            }
+                          ]
+                        ],
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        },
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.2",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "max",
+                    "mean"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "wps",
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 60,
+                    "lineWidth": 1,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "spanNulls": true,
+                    "gradientMode": "none"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 50,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 200,
+                        "color": "#d44a3a"
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
       "panel-17": {
         "kind": "Panel",
         "spec": {
@@ -3564,6 +3715,19 @@
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-21"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 21,
+                        "width": 24,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-41"
                         }
                       }
                     }
