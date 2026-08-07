@@ -135,9 +135,12 @@ func (r *reaper) Reap(ctx context.Context) {
 				isInRecovery := md.IsInRecovery
 				versionStr := md.VersionStr
 				approxDbSize := md.ApproxDbSize
-				var metricsMain, metricsStandby metrics.MetricIntervals
-				metricsMain = maps.Clone(md.Metrics)
-				metricsStandby = maps.Clone(md.MetricsStandby)
+				var metricsConfig metrics.MetricIntervals
+				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+					metricsConfig = maps.Clone(md.MetricsStandby)
+				} else {
+					metricsConfig = maps.Clone(md.Metrics)
+				}
 				md.RUnlock()
 
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
@@ -148,12 +151,6 @@ func (r *reaper) Reap(ctx context.Context) {
 						hostsToShutDownDueToRoleChange[src.Name] = true
 					}
 					continue
-				}
-				var metricsConfig metrics.MetricIntervals
-				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-					metricsConfig = md.MetricsStandby
-				} else {
-					metricsConfig = metricsMain
 				}
 
 				r.CreateSourceHelpers(ctx, srcL, md)
