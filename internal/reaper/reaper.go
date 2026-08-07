@@ -25,7 +25,6 @@ const (
 var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
 var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
-var metricsConfig metrics.MetricIntervals                 // set to host.Metrics or host.MetricsStandby (in case optional config defined and in recovery state
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
@@ -136,7 +135,7 @@ func (r *reaper) Reap(ctx context.Context) {
 					}
 					continue
 				}
-
+				var metricsConfig metrics.MetricIntervals
 				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 					metricsConfig = md.MetricsStandby
 				} else {
@@ -155,14 +154,13 @@ func (r *reaper) Reap(ctx context.Context) {
 
 					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[src.Name]
 					if lastKnownStatusInRecovery != md.IsInRecovery {
+						// metricsConfig was already selected above; here we only log the role change
 						if md.IsInRecovery && len(md.MetricsStandby) > 0 {
 							srcL.Warning("Switching metrics collection to standby config...")
-							metricsConfig = md.MetricsStandby
 						} else if !md.IsInRecovery {
 							srcL.Warning("Switching metrics collection to primary config...")
-							metricsConfig = md.Metrics
 						}
-						// else: it already has primary config do nothing + no warn
+						// else: standby without a dedicated standby config keeps primary config, no warn
 					}
 				}
 				hostLastKnownStatusInRecovery[src.Name] = md.IsInRecovery
