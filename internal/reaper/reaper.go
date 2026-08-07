@@ -123,96 +123,96 @@ func (r *reaper) Reap(ctx context.Context) {
 			}
 
 			switch md := monitoredSource.(type) {
-		case *sources.DbConn:
-			if err = md.FetchRuntimeInfo(ctx, true); err != nil {
-				srcL.WithError(err).Error("could not start metric gathering")
-				continue
-			}
+			case *sources.DbConn:
+				if err = md.FetchRuntimeInfo(ctx, true); err != nil {
+					srcL.WithError(err).Error("could not start metric gathering")
+					continue
+				}
 
-			// Snapshot mutable RuntimeInfo fields under RLock so subsequent reads
-			// in this iteration are consistent and race-free against the per-source
-			// DbConnReaper goroutine calling FetchRuntimeInfo concurrently.
-			md.RLock()
-			isInRecovery := md.IsInRecovery
-			versionStr := md.VersionStr
-			approxDbSize := md.ApproxDbSize
-			var metricsMain, metricsStandby metrics.MetricIntervals
-			if md.Metrics != nil {
-				metricsMain = maps.Clone(md.Metrics)
-			}
-			if md.MetricsStandby != nil {
-				metricsStandby = maps.Clone(md.MetricsStandby)
-			}
-			md.RUnlock()
+				// Snapshot mutable RuntimeInfo fields under RLock so subsequent reads
+				// in this iteration are consistent and race-free against the per-source
+				// DbConnReaper goroutine calling FetchRuntimeInfo concurrently.
+				md.RLock()
+				isInRecovery := md.IsInRecovery
+				versionStr := md.VersionStr
+				approxDbSize := md.ApproxDbSize
+				var metricsMain, metricsStandby metrics.MetricIntervals
+				if md.Metrics != nil {
+					metricsMain = maps.Clone(md.Metrics)
+				}
+				if md.MetricsStandby != nil {
+					metricsStandby = maps.Clone(md.MetricsStandby)
+				}
+				md.RUnlock()
 
-			srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
-			if isInRecovery && md.OnlyIfMaster {
-				srcL.Info("not added to monitoring due to 'master only' property")
+				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
+				if isInRecovery && md.OnlyIfMaster {
+					srcL.Info("not added to monitoring due to 'master only' property")
+					if md.IsPostgresSource() {
+						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
+						hostsToShutDownDueToRoleChange[src.Name] = true
+					}
+					continue
+				}
+
+				if isInRecovery && len(metricsStandby) > 0 {
+					metricsConfig = metricsStandby
+				} else {
+					metricsConfig = metricsMain
+				}
+
+				r.CreateSourceHelpers(ctx, srcL, md)
+
 				if md.IsPostgresSource() {
-					srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-					hostsToShutDownDueToRoleChange[src.Name] = true
-				}
-				continue
-			}
-
-			if isInRecovery && len(metricsStandby) > 0 {
-				metricsConfig = metricsStandby
-			} else {
-				metricsConfig = metricsMain
-			}
-
-			r.CreateSourceHelpers(ctx, srcL, md)
-
-			if md.IsPostgresSource() {
-				DBSizeMB := approxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
-				if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-					srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-					hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
-					continue
-				}
-
-				lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[src.Name]
-				if lastKnownStatusInRecovery != isInRecovery {
-					if isInRecovery && len(metricsStandby) > 0 {
-						srcL.Warning("Switching metrics collection to standby config...")
-						metricsConfig = metricsStandby
-					} else if !isInRecovery {
-						srcL.Warning("Switching metrics collection to primary config...")
-						metricsConfig = metricsMain
+					DBSizeMB := approxDbSize / 1048576 // only remove from monitoring when we're certain it's under the threshold
+					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+						hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
+						continue
 					}
-					// else: it already has primary config do nothing + no warn
-				}
-			}
-			hostLastKnownStatusInRecovery[src.Name] = isInRecovery
 
-			// Sync metric names with sinks for the active config
-			for metricName := range metricsConfig {
-				mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
-				if !metricDefExists {
-					epoch, ok := lastSQLFetchError.Load(metricName)
-					if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
-						srcL.WithField("metric", metricName).Warning("metric definition not found")
-						lastSQLFetchError.Store(metricName, time.Now().Unix())
+					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[src.Name]
+					if lastKnownStatusInRecovery != isInRecovery {
+						if isInRecovery && len(metricsStandby) > 0 {
+							srcL.Warning("Switching metrics collection to standby config...")
+							metricsConfig = metricsStandby
+						} else if !isInRecovery {
+							srcL.Warning("Switching metrics collection to primary config...")
+							metricsConfig = metricsMain
+						}
+						// else: it already has primary config do nothing + no warn
 					}
-					continue
 				}
-				metricNameForStorage := metricName
-				if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
-					metricNameForStorage = mvp.StorageName
-				}
-				if err := r.SinksWriter.SyncMetric(src.Name, metricNameForStorage, sinks.AddOp); err != nil {
-					srcL.Error(err)
-				}
-			}
+				hostLastKnownStatusInRecovery[src.Name] = isInRecovery
 
-			// Start SourceReaper for this source if not already running
-			if _, exists := r.cancelFuncs[src.Name]; !exists {
-				srcL.Info("starting source reaper")
-				sr := NewDbConnReaper(r, md)
-				sourceCtx, cancelFunc := context.WithCancel(ctx)
-				r.cancelFuncs[src.Name] = cancelFunc
-				go sr.Reap(sourceCtx)
-			}
+				// Sync metric names with sinks for the active config
+				for metricName := range metricsConfig {
+					mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
+					if !metricDefExists {
+						epoch, ok := lastSQLFetchError.Load(metricName)
+						if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
+							srcL.WithField("metric", metricName).Warning("metric definition not found")
+							lastSQLFetchError.Store(metricName, time.Now().Unix())
+						}
+						continue
+					}
+					metricNameForStorage := metricName
+					if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
+						metricNameForStorage = mvp.StorageName
+					}
+					if err := r.SinksWriter.SyncMetric(src.Name, metricNameForStorage, sinks.AddOp); err != nil {
+						srcL.Error(err)
+					}
+				}
+
+				// Start SourceReaper for this source if not already running
+				if _, exists := r.cancelFuncs[src.Name]; !exists {
+					srcL.Info("starting source reaper")
+					sr := NewDbConnReaper(r, md)
+					sourceCtx, cancelFunc := context.WithCancel(ctx)
+					r.cancelFuncs[src.Name] = cancelFunc
+					go sr.Reap(sourceCtx)
+				}
 			case *sources.PromConn:
 				if _, exists := r.cancelFuncs[src.Name]; !exists {
 					srcL.Info("starting prometheus source reaper")
