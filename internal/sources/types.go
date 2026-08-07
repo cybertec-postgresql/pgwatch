@@ -17,20 +17,20 @@ var ErrSourceExists = errors.New("source already exists")
 type Kind string
 
 const (
-	SourcePostgres           Kind = "postgres"
-	SourcePostgresContinuous Kind = "postgres-continuous-discovery"
-	SourcePgBouncer          Kind = "pgbouncer"
-	SourcePgPool             Kind = "pgpool"
-	SourcePatroni            Kind = "patroni"
-	SourcePrometheus         Kind = "prometheus"
+	SourcePostgres          Kind = "postgres"
+	SourcePostgresDiscovery Kind = "postgres-continuous-discovery"
+	SourcePgBouncer         Kind = "pgbouncer"
+	SourcePgPool            Kind = "pgpool"
+	SourcePatroniDiscovery  Kind = "patroni"
+	SourcePrometheus        Kind = "prometheus"
 )
 
 var Kinds = []Kind{
 	SourcePostgres,
-	SourcePostgresContinuous,
+	SourcePostgresDiscovery,
 	SourcePgBouncer,
 	SourcePgPool,
-	SourcePatroni,
+	SourcePatroniDiscovery,
 	SourcePrometheus,
 }
 
@@ -76,7 +76,7 @@ func (srcs Sources) Validate() (Sources, error) {
 			src.Kind = SourcePostgres
 		case "patroni-continuous-discovery", "patroni-namespace-discovery":
 			// deprecated, use SourcePatroni
-			src.Kind = SourcePatroni
+			src.Kind = SourcePatroniDiscovery
 		}
 	}
 	return srcs, nil

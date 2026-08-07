@@ -20,10 +20,10 @@ func TestKind_IsValid(t *testing.T) {
 		expected bool
 	}{
 		{name: "postgres", kind: sources.SourcePostgres, expected: true},
-		{name: "postgres continuous", kind: sources.SourcePostgresContinuous, expected: true},
+		{name: "postgres continuous", kind: sources.SourcePostgresDiscovery, expected: true},
 		{name: "pgbouncer", kind: sources.SourcePgBouncer, expected: true},
 		{name: "pgpool", kind: sources.SourcePgPool, expected: true},
-		{name: "patroni", kind: sources.SourcePatroni, expected: true},
+		{name: "patroni", kind: sources.SourcePatroniDiscovery, expected: true},
 		{name: "prometheus", kind: sources.SourcePrometheus, expected: true},
 		{name: "invalid", kind: "invalid", expected: false},
 	}

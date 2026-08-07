@@ -53,9 +53,9 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 	var e error
 	for _, s := range foundSources {
 		switch s.Kind {
-		case sources.SourcePatroni:
+		case sources.SourcePatroniDiscovery:
 			_, e = sources.ResolveDatabasesFromPatroni(s)
-		case sources.SourcePostgresContinuous:
+		case sources.SourcePostgresDiscovery:
 			_, e = sources.ResolveDatabasesFromPostgres(s)
 		default:
 			mdb := sources.NewSourceConn(s)
