@@ -110,9 +110,9 @@
 <span id="L53" class="ln">    53  </span>	var e error
 <span id="L54" class="ln">    54  </span>	for _, s := range foundSources {
 <span id="L55" class="ln">    55  </span>		switch s.Kind {
-<span id="L56" class="ln">    56  </span>		case sources.SourcePatroni:
+<span id="L56" class="ln">    56  </span>		case sources.SourcePatroniDiscovery:
 <span id="L57" class="ln">    57  </span>			_, e = sources.ResolveDatabasesFromPatroni(s)
-<span id="L58" class="ln">    58  </span>		case sources.SourcePostgresContinuous:
+<span id="L58" class="ln">    58  </span>		case sources.SourcePostgresDiscovery:
 <span id="L59" class="ln">    59  </span>			_, e = sources.ResolveDatabasesFromPostgres(s)
 <span id="L60" class="ln">    60  </span>		default:
 <span id="L61" class="ln">    61  </span>			mdb := sources.NewSourceConn(s)

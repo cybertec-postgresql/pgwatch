@@ -80,7 +80,7 @@
 <span id="L23" class="ln">    23  </span>	<span class="comment">// Create a new MonitoredDatabase instance</span>
 <span id="L24" class="ln">    24  </span>	md := sources.Source{}
 <span id="L25" class="ln">    25  </span>	md.Name = &#34;continuous&#34;
-<span id="L26" class="ln">    26  </span>	md.Kind = sources.SourcePostgresContinuous
+<span id="L26" class="ln">    26  </span>	md.Kind = sources.SourcePostgresDiscovery
 <span id="L27" class="ln">    27  </span>	md.ConnStr, err = pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
 <span id="L28" class="ln">    28  </span>	assert.NoError(t, err)
 <span id="L29" class="ln">    29  </span>
@@ -145,7 +145,7 @@
 <span id="L88" class="ln">    88  </span>	md.OnlyIfMaster = true
 <span id="L89" class="ln">    89  </span>
 <span id="L90" class="ln">    90  </span>	t.Run(&#34;simple patroni discovery&#34;, func(t *testing.T) {
-<span id="L91" class="ln">    91  </span>		md.Kind = sources.SourcePatroni
+<span id="L91" class="ln">    91  </span>		md.Kind = sources.SourcePatroniDiscovery
 <span id="L92" class="ln">    92  </span>		md.ConnStr = &#34;etcd://&#34; + strings.TrimPrefix(endpoint, &#34;http://&#34;)
 <span id="L93" class="ln">    93  </span>		md.ConnStr += &#34;/service&#34;
 <span id="L94" class="ln">    94  </span>		md.ConnStr += &#34;/demo&#34;
@@ -158,7 +158,7 @@
 <span id="L101" class="ln">   101  </span>	})
 <span id="L102" class="ln">   102  </span>
 <span id="L103" class="ln">   103  </span>	t.Run(&#34;several endpoints patroni discovery&#34;, func(t *testing.T) {
-<span id="L104" class="ln">   104  </span>		md.Kind = sources.SourcePatroni
+<span id="L104" class="ln">   104  </span>		md.Kind = sources.SourcePatroniDiscovery
 <span id="L105" class="ln">   105  </span>		e := strings.TrimPrefix(endpoint, &#34;http://&#34;)
 <span id="L106" class="ln">   106  </span>		md.ConnStr = &#34;etcd://&#34; + strings.Join([]string{e, e, e}, &#34;,&#34;)
 <span id="L107" class="ln">   107  </span>		md.ConnStr += &#34;/service&#34;
@@ -172,7 +172,7 @@
 <span id="L115" class="ln">   115  </span>	})
 <span id="L116" class="ln">   116  </span>
 <span id="L117" class="ln">   117  </span>	t.Run(&#34;namespace patroni discovery&#34;, func(t *testing.T) {
-<span id="L118" class="ln">   118  </span>		md.Kind = sources.SourcePatroni
+<span id="L118" class="ln">   118  </span>		md.Kind = sources.SourcePatroniDiscovery
 <span id="L119" class="ln">   119  </span>		md.ConnStr = &#34;etcd://&#34; + strings.TrimPrefix(endpoint, &#34;http://&#34;)
 <span id="L120" class="ln">   120  </span>
 <span id="L121" class="ln">   121  </span>		<span class="comment">// Run ResolveDatabasesFromPatroni</span>
@@ -186,7 +186,7 @@
 <span id="L129" class="ln">   129  </span>func TestMonitoredDatabase_UnsupportedDCS(t *testing.T) {
 <span id="L130" class="ln">   130  </span>	md := sources.Source{}
 <span id="L131" class="ln">   131  </span>	md.Name = &#34;continuous&#34;
-<span id="L132" class="ln">   132  </span>	md.Kind = sources.SourcePatroni
+<span id="L132" class="ln">   132  </span>	md.Kind = sources.SourcePatroniDiscovery
 <span id="L133" class="ln">   133  </span>
 <span id="L134" class="ln">   134  </span>	md.ConnStr = &#34;consul://foo&#34;
 <span id="L135" class="ln">   135  </span>	_, err := md.ResolveDatabases()

@@ -116,9 +116,9 @@
 <span id="L59" class="ln">    59  </span><span class="comment">// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni</span>
 <span id="L60" class="ln">    60  </span>func (s Source) ResolveDatabases() (SourceConns, error) {
 <span id="L61" class="ln">    61  </span>	switch s.Kind {
-<span id="L62" class="ln">    62  </span>	case SourcePatroni:
+<span id="L62" class="ln">    62  </span>	case SourcePatroniDiscovery:
 <span id="L63" class="ln">    63  </span>		return ResolveDatabasesFromPatroni(s)
-<span id="L64" class="ln">    64  </span>	case SourcePostgresContinuous:
+<span id="L64" class="ln">    64  </span>	case SourcePostgresDiscovery:
 <span id="L65" class="ln">    65  </span>		return ResolveDatabasesFromPostgres(s)
 <span id="L66" class="ln">    66  </span>	case SourcePrometheus:
 <span id="L67" class="ln">    67  </span>		return SourceConns{NewPromConn(s)}, nil

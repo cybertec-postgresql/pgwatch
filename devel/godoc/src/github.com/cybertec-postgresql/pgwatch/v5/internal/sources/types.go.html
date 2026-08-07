@@ -74,20 +74,20 @@
 <span id="L17" class="ln">    17  </span>type Kind string
 <span id="L18" class="ln">    18  </span>
 <span id="L19" class="ln">    19  </span>const (
-<span id="L20" class="ln">    20  </span>	SourcePostgres           Kind = &#34;postgres&#34;
-<span id="L21" class="ln">    21  </span>	SourcePostgresContinuous Kind = &#34;postgres-continuous-discovery&#34;
-<span id="L22" class="ln">    22  </span>	SourcePgBouncer          Kind = &#34;pgbouncer&#34;
-<span id="L23" class="ln">    23  </span>	SourcePgPool             Kind = &#34;pgpool&#34;
-<span id="L24" class="ln">    24  </span>	SourcePatroni            Kind = &#34;patroni&#34;
-<span id="L25" class="ln">    25  </span>	SourcePrometheus         Kind = &#34;prometheus&#34;
+<span id="L20" class="ln">    20  </span>	SourcePostgres          Kind = &#34;postgres&#34;
+<span id="L21" class="ln">    21  </span>	SourcePostgresDiscovery Kind = &#34;postgres-continuous-discovery&#34;
+<span id="L22" class="ln">    22  </span>	SourcePgBouncer         Kind = &#34;pgbouncer&#34;
+<span id="L23" class="ln">    23  </span>	SourcePgPool            Kind = &#34;pgpool&#34;
+<span id="L24" class="ln">    24  </span>	SourcePatroniDiscovery  Kind = &#34;patroni&#34;
+<span id="L25" class="ln">    25  </span>	SourcePrometheus        Kind = &#34;prometheus&#34;
 <span id="L26" class="ln">    26  </span>)
 <span id="L27" class="ln">    27  </span>
 <span id="L28" class="ln">    28  </span>var Kinds = []Kind{
 <span id="L29" class="ln">    29  </span>	SourcePostgres,
-<span id="L30" class="ln">    30  </span>	SourcePostgresContinuous,
+<span id="L30" class="ln">    30  </span>	SourcePostgresDiscovery,
 <span id="L31" class="ln">    31  </span>	SourcePgBouncer,
 <span id="L32" class="ln">    32  </span>	SourcePgPool,
-<span id="L33" class="ln">    33  </span>	SourcePatroni,
+<span id="L33" class="ln">    33  </span>	SourcePatroniDiscovery,
 <span id="L34" class="ln">    34  </span>	SourcePrometheus,
 <span id="L35" class="ln">    35  </span>}
 <span id="L36" class="ln">    36  </span>
@@ -133,7 +133,7 @@
 <span id="L76" class="ln">    76  </span>			src.Kind = SourcePostgres
 <span id="L77" class="ln">    77  </span>		case &#34;patroni-continuous-discovery&#34;, &#34;patroni-namespace-discovery&#34;:
 <span id="L78" class="ln">    78  </span>			<span class="comment">// deprecated, use SourcePatroni</span>
-<span id="L79" class="ln">    79  </span>			src.Kind = SourcePatroni
+<span id="L79" class="ln">    79  </span>			src.Kind = SourcePatroniDiscovery
 <span id="L80" class="ln">    80  </span>		}
 <span id="L81" class="ln">    81  </span>	}
 <span id="L82" class="ln">    82  </span>	return srcs, nil

@@ -77,10 +77,10 @@
 <span id="L20" class="ln">    20  </span>		expected bool
 <span id="L21" class="ln">    21  </span>	}{
 <span id="L22" class="ln">    22  </span>		{name: &#34;postgres&#34;, kind: sources.SourcePostgres, expected: true},
-<span id="L23" class="ln">    23  </span>		{name: &#34;postgres continuous&#34;, kind: sources.SourcePostgresContinuous, expected: true},
+<span id="L23" class="ln">    23  </span>		{name: &#34;postgres continuous&#34;, kind: sources.SourcePostgresDiscovery, expected: true},
 <span id="L24" class="ln">    24  </span>		{name: &#34;pgbouncer&#34;, kind: sources.SourcePgBouncer, expected: true},
 <span id="L25" class="ln">    25  </span>		{name: &#34;pgpool&#34;, kind: sources.SourcePgPool, expected: true},
-<span id="L26" class="ln">    26  </span>		{name: &#34;patroni&#34;, kind: sources.SourcePatroni, expected: true},
+<span id="L26" class="ln">    26  </span>		{name: &#34;patroni&#34;, kind: sources.SourcePatroniDiscovery, expected: true},
 <span id="L27" class="ln">    27  </span>		{name: &#34;prometheus&#34;, kind: sources.SourcePrometheus, expected: true},
 <span id="L28" class="ln">    28  </span>		{name: &#34;invalid&#34;, kind: &#34;invalid&#34;, expected: false},
 <span id="L29" class="ln">    29  </span>	}

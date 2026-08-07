@@ -269,373 +269,378 @@
 <span id="L212" class="ln">   212  </span>}
 <span id="L213" class="ln">   213  </span>
 <span id="L214" class="ln">   214  </span>func (md *DbConn) IsPostgresSource() bool {
-<span id="L215" class="ln">   215  </span>	return md.Kind != SourcePgBouncer &amp;&amp; md.Kind != SourcePgPool
-<span id="L216" class="ln">   216  </span>}
-<span id="L217" class="ln">   217  </span>
-<span id="L218" class="ln">   218  </span><span class="comment">// VersionToInt parses a given version and returns an integer  or</span>
-<span id="L219" class="ln">   219  </span><span class="comment">// an error if unable to parse the version. Only parses valid semantic versions.</span>
-<span id="L220" class="ln">   220  </span><span class="comment">// Performs checking that can find errors within the version.</span>
-<span id="L221" class="ln">   221  </span><span class="comment">// Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00</span>
-<span id="L222" class="ln">   222  </span>var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
-<span id="L223" class="ln">   223  </span>
-<span id="L224" class="ln">   224  </span>func VersionToInt(version string) (v int) {
-<span id="L225" class="ln">   225  </span>	if matches := regVer.FindStringSubmatch(version); len(matches) &gt; 1 {
-<span id="L226" class="ln">   226  </span>		for i, match := range matches[1:] {
-<span id="L227" class="ln">   227  </span>			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
-<span id="L228" class="ln">   228  </span>		}
-<span id="L229" class="ln">   229  </span>	}
-<span id="L230" class="ln">   230  </span>	return
-<span id="L231" class="ln">   231  </span>}
-<span id="L232" class="ln">   232  </span>
-<span id="L233" class="ln">   233  </span>func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
-<span id="L234" class="ln">   234  </span>	<span class="comment">// Fast path: check the atomic timestamp without acquiring any lock.</span>
-<span id="L235" class="ln">   235  </span>	<span class="comment">// This avoids lock contention when the cached value is still fresh.</span>
-<span id="L236" class="ln">   236  </span>	if !forceRefetch &amp;&amp; time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) &lt; 5*time.Minute {
-<span id="L237" class="ln">   237  </span>		return nil
-<span id="L238" class="ln">   238  </span>	}
-<span id="L239" class="ln">   239  </span>
-<span id="L240" class="ln">   240  </span>	md.Lock()
-<span id="L241" class="ln">   241  </span>	defer md.Unlock()
-<span id="L242" class="ln">   242  </span>	if ctx.Err() != nil {
-<span id="L243" class="ln">   243  </span>		return ctx.Err()
-<span id="L244" class="ln">   244  </span>	}
-<span id="L245" class="ln">   245  </span>
-<span id="L246" class="ln">   246  </span>	switch md.Kind {
-<span id="L247" class="ln">   247  </span>	case SourcePgBouncer, SourcePgPool:
-<span id="L248" class="ln">   248  </span>		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
-<span id="L249" class="ln">   249  </span>			if md.Kind == SourcePgBouncer {
-<span id="L250" class="ln">   250  </span>				return &#34;SHOW VERSION&#34;
-<span id="L251" class="ln">   251  </span>			}
-<span id="L252" class="ln">   252  </span>			return &#34;SHOW POOL_VERSION&#34;
-<span id="L253" class="ln">   253  </span>		}()); err != nil {
-<span id="L254" class="ln">   254  </span>			return
-<span id="L255" class="ln">   255  </span>		}
-<span id="L256" class="ln">   256  </span>	default:
-<span id="L257" class="ln">   257  </span>		sql := `select /* pgwatch_generated */ 
-<span id="L258" class="ln">   258  </span>	div(current_setting(&#39;server_version_num&#39;)::int, 10000) as ver, 
-<span id="L259" class="ln">   259  </span>	version(), 
-<span id="L260" class="ln">   260  </span>	pg_is_in_recovery(), 
-<span id="L261" class="ln">   261  </span>	current_database()::TEXT,
-<span id="L262" class="ln">   262  </span>	system_identifier,
-<span id="L263" class="ln">   263  </span>	current_setting(&#39;is_superuser&#39;)::bool
-<span id="L264" class="ln">   264  </span>FROM
-<span id="L265" class="ln">   265  </span>	pg_control_system()`
-<span id="L266" class="ln">   266  </span>
-<span id="L267" class="ln">   267  </span>		err = md.Conn.QueryRow(ctx, sql).
-<span id="L268" class="ln">   268  </span>			Scan(&amp;md.Version, &amp;md.VersionStr,
-<span id="L269" class="ln">   269  </span>				&amp;md.IsInRecovery, &amp;md.RealDbname,
-<span id="L270" class="ln">   270  </span>				&amp;md.SystemIdentifier, &amp;md.IsSuperuser)
-<span id="L271" class="ln">   271  </span>		if err != nil {
-<span id="L272" class="ln">   272  </span>			return err
-<span id="L273" class="ln">   273  </span>		}
-<span id="L274" class="ln">   274  </span>
-<span id="L275" class="ln">   275  </span>		md.ExecEnv = md.DiscoverPlatform(ctx)
-<span id="L276" class="ln">   276  </span>		md.ApproxDbSize = md.FetchApproxSize(ctx)
-<span id="L277" class="ln">   277  </span>
-<span id="L278" class="ln">   278  </span>		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
-<span id="L279" class="ln">   279  </span>		var res pgx.Rows
-<span id="L280" class="ln">   280  </span>		res, err = md.Conn.Query(ctx, sqlExtensions)
-<span id="L281" class="ln">   281  </span>		if err == nil {
-<span id="L282" class="ln">   282  </span>			var ext string
-<span id="L283" class="ln">   283  </span>			var ver string
-<span id="L284" class="ln">   284  </span>			_, err = pgx.ForEachRow(res, []any{&amp;ext, &amp;ver}, func() error {
-<span id="L285" class="ln">   285  </span>				extver := VersionToInt(ver)
-<span id="L286" class="ln">   286  </span>				if extver == 0 {
-<span id="L287" class="ln">   287  </span>					return fmt.Errorf(&#34;unexpected extension %s version input: %s&#34;, ext, ver)
-<span id="L288" class="ln">   288  </span>				}
-<span id="L289" class="ln">   289  </span>				md.Extensions[ext] = extver
-<span id="L290" class="ln">   290  </span>				return nil
-<span id="L291" class="ln">   291  </span>			})
-<span id="L292" class="ln">   292  </span>		}
-<span id="L293" class="ln">   293  </span>
-<span id="L294" class="ln">   294  </span>	}
-<span id="L295" class="ln">   295  </span>	md.lastCheckedNs.Store(time.Now().UnixNano())
-<span id="L296" class="ln">   296  </span>	return err
-<span id="L297" class="ln">   297  </span>}
+<span id="L215" class="ln">   215  </span>	switch md.Kind {
+<span id="L216" class="ln">   216  </span>	case SourcePostgres, SourcePatroniDiscovery, SourcePostgresDiscovery:
+<span id="L217" class="ln">   217  </span>		return true
+<span id="L218" class="ln">   218  </span>	default:
+<span id="L219" class="ln">   219  </span>		return false
+<span id="L220" class="ln">   220  </span>	}
+<span id="L221" class="ln">   221  </span>}
+<span id="L222" class="ln">   222  </span>
+<span id="L223" class="ln">   223  </span><span class="comment">// VersionToInt parses a given version and returns an integer  or</span>
+<span id="L224" class="ln">   224  </span><span class="comment">// an error if unable to parse the version. Only parses valid semantic versions.</span>
+<span id="L225" class="ln">   225  </span><span class="comment">// Performs checking that can find errors within the version.</span>
+<span id="L226" class="ln">   226  </span><span class="comment">// Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00</span>
+<span id="L227" class="ln">   227  </span>var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+<span id="L228" class="ln">   228  </span>
+<span id="L229" class="ln">   229  </span>func VersionToInt(version string) (v int) {
+<span id="L230" class="ln">   230  </span>	if matches := regVer.FindStringSubmatch(version); len(matches) &gt; 1 {
+<span id="L231" class="ln">   231  </span>		for i, match := range matches[1:] {
+<span id="L232" class="ln">   232  </span>			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
+<span id="L233" class="ln">   233  </span>		}
+<span id="L234" class="ln">   234  </span>	}
+<span id="L235" class="ln">   235  </span>	return
+<span id="L236" class="ln">   236  </span>}
+<span id="L237" class="ln">   237  </span>
+<span id="L238" class="ln">   238  </span>func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+<span id="L239" class="ln">   239  </span>	<span class="comment">// Fast path: check the atomic timestamp without acquiring any lock.</span>
+<span id="L240" class="ln">   240  </span>	<span class="comment">// This avoids lock contention when the cached value is still fresh.</span>
+<span id="L241" class="ln">   241  </span>	if !forceRefetch &amp;&amp; time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) &lt; 5*time.Minute {
+<span id="L242" class="ln">   242  </span>		return nil
+<span id="L243" class="ln">   243  </span>	}
+<span id="L244" class="ln">   244  </span>
+<span id="L245" class="ln">   245  </span>	md.Lock()
+<span id="L246" class="ln">   246  </span>	defer md.Unlock()
+<span id="L247" class="ln">   247  </span>	if ctx.Err() != nil {
+<span id="L248" class="ln">   248  </span>		return ctx.Err()
+<span id="L249" class="ln">   249  </span>	}
+<span id="L250" class="ln">   250  </span>
+<span id="L251" class="ln">   251  </span>	switch md.Kind {
+<span id="L252" class="ln">   252  </span>	case SourcePgBouncer, SourcePgPool:
+<span id="L253" class="ln">   253  </span>		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
+<span id="L254" class="ln">   254  </span>			if md.Kind == SourcePgBouncer {
+<span id="L255" class="ln">   255  </span>				return &#34;SHOW VERSION&#34;
+<span id="L256" class="ln">   256  </span>			}
+<span id="L257" class="ln">   257  </span>			return &#34;SHOW POOL_VERSION&#34;
+<span id="L258" class="ln">   258  </span>		}()); err != nil {
+<span id="L259" class="ln">   259  </span>			return
+<span id="L260" class="ln">   260  </span>		}
+<span id="L261" class="ln">   261  </span>	default:
+<span id="L262" class="ln">   262  </span>		sql := `select /* pgwatch_generated */ 
+<span id="L263" class="ln">   263  </span>	div(current_setting(&#39;server_version_num&#39;)::int, 10000) as ver, 
+<span id="L264" class="ln">   264  </span>	version(), 
+<span id="L265" class="ln">   265  </span>	pg_is_in_recovery(), 
+<span id="L266" class="ln">   266  </span>	current_database()::TEXT,
+<span id="L267" class="ln">   267  </span>	system_identifier,
+<span id="L268" class="ln">   268  </span>	current_setting(&#39;is_superuser&#39;)::bool
+<span id="L269" class="ln">   269  </span>FROM
+<span id="L270" class="ln">   270  </span>	pg_control_system()`
+<span id="L271" class="ln">   271  </span>
+<span id="L272" class="ln">   272  </span>		err = md.Conn.QueryRow(ctx, sql).
+<span id="L273" class="ln">   273  </span>			Scan(&amp;md.Version, &amp;md.VersionStr,
+<span id="L274" class="ln">   274  </span>				&amp;md.IsInRecovery, &amp;md.RealDbname,
+<span id="L275" class="ln">   275  </span>				&amp;md.SystemIdentifier, &amp;md.IsSuperuser)
+<span id="L276" class="ln">   276  </span>		if err != nil {
+<span id="L277" class="ln">   277  </span>			return err
+<span id="L278" class="ln">   278  </span>		}
+<span id="L279" class="ln">   279  </span>
+<span id="L280" class="ln">   280  </span>		md.ExecEnv = md.DiscoverPlatform(ctx)
+<span id="L281" class="ln">   281  </span>		md.ApproxDbSize = md.FetchApproxSize(ctx)
+<span id="L282" class="ln">   282  </span>
+<span id="L283" class="ln">   283  </span>		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+<span id="L284" class="ln">   284  </span>		var res pgx.Rows
+<span id="L285" class="ln">   285  </span>		res, err = md.Conn.Query(ctx, sqlExtensions)
+<span id="L286" class="ln">   286  </span>		if err == nil {
+<span id="L287" class="ln">   287  </span>			var ext string
+<span id="L288" class="ln">   288  </span>			var ver string
+<span id="L289" class="ln">   289  </span>			_, err = pgx.ForEachRow(res, []any{&amp;ext, &amp;ver}, func() error {
+<span id="L290" class="ln">   290  </span>				extver := VersionToInt(ver)
+<span id="L291" class="ln">   291  </span>				if extver == 0 {
+<span id="L292" class="ln">   292  </span>					return fmt.Errorf(&#34;unexpected extension %s version input: %s&#34;, ext, ver)
+<span id="L293" class="ln">   293  </span>				}
+<span id="L294" class="ln">   294  </span>				md.Extensions[ext] = extver
+<span id="L295" class="ln">   295  </span>				return nil
+<span id="L296" class="ln">   296  </span>			})
+<span id="L297" class="ln">   297  </span>		}
 <span id="L298" class="ln">   298  </span>
-<span id="L299" class="ln">   299  </span>func (md *DbConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
-<span id="L300" class="ln">   300  </span>	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&amp;version); err != nil {
-<span id="L301" class="ln">   301  </span>		return
-<span id="L302" class="ln">   302  </span>	}
-<span id="L303" class="ln">   303  </span>	ver = VersionToInt(version)
-<span id="L304" class="ln">   304  </span>	return
-<span id="L305" class="ln">   305  </span>}
-<span id="L306" class="ln">   306  </span>
-<span id="L307" class="ln">   307  </span><span class="comment">// DiscoverPlatform tries to discover the platform based on the database version string and some special settings</span>
-<span id="L308" class="ln">   308  </span><span class="comment">// that are only available on certain platforms. Returns the platform name or &#34;UNKNOWN&#34; if not sure.</span>
-<span id="L309" class="ln">   309  </span>func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
-<span id="L310" class="ln">   310  </span>	if md.ExecEnv != &#34;&#34; {
-<span id="L311" class="ln">   311  </span>		return md.ExecEnv <span class="comment">// carry over as not likely to change ever</span>
-<span id="L312" class="ln">   312  </span>	}
-<span id="L313" class="ln">   313  </span>	sql := `select /* pgwatch_generated */
-<span id="L314" class="ln">   314  </span>	case
-<span id="L315" class="ln">   315  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by Visual C&#39; then &#39;AZURE_SINGLE&#39;
-<span id="L316" class="ln">   316  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by gcc&#39; then &#39;AZURE_FLEXIBLE&#39;
-<span id="L317" class="ln">   317  </span>	  when exists (select * from pg_settings where name = &#39;cloudsql.supported_extensions&#39;) then &#39;GOOGLE&#39;
-<span id="L318" class="ln">   318  </span>	else
-<span id="L319" class="ln">   319  </span>	  &#39;UNKNOWN&#39;
-<span id="L320" class="ln">   320  </span>	end as exec_env`
-<span id="L321" class="ln">   321  </span>	_ = md.Conn.QueryRow(ctx, sql).Scan(&amp;platform)
-<span id="L322" class="ln">   322  </span>	return
-<span id="L323" class="ln">   323  </span>}
-<span id="L324" class="ln">   324  </span>
-<span id="L325" class="ln">   325  </span><span class="comment">// FetchApproxSize returns the approximate size of the database in bytes</span>
-<span id="L326" class="ln">   326  </span>func (md *DbConn) FetchApproxSize(ctx context.Context) (size int64) {
-<span id="L327" class="ln">   327  </span>	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting(&#39;block_size&#39;)::int8 * sum(relpages) from pg_class c where c.relpersistence != &#39;t&#39;`
-<span id="L328" class="ln">   328  </span>	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&amp;size)
-<span id="L329" class="ln">   329  </span>	return
-<span id="L330" class="ln">   330  </span>}
-<span id="L331" class="ln">   331  </span>
-<span id="L332" class="ln">   332  </span><span class="comment">// FunctionExists checks if a function exists in the database</span>
-<span id="L333" class="ln">   333  </span>func (md *DbConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
-<span id="L334" class="ln">   334  </span>	sql := `select /* pgwatch_generated */ true 
-<span id="L335" class="ln">   335  </span>from 
-<span id="L336" class="ln">   336  </span>	pg_proc join pg_namespace n on pronamespace = n.oid 
-<span id="L337" class="ln">   337  </span>where 
-<span id="L338" class="ln">   338  </span>	proname = $1 and n.nspname = &#39;public&#39;`
-<span id="L339" class="ln">   339  </span>	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&amp;exists)
-<span id="L340" class="ln">   340  </span>	return
-<span id="L341" class="ln">   341  </span>}
-<span id="L342" class="ln">   342  </span>
-<span id="L343" class="ln">   343  </span><span class="comment">// TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
-<span id="L344" class="ln">   344  </span>func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
-<span id="L345" class="ln">   345  </span>	<span class="comment">// Snapshot the already-known extensions under RLock; release before doing any I/O.</span>
-<span id="L346" class="ln">   346  </span>	md.RLock()
-<span id="L347" class="ln">   347  </span>	knownExts := maps.Clone(md.Extensions)
-<span id="L348" class="ln">   348  </span>	md.RUnlock()
-<span id="L349" class="ln">   349  </span>
-<span id="L350" class="ln">   350  </span>	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
-<span id="L351" class="ln">   351  </span>	createdExts := make([]string, 0)
-<span id="L352" class="ln">   352  </span>
-<span id="L353" class="ln">   353  </span>	data, err := md.Conn.Query(ctx, sqlAvailableExts)
-<span id="L354" class="ln">   354  </span>	if err != nil {
-<span id="L355" class="ln">   355  </span>		return &#34;&#34;, err
-<span id="L356" class="ln">   356  </span>	}
-<span id="L357" class="ln">   357  </span>	availableExts, err := pgx.CollectRows(data, pgx.RowTo[string])
-<span id="L358" class="ln">   358  </span>	if err != nil {
-<span id="L359" class="ln">   359  </span>		return &#34;&#34;, err
-<span id="L360" class="ln">   360  </span>	}
-<span id="L361" class="ln">   361  </span>
-<span id="L362" class="ln">   362  </span>	for _, extToCreate := range extensions {
-<span id="L363" class="ln">   363  </span>		if _, ok := knownExts[extToCreate]; ok {
-<span id="L364" class="ln">   364  </span>			continue
-<span id="L365" class="ln">   365  </span>		}
-<span id="L366" class="ln">   366  </span>		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
-<span id="L367" class="ln">   367  </span>			err = errors.Join(err, fmt.Errorf(&#34;requested extension %s is not available on instance&#34;, extToCreate))
-<span id="L368" class="ln">   368  </span>			continue
-<span id="L369" class="ln">   369  </span>		}
-<span id="L370" class="ln">   370  </span>		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists &#34;%s&#34;`, extToCreate)); e != nil {
-<span id="L371" class="ln">   371  </span>			err = errors.Join(err, fmt.Errorf(&#34;failed to create extension %s: %w&#34;, extToCreate, e))
-<span id="L372" class="ln">   372  </span>		} else {
-<span id="L373" class="ln">   373  </span>			createdExts = append(createdExts, extToCreate)
+<span id="L299" class="ln">   299  </span>	}
+<span id="L300" class="ln">   300  </span>	md.lastCheckedNs.Store(time.Now().UnixNano())
+<span id="L301" class="ln">   301  </span>	return err
+<span id="L302" class="ln">   302  </span>}
+<span id="L303" class="ln">   303  </span>
+<span id="L304" class="ln">   304  </span>func (md *DbConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
+<span id="L305" class="ln">   305  </span>	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&amp;version); err != nil {
+<span id="L306" class="ln">   306  </span>		return
+<span id="L307" class="ln">   307  </span>	}
+<span id="L308" class="ln">   308  </span>	ver = VersionToInt(version)
+<span id="L309" class="ln">   309  </span>	return
+<span id="L310" class="ln">   310  </span>}
+<span id="L311" class="ln">   311  </span>
+<span id="L312" class="ln">   312  </span><span class="comment">// DiscoverPlatform tries to discover the platform based on the database version string and some special settings</span>
+<span id="L313" class="ln">   313  </span><span class="comment">// that are only available on certain platforms. Returns the platform name or &#34;UNKNOWN&#34; if not sure.</span>
+<span id="L314" class="ln">   314  </span>func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
+<span id="L315" class="ln">   315  </span>	if md.ExecEnv != &#34;&#34; {
+<span id="L316" class="ln">   316  </span>		return md.ExecEnv <span class="comment">// carry over as not likely to change ever</span>
+<span id="L317" class="ln">   317  </span>	}
+<span id="L318" class="ln">   318  </span>	sql := `select /* pgwatch_generated */
+<span id="L319" class="ln">   319  </span>	case
+<span id="L320" class="ln">   320  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by Visual C&#39; then &#39;AZURE_SINGLE&#39;
+<span id="L321" class="ln">   321  </span>	  when exists (select * from pg_settings where name = &#39;pg_qs.host_database&#39; and setting = &#39;azure_sys&#39;) and version() ~* &#39;compiled by gcc&#39; then &#39;AZURE_FLEXIBLE&#39;
+<span id="L322" class="ln">   322  </span>	  when exists (select * from pg_settings where name = &#39;cloudsql.supported_extensions&#39;) then &#39;GOOGLE&#39;
+<span id="L323" class="ln">   323  </span>	else
+<span id="L324" class="ln">   324  </span>	  &#39;UNKNOWN&#39;
+<span id="L325" class="ln">   325  </span>	end as exec_env`
+<span id="L326" class="ln">   326  </span>	_ = md.Conn.QueryRow(ctx, sql).Scan(&amp;platform)
+<span id="L327" class="ln">   327  </span>	return
+<span id="L328" class="ln">   328  </span>}
+<span id="L329" class="ln">   329  </span>
+<span id="L330" class="ln">   330  </span><span class="comment">// FetchApproxSize returns the approximate size of the database in bytes</span>
+<span id="L331" class="ln">   331  </span>func (md *DbConn) FetchApproxSize(ctx context.Context) (size int64) {
+<span id="L332" class="ln">   332  </span>	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting(&#39;block_size&#39;)::int8 * sum(relpages) from pg_class c where c.relpersistence != &#39;t&#39;`
+<span id="L333" class="ln">   333  </span>	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&amp;size)
+<span id="L334" class="ln">   334  </span>	return
+<span id="L335" class="ln">   335  </span>}
+<span id="L336" class="ln">   336  </span>
+<span id="L337" class="ln">   337  </span><span class="comment">// FunctionExists checks if a function exists in the database</span>
+<span id="L338" class="ln">   338  </span>func (md *DbConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
+<span id="L339" class="ln">   339  </span>	sql := `select /* pgwatch_generated */ true 
+<span id="L340" class="ln">   340  </span>from 
+<span id="L341" class="ln">   341  </span>	pg_proc join pg_namespace n on pronamespace = n.oid 
+<span id="L342" class="ln">   342  </span>where 
+<span id="L343" class="ln">   343  </span>	proname = $1 and n.nspname = &#39;public&#39;`
+<span id="L344" class="ln">   344  </span>	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&amp;exists)
+<span id="L345" class="ln">   345  </span>	return
+<span id="L346" class="ln">   346  </span>}
+<span id="L347" class="ln">   347  </span>
+<span id="L348" class="ln">   348  </span><span class="comment">// TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.</span>
+<span id="L349" class="ln">   349  </span>func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+<span id="L350" class="ln">   350  </span>	<span class="comment">// Snapshot the already-known extensions under RLock; release before doing any I/O.</span>
+<span id="L351" class="ln">   351  </span>	md.RLock()
+<span id="L352" class="ln">   352  </span>	knownExts := maps.Clone(md.Extensions)
+<span id="L353" class="ln">   353  </span>	md.RUnlock()
+<span id="L354" class="ln">   354  </span>
+<span id="L355" class="ln">   355  </span>	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
+<span id="L356" class="ln">   356  </span>	createdExts := make([]string, 0)
+<span id="L357" class="ln">   357  </span>
+<span id="L358" class="ln">   358  </span>	data, err := md.Conn.Query(ctx, sqlAvailableExts)
+<span id="L359" class="ln">   359  </span>	if err != nil {
+<span id="L360" class="ln">   360  </span>		return &#34;&#34;, err
+<span id="L361" class="ln">   361  </span>	}
+<span id="L362" class="ln">   362  </span>	availableExts, err := pgx.CollectRows(data, pgx.RowTo[string])
+<span id="L363" class="ln">   363  </span>	if err != nil {
+<span id="L364" class="ln">   364  </span>		return &#34;&#34;, err
+<span id="L365" class="ln">   365  </span>	}
+<span id="L366" class="ln">   366  </span>
+<span id="L367" class="ln">   367  </span>	for _, extToCreate := range extensions {
+<span id="L368" class="ln">   368  </span>		if _, ok := knownExts[extToCreate]; ok {
+<span id="L369" class="ln">   369  </span>			continue
+<span id="L370" class="ln">   370  </span>		}
+<span id="L371" class="ln">   371  </span>		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
+<span id="L372" class="ln">   372  </span>			err = errors.Join(err, fmt.Errorf(&#34;requested extension %s is not available on instance&#34;, extToCreate))
+<span id="L373" class="ln">   373  </span>			continue
 <span id="L374" class="ln">   374  </span>		}
-<span id="L375" class="ln">   375  </span>	}
-<span id="L376" class="ln">   376  </span>	return strings.Join(createdExts, &#34;,&#34;), err
-<span id="L377" class="ln">   377  </span>}
-<span id="L378" class="ln">   378  </span>
-<span id="L379" class="ln">   379  </span><span class="comment">// TryCreateMetricsHelpers should be called once on daemon startup to try to create &#34;metric fetching helper&#34; functions automatically</span>
-<span id="L380" class="ln">   380  </span>func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
-<span id="L381" class="ln">   381  </span>	<span class="comment">// Clone the metric map under RLock; release before doing any I/O.</span>
-<span id="L382" class="ln">   382  </span>	md.RLock()
-<span id="L383" class="ln">   383  </span>	metricsMap := maps.Clone(md.Metrics)
-<span id="L384" class="ln">   384  </span>	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
-<span id="L385" class="ln">   385  </span>	md.RUnlock()
-<span id="L386" class="ln">   386  </span>
-<span id="L387" class="ln">   387  </span>	var sql string
-<span id="L388" class="ln">   388  </span>	for metricName := range metricsMap {
-<span id="L389" class="ln">   389  </span>		if sql = getSQLFn(metricName); sql == &#34;&#34; {
-<span id="L390" class="ln">   390  </span>			continue
-<span id="L391" class="ln">   391  </span>		}
-<span id="L392" class="ln">   392  </span>		if _, e := md.Conn.Exec(ctx, sql); e != nil {
-<span id="L393" class="ln">   393  </span>			err = errors.Join(err, fmt.Errorf(&#34;failed to create helper for metric %s: %w&#34;, metricName, e))
-<span id="L394" class="ln">   394  </span>		}
-<span id="L395" class="ln">   395  </span>	}
-<span id="L396" class="ln">   396  </span>	return
-<span id="L397" class="ln">   397  </span>}
-<span id="L398" class="ln">   398  </span>
-<span id="L399" class="ln">   399  </span>func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) SourceConn {
-<span id="L400" class="ln">   400  </span>	for _, md := range mds {
-<span id="L401" class="ln">   401  </span>		if md.GetSource().Name == DBUniqueName {
-<span id="L402" class="ln">   402  </span>			return md
-<span id="L403" class="ln">   403  </span>		}
-<span id="L404" class="ln">   404  </span>	}
-<span id="L405" class="ln">   405  </span>	return nil
-<span id="L406" class="ln">   406  </span>}
-<span id="L407" class="ln">   407  </span>
-<span id="L408" class="ln">   408  </span><span class="comment">// RedactURL replaces the password in URL userinfo with &#34;xxxxx&#34;.</span>
-<span id="L409" class="ln">   409  </span><span class="comment">// If rawURL cannot be parsed or has no password, it is returned unchanged.</span>
-<span id="L410" class="ln">   410  </span>func RedactURL(rawURL string) string {
-<span id="L411" class="ln">   411  </span>	u, err := url.Parse(rawURL)
-<span id="L412" class="ln">   412  </span>	if err != nil {
-<span id="L413" class="ln">   413  </span>		return rawURL
-<span id="L414" class="ln">   414  </span>	}
-<span id="L415" class="ln">   415  </span>	if u.User == nil {
-<span id="L416" class="ln">   416  </span>		return rawURL
-<span id="L417" class="ln">   417  </span>	}
-<span id="L418" class="ln">   418  </span>	if _, hasPass := u.User.Password(); !hasPass {
-<span id="L419" class="ln">   419  </span>		return rawURL
-<span id="L420" class="ln">   420  </span>	}
-<span id="L421" class="ln">   421  </span>	u.User = url.UserPassword(u.User.Username(), &#34;xxxxx&#34;)
-<span id="L422" class="ln">   422  </span>	return u.String()
-<span id="L423" class="ln">   423  </span>}
-<span id="L424" class="ln">   424  </span>
-<span id="L425" class="ln">   425  </span><span class="comment">// promConnConfig holds the parsed Prometheus source connection parameters.</span>
-<span id="L426" class="ln">   426  </span><span class="comment">// It is populated once by ParseConfig and reused by Connect and Ping.</span>
-<span id="L427" class="ln">   427  </span>type promConnConfig struct {
-<span id="L428" class="ln">   428  </span>	URL       string
-<span id="L429" class="ln">   429  </span>	Userinfo  *url.Userinfo
-<span id="L430" class="ln">   430  </span>	TLSConfig *tls.Config
-<span id="L431" class="ln">   431  </span>}
-<span id="L432" class="ln">   432  </span>
-<span id="L433" class="ln">   433  </span><span class="comment">// PromConn represents a Prometheus source connection.</span>
-<span id="L434" class="ln">   434  </span>type PromConn struct {
-<span id="L435" class="ln">   435  </span>	Source
-<span id="L436" class="ln">   436  </span>	connConfig *promConnConfig
-<span id="L437" class="ln">   437  </span>	HTTPClient *http.Client
-<span id="L438" class="ln">   438  </span>	sync.RWMutex
-<span id="L439" class="ln">   439  </span>}
-<span id="L440" class="ln">   440  </span>
-<span id="L441" class="ln">   441  </span>func NewPromConn(s Source) *PromConn {
-<span id="L442" class="ln">   442  </span>	return &amp;PromConn{
-<span id="L443" class="ln">   443  </span>		Source: s,
-<span id="L444" class="ln">   444  </span>	}
-<span id="L445" class="ln">   445  </span>}
-<span id="L446" class="ln">   446  </span>
-<span id="L447" class="ln">   447  </span><span class="comment">// ParseConfig parses pc.ConnStr once and caches the result in pc.connConfig.</span>
-<span id="L448" class="ln">   448  </span><span class="comment">// Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.</span>
-<span id="L449" class="ln">   449  </span>func (pc *PromConn) ParseConfig() error {
-<span id="L450" class="ln">   450  </span>	if pc.connConfig != nil {
-<span id="L451" class="ln">   451  </span>		return nil
-<span id="L452" class="ln">   452  </span>	}
-<span id="L453" class="ln">   453  </span>	u, err := url.Parse(pc.ConnStr)
-<span id="L454" class="ln">   454  </span>	if err != nil {
-<span id="L455" class="ln">   455  </span>		return fmt.Errorf(&#34;parsing prometheus source URL: %w&#34;, err)
-<span id="L456" class="ln">   456  </span>	}
-<span id="L457" class="ln">   457  </span>	userinfo := u.User
-<span id="L458" class="ln">   458  </span>	u.User = nil
-<span id="L459" class="ln">   459  </span>
-<span id="L460" class="ln">   460  </span>	q := u.Query()
-<span id="L461" class="ln">   461  </span>	tlsRootCert := q.Get(&#34;tlsrootcert&#34;)
-<span id="L462" class="ln">   462  </span>	tlsSkipVerify := q.Get(&#34;tlsskipverify&#34;) == &#34;true&#34;
-<span id="L463" class="ln">   463  </span>	q.Del(&#34;tlsrootcert&#34;)
-<span id="L464" class="ln">   464  </span>	q.Del(&#34;tlsskipverify&#34;)
-<span id="L465" class="ln">   465  </span>	u.RawQuery = q.Encode()
-<span id="L466" class="ln">   466  </span>
-<span id="L467" class="ln">   467  </span>	tlsConfig := &amp;tls.Config{InsecureSkipVerify: tlsSkipVerify} <span class="comment">//nolint:gosec // intentional per config</span>
-<span id="L468" class="ln">   468  </span>	if tlsRootCert != &#34;&#34; {
-<span id="L469" class="ln">   469  </span>		caCert, readErr := os.ReadFile(tlsRootCert)
-<span id="L470" class="ln">   470  </span>		if readErr != nil {
-<span id="L471" class="ln">   471  </span>			return fmt.Errorf(&#34;reading tlsrootcert %q: %w&#34;, tlsRootCert, readErr)
-<span id="L472" class="ln">   472  </span>		}
-<span id="L473" class="ln">   473  </span>		pool := x509.NewCertPool()
-<span id="L474" class="ln">   474  </span>		pool.AppendCertsFromPEM(caCert)
-<span id="L475" class="ln">   475  </span>		tlsConfig.RootCAs = pool
-<span id="L476" class="ln">   476  </span>	}
-<span id="L477" class="ln">   477  </span>
-<span id="L478" class="ln">   478  </span>	pc.connConfig = &amp;promConnConfig{
-<span id="L479" class="ln">   479  </span>		URL:       u.String(),
-<span id="L480" class="ln">   480  </span>		Userinfo:  userinfo,
-<span id="L481" class="ln">   481  </span>		TLSConfig: tlsConfig,
-<span id="L482" class="ln">   482  </span>	}
-<span id="L483" class="ln">   483  </span>	return nil
-<span id="L484" class="ln">   484  </span>}
-<span id="L485" class="ln">   485  </span>
-<span id="L486" class="ln">   486  </span>func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
-<span id="L487" class="ln">   487  </span>	pc.Lock()
-<span id="L488" class="ln">   488  </span>	if pc.HTTPClient == nil {
-<span id="L489" class="ln">   489  </span>		if err := pc.ParseConfig(); err != nil {
-<span id="L490" class="ln">   490  </span>			pc.Unlock()
-<span id="L491" class="ln">   491  </span>			return err
-<span id="L492" class="ln">   492  </span>		}
-<span id="L493" class="ln">   493  </span>		pc.HTTPClient = &amp;http.Client{
-<span id="L494" class="ln">   494  </span>			Transport: &amp;http.Transport{TLSClientConfig: pc.connConfig.TLSConfig},
-<span id="L495" class="ln">   495  </span>			Timeout:   30 * time.Second,
-<span id="L496" class="ln">   496  </span>			CheckRedirect: func(*http.Request, []*http.Request) error {
-<span id="L497" class="ln">   497  </span>				return http.ErrUseLastResponse
-<span id="L498" class="ln">   498  </span>			},
-<span id="L499" class="ln">   499  </span>		}
-<span id="L500" class="ln">   500  </span>	}
-<span id="L501" class="ln">   501  </span>	pc.Unlock()
-<span id="L502" class="ln">   502  </span>	return pc.Ping(ctx)
-<span id="L503" class="ln">   503  </span>}
-<span id="L504" class="ln">   504  </span>
-<span id="L505" class="ln">   505  </span><span class="comment">// Scrape executes a single GET request to the source&#39;s metrics endpoint with</span>
-<span id="L506" class="ln">   506  </span><span class="comment">// Accept: text/plain and optional Basic Auth from the cached config.</span>
-<span id="L507" class="ln">   507  </span><span class="comment">// The caller is responsible for closing resp.Body.</span>
-<span id="L508" class="ln">   508  </span><span class="comment">// Connect must be called before Scrape.</span>
-<span id="L509" class="ln">   509  </span>func (pc *PromConn) Scrape(ctx context.Context) (*http.Response, error) {
-<span id="L510" class="ln">   510  </span>	pc.RLock()
-<span id="L511" class="ln">   511  </span>	client := pc.HTTPClient
-<span id="L512" class="ln">   512  </span>	cfg := pc.connConfig
-<span id="L513" class="ln">   513  </span>	pc.RUnlock()
-<span id="L514" class="ln">   514  </span>
-<span id="L515" class="ln">   515  </span>	if client == nil || cfg == nil {
-<span id="L516" class="ln">   516  </span>		return nil, errors.New(&#34;prometheus source not connected: call Connect first&#34;)
-<span id="L517" class="ln">   517  </span>	}
-<span id="L518" class="ln">   518  </span>
-<span id="L519" class="ln">   519  </span>	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
-<span id="L520" class="ln">   520  </span>	if err != nil {
-<span id="L521" class="ln">   521  </span>		return nil, err
+<span id="L375" class="ln">   375  </span>		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists &#34;%s&#34;`, extToCreate)); e != nil {
+<span id="L376" class="ln">   376  </span>			err = errors.Join(err, fmt.Errorf(&#34;failed to create extension %s: %w&#34;, extToCreate, e))
+<span id="L377" class="ln">   377  </span>		} else {
+<span id="L378" class="ln">   378  </span>			createdExts = append(createdExts, extToCreate)
+<span id="L379" class="ln">   379  </span>		}
+<span id="L380" class="ln">   380  </span>	}
+<span id="L381" class="ln">   381  </span>	return strings.Join(createdExts, &#34;,&#34;), err
+<span id="L382" class="ln">   382  </span>}
+<span id="L383" class="ln">   383  </span>
+<span id="L384" class="ln">   384  </span><span class="comment">// TryCreateMetricsHelpers should be called once on daemon startup to try to create &#34;metric fetching helper&#34; functions automatically</span>
+<span id="L385" class="ln">   385  </span>func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+<span id="L386" class="ln">   386  </span>	<span class="comment">// Clone the metric map under RLock; release before doing any I/O.</span>
+<span id="L387" class="ln">   387  </span>	md.RLock()
+<span id="L388" class="ln">   388  </span>	metricsMap := maps.Clone(md.Metrics)
+<span id="L389" class="ln">   389  </span>	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
+<span id="L390" class="ln">   390  </span>	md.RUnlock()
+<span id="L391" class="ln">   391  </span>
+<span id="L392" class="ln">   392  </span>	var sql string
+<span id="L393" class="ln">   393  </span>	for metricName := range metricsMap {
+<span id="L394" class="ln">   394  </span>		if sql = getSQLFn(metricName); sql == &#34;&#34; {
+<span id="L395" class="ln">   395  </span>			continue
+<span id="L396" class="ln">   396  </span>		}
+<span id="L397" class="ln">   397  </span>		if _, e := md.Conn.Exec(ctx, sql); e != nil {
+<span id="L398" class="ln">   398  </span>			err = errors.Join(err, fmt.Errorf(&#34;failed to create helper for metric %s: %w&#34;, metricName, e))
+<span id="L399" class="ln">   399  </span>		}
+<span id="L400" class="ln">   400  </span>	}
+<span id="L401" class="ln">   401  </span>	return
+<span id="L402" class="ln">   402  </span>}
+<span id="L403" class="ln">   403  </span>
+<span id="L404" class="ln">   404  </span>func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) SourceConn {
+<span id="L405" class="ln">   405  </span>	for _, md := range mds {
+<span id="L406" class="ln">   406  </span>		if md.GetSource().Name == DBUniqueName {
+<span id="L407" class="ln">   407  </span>			return md
+<span id="L408" class="ln">   408  </span>		}
+<span id="L409" class="ln">   409  </span>	}
+<span id="L410" class="ln">   410  </span>	return nil
+<span id="L411" class="ln">   411  </span>}
+<span id="L412" class="ln">   412  </span>
+<span id="L413" class="ln">   413  </span><span class="comment">// RedactURL replaces the password in URL userinfo with &#34;xxxxx&#34;.</span>
+<span id="L414" class="ln">   414  </span><span class="comment">// If rawURL cannot be parsed or has no password, it is returned unchanged.</span>
+<span id="L415" class="ln">   415  </span>func RedactURL(rawURL string) string {
+<span id="L416" class="ln">   416  </span>	u, err := url.Parse(rawURL)
+<span id="L417" class="ln">   417  </span>	if err != nil {
+<span id="L418" class="ln">   418  </span>		return rawURL
+<span id="L419" class="ln">   419  </span>	}
+<span id="L420" class="ln">   420  </span>	if u.User == nil {
+<span id="L421" class="ln">   421  </span>		return rawURL
+<span id="L422" class="ln">   422  </span>	}
+<span id="L423" class="ln">   423  </span>	if _, hasPass := u.User.Password(); !hasPass {
+<span id="L424" class="ln">   424  </span>		return rawURL
+<span id="L425" class="ln">   425  </span>	}
+<span id="L426" class="ln">   426  </span>	u.User = url.UserPassword(u.User.Username(), &#34;xxxxx&#34;)
+<span id="L427" class="ln">   427  </span>	return u.String()
+<span id="L428" class="ln">   428  </span>}
+<span id="L429" class="ln">   429  </span>
+<span id="L430" class="ln">   430  </span><span class="comment">// promConnConfig holds the parsed Prometheus source connection parameters.</span>
+<span id="L431" class="ln">   431  </span><span class="comment">// It is populated once by ParseConfig and reused by Connect and Ping.</span>
+<span id="L432" class="ln">   432  </span>type promConnConfig struct {
+<span id="L433" class="ln">   433  </span>	URL       string
+<span id="L434" class="ln">   434  </span>	Userinfo  *url.Userinfo
+<span id="L435" class="ln">   435  </span>	TLSConfig *tls.Config
+<span id="L436" class="ln">   436  </span>}
+<span id="L437" class="ln">   437  </span>
+<span id="L438" class="ln">   438  </span><span class="comment">// PromConn represents a Prometheus source connection.</span>
+<span id="L439" class="ln">   439  </span>type PromConn struct {
+<span id="L440" class="ln">   440  </span>	Source
+<span id="L441" class="ln">   441  </span>	connConfig *promConnConfig
+<span id="L442" class="ln">   442  </span>	HTTPClient *http.Client
+<span id="L443" class="ln">   443  </span>	sync.RWMutex
+<span id="L444" class="ln">   444  </span>}
+<span id="L445" class="ln">   445  </span>
+<span id="L446" class="ln">   446  </span>func NewPromConn(s Source) *PromConn {
+<span id="L447" class="ln">   447  </span>	return &amp;PromConn{
+<span id="L448" class="ln">   448  </span>		Source: s,
+<span id="L449" class="ln">   449  </span>	}
+<span id="L450" class="ln">   450  </span>}
+<span id="L451" class="ln">   451  </span>
+<span id="L452" class="ln">   452  </span><span class="comment">// ParseConfig parses pc.ConnStr once and caches the result in pc.connConfig.</span>
+<span id="L453" class="ln">   453  </span><span class="comment">// Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.</span>
+<span id="L454" class="ln">   454  </span>func (pc *PromConn) ParseConfig() error {
+<span id="L455" class="ln">   455  </span>	if pc.connConfig != nil {
+<span id="L456" class="ln">   456  </span>		return nil
+<span id="L457" class="ln">   457  </span>	}
+<span id="L458" class="ln">   458  </span>	u, err := url.Parse(pc.ConnStr)
+<span id="L459" class="ln">   459  </span>	if err != nil {
+<span id="L460" class="ln">   460  </span>		return fmt.Errorf(&#34;parsing prometheus source URL: %w&#34;, err)
+<span id="L461" class="ln">   461  </span>	}
+<span id="L462" class="ln">   462  </span>	userinfo := u.User
+<span id="L463" class="ln">   463  </span>	u.User = nil
+<span id="L464" class="ln">   464  </span>
+<span id="L465" class="ln">   465  </span>	q := u.Query()
+<span id="L466" class="ln">   466  </span>	tlsRootCert := q.Get(&#34;tlsrootcert&#34;)
+<span id="L467" class="ln">   467  </span>	tlsSkipVerify := q.Get(&#34;tlsskipverify&#34;) == &#34;true&#34;
+<span id="L468" class="ln">   468  </span>	q.Del(&#34;tlsrootcert&#34;)
+<span id="L469" class="ln">   469  </span>	q.Del(&#34;tlsskipverify&#34;)
+<span id="L470" class="ln">   470  </span>	u.RawQuery = q.Encode()
+<span id="L471" class="ln">   471  </span>
+<span id="L472" class="ln">   472  </span>	tlsConfig := &amp;tls.Config{InsecureSkipVerify: tlsSkipVerify} <span class="comment">//nolint:gosec // intentional per config</span>
+<span id="L473" class="ln">   473  </span>	if tlsRootCert != &#34;&#34; {
+<span id="L474" class="ln">   474  </span>		caCert, readErr := os.ReadFile(tlsRootCert)
+<span id="L475" class="ln">   475  </span>		if readErr != nil {
+<span id="L476" class="ln">   476  </span>			return fmt.Errorf(&#34;reading tlsrootcert %q: %w&#34;, tlsRootCert, readErr)
+<span id="L477" class="ln">   477  </span>		}
+<span id="L478" class="ln">   478  </span>		pool := x509.NewCertPool()
+<span id="L479" class="ln">   479  </span>		pool.AppendCertsFromPEM(caCert)
+<span id="L480" class="ln">   480  </span>		tlsConfig.RootCAs = pool
+<span id="L481" class="ln">   481  </span>	}
+<span id="L482" class="ln">   482  </span>
+<span id="L483" class="ln">   483  </span>	pc.connConfig = &amp;promConnConfig{
+<span id="L484" class="ln">   484  </span>		URL:       u.String(),
+<span id="L485" class="ln">   485  </span>		Userinfo:  userinfo,
+<span id="L486" class="ln">   486  </span>		TLSConfig: tlsConfig,
+<span id="L487" class="ln">   487  </span>	}
+<span id="L488" class="ln">   488  </span>	return nil
+<span id="L489" class="ln">   489  </span>}
+<span id="L490" class="ln">   490  </span>
+<span id="L491" class="ln">   491  </span>func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
+<span id="L492" class="ln">   492  </span>	pc.Lock()
+<span id="L493" class="ln">   493  </span>	if pc.HTTPClient == nil {
+<span id="L494" class="ln">   494  </span>		if err := pc.ParseConfig(); err != nil {
+<span id="L495" class="ln">   495  </span>			pc.Unlock()
+<span id="L496" class="ln">   496  </span>			return err
+<span id="L497" class="ln">   497  </span>		}
+<span id="L498" class="ln">   498  </span>		pc.HTTPClient = &amp;http.Client{
+<span id="L499" class="ln">   499  </span>			Transport: &amp;http.Transport{TLSClientConfig: pc.connConfig.TLSConfig},
+<span id="L500" class="ln">   500  </span>			Timeout:   30 * time.Second,
+<span id="L501" class="ln">   501  </span>			CheckRedirect: func(*http.Request, []*http.Request) error {
+<span id="L502" class="ln">   502  </span>				return http.ErrUseLastResponse
+<span id="L503" class="ln">   503  </span>			},
+<span id="L504" class="ln">   504  </span>		}
+<span id="L505" class="ln">   505  </span>	}
+<span id="L506" class="ln">   506  </span>	pc.Unlock()
+<span id="L507" class="ln">   507  </span>	return pc.Ping(ctx)
+<span id="L508" class="ln">   508  </span>}
+<span id="L509" class="ln">   509  </span>
+<span id="L510" class="ln">   510  </span><span class="comment">// Scrape executes a single GET request to the source&#39;s metrics endpoint with</span>
+<span id="L511" class="ln">   511  </span><span class="comment">// Accept: text/plain and optional Basic Auth from the cached config.</span>
+<span id="L512" class="ln">   512  </span><span class="comment">// The caller is responsible for closing resp.Body.</span>
+<span id="L513" class="ln">   513  </span><span class="comment">// Connect must be called before Scrape.</span>
+<span id="L514" class="ln">   514  </span>func (pc *PromConn) Scrape(ctx context.Context) (*http.Response, error) {
+<span id="L515" class="ln">   515  </span>	pc.RLock()
+<span id="L516" class="ln">   516  </span>	client := pc.HTTPClient
+<span id="L517" class="ln">   517  </span>	cfg := pc.connConfig
+<span id="L518" class="ln">   518  </span>	pc.RUnlock()
+<span id="L519" class="ln">   519  </span>
+<span id="L520" class="ln">   520  </span>	if client == nil || cfg == nil {
+<span id="L521" class="ln">   521  </span>		return nil, errors.New(&#34;prometheus source not connected: call Connect first&#34;)
 <span id="L522" class="ln">   522  </span>	}
-<span id="L523" class="ln">   523  </span>	req.Header.Set(&#34;Accept&#34;, &#34;text/plain&#34;)
-<span id="L524" class="ln">   524  </span>	if cfg.Userinfo != nil {
-<span id="L525" class="ln">   525  </span>		pass, _ := cfg.Userinfo.Password()
-<span id="L526" class="ln">   526  </span>		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+<span id="L523" class="ln">   523  </span>
+<span id="L524" class="ln">   524  </span>	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+<span id="L525" class="ln">   525  </span>	if err != nil {
+<span id="L526" class="ln">   526  </span>		return nil, err
 <span id="L527" class="ln">   527  </span>	}
-<span id="L528" class="ln">   528  </span>	return client.Do(req)
-<span id="L529" class="ln">   529  </span>}
-<span id="L530" class="ln">   530  </span>
-<span id="L531" class="ln">   531  </span>func (pc *PromConn) Ping(ctx context.Context) error {
-<span id="L532" class="ln">   532  </span>	pc.RLock()
-<span id="L533" class="ln">   533  </span>	client := pc.HTTPClient
-<span id="L534" class="ln">   534  </span>	cfg := pc.connConfig
-<span id="L535" class="ln">   535  </span>	pc.RUnlock()
-<span id="L536" class="ln">   536  </span>
-<span id="L537" class="ln">   537  </span>	if client == nil || cfg == nil {
-<span id="L538" class="ln">   538  </span>		return errors.New(&#34;prometheus source not connected: call Connect first&#34;)
-<span id="L539" class="ln">   539  </span>	}
-<span id="L540" class="ln">   540  </span>
-<span id="L541" class="ln">   541  </span>	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
-<span id="L542" class="ln">   542  </span>	if err != nil {
-<span id="L543" class="ln">   543  </span>		return err
+<span id="L528" class="ln">   528  </span>	req.Header.Set(&#34;Accept&#34;, &#34;text/plain&#34;)
+<span id="L529" class="ln">   529  </span>	if cfg.Userinfo != nil {
+<span id="L530" class="ln">   530  </span>		pass, _ := cfg.Userinfo.Password()
+<span id="L531" class="ln">   531  </span>		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+<span id="L532" class="ln">   532  </span>	}
+<span id="L533" class="ln">   533  </span>	return client.Do(req)
+<span id="L534" class="ln">   534  </span>}
+<span id="L535" class="ln">   535  </span>
+<span id="L536" class="ln">   536  </span>func (pc *PromConn) Ping(ctx context.Context) error {
+<span id="L537" class="ln">   537  </span>	pc.RLock()
+<span id="L538" class="ln">   538  </span>	client := pc.HTTPClient
+<span id="L539" class="ln">   539  </span>	cfg := pc.connConfig
+<span id="L540" class="ln">   540  </span>	pc.RUnlock()
+<span id="L541" class="ln">   541  </span>
+<span id="L542" class="ln">   542  </span>	if client == nil || cfg == nil {
+<span id="L543" class="ln">   543  </span>		return errors.New(&#34;prometheus source not connected: call Connect first&#34;)
 <span id="L544" class="ln">   544  </span>	}
-<span id="L545" class="ln">   545  </span>	if cfg.Userinfo != nil {
-<span id="L546" class="ln">   546  </span>		pass, _ := cfg.Userinfo.Password()
-<span id="L547" class="ln">   547  </span>		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
-<span id="L548" class="ln">   548  </span>	}
-<span id="L549" class="ln">   549  </span>
-<span id="L550" class="ln">   550  </span>	resp, err := client.Do(req)
-<span id="L551" class="ln">   551  </span>	if err != nil {
-<span id="L552" class="ln">   552  </span>		return err
+<span id="L545" class="ln">   545  </span>
+<span id="L546" class="ln">   546  </span>	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+<span id="L547" class="ln">   547  </span>	if err != nil {
+<span id="L548" class="ln">   548  </span>		return err
+<span id="L549" class="ln">   549  </span>	}
+<span id="L550" class="ln">   550  </span>	if cfg.Userinfo != nil {
+<span id="L551" class="ln">   551  </span>		pass, _ := cfg.Userinfo.Password()
+<span id="L552" class="ln">   552  </span>		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
 <span id="L553" class="ln">   553  </span>	}
-<span id="L554" class="ln">   554  </span>	_, _ = io.Copy(io.Discard, resp.Body)
-<span id="L555" class="ln">   555  </span>	_ = resp.Body.Close()
-<span id="L556" class="ln">   556  </span>
-<span id="L557" class="ln">   557  </span>	if resp.StatusCode &gt;= 300 {
-<span id="L558" class="ln">   558  </span>		return fmt.Errorf(&#34;prometheus ping: unexpected status %s&#34;, resp.Status)
-<span id="L559" class="ln">   559  </span>	}
-<span id="L560" class="ln">   560  </span>	return nil
-<span id="L561" class="ln">   561  </span>}
-<span id="L562" class="ln">   562  </span>
-<span id="L563" class="ln">   563  </span>func (pc *PromConn) IsPostgresSource() bool                           { return false }
-<span id="L564" class="ln">   564  </span>func (pc *PromConn) GetSource() Source                                { return pc.Source }
-<span id="L565" class="ln">   565  </span>func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
-<span id="L566" class="ln">   566  </span>func (pc *PromConn) Close()                                           {}
+<span id="L554" class="ln">   554  </span>
+<span id="L555" class="ln">   555  </span>	resp, err := client.Do(req)
+<span id="L556" class="ln">   556  </span>	if err != nil {
+<span id="L557" class="ln">   557  </span>		return err
+<span id="L558" class="ln">   558  </span>	}
+<span id="L559" class="ln">   559  </span>	_, _ = io.Copy(io.Discard, resp.Body)
+<span id="L560" class="ln">   560  </span>	_ = resp.Body.Close()
+<span id="L561" class="ln">   561  </span>
+<span id="L562" class="ln">   562  </span>	if resp.StatusCode &gt;= 300 {
+<span id="L563" class="ln">   563  </span>		return fmt.Errorf(&#34;prometheus ping: unexpected status %s&#34;, resp.Status)
+<span id="L564" class="ln">   564  </span>	}
+<span id="L565" class="ln">   565  </span>	return nil
+<span id="L566" class="ln">   566  </span>}
 <span id="L567" class="ln">   567  </span>
-<span id="L568" class="ln">   568  </span>func (pc *PromConn) GetMetricInterval(name string) time.Duration {
-<span id="L569" class="ln">   569  </span>	pc.RLock()
-<span id="L570" class="ln">   570  </span>	defer pc.RUnlock()
-<span id="L571" class="ln">   571  </span>	return time.Duration(pc.Metrics[name]) * time.Second
-<span id="L572" class="ln">   572  </span>}
-<span id="L573" class="ln">   573  </span>
-<span id="L574" class="ln">   574  </span>func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
-<span id="L575" class="ln">   575  </span>	pc.Lock()
-<span id="L576" class="ln">   576  </span>	defer pc.Unlock()
-<span id="L577" class="ln">   577  </span>	if main != nil {
-<span id="L578" class="ln">   578  </span>		pc.Metrics = main
-<span id="L579" class="ln">   579  </span>	}
-<span id="L580" class="ln">   580  </span>}
-<span id="L581" class="ln">   581  </span>
+<span id="L568" class="ln">   568  </span>func (pc *PromConn) IsPostgresSource() bool                           { return false }
+<span id="L569" class="ln">   569  </span>func (pc *PromConn) GetSource() Source                                { return pc.Source }
+<span id="L570" class="ln">   570  </span>func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
+<span id="L571" class="ln">   571  </span>func (pc *PromConn) Close()                                           {}
+<span id="L572" class="ln">   572  </span>
+<span id="L573" class="ln">   573  </span>func (pc *PromConn) GetMetricInterval(name string) time.Duration {
+<span id="L574" class="ln">   574  </span>	pc.RLock()
+<span id="L575" class="ln">   575  </span>	defer pc.RUnlock()
+<span id="L576" class="ln">   576  </span>	return time.Duration(pc.Metrics[name]) * time.Second
+<span id="L577" class="ln">   577  </span>}
+<span id="L578" class="ln">   578  </span>
+<span id="L579" class="ln">   579  </span>func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
+<span id="L580" class="ln">   580  </span>	pc.Lock()
+<span id="L581" class="ln">   581  </span>	defer pc.Unlock()
+<span id="L582" class="ln">   582  </span>	if main != nil {
+<span id="L583" class="ln">   583  </span>		pc.Metrics = main
+<span id="L584" class="ln">   584  </span>	}
+<span id="L585" class="ln">   585  </span>}
+<span id="L586" class="ln">   586  </span>
 </pre><p></p>
 
 <div id="footer">
