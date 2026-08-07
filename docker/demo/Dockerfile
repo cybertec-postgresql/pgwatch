@@ -58,7 +58,7 @@ RUN go generate ./api/pb/ && \
 # ----------------------------------------------------------------
 # 5. Demo Image with PostgreSQL + Grafana
 # ----------------------------------------------------------------
-FROM postgres:18-bookworm AS demo
+FROM postgres:19beta2 AS demo
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
