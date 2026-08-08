@@ -467,6 +467,19 @@ metrics:
                   pg_stat_database_conflicts
                 WHERE
                   datname = current_database()
+            19: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  confl_tablespace,
+                  confl_lock,
+                  confl_snapshot,
+                  confl_bufferpin,
+                  confl_deadlock,
+                  extract(epoch from now() - stats_reset)::int8 as stats_reset_s
+                FROM
+                  pg_stat_database_conflicts
+                WHERE
+                  datname = current_database()
         node_status: standby
     db_size:
         description: >
@@ -2080,6 +2093,25 @@ metrics:
                   calls as sp_calls,
                   self_time,
                   total_time
+                FROM
+                  pg_stat_user_functions f
+                  JOIN
+                  pg_proc p ON p.oid = f.funcid
+                ORDER BY
+                  total_time DESC
+                LIMIT
+                  300
+            19: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  schemaname::text AS tag_schema,
+                  funcname::text  AS tag_function_name,
+                  quote_ident(schemaname)||'.'||quote_ident(funcname) as tag_function_full_name,
+                  p.oid::text as tag_oid, -- for overloaded funcs
+                  calls as sp_calls,
+                  self_time,
+                  total_time,
+                  extract(epoch from now() - stats_reset)::int8 as stats_reset_s
                 FROM
                   pg_stat_user_functions f
                   JOIN
