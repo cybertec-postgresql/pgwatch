@@ -1040,7 +1040,6 @@
                   "kind": "PanelQuery",
                   "spec": {
                     "query": {
-                      "kind": "DataQuery",
                       "group": "grafana-postgresql-datasource",
                       "version": "v0",
                       "datasource": {
@@ -1050,7 +1049,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT 0 as time, dbname, max((data->>'in_recovery_int')::int) FROM wal WHERE time in (select max(time) from wal where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname) GROUP BY dbname",
+                        "rawSql": "SELECT 0 as time, dbname AS metric, max((data->>'in_recovery_int')::int) AS value FROM wal WHERE time in (select max(time) from wal where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname) GROUP BY dbname",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -1100,10 +1099,10 @@
             "version": "12.0.0",
             "spec": {
               "options": {
-                "colorMode": "value",
+                "colorMode": "background",
                 "graphMode": "none",
                 "justifyMode": "auto",
-                "orientation": "horizontal",
+                "orientation": "vertical",
                 "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
@@ -1113,21 +1112,12 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
+                "textMode": "value_and_name",
+                "wideLayout": false
               },
               "fieldConfig": {
                 "defaults": {
                   "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    },
                     {
                       "type": "value",
                       "options": {
@@ -1138,7 +1128,7 @@
                         },
                         "1": {
                           "text": "REPLICA",
-                          "color": "blue",
+                          "color": "#7f7f7f",
                           "index": 1
                         }
                       }
@@ -1150,6 +1140,10 @@
                       {
                         "value": 0,
                         "color": "#28781e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#7f7f7f"
                       }
                     ]
                   },

@@ -786,10 +786,10 @@
             "version": "12.0.0",
             "spec": {
               "options": {
-                "colorMode": "value",
+                "colorMode": "background",
                 "graphMode": "none",
                 "justifyMode": "auto",
-                "orientation": "horizontal",
+                "orientation": "vertical",
                 "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
@@ -799,21 +799,12 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
+                "textMode": "value_and_name",
+                "wideLayout": false
               },
               "fieldConfig": {
                 "defaults": {
                   "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    },
                     {
                       "type": "value",
                       "options": {
@@ -824,7 +815,7 @@
                         },
                         "1": {
                           "text": "REPLICA",
-                          "color": "blue",
+                          "color": "#7f7f7f",
                           "index": 1
                         }
                       }
@@ -836,6 +827,10 @@
                       {
                         "value": 0,
                         "color": "#28781e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#7f7f7f"
                       }
                     ]
                   },
