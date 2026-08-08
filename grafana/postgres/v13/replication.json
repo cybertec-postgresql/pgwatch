@@ -3492,10 +3492,10 @@
           }
         }
       },
-      "panel-25": {
+      "panel-colophon": {
         "kind": "Panel",
         "spec": {
-          "id": 25,
+          "id": 99999,
           "title": "",
           "description": "",
           "links": [],
@@ -3518,7 +3518,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"300\" /></a>\n",
                 "mode": "markdown"
               },
               "fieldConfig": {
@@ -3950,26 +3950,27 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Colophon",
               "collapse": false,
+              "hideHeader": true,
+              "title": "Colophon",
               "layout": {
-                "kind": "GridLayout",
+                "kind": "AutoGridLayout",
                 "spec": {
+                  "columnWidthMode": "narrow",
+                  "fillScreen": true,
                   "items": [
                     {
-                      "kind": "GridLayoutItem",
+                      "kind": "AutoGridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 5,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-25"
+                          "name": "panel-colophon"
                         }
                       }
                     }
-                  ]
+                  ],
+                  "maxColumnCount": 1,
+                  "rowHeightMode": "standard"
                 }
               }
             }
