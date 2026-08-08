@@ -30,14 +30,15 @@
       }
     ],
     "cursorSync": "Off",
+    "description": "PostgreSQL replication monitoring using PostgreSQL data source",
     "editable": true,
     "elements": {
-      "panel-10": {
+      "panel-1": {
         "kind": "Panel",
         "spec": {
-          "id": 10,
-          "title": "Repl. slot XMIN age (in transactions)",
-          "description": "Based on \"pg_replication_slots.xmin\". The oldest transaction that this slot needs the database to retain. VACUUM cannot remove tuples deleted by any later transaction.",
+          "id": 1,
+          "title": "Inactive repl. slots",
+          "description": "Inactive slots cause WAL accumulation on the primary and autovacuum inefficiencies. Based on last 5m data.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -54,9 +55,11 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]] [[tag_slot_name]]",
                         "format": "time_series",
                         "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, sum((data->>'non_active_int')::int) FROM replication_slots WHERE time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
                         "groupBy": [
                           {
                             "params": [
@@ -66,58 +69,20 @@
                           },
                           {
                             "params": [
-                              "dbname"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "plugin"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "slot_name"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
                               "none"
                             ],
                             "type": "fill"
                           }
                         ],
-                        "measurement": "replication_slots",
+                        "measurement": "",
                         "metricColumn": "none",
                         "orderByTime": "ASC",
                         "policy": "default",
                         "query": "",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'xmin_age_tx')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2",
-                        "resultFormat": "time_series",
                         "select": [
-                          [
-                            {
-                              "params": [
-                                "xmin_age_tx"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            }
-                          ]
+                          []
                         ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
+                        "tags": [],
                         "timeColumn": "time",
                         "where": [
                           {
@@ -128,1191 +93,13 @@
                         ]
                       }
                     },
-                    "refId": "B",
+                    "refId": "A",
                     "hidden": false
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "mean"
-                  ],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "short",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-12": {
-        "kind": "Panel",
-        "spec": {
-          "id": 12,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
               "transformations": [],
               "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
-                "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "panel-13": {
-        "kind": "Panel",
-        "spec": {
-          "id": 13,
-          "title": "Active repl. slots",
-          "description": "Based on last 5m data. FYI - no thresholds defined",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1m"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication_slots",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "select count(\"active\") from (select last(\"active\") as \"active\" FROM \"replication_slots\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter group by \"dbname\", \"slot_name\") WHERE \"active\" =  true",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  count(*) filter (where data->>'non_active_int' = '0')\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "active"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "last"
-                            }
-                          ]
-                        ],
-                        "tags": [],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "none",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "none",
-                  "decimals": 0,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 1,
-                        "color": "#bf1b00"
-                      },
-                      {
-                        "value": 1000,
-                        "color": "#d44a3a"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-14": {
-        "kind": "Panel",
-        "spec": {
-          "id": 14,
-          "title": "Active replicas",
-          "description": "Data is available  only on connected replicas. No thresholds by default",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "select count(\"last\") from (SELECT last(\"state\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time(1d), dbname, client_info fill(none)) where \"last\" = 'streaming'",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  count(*)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "replay_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "count"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "none",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "short",
-                  "decimals": 0,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 100000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
-                      },
-                      {
-                        "value": 1000000000,
-                        "color": "#d44a3a"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-15": {
-        "kind": "Panel",
-        "spec": {
-          "id": 15,
-          "title": "Active \"sync\" replicas",
-          "description": "Data is available  only on connected replicas. No thresholds by default",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "select sum(\"last\") from (SELECT last(\"is_sync_int\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time(1d), dbname, client_info fill(none))",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  count(*) filter (where data->>'is_sync_int' = '1') \nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "replay_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "count"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "none",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "short",
-                  "decimals": 0,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-16": {
-        "kind": "Panel",
-        "spec": {
-          "id": 16,
-          "title": "Max. flush lag",
-          "description": "Data is available  only on connected replicas! Based on last 5m data.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "SELECT max(\"write_lag_b\") FROM \"replication\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  max((data->>'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "flush_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "max"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 100000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
-                      },
-                      {
-                        "value": 1000000000,
-                        "color": "#d44a3a"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-17": {
-        "kind": "Panel",
-        "spec": {
-          "id": 17,
-          "title": "Replication flush lag",
-          "description": "Based on pg_stat_replication on primaries. Data is available  only on connected replicas!",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "alias": "[[tag_dbname]] [[tag_application_name]] [[tag_client_info]]",
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "$__interval"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "dbname"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "client_info"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "application_name"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "SELECT mean(\"write_lag_b\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time($__interval), \"dbname\", \"client_info\", \"application_name\" fill(none)",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'flush_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "flush_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "B",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "interval": "2m"
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "mean"
-                  ],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-2": {
-        "kind": "Panel",
-        "spec": {
-          "id": 2,
-          "title": "Replication slot restart_lsn lag (primary extra WAL size)",
-          "description": "Based on pg_replication_slots.  Primary only",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "alias": "[[tag_dbname]] slot=[[tag_slot_name]]",
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "$__interval"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "dbname"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "slot_name"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication_slots",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "restart_lsn_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "mean"
-                  ],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-4": {
-        "kind": "Panel",
-        "spec": {
-          "id": 4,
-          "title": "Inactive repl. slots",
-          "description": "Based on last 5m data.  > 1 ~ Error. Causes WAL accumulation on the master and possibly autovacuum inefficiencies",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1m"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication_slots",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "select sum(\"last\") from (select last(\"non_active_int\") FROM \"replication_slots\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter group by \"dbname\", \"slot_name\")",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  sum((data->>'non_active_int')::int)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "active"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "last"
-                            }
-                          ]
-                        ],
-                        "tags": [],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
             }
           },
           "vizConfig": {
@@ -1339,8 +126,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
-                  "decimals": 0,
                   "mappings": [
                     {
                       "type": "special",
@@ -1356,22 +141,511 @@
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 1,
-                        "color": "#bf1b00"
-                      },
-                      {
-                        "value": 1000,
-                        "color": "#d44a3a"
+                        "value": 0,
+                        "color": "#28781e"
                       }
                     ]
                   },
                   "color": {
                     "mode": "thresholds"
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Active repl. slots",
+          "description": "Number of active replication slots. Based on last 5m data.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, count(*) filter (where data->>'non_active_int' = '0') FROM replication_slots WHERE time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
                   }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Active replicas",
+          "description": "Currently connected replicas (visible on primaries).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, count(*) FROM replication WHERE time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Active sync replicas",
+          "description": "Currently connected synchronous replicas (sync or quorum). Visible on primaries.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, count(*) filter (where data->>'is_sync_int' = '1') FROM replication WHERE time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Slot max. restart_lsn lag",
+          "description": "Maximum restart_lsn lag across all slots; translates to retained WAL size on the primary. Based on last 5m data.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, max((data->>'restart_lsn_lag_b')::int8) FROM replication_slots WHERE time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "bytes"
                 },
                 "overrides": []
               }
@@ -1384,7 +658,7 @@
         "spec": {
           "id": 6,
           "title": "Max. write lag",
-          "description": "Data is available  only on connected replicas! Based on last 5m data.",
+          "description": "Maximum write lag across connected replicas. Based on last 5m data.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1403,160 +677,9 @@
                       "spec": {
                         "format": "time_series",
                         "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "SELECT max(\"write_lag_b\") FROM \"replication\" WHERE $timeFilter GROUP BY time($__interval) fill(none)",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  max((data->>'write_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
+                        "rawSql": "SELECT 0 as time, max((data->>'write_lag_b')::int8) FROM replication WHERE time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
                         "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "write_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "max"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 100000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
-                      },
-                      {
-                        "value": 1000000000,
-                        "color": "#d44a3a"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-7": {
-        "kind": "Panel",
-        "spec": {
-          "id": 7,
-          "title": "Slot max. restart_lsn lag",
-          "description": "Based on last 5m of \"pg_replication_slots.restart_lsn\" and translates to \"overhead\" WAL folder size",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
                         "groupBy": [
                           {
                             "params": [
@@ -1571,27 +694,13 @@
                             "type": "fill"
                           }
                         ],
-                        "measurement": "replication_slots",
+                        "measurement": "",
                         "metricColumn": "none",
                         "orderByTime": "ASC",
                         "policy": "default",
-                        "query": "SELECT max(\"restart_lsn_lag_b\") FROM \"replication_slots\" WHERE \"dbname\" =~ /^$dbname$/ AND $timeFilter GROUP BY time(1d) fill(none)",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  max((data->>'restart_lsn_lag_b')::int8)\nFROM\n  replication_slots\nWHERE\n  time in (select max(time) from replication_slots where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
-                        "resultFormat": "time_series",
+                        "query": "",
                         "select": [
-                          [
-                            {
-                              "params": [
-                                "restart_lsn_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "max"
-                            }
-                          ]
+                          []
                         ],
                         "tags": [],
                         "timeColumn": "time",
@@ -1610,352 +719,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "type": "special",
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "N/A"
-                        }
-                      }
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 16000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
-                      },
-                      {
-                        "value": 1000000000,
-                        "color": "#d44a3a"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-8": {
-        "kind": "Panel",
-        "spec": {
-          "id": 8,
-          "title": "Replication replay lag",
-          "description": "Based on pg_stat_replication on primaries. Data is available  only on connected replicas!",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "alias": "[[tag_dbname]] [[tag_application_name]] [[tag_client_info]]",
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "$__interval"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "dbname"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "client_info"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "application_name"
-                            ],
-                            "type": "tag"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  avg((data->>'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY\n  1, 2\nORDER BY\n  1, 2\n  \n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "replay_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "B",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "interval": "15m"
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "12.0.0",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "mean"
-                  ],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-9": {
-        "kind": "Panel",
-        "spec": {
-          "id": 9,
-          "title": "Max. replay lag",
-          "description": "Data is available  only on connected replicas! Based on last 5m data.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "pgwatch-metrics"
-                      },
-                      "spec": {
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "1d"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "replication",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "SELECT max(\"replay_lag_b\") FROM \"replication\" WHERE (\"dbname\" =~ /^$dbname$/) AND $timeFilter GROUP BY time($__interval) fill(none)",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  max((data->>'replay_lag_b')::int8)\nFROM\n  replication\nWHERE\n  time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname)\n  AND dbname in ($dbname)\n\n",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "replay_lag_b"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "max"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -1982,8 +746,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "bytes",
-                  "decimals": 1,
                   "mappings": [
                     {
                       "type": "special",
@@ -1999,22 +761,15 @@
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
-                        "color": "#299c46"
-                      },
-                      {
-                        "value": 100000000,
-                        "color": "rgba(237, 129, 40, 0.89)"
-                      },
-                      {
-                        "value": 1000000000,
-                        "color": "#d44a3a"
+                        "value": 0,
+                        "color": "#28781e"
                       }
                     ]
                   },
                   "color": {
                     "mode": "thresholds"
-                  }
+                  },
+                  "unit": "bytes"
                 },
                 "overrides": []
               }
@@ -2022,12 +777,12 @@
           }
         }
       },
-      "panel-101": {
+      "panel-7": {
         "kind": "Panel",
         "spec": {
-          "id": 101,
-          "title": "Pause state",
-          "description": "pg_stat_recovery.pause_state. Standby only.",
+          "id": 7,
+          "title": "Max. flush lag",
+          "description": "Maximum flush lag across connected replicas. Based on last 5m data.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2044,10 +799,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]]",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  dbname,\n  data->>'tag_pause_state'\nFROM recovery\nWHERE time in (SELECT max(time) FROM recovery\n    WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY dbname)\n  AND dbname in ($dbname)\n"
+                        "rawSql": "SELECT 0 as time, max((data->>'flush_lag_b')::int8) FROM replication WHERE time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2056,11 +843,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2069,7 +852,7 @@
             "version": "12.0.0",
             "spec": {
               "options": {
-                "colorMode": "none",
+                "colorMode": "value",
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "horizontal",
@@ -2082,12 +865,259 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "value",
+                "textMode": "auto",
                 "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Max. replay lag",
+          "description": "Maximum replay lag across connected replicas. Based on last 5m data.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, max((data->>'replay_lag_b')::int8) FROM replication WHERE time in (select max(time) from replication where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname)",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Database roles",
+          "description": "Database role of each monitored instance.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, dbname, max((data->>'in_recovery_int')::int) FROM wal WHERE time in (select max(time) from wal where $__timeFilter(time) AND dbname in ($dbname) group by dbname) AND dbname in ($dbname) GROUP BY dbname",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
                   "mappings": [
                     {
                       "type": "special",
@@ -2101,17 +1131,1540 @@
                     {
                       "type": "value",
                       "options": {
-                        "not paused": {
+                        "0": {
+                          "text": "PRIMARY",
+                          "color": "#28781e",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "REPLICA",
+                          "color": "blue",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Replication slot restart_lsn lag (primary extra WAL size)",
+          "description": "Per-slot restart_lsn lag; WAL the primary must retain for each slot.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' slot=' || (tag_data->>'slot_name'), max((data->>'restart_lsn_lag_b')::int8) FROM replication_slots WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "Repl. slot XMIN age (in transactions)",
+          "description": "Oldest transaction each slot needs the database to retain; blocks VACUUM cleanup.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' slot=' || (tag_data->>'slot_name'), avg((data->>'xmin_age_tx')::int8) FROM replication_slots WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "Replication flush lag",
+          "description": "Per-replica flush lag, based on pg_stat_replication. Visible on primaries with connected replicas.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), concat_ws(' ', dbname, tag_data->>'application_name', tag_data->>'client_info'), avg((data->>'flush_lag_b')::int8) FROM replication WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "Replication replay lag",
+          "description": "Per-replica replay lag, based on pg_stat_replication. Visible on primaries with connected replicas.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), concat_ws(' ', dbname, tag_data->>'application_name', tag_data->>'client_info'), avg((data->>'replay_lag_b')::int8) FROM replication WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "bytes"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-14": {
+        "kind": "Panel",
+        "spec": {
+          "id": 14,
+          "title": "WAL timeline",
+          "description": "WAL timeline progression. A jump indicates a promotion/failover.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'timeline')::int) FROM wal WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "none",
+                  "decimals": 0,
+                  "legendCalcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-15": {
+        "kind": "Panel",
+        "spec": {
+          "id": 15,
+          "title": "WAL location (bytes)",
+          "description": "Absolute WAL write/replay position.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'xlog_location_b')::int8) FROM wal WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "bytes",
+                  "decimals": 0,
+                  "legendCalcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-16": {
+        "kind": "Panel",
+        "spec": {
+          "id": 16,
+          "title": "WAL generation rate",
+          "description": "WAL bytes generated per second, averaged over the aggregation interval.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((l - l_lag) / extract(epoch from time - time_lag))\nfrom (\n  select\n    (data->>'xlog_location_b')::numeric as l,\n    lag((data->>'xlog_location_b')::numeric) over w as l_lag,\n    time,\n    lag(time) over w as time_lag,\n    dbname\n  from wal\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere time > time_lag and l > l_lag\ngroup by 1, 2\norder by 1\n",
+                        "resultFormat": "time_series"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "unit": "binBps",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-17": {
+        "kind": "Panel",
+        "spec": {
+          "id": 17,
+          "title": "WAL files overview",
+          "description": "WAL file count and total WAL directory size.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' - WAL file count', max((data->>'wal_file_count')::int8) FROM wal_size WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' - WAL total size', max((data->>'wal_size_b')::int8) FROM wal_size WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#28781e"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "legendCalcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "(?i).*count.*"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "(?i).*size.*"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "bytes"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-18": {
+        "kind": "Panel",
+        "spec": {
+          "id": 18,
+          "title": "Archive pending",
+          "description": "WAL files waiting to be archived (.ready files in archive_status).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, avg((data->>'archiver_pending_count')::int8) FROM archiver_pending_count WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "#28781e"
+                      },
+                      {
+                        "value": 10,
+                        "color": "rgba(237, 129, 40, 0.89)"
+                      },
+                      {
+                        "value": 50,
+                        "color": "#d44a3a"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "line"
+                    }
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "legendCalcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "thresholdsStyle": {
+                    "mode": "line"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-19": {
+        "kind": "Panel",
+        "spec": {
+          "id": 19,
+          "title": "Pause state",
+          "description": "Recovery pause state. Standby only.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "rawQuery": true,
+                        "rawSql": "SELECT 0 as time, dbname, CASE max(tag_data->>'pause_state') WHEN 'paused' THEN 2 WHEN 'pause requested' THEN 1 ELSE 0 END FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY dbname) AND dbname in ($recovery_dbname) GROUP BY dbname",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "N/A"
+                        }
+                      }
+                    },
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
                           "text": "not paused",
                           "color": "#28781e",
                           "index": 0
                         },
-                        "pause requested": {
+                        "1": {
                           "text": "pause requested",
                           "color": "rgba(237, 129, 40, 0.89)",
                           "index": 1
                         },
-                        "paused": {
+                        "2": {
                           "text": "paused",
                           "color": "#d44a3a",
                           "index": 2
@@ -2130,7 +2683,8 @@
                   },
                   "color": {
                     "mode": "thresholds"
-                  }
+                  },
+                  "unit": "none"
                 },
                 "overrides": []
               }
@@ -2138,12 +2692,12 @@
           }
         }
       },
-      "panel-102": {
+      "panel-20": {
         "kind": "Panel",
         "spec": {
-          "id": 102,
+          "id": 20,
           "title": "Promote triggered",
-          "description": "True when pg_stat_recovery.promote_triggered is set. Standby only.",
+          "description": "Promotion has been triggered. Standby only.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2160,10 +2714,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]]",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  0 as time,\n  dbname,\n  bool_or((data->>'promote_triggered_int')::int = 1)::int\nFROM recovery\nWHERE time in (SELECT max(time) FROM recovery\n    WHERE $__timeFilter(time) AND dbname in ($dbname) GROUP BY dbname)\n  AND dbname in ($dbname)\nGROUP BY dbname\n"
+                        "rawSql": "SELECT 0 as time, dbname, max((data->>'promote_triggered_int')::int) FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY dbname) AND dbname in ($recovery_dbname) GROUP BY dbname",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2172,11 +2758,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "timeFrom": "5m",
-                "maxDataPoints": 100,
-                "hideTimeOverride": true
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2203,8 +2785,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
-                  "decimals": 0,
                   "mappings": [
                     {
                       "type": "special",
@@ -2237,16 +2817,13 @@
                       {
                         "value": 0,
                         "color": "#28781e"
-                      },
-                      {
-                        "value": 1,
-                        "color": "#d44a3a"
                       }
                     ]
                   },
                   "color": {
                     "mode": "thresholds"
-                  }
+                  },
+                  "unit": "none"
                 },
                 "overrides": []
               }
@@ -2254,10 +2831,10 @@
           }
         }
       },
-      "panel-103": {
+      "panel-21": {
         "kind": "Panel",
         "spec": {
-          "id": 103,
+          "id": 21,
           "title": "Replay lag (bytes)",
           "description": "Distance between replay_end_lsn and last_replayed_end_lsn. Standby only.",
           "links": [],
@@ -2276,10 +2853,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]]",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'replay_lag_b')::int8)\nFROM recovery\nWHERE $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n"
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'replay_lag_b')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2288,9 +2897,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2301,9 +2908,10 @@
               "options": {
                 "legend": {
                   "calcs": [
-                    "mean"
+                    "mean",
+                    "max"
                   ],
-                  "displayMode": "list",
+                  "displayMode": "table",
                   "placement": "bottom",
                   "showLegend": true
                 },
@@ -2315,14 +2923,12 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "bytes",
-                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
+                        "value": null,
                         "color": "#28781e"
                       },
                       {
@@ -2370,7 +2976,9 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "unit": "bytes",
+                  "decimals": 0
                 },
                 "overrides": []
               }
@@ -2378,10 +2986,10 @@
           }
         }
       },
-      "panel-104": {
+      "panel-22": {
         "kind": "Panel",
         "spec": {
-          "id": 104,
+          "id": 22,
           "title": "Seconds since last replayed transaction",
           "description": "Standby only.",
           "links": [],
@@ -2400,10 +3008,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]]",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'seconds_since_last_xact')::int8)\nFROM recovery\nWHERE $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n"
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_last_xact')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2412,9 +3052,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2425,9 +3063,10 @@
               "options": {
                 "legend": {
                   "calcs": [
-                    "mean"
+                    "mean",
+                    "max"
                   ],
-                  "displayMode": "list",
+                  "displayMode": "table",
                   "placement": "bottom",
                   "showLegend": true
                 },
@@ -2439,14 +3078,12 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
-                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
+                        "value": null,
                         "color": "#28781e"
                       },
                       {
@@ -2494,7 +3131,9 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "unit": "s",
+                  "decimals": 0
                 },
                 "overrides": []
               }
@@ -2502,10 +3141,10 @@
           }
         }
       },
-      "panel-105": {
+      "panel-23": {
         "kind": "Panel",
         "spec": {
-          "id": 105,
+          "id": 23,
           "title": "Seconds since current WAL chunk",
           "description": "How long ago the startup process observed the latest WAL chunk. Standby only.",
           "links": [],
@@ -2524,10 +3163,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]]",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'seconds_since_current_chunk')::int8)\nFROM recovery\nWHERE $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n"
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_current_chunk')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2536,9 +3207,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2549,9 +3218,10 @@
               "options": {
                 "legend": {
                   "calcs": [
-                    "mean"
+                    "mean",
+                    "max"
                   ],
-                  "displayMode": "list",
+                  "displayMode": "table",
                   "placement": "bottom",
                   "showLegend": true
                 },
@@ -2563,14 +3233,12 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
-                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
+                        "value": null,
                         "color": "#28781e"
                       },
                       {
@@ -2618,7 +3286,9 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "unit": "s",
+                  "decimals": 0
                 },
                 "overrides": []
               }
@@ -2626,10 +3296,10 @@
           }
         }
       },
-      "panel-106": {
+      "panel-24": {
         "kind": "Panel",
         "spec": {
-          "id": 106,
+          "id": 24,
           "title": "Replay timelines",
           "description": "last_replayed_tli vs replay_end_tli. A divergence indicates a timeline switch. Standby only.",
           "links": [],
@@ -2648,10 +3318,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]] last_replayed_tli",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'last_replayed_tli')::int)\nFROM recovery\nWHERE $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n"
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' last_replayed_tli', max((data->>'last_replayed_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "A",
@@ -2669,10 +3371,42 @@
                         "name": "pgwatch-metrics"
                       },
                       "spec": {
-                        "alias": "[[tag_dbname]] replay_end_tli",
                         "format": "time_series",
+                        "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $__interval),\n  dbname,\n  max((data->>'replay_end_tli')::int)\nFROM recovery\nWHERE $__timeFilter(time)\n  AND dbname in ($dbname)\nGROUP BY 1, 2\nORDER BY 1, 2\n"
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' replay_end_tli', max((data->>'replay_end_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "resultFormat": "time_series",
+                        "groupBy": [
+                          {
+                            "params": [
+                              "$__interval"
+                            ],
+                            "type": "time"
+                          },
+                          {
+                            "params": [
+                              "none"
+                            ],
+                            "type": "fill"
+                          }
+                        ],
+                        "measurement": "",
+                        "metricColumn": "none",
+                        "orderByTime": "ASC",
+                        "policy": "default",
+                        "query": "",
+                        "select": [
+                          []
+                        ],
+                        "tags": [],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
                       }
                     },
                     "refId": "B",
@@ -2681,9 +3415,7 @@
                 }
               ],
               "transformations": [],
-              "queryOptions": {
-                "interval": "5m"
-              }
+              "queryOptions": {}
             }
           },
           "vizConfig": {
@@ -2708,8 +3440,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
-                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -2755,12 +3485,55 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "unit": "none",
+                  "decimals": 0,
+                  "legendCalcs": [
+                    "lastNotNull"
+                  ]
                 },
                 "overrides": []
               }
             }
           }
+        }
+      },
+      "panel-25": {
+        "kind": "Panel",
+        "spec": {
+          "id": 25,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
         }
       }
     },
@@ -2771,7 +3544,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Replication overview",
+              "title": "Overview",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2786,7 +3559,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-4"
+                          "name": "panel-1"
                         }
                       }
                     },
@@ -2799,7 +3572,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-13"
+                          "name": "panel-2"
                         }
                       }
                     },
@@ -2812,7 +3585,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-14"
+                          "name": "panel-3"
                         }
                       }
                     },
@@ -2825,7 +3598,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-15"
+                          "name": "panel-4"
                         }
                       }
                     },
@@ -2838,7 +3611,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-7"
+                          "name": "panel-5"
                         }
                       }
                     },
@@ -2864,7 +3637,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-16"
+                          "name": "panel-7"
                         }
                       }
                     },
@@ -2874,6 +3647,19 @@
                         "x": 21,
                         "y": 0,
                         "width": 3,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 6,
+                        "width": 24,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2904,7 +3690,7 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-2"
+                          "name": "panel-10"
                         }
                       }
                     },
@@ -2917,7 +3703,7 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-10"
+                          "name": "panel-11"
                         }
                       }
                     }
@@ -2944,7 +3730,7 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-17"
+                          "name": "panel-12"
                         }
                       }
                     },
@@ -2957,7 +3743,86 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-8"
+                          "name": "panel-13"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "WAL",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-14"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 10,
+                        "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-15"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 10,
+                        "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-16"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 20,
+                        "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-17"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 20,
+                        "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-18"
                         }
                       }
                     }
@@ -2984,7 +3849,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-101"
+                          "name": "panel-19"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3002,7 +3867,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-102"
+                          "name": "panel-20"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3020,7 +3885,7 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-103"
+                          "name": "panel-21"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3038,7 +3903,7 @@
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-104"
+                          "name": "panel-22"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3056,7 +3921,7 @@
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-105"
+                          "name": "panel-23"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3074,7 +3939,7 @@
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-106"
+                          "name": "panel-24"
                         },
                         "repeat": {
                           "mode": "variable",
@@ -3106,7 +3971,7 @@
                         "height": 5,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-12"
+                          "name": "panel-25"
                         }
                       }
                     }
@@ -3136,7 +4001,7 @@
         "1m",
         "5m",
         "15m",
-        "30m",
+        "30s",
         "1h",
         "2h",
         "1d"
@@ -3167,15 +4032,59 @@
               "name": "pgwatch-metrics"
             },
             "spec": {
-              "__legacyStringValue": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric IN ('replication', 'replication_slots') ORDER BY 1;"
+              "__legacyStringValue": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric IN ('replication', 'replication_slots', 'recovery', 'wal') ORDER BY 1;"
             }
           },
           "regex": "",
-          "sort": "disabled",
-          "definition": "",
+          "sort": "alphabeticalAsc",
+          "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric IN ('replication', 'replication_slots', 'recovery', 'wal') ORDER BY 1;",
           "options": [],
           "multi": true,
           "includeAll": true,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "agg_interval",
+          "query": "1m,5m,10m,30m,1h",
+          "current": {
+            "text": "5m",
+            "value": "5m"
+          },
+          "options": [
+            {
+              "selected": false,
+              "text": "1m",
+              "value": "1m"
+            },
+            {
+              "selected": true,
+              "text": "5m",
+              "value": "5m"
+            },
+            {
+              "selected": false,
+              "text": "10m",
+              "value": "10m"
+            },
+            {
+              "selected": false,
+              "text": "30m",
+              "value": "30m"
+            },
+            {
+              "selected": false,
+              "text": "1h",
+              "value": "1h"
+            }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "label": "Aggregation interval",
+          "hide": "dontHide",
+          "skipUrlSync": false,
           "allowCustomValue": true
         }
       },
@@ -3199,12 +4108,12 @@
               "name": "pgwatch-metrics"
             },
             "spec": {
-              "__legacyStringValue": "SELECT DISTINCT dbname FROM recovery WHERE $__timeFilter(time)   AND dbname in ($dbname) ORDER BY 1;"
+              "__legacyStringValue": "SELECT DISTINCT dbname FROM recovery WHERE $__timeFilter(time) AND dbname in ($dbname) ORDER BY 1;"
             }
           },
           "regex": "",
           "sort": "alphabeticalAsc",
-          "definition": "SELECT DISTINCT dbname FROM recovery WHERE $__timeFilter(time)   AND dbname in ($dbname) ORDER BY 1;",
+          "definition": "SELECT DISTINCT dbname FROM recovery WHERE $__timeFilter(time) AND dbname in ($dbname) ORDER BY 1;",
           "options": [],
           "multi": true,
           "includeAll": true,
