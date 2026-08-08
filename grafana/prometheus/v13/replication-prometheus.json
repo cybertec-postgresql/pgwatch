@@ -2691,7 +2691,7 @@
                       "spec": {
                         "x": 0,
                         "y": 0,
-                        "width": 3,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2702,9 +2702,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 3,
+                        "x": 6,
                         "y": 0,
-                        "width": 3,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2715,9 +2715,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 6,
+                        "x": 12,
                         "y": 0,
-                        "width": 3,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2728,9 +2728,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 9,
+                        "x": 18,
                         "y": 0,
-                        "width": 3,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2741,9 +2741,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 0,
-                        "width": 3,
+                        "x": 0,
+                        "y": 6,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2754,9 +2754,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 15,
-                        "y": 0,
-                        "width": 3,
+                        "x": 6,
+                        "y": 6,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2767,9 +2767,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 18,
-                        "y": 0,
-                        "width": 3,
+                        "x": 12,
+                        "y": 6,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2780,9 +2780,9 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 21,
-                        "y": 0,
-                        "width": 3,
+                        "x": 18,
+                        "y": 6,
+                        "width": 6,
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
@@ -2794,7 +2794,7 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 6,
+                        "y": 12,
                         "width": 24,
                         "height": 6,
                         "element": {
