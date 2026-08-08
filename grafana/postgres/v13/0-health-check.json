@@ -3011,7 +3011,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT 0 as time,\n       sum(count) AS issues_count\nFROM (\n      SELECT count\n        FROM (\n              SELECT CASE WHEN data->>'autovacuum' = 'off' THEN 1 ELSE 0 END AS count\n                FROM settings\n               WHERE dbname = '$dbname'\n                 AND time > now() - '1d'::interval\n               ORDER BY time DESC\n               LIMIT 1\n              ) AS s\n \n      UNION ALL\n\n      SELECT count(*)\n        FROM table_stats\n       WHERE dbname = '$dbname'\n         AND time = (SELECT max(time) FROM table_stats WHERE dbname = '$dbname')\n         AND (data->>'no_autovacuum')::int = 1\n ) x;",
+                        "rawSql": "SELECT 0 as time,\n       sum(count) AS issues_count\nFROM (\n      SELECT count\n        FROM (\n              SELECT CASE WHEN (data->>'value')::float8 = 0 THEN 1 ELSE 0 END AS count\n                FROM settings_num\n               WHERE dbname = '$dbname'\n                 AND tag_data->>'name' = 'autovacuum'\n                 AND time > now() - '1d'::interval\n               ORDER BY time DESC\n               LIMIT 1\n              ) AS s\n \n      UNION ALL\n\n      SELECT count(*)\n        FROM table_stats\n       WHERE dbname = '$dbname'\n         AND time = (SELECT max(time) FROM table_stats WHERE dbname = '$dbname')\n         AND (data->>'no_autovacuum')::int = 1\n ) x;",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -4688,7 +4688,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "select split_part(data->>'server_version'::text, ' ',  1) as server_version\nfrom settings \nwhere dbname = '$dbname' and $__timeFilter(time) \norder by time \ndesc limit 1;",
+                        "rawSql": "select concat((data->>'value')::int8 / 10000, '.', ((data->>'value')::int8 % 10000) / 100) as server_version\nfrom settings_num\nwhere dbname = '$dbname' and tag_data->>'name' = 'server_version_num' and $__timeFilter(time)\norder by time\ndesc limit 1;",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -4856,7 +4856,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'max_connections')::int\n  FROM settings\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n  ORDER BY time DESC\n  LIMIT 1\n)\nSELECT round(((b.data->>'numbackends')::float / s.max_connections) * 100) AS conn_used_pct, max_connections\nFROM db_stats b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
+                        "rawSql": "WITH s(max_connections) AS (\n  SELECT (data->>'value')::int\n  FROM settings_num\n  WHERE $__timeFilter(time) AND dbname = '$dbname'\n    AND tag_data->>'name' = 'max_connections'\n  ORDER BY time DESC\n  LIMIT 1\n)\nSELECT round(((b.data->>'numbackends')::float / s.max_connections) * 100) AS conn_used_pct, max_connections\nFROM db_stats b, s\nWHERE $__timeFilter(b.time) AND b.dbname = '$dbname'\nORDER BY b.time DESC\nLIMIT 1",
                         "resultFormat": "time_series",
                         "select": [
                           [
