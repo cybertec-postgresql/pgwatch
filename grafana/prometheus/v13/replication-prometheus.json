@@ -1942,7 +1942,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"$recovery_dbname\",pause_state=\"paused\"} > bool 0) * 2 or max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"$recovery_dbname\",pause_state=\"pause requested\"} > bool 0) * 1 or max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"$recovery_dbname\"} * 0)",
+                        "expr": "max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"${recovery_dbname:regex}\",pause_state=\"paused\"} > bool 0) * 2 or max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"${recovery_dbname:regex}\",pause_state=\"pause requested\"} > bool 0) * 1 or max by (dbname) (pgwatch_recovery_replay_lag_b{dbname=~\"${recovery_dbname:regex}\"} * 0)",
                         "legendFormat": "{{dbname}}",
                         "instant": true
                       }
@@ -2053,7 +2053,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "max by (dbname) (pgwatch_recovery_promote_triggered_int{dbname=~\"$recovery_dbname\"})",
+                        "expr": "max by (dbname) (pgwatch_recovery_promote_triggered_int{dbname=~\"${recovery_dbname:regex}\"})",
                         "legendFormat": "{{dbname}}",
                         "instant": true
                       }
@@ -2159,7 +2159,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "pgwatch_recovery_replay_lag_b{dbname=~\"$recovery_dbname\"}",
+                        "expr": "pgwatch_recovery_replay_lag_b{dbname=~\"${recovery_dbname:regex}\"}",
                         "legendFormat": "{{dbname}}"
                       }
                     },
@@ -2280,7 +2280,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "pgwatch_recovery_seconds_since_last_xact{dbname=~\"$recovery_dbname\"}",
+                        "expr": "pgwatch_recovery_seconds_since_last_xact{dbname=~\"${recovery_dbname:regex}\"}",
                         "legendFormat": "{{dbname}}"
                       }
                     },
@@ -2401,7 +2401,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "pgwatch_recovery_seconds_since_current_chunk{dbname=~\"$recovery_dbname\"}",
+                        "expr": "pgwatch_recovery_seconds_since_current_chunk{dbname=~\"${recovery_dbname:regex}\"}",
                         "legendFormat": "{{dbname}}"
                       }
                     },
@@ -2522,7 +2522,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "pgwatch_recovery_last_replayed_tli{dbname=~\"$recovery_dbname\"}",
+                        "expr": "pgwatch_recovery_last_replayed_tli{dbname=~\"${recovery_dbname:regex}\"}",
                         "legendFormat": "{{dbname}} last_replayed_tli"
                       }
                     },
@@ -2541,7 +2541,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "pgwatch_recovery_replay_end_tli{dbname=~\"$recovery_dbname\"}",
+                        "expr": "pgwatch_recovery_replay_end_tli{dbname=~\"${recovery_dbname:regex}\"}",
                         "legendFormat": "{{dbname}} replay_end_tli"
                       }
                     },

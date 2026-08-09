@@ -2567,7 +2567,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT 0 as time, dbname, CASE max(tag_data->>'pause_state') WHEN 'paused' THEN 2 WHEN 'pause requested' THEN 1 ELSE 0 END FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY dbname) AND dbname in ($recovery_dbname) GROUP BY dbname",
+                        "rawSql": "SELECT 0 as time, dbname, CASE max(tag_data->>'pause_state') WHEN 'paused' THEN 2 WHEN 'pause requested' THEN 1 ELSE 0 END FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY dbname) AND dbname in (${recovery_dbname:singlequote}) GROUP BY dbname",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -2711,7 +2711,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT 0 as time, dbname, max((data->>'promote_triggered_int')::int) FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY dbname) AND dbname in ($recovery_dbname) GROUP BY dbname",
+                        "rawSql": "SELECT 0 as time, dbname, max((data->>'promote_triggered_int')::int) FROM recovery WHERE time in (SELECT max(time) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY dbname) AND dbname in (${recovery_dbname:singlequote}) GROUP BY dbname",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -2850,7 +2850,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'replay_lag_b')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'replay_lag_b')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY 1, 2 ORDER BY 1, 2",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -3005,7 +3005,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_last_xact')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_last_xact')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY 1, 2 ORDER BY 1, 2",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -3160,7 +3160,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_current_chunk')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname, max((data->>'seconds_since_current_chunk')::int8) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY 1, 2 ORDER BY 1, 2",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -3315,7 +3315,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' last_replayed_tli', max((data->>'last_replayed_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' last_replayed_tli', max((data->>'last_replayed_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY 1, 2 ORDER BY 1, 2",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
@@ -3368,7 +3368,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' replay_end_tli', max((data->>'replay_end_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in ($recovery_dbname) GROUP BY 1, 2 ORDER BY 1, 2",
+                        "rawSql": "SELECT $__timeGroup(time, $agg_interval), dbname || ' replay_end_tli', max((data->>'replay_end_tli')::int) FROM recovery WHERE $__timeFilter(time) AND dbname in (${recovery_dbname:singlequote}) GROUP BY 1, 2 ORDER BY 1, 2",
                         "resultFormat": "time_series",
                         "groupBy": [
                           {
