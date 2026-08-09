@@ -1830,7 +1830,7 @@ metrics:
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   pause_state as tag_pause_state,
-                  promote_triggered as promote_triggered_int,
+                  promote_triggered::int as promote_triggered_int,
                   last_replayed_tli,
                   replay_end_tli,
                   coalesce(pg_wal_lsn_diff(replay_end_lsn, last_replayed_end_lsn)::int8, 0) as replay_lag_b,
