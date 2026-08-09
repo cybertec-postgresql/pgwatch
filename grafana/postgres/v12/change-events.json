@@ -1190,7 +1190,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "select\n  (select time from settings where $__timeFilter(time) order by time desc limit 1) as \"Time\",\n  key,\n  value::text as value\nfrom (\n  select * from jsonb_each((select data from settings where $__timeFilter(time) order by time desc limit 1))\n) x;",
+          "rawSql": "SELECT\n  (SELECT max(time) FROM settings_num\n   WHERE dbname = '$dbname' AND $__timeFilter(time)) AS \"Time\",\n  tag_data->>'name'       AS name,\n  (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND time = (SELECT max(time) FROM settings_num\n              WHERE dbname = '$dbname' AND $__timeFilter(time))\nORDER BY name",
           "refId": "A",
           "select": [
             [

@@ -145,7 +145,7 @@
           "policy": "default",
           "query": "SELECT top(\"spread\", \"function_full_name\", \"oid\", $top) FROM (SELECT spread(\"total_time\") FROM \"sproc_stats\" WHERE $timeFilter AND \"dbname\" = '$dbname' GROUP BY time(3650d), \"function_full_name\", \"oid\" fill(none) ) WHERE spread > 0",
           "rawQuery": true,
-          "rawSql": "SELECT\n  split_part(data->>'server_version'::text, ' ',  1) as server_version,\n  (data->>'server_version_num')::int8 as server_version_num,\n  string_agg(DISTINCT dbname, ', ') as dbname  \nFROM\n  settings\nWHERE\n  $__timeFilter(time)\n  AND dbname IN ($dbname)\n  AND (data->>'server_version_num')::int8 <= $lower_than_server_version_num\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT\n  (data->>'value')::int8                    AS server_version_num,\n  string_agg(DISTINCT sn.dbname, ', ')      AS dbname\nFROM settings_num sn\nWHERE $__timeFilter(sn.time)\n  AND sn.dbname IN ($dbname)\n  AND sn.tag_data->>'name' = 'server_version_num'\n  AND (sn.data->>'value')::int8 <= $lower_than_server_version_num\nGROUP BY 1\nORDER BY 1",
           "refId": "A",
           "resultFormat": "table",
           "select": [
@@ -202,7 +202,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+        "content": "### Brought to you by\n\n[![Cybertec \u2013 The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
         "mode": "markdown"
       },
       "pluginVersion": "12.0.0",
@@ -230,12 +230,12 @@
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
-        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings' ORDER BY 1;",
+        "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings_num' ORDER BY 1;",
         "includeAll": true,
         "multi": true,
         "name": "dbname",
         "options": [],
-        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings' ORDER BY 1;",
+        "query": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings_num' ORDER BY 1;",
         "refresh": 1,
         "regex": "",
         "type": "query"
@@ -245,11 +245,11 @@
           "type": "grafana-postgresql-datasource",
           "uid": "pgwatch-metrics"
         },
-        "definition": "SELECT DISTINCT (data->>'server_version_num')::int FROM settings WHERE time > now() - '24h'::interval ORDER BY 1 DESC",
+        "definition": "SELECT DISTINCT (data->>'value')::int\nFROM settings_num\nWHERE tag_data->>'name' = 'server_version_num'\n  AND time > now() - '24h'::interval\nORDER BY 1 DESC",
         "includeAll": false,
         "name": "lower_than_server_version_num",
         "options": [],
-        "query": "SELECT DISTINCT (data->>'server_version_num')::int FROM settings WHERE time > now() - '24h'::interval ORDER BY 1 DESC",
+        "query": "SELECT DISTINCT (data->>'value')::int\nFROM settings_num\nWHERE tag_data->>'name' = 'server_version_num'\n  AND time > now() - '24h'::interval\nORDER BY 1 DESC",
         "refresh": 1,
         "regex": "",
         "type": "query"
