@@ -703,44 +703,6 @@
           }
         }
       },
-      "panel-201": {
-        "kind": "Panel",
-        "spec": {
-          "id": 201,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "12.3.1",
-            "spec": {
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
-                "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              }
-            }
-          },
-          "transparent": true
-        }
-      },
       "panel-202": {
         "kind": "Panel",
         "spec": {
@@ -1866,6 +1828,44 @@
             }
           }
         }
+      },
+      "panel-colophon": {
+        "kind": "Panel",
+        "spec": {
+          "id": 99999,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"300\" /></a>\n",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
       }
     },
     "layout": {
@@ -2050,21 +2050,36 @@
                           "name": "panel-2"
                         }
                       }
-                    },
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "title": "Colophon",
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "columnWidthMode": "narrow",
+                  "fillScreen": true,
+                  "items": [
                     {
-                      "kind": "GridLayoutItem",
+                      "kind": "AutoGridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 27,
-                        "width": 11,
-                        "height": 5,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-201"
+                          "name": "panel-colophon"
                         }
                       }
                     }
-                  ]
+                  ],
+                  "maxColumnCount": 1,
+                  "rowHeightMode": "standard"
                 }
               }
             }

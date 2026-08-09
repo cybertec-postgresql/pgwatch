@@ -1250,44 +1250,6 @@
           }
         }
       },
-      "panel-6": {
-        "kind": "Panel",
-        "spec": {
-          "id": 6,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "12.3.1",
-            "spec": {
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "## Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\">\n  <img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"600\" />\n</a>",
-                "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              }
-            }
-          },
-          "transparent": true
-        }
-      },
       "panel-8": {
         "kind": "Panel",
         "spec": {
@@ -1791,139 +1753,207 @@
             }
           }
         }
+      },
+      "panel-colophon": {
+        "kind": "Panel",
+        "spec": {
+          "id": 99999,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"300\" /></a>\n",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
       }
     },
     "layout": {
-      "kind": "GridLayout",
+      "kind": "RowsLayout",
       "spec": {
-        "items": [
+        "rows": [
           {
-            "kind": "GridLayoutItem",
+            "kind": "RowsLayoutRow",
             "spec": {
-              "x": 0,
-              "y": 0,
-              "width": 24,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-9"
+              "title": "Content",
+              "collapse": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 8,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 8,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-14"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 16,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-15"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 16,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-16"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 24,
+                        "width": 24,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 32,
+                        "width": 12,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 32,
+                        "width": 12,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 39,
+                        "width": 24,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
           {
-            "kind": "GridLayoutItem",
+            "kind": "RowsLayoutRow",
             "spec": {
-              "x": 0,
-              "y": 8,
-              "width": 12,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-13"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 12,
-              "y": 8,
-              "width": 12,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-14"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 16,
-              "width": 12,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-15"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 12,
-              "y": 16,
-              "width": 12,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-16"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 24,
-              "width": 24,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-12"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 32,
-              "width": 12,
-              "height": 7,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-11"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 12,
-              "y": 32,
-              "width": 12,
-              "height": 7,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-10"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 39,
-              "width": 24,
-              "height": 6,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-8"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 45,
-              "width": 24,
-              "height": 7,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-6"
+              "collapse": false,
+              "hideHeader": true,
+              "title": "Colophon",
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "columnWidthMode": "narrow",
+                  "fillScreen": true,
+                  "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-colophon"
+                        }
+                      }
+                    }
+                  ],
+                  "maxColumnCount": 1,
+                  "rowHeightMode": "standard"
+                }
               }
             }
           }

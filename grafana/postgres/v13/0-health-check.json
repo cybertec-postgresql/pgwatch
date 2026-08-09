@@ -37,18 +37,32 @@
           "title": "",
           "description": "",
           "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
           "vizConfig": {
             "kind": "VizConfig",
             "group": "text",
             "version": "13.1.1",
             "spec": {
               "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "## Overall state",
                 "mode": "markdown"
               },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
             }
           },
           "transparent": true
@@ -58,222 +72,6 @@
         "kind": "Panel",
         "spec": {
           "id": 102,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Autovacuum",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-wal-replication": {
-        "kind": "Panel",
-        "spec": {
-          "id": 103,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## WAL & replication",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-connections": {
-        "kind": "Panel",
-        "spec": {
-          "id": 104,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Connections",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-disk-usage": {
-        "kind": "Panel",
-        "spec": {
-          "id": 105,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Disk usage",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-miscellaneous": {
-        "kind": "Panel",
-        "spec": {
-          "id": 106,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Misc.",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-change-rate": {
-        "kind": "Panel",
-        "spec": {
-          "id": 107,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Change rate",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-transactions": {
-        "kind": "Panel",
-        "spec": {
-          "id": 108,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Transactions",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-queries": {
-        "kind": "Panel",
-        "spec": {
-          "id": 109,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Queries",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "row-label-tables-indexes": {
-        "kind": "Panel",
-        "spec": {
-          "id": 110,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": { "kind": "QueryGroup", "spec": { "queries": [], "transformations": [], "queryOptions": {} } },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
-                "content": "## Tables & indexes",
-                "mode": "markdown"
-              },
-              "fieldConfig": { "defaults": {}, "overrides": [] }
-            }
-          },
-          "transparent": true
-        }
-      },
-      "panel-12": {
-        "kind": "Panel",
-        "spec": {
-          "id": 12,
           "title": "",
           "description": "",
           "links": [],
@@ -296,7 +94,311 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Brought to you by\n\n[![Cybertec – The PostgreSQL Database Company](https://www.cybertec-postgresql.com/wp-content/uploads/2025/02/cybertec-logo-white-blue.svg)](https://www.cybertec-postgresql.com/en/)\n",
+                "content": "## Autovacuum",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-wal-replication": {
+        "kind": "Panel",
+        "spec": {
+          "id": 103,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## WAL & replication",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-connections": {
+        "kind": "Panel",
+        "spec": {
+          "id": 104,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Connections",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-disk-usage": {
+        "kind": "Panel",
+        "spec": {
+          "id": 105,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Disk usage",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-miscellaneous": {
+        "kind": "Panel",
+        "spec": {
+          "id": 106,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Misc.",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-change-rate": {
+        "kind": "Panel",
+        "spec": {
+          "id": 107,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Change rate",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-transactions": {
+        "kind": "Panel",
+        "spec": {
+          "id": 108,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Transactions",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-queries": {
+        "kind": "Panel",
+        "spec": {
+          "id": 109,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Queries",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
+      },
+      "row-label-tables-indexes": {
+        "kind": "Panel",
+        "spec": {
+          "id": 110,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "13.1.1",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Tables & indexes",
                 "mode": "markdown"
               },
               "fieldConfig": {
@@ -5209,44 +5311,6 @@
           }
         }
       },
-      "panel-48": {
-        "kind": "Panel",
-        "spec": {
-          "id": 48,
-          "title": "",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "text",
-            "version": "13.1.1",
-            "spec": {
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "### The preset threshold values (green / yellow / red) should be reviewed / adjusted!",
-                "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              }
-            }
-          },
-          "transparent": true
-        }
-      },
       "panel-49": {
         "kind": "Panel",
         "spec": {
@@ -6519,6 +6583,44 @@
             }
           }
         }
+      },
+      "panel-colophon": {
+        "kind": "Panel",
+        "spec": {
+          "id": 99999,
+          "title": "",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "12.0.0",
+            "spec": {
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"300\" /></a>\n",
+                "mode": "markdown"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          },
+          "transparent": true
+        }
       }
     },
     "layout": {
@@ -7360,39 +7462,27 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Colophon",
               "collapse": false,
+              "hideHeader": true,
+              "title": "Colophon",
               "layout": {
-                "kind": "GridLayout",
+                "kind": "AutoGridLayout",
                 "spec": {
+                  "columnWidthMode": "narrow",
+                  "fillScreen": true,
                   "items": [
                     {
-                      "kind": "GridLayoutItem",
+                      "kind": "AutoGridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 12,
-                        "height": 7,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-12"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 12,
-                        "y": 0,
-                        "width": 12,
-                        "height": 2,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-48"
+                          "name": "panel-colophon"
                         }
                       }
                     }
-                  ]
+                  ],
+                  "maxColumnCount": 1,
+                  "rowHeightMode": "standard"
                 }
               }
             }
