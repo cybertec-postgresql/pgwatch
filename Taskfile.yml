@@ -1,0 +1,303 @@
+version: '3'
+
+# pgwatch cross-platform development tasks (Windows / Linux / macOS).
+# Toolchain: Go 1.26, Node.js 22 + Yarn 1.x, Docker with compose v2, protoc (proto task only).
+# Run `task --list` for all tasks and `task tools` to install the Go-based tool dependencies.
+
+vars:
+  BINARY: '{{if eq OS "windows"}}pgwatch.exe{{else}}pgwatch{{end}}'
+  GIT_HASH:
+    sh: git show -s --format=%H HEAD
+  GIT_TIME:
+    sh: git show -s --format=%cI HEAD
+  VERSION:
+    sh: git rev-parse --abbrev-ref HEAD
+  LDFLAGS: -X 'main.commit={{.GIT_HASH}}' -X 'main.date={{.GIT_TIME}}' -X 'main.version={{.VERSION}}'
+
+tasks:
+
+  default:
+    deps: [build]
+
+  # ------------------------------- Go -------------------------------
+
+  proto:
+    desc: Generate gRPC stubs from api/pb/pgwatch.proto
+    method: timestamp
+    sources:
+      - api/pb/pgwatch.proto
+    generates:
+      - api/pb/pgwatch.pb.go
+      - api/pb/pgwatch_grpc.pb.go
+    preconditions:
+      - sh: protoc --version
+        msg: |
+          protoc not found on PATH. Install it first:
+            Windows:        winget install protobuf
+            macOS:          brew install protobuf
+            Debian/Ubuntu:  sudo apt install protobuf-compiler
+          The Go plugins (protoc-gen-go, protoc-gen-go-grpc) are installed by `task tools`.
+    cmds:
+      - go generate ./api/pb/
+
+  build:
+    desc: Build the pgwatch agent binary with version ldflags
+    deps: [ui, proto]
+    method: timestamp
+    sources:
+      - '**/*.go'
+      - 'internal/**/*.sql'
+      - 'internal/metrics/metrics.yaml'
+      - 'internal/webserver/build/**/*'
+    exclude:
+      - 'internal/webui/node_modules/**/*'
+    generates:
+      - '{{.BINARY}}'
+    cmds:
+      - go build -ldflags "{{.LDFLAGS}}" -o {{.BINARY}} ./cmd/pgwatch
+
+  test:
+    desc: Run the Go test suite (spins up Postgres/etcd testcontainers — Docker must be running)
+    deps: [ui, proto]
+    method: timestamp
+    sources:
+      - '**/*.go'
+      - 'internal/**/*.sql'
+      - 'internal/metrics/metrics.yaml'
+      - 'internal/webserver/build/**/*'
+    exclude:
+      - 'internal/webui/node_modules/**/*'
+    generates:
+      - coverage.out
+    preconditions:
+      - sh: docker info
+        msg: The tests need a running Docker daemon (testcontainers).
+    cmds:
+      - go test -failfast -v -timeout=300s -p 1 -coverprofile=coverage.out ./cmd/... ./internal/...
+
+  cover:
+    desc: Open the HTML coverage report (re-runs tests if coverage.out is missing or stale)
+    deps: [test]
+    cmds:
+      - go tool cover -html=coverage.out
+
+  lint:
+    desc: Run golangci-lint (config .golangci.yml); extra args after --
+    deps: [ui, proto]
+    preconditions:
+      - sh: golangci-lint --version
+        msg: golangci-lint not found — run `task tools` to install it.
+    cmds:
+      - golangci-lint run {{.CLI_ARGS}}
+
+  lint:fix:
+    desc: Run golangci-lint with auto-fix
+    deps: [ui, proto]
+    cmds:
+      - golangci-lint run --fix
+
+  tidy:
+    desc: Run go mod tidy
+    cmds:
+      - go mod tidy
+
+  tools:
+    desc: Install the Go-based dev tools (protoc plugins, golangci-lint, gopages, yq)
+    cmds:
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+      - go install github.com/johnstarich/go/gopages@v0.1.29
+      - go install github.com/mikefarah/yq/v4@latest
+      - >-
+        echo NOTE-protoc-itself-is-a-C-binary-install-it-via-winget/brew/apt-see-task-proto-message
+
+  # ------------------------------ WebUI ------------------------------
+
+  ui:
+    desc: Install WebUI dependencies and build into internal/webserver/build
+    dir: internal/webui
+    sources:
+      - 'src/**/*'
+      - 'public/**/*'
+      - index.html
+      - package.json
+      - yarn.lock
+      - vite.config.ts
+      - tsconfig.json
+    cmds:
+      - yarn install --network-timeout 100000
+      - yarn build
+
+  ui:dev:
+    desc: Start the Vite dev server on :4000 (API proxied to the agent on :8080)
+    dir: internal/webui
+    interactive: true
+    cmds:
+      - yarn install --network-timeout 100000
+      - yarn start
+
+  ui:lint:
+    desc: ESLint the WebUI
+    dir: internal/webui
+    cmds:
+      - yarn lint:ts
+
+  ui:lint:fix:
+    desc: ESLint the WebUI with auto-fix
+    dir: internal/webui
+    cmds:
+      - yarn lint:fix
+
+  # -------------------- Docker Compose dev stack (dir: docker) --------------------
+
+  dc:up:
+    desc: Start the full dev stack (postgres, pgwatch, grafana, ...); extra args after --
+    dir: docker
+    cmds:
+      - docker compose up --detach {{.CLI_ARGS}}
+
+  dc:down:
+    desc: Stop the dev stack; extra args after --
+    dir: docker
+    cmds:
+      - docker compose down {{.CLI_ARGS}}
+
+  dc:nuke:
+    desc: Destroy the whole stack incl. volumes — or one service via `task dc:nuke -- <service>` (`postgres` also loses its pgdata volume; the service is recreated empty)
+    dir: docker
+    prompt: This DESTROYS containers and volumes — data will be lost. Continue?
+    cmds:
+      - |
+        if [ -z "{{.CLI_ARGS}}" ]; then
+          docker compose down --volumes --remove-orphans
+        else
+          docker compose stop {{.CLI_ARGS}} && \
+          docker compose rm --force --volumes {{.CLI_ARGS}} && \
+          if [ "{{.CLI_ARGS}}" = "postgres" ]; then docker volume rm docker_pgdata || true; fi && \
+          docker compose up --detach --wait {{.CLI_ARGS}} && \
+          echo "{{.CLI_ARGS}} recreated empty. Run \`task demo:init\` to re-seed schemas and demo sources."
+        fi
+
+  dc:build:
+    desc: Build the compose images from source (pgwatch, postgres); extra args after --
+    dir: docker
+    cmds:
+      - docker compose build {{.CLI_ARGS}}
+
+  dc:ps:
+    desc: Show dev stack container status
+    dir: docker
+    cmds:
+      - docker compose ps
+
+  dc:logs:
+    desc: Follow dev stack logs; service filter after -- (e.g. `task dc:logs -- pgwatch`)
+    dir: docker
+    interactive: true
+    cmds:
+      - docker compose logs --follow {{.CLI_ARGS}}
+
+  dc:restart:
+    desc: Restart the service, e.g. `task dc:restart -- pgwatch` (or `postgres`, `grafana`, etc.)
+    dir: docker
+    cmds:
+      - docker compose restart pgwatch {{.CLI_ARGS}}
+
+  dc:rebuild:
+    desc: Rebuild the image from source and restart its container, e.g. `task docker:rebuild -- pgwatch` (or `postgres`, etc.)
+    dir: docker
+    cmds:
+      - docker compose up {{.CLI_ARGS}} --build --force-recreate --detach
+
+  # ------------------------------ Docker images ------------------------------
+
+  docker:image:
+    desc: Build the production image cybertecpostgresql/pgwatch:latest from source
+    cmds:
+      - docker build --build-arg GIT_TIME={{.GIT_TIME}} --build-arg GIT_HASH={{.GIT_HASH}} --build-arg VERSION={{.VERSION}} -t cybertecpostgresql/pgwatch:latest -f docker/Dockerfile .
+
+  docker:image:demo:
+    desc: Build the demo image cybertecpostgresql/pgwatch-demo:latest from source
+    cmds:
+      - docker build --build-arg GIT_TIME={{.GIT_TIME}} --build-arg GIT_HASH={{.GIT_HASH}} --build-arg VERSION={{.VERSION}} -t cybertecpostgresql/pgwatch-demo:latest -f docker/demo/Dockerfile .
+
+  # --------------- Demo database (was docker/scripts/*.sh) ---------------
+
+  demo:init:
+    desc: Init config/metrics schemas and register demo sources (replaces docker/scripts/add-test-db.sh)
+    dir: docker
+    cmds:
+      - docker compose exec -T pgwatch /pgwatch/pgwatch metric print-init debug | docker compose exec -T -i postgres psql -d pgwatch -v ON_ERROR_STOP=1
+      - docker compose exec -T pgwatch /pgwatch/pgwatch metric print-init full | docker compose exec -T -i postgres psql -d pgwatch_metrics -v ON_ERROR_STOP=1
+      - >-
+        docker compose exec -T postgres psql -d pgwatch -v ON_ERROR_STOP=1 -c "
+        TRUNCATE pgwatch.source CASCADE;
+        INSERT INTO pgwatch.source (name, dbtype, preset_config, connstr, custom_tags) VALUES
+        ('demo', 'postgres', 'full', 'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch', NULL),
+        ('demo_metrics', 'postgres', 'full', 'postgresql://pgwatch:pgwatchadmin@postgres/pgwatch_metrics', NULL),
+        ('demo_standby', 'postgres', 'full', 'postgresql://pgwatch:pgwatchadmin@postgres-standby/pgwatch', NULL),
+        ('demo_patroni', 'patroni', 'basic', 'etcd://etcd1:2379,etcd2:2379,etcd3:2379/service/demo', NULL),
+        ('demo_pgbouncer', 'pgbouncer', 'pgbouncer', 'postgresql://pgwatch:pgwatchadmin@pgbouncer/pgbouncer', NULL),
+        ('demo_pgpool', 'pgpool', 'pgpool', 'postgresql://pgwatch:pgwatchadmin@pgpool/pgwatch', NULL),
+        ('patroni1-prom', 'prometheus', 'patroni', 'http://patroni1:8008/metrics', '{\"cluster\": \"demo\", \"node\": \"patroni1\"}'),
+        ('patroni2-prom', 'prometheus', 'patroni', 'http://patroni2:8008/metrics', '{\"cluster\": \"demo\", \"node\": \"patroni2\"}'),
+        ('patroni3-prom', 'prometheus', 'patroni', 'http://patroni3:8008/metrics', '{\"cluster\": \"demo\", \"node\": \"patroni3\"}');"
+
+  demo:bench:
+    desc: Run pgbench against the demo DB (scale 50, 5 min, rate 150; replaces docker/scripts/pgbench.sh)
+    dir: docker
+    interactive: true
+    cmds:
+      - docker compose exec -e PGDATABASE=pgwatch postgres sh -c "pgbench --initialize --scale=50 && pgbench --progress=5 --client=10 --jobs=2 --time=300 --rate=150 && pgbench --initialize --init-steps=d"
+
+  demo:activity:
+    desc: Open pg_activity for the pgwatch database (replaces docker/scripts/pgactivity.sh)
+    dir: docker
+    interactive: true
+    cmds:
+      - docker compose exec postgres pg_activity -d pgwatch
+
+  # ------------------------------- Docs -------------------------------
+
+  docs:install:
+    desc: Install the Python docs dependencies (mkdocs-material, mike, mkdocs-glightbox)
+    cmds:
+      - pip install mike mkdocs-material mkdocs-glightbox
+      - go install github.com/johnstarich/go/gopages@v0.1.29
+
+  docs:serve:
+    desc: Serve the docs locally with live reload
+    interactive: true
+    cmds:
+      - mike serve
+
+  docs:godoc:
+    desc: Generate the Go API docs into docs/godoc (requires gopages — run `task tools`)
+    cmds:
+      - gopages -out "docs/godoc" -base "/devel/godoc" -internal
+
+  # ----------------------------- Release -----------------------------
+
+  release:snapshot:
+    desc: 'Build a local snapshot release via GoReleaser (no publish). Windows: needs sh on PATH (Git Bash) for the webui before-hook in .goreleaser.yml'
+    deps: [proto]
+    preconditions:
+      - sh: goreleaser --version
+        msg: goreleaser not found — see https://goreleaser.com/install/
+    cmds:
+      - goreleaser release --snapshot --skip=publish --clean
+
+  # ------------------------------ Misc ------------------------------
+
+  check:
+    desc: Pre-PR gate — run lint and tests
+    deps: [lint, test]
+
+  clean:
+    desc: Remove build artifacts (binary, coverage.out, webui build, goreleaser dist, mkdocs site, docs/godoc)
+    cmds:
+      - cmd: rm -rf {{.BINARY}} coverage.out internal/webserver/build dist site docs/godoc
+        platforms: [linux, darwin]
+      - cmd: powershell -NoProfile -Command "Get-Item -ErrorAction SilentlyContinue @('{{.BINARY}}','coverage.out','internal/webserver/build','dist','site','docs/godoc') | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
+        platforms: [windows]
