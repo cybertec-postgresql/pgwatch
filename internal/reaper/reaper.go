@@ -25,7 +25,6 @@ const (
 
 var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
 
-var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
@@ -50,6 +49,7 @@ type reaper struct {
 	logger               log.Logger
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
+	hostRecoveryStatus   map[string]bool
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
@@ -65,6 +65,7 @@ func newReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
+		hostRecoveryStatus:   make(map[string]bool),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
 	}
 }
@@ -163,7 +164,7 @@ func (r *reaper) Reap(ctx context.Context) {
 						continue
 					}
 
-					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[src.Name]
+					lastKnownStatusInRecovery := r.hostRecoveryStatus[src.Name]
 					if lastKnownStatusInRecovery != md.IsInRecovery {
 						// metricsConfig was already selected above; here we only log the role change
 						if md.IsInRecovery && len(md.MetricsStandby) > 0 {
@@ -174,7 +175,7 @@ func (r *reaper) Reap(ctx context.Context) {
 						// else: standby without a dedicated standby config keeps primary config, no warn
 					}
 				}
-				hostLastKnownStatusInRecovery[src.Name] = isInRecovery
+				r.hostRecoveryStatus[src.Name] = isInRecovery
 
 				// Sync metric names with sinks for the active config
 				for metricName := range metricsConfig {
