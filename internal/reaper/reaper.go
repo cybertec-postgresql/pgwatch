@@ -89,7 +89,6 @@ func (r *reaper) PrintMemStats() {
 // start or stop the gatherers accordingly.
 func (r *reaper) Reap(ctx context.Context) {
 	var err error
-	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
 
@@ -100,15 +99,15 @@ func (r *reaper) Reap(ctx context.Context) {
 			r.PrintMemStats()
 		}
 		if err = r.LoadSources(ctx); err != nil {
-			logger.WithError(err).Error("could not refresh active sources, using last valid cache")
+			r.logger.Error("could not refresh active sources, using last valid cache: %w", err)
 		}
 		if err = r.LoadMetrics(); err != nil {
-			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
+			r.logger.Error("could not refresh metric definitions, using last valid cache: %w", err)
 		}
 
 		for _, monitoredSource := range r.monitoredSources {
 			src := monitoredSource.GetSource()
-			srcL := logger.WithField("source", src.Name)
+			srcL := r.logger.WithField("source", src.Name)
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
@@ -138,7 +137,7 @@ func (r *reaper) Reap(ctx context.Context) {
 		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
-			logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
+			r.logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
 		case <-ctx.Done():
 			return
 		}
