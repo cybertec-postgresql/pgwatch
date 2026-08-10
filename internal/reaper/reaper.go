@@ -46,7 +46,7 @@ type reaper struct {
 	logger               log.Logger
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
-	hostRecoveryStatus   map[string]bool
+	srcRecoveryStatus    map[string]bool
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
@@ -62,7 +62,7 @@ func newReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
-		hostRecoveryStatus:   make(map[string]bool),
+		srcRecoveryStatus:    make(map[string]bool),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
 	}
 }
@@ -197,7 +197,7 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 	md.RUnlock()
 
 	l := log.GetLogger(ctx)
-	if r.hostRecoveryStatus[md.Name] != isInRecovery {
+	if r.srcRecoveryStatus[md.Name] != isInRecovery {
 		if isInRecovery && hasStandbyConfig {
 			l.Warning("Switching metrics collection to standby config...")
 		} else if !isInRecovery {
@@ -205,7 +205,7 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 		}
 		// else: standby without a dedicated standby config keeps primary config, no warn
 	}
-	r.hostRecoveryStatus[md.Name] = isInRecovery
+	r.srcRecoveryStatus[md.Name] = isInRecovery
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
