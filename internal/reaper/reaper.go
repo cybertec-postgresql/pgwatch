@@ -275,7 +275,7 @@ func (r *reaper) isSpecialMetric(name string) bool {
 
 // ShutdownWorker stops the source reaper for a single named source, closes its
 // connection pool, and deregisters it from the sinks.
-func (r *reaper) ShutdownWorker(ctx context.Context, sourceName string) {
+func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
 	if cancelFunc, exists := r.cancelFuncs[sourceName]; exists {
 		r.logger.WithField("source", sourceName).Info("stopping source reaper...")
 		cancelFunc()

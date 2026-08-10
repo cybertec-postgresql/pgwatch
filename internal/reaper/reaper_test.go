@@ -16,33 +16,9 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/pashagolub/pgxmock/v4"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// logCaptureHook captures all log entries for assertions in tests.
-type logCaptureHook struct {
-	mu      sync.Mutex
-	entries []*logrus.Entry
-}
-
-func (h *logCaptureHook) Levels() []logrus.Level { return logrus.AllLevels }
-func (h *logCaptureHook) Fire(e *logrus.Entry) error {
-	h.mu.Lock()
-	h.entries = append(h.entries, e)
-	h.mu.Unlock()
-	return nil
-}
-
-// newCapturingLogger returns a context whose logger captures entries via the returned hook.
-func newCapturingLogger(parent context.Context) (context.Context, *logCaptureHook) {
-	l := logrus.New()
-	l.SetLevel(logrus.TraceLevel)
-	hook := &logCaptureHook{}
-	l.AddHook(hook)
-	return log.WithLogger(parent, l), hook
-}
 
 func TestReaper_LoadSources(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
@@ -560,45 +536,45 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 	t.Run("no role change: cache updated silently", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
-		r.hostRecoveryStatus["testdb"] = false
+		r.srcRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, false, nil)
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.False(r.hostRecoveryStatus["testdb"])
+		a.False(r.srcRecoveryStatus["testdb"])
 	})
 
 	t.Run("primary→standby with standby config: cache updated", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
-		r.hostRecoveryStatus["testdb"] = false
+		r.srcRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{"cpu": 10})
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.True(r.hostRecoveryStatus["testdb"])
+		a.True(r.srcRecoveryStatus["testdb"])
 	})
 
 	t.Run("standby→primary: cache updated", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
-		r.hostRecoveryStatus["testdb"] = true
+		r.srcRecoveryStatus["testdb"] = true
 		md := newPgConn(sources.SourcePostgres, false, nil)
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.False(r.hostRecoveryStatus["testdb"])
+		a.False(r.srcRecoveryStatus["testdb"])
 	})
 
 	t.Run("primary→standby without standby config: cache updated, no shutdown", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
-		r.hostRecoveryStatus["testdb"] = false
+		r.srcRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, true, nil)
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.True(r.hostRecoveryStatus["testdb"])
+		a.True(r.srcRecoveryStatus["testdb"])
 	})
 
 	t.Run("pgbouncer: cache updated", func(t *testing.T) {
@@ -608,7 +584,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.False(r.hostRecoveryStatus["testdb"])
+		a.False(r.srcRecoveryStatus["testdb"])
 	})
 
 	t.Run("patroni discovery: cache updated", func(t *testing.T) {
@@ -618,7 +594,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 
 		r.TrackRecoveryStatus(ctx, md)
 
-		a.True(r.hostRecoveryStatus["testdb"])
+		a.True(r.srcRecoveryStatus["testdb"])
 	})
 }
 
@@ -749,14 +725,14 @@ func TestReaper_StartWorker(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
 	// minimal Reaper implementation that records whether Reap was called
-	type fakeReaper struct{ started bool }
+	type fakeReaper struct{}
 	newFake := func() *fakeReaper { return &fakeReaper{} }
 
 	t.Run("starts worker and registers cancel func", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
 		reaped := make(chan struct{}, 1)
-		fake := reaperFunc(func(ctx context.Context) { reaped <- struct{}{} })
+		fake := reaperFunc(func(context.Context) { reaped <- struct{}{} })
 
 		r.StartWorker(ctx, "testdb", fake)
 
@@ -770,7 +746,7 @@ func TestReaper_StartWorker(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
 		callCount := 0
-		fake := reaperFunc(func(ctx context.Context) { callCount++ })
+		fake := reaperFunc(func(context.Context) { callCount++ })
 		r.cancelFuncs["testdb"] = func() {}
 
 		r.StartWorker(ctx, "testdb", fake)
@@ -799,7 +775,7 @@ func TestReaper_ShutdownWorker(t *testing.T) {
 		a.NotContains(r.cancelFuncs, "testdb")
 	})
 
-	t.Run("no-op when source has no running worker", func(t *testing.T) {
+	t.Run("no-op when source has no running worker", func(*testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		// must not panic
 		r.ShutdownWorker(ctx, "nonexistent")
