@@ -440,7 +440,6 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 
 func TestReaper_FilterByMasterOnly(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	srcL := log.GetLogger(ctx)
 
 	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool) *sources.DbConn {
 		md := sources.NewDbConn(sources.Source{Name: "testdb", Kind: kind, OnlyIfMaster: onlyIfMaster})
@@ -453,7 +452,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		r.cancelFuncs["testdb"] = func() {}
 
-		a.False(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, false, true)))
+		a.False(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, false, true)))
 		_, exists := r.cancelFuncs["testdb"]
 		a.True(exists, "worker should not be shut down for primary")
 	})
@@ -462,7 +461,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 
-		a.False(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, true, false)))
+		a.False(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, true, false)))
 	})
 
 	t.Run("standby, onlyIfMaster=true, postgres: worker shut down, returns true", func(t *testing.T) {
@@ -471,7 +470,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 
-		a.True(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, true, true)))
+		a.True(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, true, true)))
 		a.True(cancelCalled, "worker cancel should be called for standby postgres with onlyIfMaster")
 		_, exists := r.cancelFuncs["testdb"]
 		a.False(exists, "cancel func should be removed after shutdown")
@@ -482,7 +481,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		r.cancelFuncs["testdb"] = func() { t.Error("cancel should not be called for non-postgres") }
 
-		a.True(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePgBouncer, true, true)))
+		a.True(r.FilterByMasterOnly(ctx, newMd(sources.SourcePgBouncer, true, true)))
 		_, exists := r.cancelFuncs["testdb"]
 		a.True(exists, "worker should not be shut down for non-postgres source")
 	})
@@ -490,7 +489,6 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 
 func TestReaper_FilterBySize(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	srcL := log.GetLogger(ctx)
 
 	t.Run("below threshold: worker shut down, returns true", func(t *testing.T) {
 		a := assert.New(t)
@@ -503,7 +501,7 @@ func TestReaper_FilterBySize(t *testing.T) {
 
 		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 		r.monitoredSources = sources.SourceConns{md}
-		a.True(r.FilterBySize(ctx, srcL, md, 100))
+		a.True(r.FilterBySize(ctx, md, 100))
 		a.True(cancelCalled, "expected worker cancel to be called")
 		_, exists := r.cancelFuncs["testdb"]
 		a.False(exists, "expected cancel func removed after shutdown")
@@ -514,7 +512,7 @@ func TestReaper_FilterBySize(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
 
 		md := sources.NewDbConn(sources.Source{Name: "testdb"})
-		a.False(r.FilterBySize(ctx, srcL, md, 600))
+		a.False(r.FilterBySize(ctx, md, 600))
 		a.Empty(r.cancelFuncs)
 	})
 
@@ -523,7 +521,7 @@ func TestReaper_FilterBySize(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
 
 		md := sources.NewDbConn(sources.Source{Name: "testdb"})
-		a.False(r.FilterBySize(ctx, srcL, md, 100))
+		a.False(r.FilterBySize(ctx, md, 100))
 	})
 
 	t.Run("zero DBSizeMB bypasses size check", func(t *testing.T) {
@@ -531,7 +529,7 @@ func TestReaper_FilterBySize(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
 		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, srcL, md, 0))
+		a.False(r.FilterBySize(ctx, md, 0))
 	})
 
 	t.Run("no min size configured: never skipped", func(t *testing.T) {
@@ -539,13 +537,12 @@ func TestReaper_FilterBySize(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{})
 		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, srcL, md, 1))
+		a.False(r.FilterBySize(ctx, md, 1))
 	})
 }
 
 func TestReaper_TrackRecoveryStatus(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	srcL := log.GetLogger(ctx)
 
 	newPgConn := func(kind sources.Kind, isInRecovery bool, standby metrics.MetricIntervals) *sources.DbConn {
 		md := sources.NewDbConn(sources.Source{Name: "testdb", Kind: kind})
@@ -560,7 +557,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r.hostRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, false, nil)
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.False(r.hostRecoveryStatus["testdb"])
 	})
@@ -571,7 +568,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r.hostRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{"cpu": 10})
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.True(r.hostRecoveryStatus["testdb"])
 	})
@@ -582,7 +579,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r.hostRecoveryStatus["testdb"] = true
 		md := newPgConn(sources.SourcePostgres, false, nil)
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.False(r.hostRecoveryStatus["testdb"])
 	})
@@ -593,7 +590,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r.hostRecoveryStatus["testdb"] = false
 		md := newPgConn(sources.SourcePostgres, true, nil)
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.True(r.hostRecoveryStatus["testdb"])
 	})
@@ -603,7 +600,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{})
 		md := newPgConn(sources.SourcePgBouncer, false, nil)
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.False(r.hostRecoveryStatus["testdb"])
 	})
@@ -613,7 +610,7 @@ func TestReaper_TrackRecoveryStatus(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{})
 		md := newPgConn(sources.SourcePatroniDiscovery, true, nil)
 
-		r.TrackRecoveryStatus(srcL, "testdb", md)
+		r.TrackRecoveryStatus(ctx, md)
 
 		a.True(r.hostRecoveryStatus["testdb"])
 	})
@@ -637,7 +634,7 @@ func (m *mockSyncWriter) Write(metrics.MeasurementEnvelope) error { return nil }
 
 func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	srcL := log.GetLogger(ctx)
+	md := sources.NewDbConn(sources.Source{Name: "mydb"})
 
 	// Populate the package-level metricDefs used by SyncMetricsToSinks.
 	origDefs := metricDefs
@@ -658,7 +655,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 		config := metrics.MetricIntervals{"cpu": 10}
 
-		r.SyncMetricsToSinks(srcL, "mydb", config)
+		r.SyncMetricsToSinks(ctx, md, config)
 
 		require.Len(t, sw.synced, 1)
 		a.Equal("mydb", sw.synced[0].source)
@@ -671,7 +668,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 		config := metrics.MetricIntervals{"memory": 30}
 
-		r.SyncMetricsToSinks(srcL, "mydb", config)
+		r.SyncMetricsToSinks(ctx, md, config)
 
 		require.Len(t, sw.synced, 1)
 		a.Equal("mem_storage", sw.synced[0].metric)
@@ -682,7 +679,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 		config := metrics.MetricIntervals{"unknown_metric": 60}
 
-		r.SyncMetricsToSinks(srcL, "mydb", config)
+		r.SyncMetricsToSinks(ctx, md, config)
 
 		assert.Empty(t, sw.synced)
 	})
@@ -694,7 +691,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 
 		// Should not panic even when SyncMetric returns an error.
 		assert.NotPanics(t, func() {
-			r.SyncMetricsToSinks(srcL, "mydb", config)
+			r.SyncMetricsToSinks(ctx, md, config)
 		})
 	})
 
@@ -702,7 +699,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 
-		r.SyncMetricsToSinks(srcL, "mydb", metrics.MetricIntervals{})
+		r.SyncMetricsToSinks(ctx, md, metrics.MetricIntervals{})
 
 		assert.Empty(t, sw.synced)
 	})
@@ -713,7 +710,7 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 		config := metrics.MetricIntervals{"cpu": 10, "memory": 20}
 
-		r.SyncMetricsToSinks(srcL, "mydb", config)
+		r.SyncMetricsToSinks(ctx, md, config)
 
 		a.Len(sw.synced, 2)
 		synced := maps.Collect(func(yield func(string, bool) bool) {
@@ -806,13 +803,13 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 		md := &sources.DbConn{Source: sources.Source{Name: "existing"}}
 		r.prevLoopMonitoredDBs = sources.SourceConns{md}
 		// Conn is nil — would panic if used, proving early return
-		r.CreateSourceHelpers(ctx, r.logger, md)
+		r.CreateSourceHelpers(ctx, md)
 	})
 
 	t.Run("skips non-postgres source", func(*testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{})
 		md := &sources.DbConn{Source: sources.Source{Name: "pgbouncer", Kind: sources.SourcePgBouncer}}
-		r.CreateSourceHelpers(ctx, r.logger, md)
+		r.CreateSourceHelpers(ctx, md)
 	})
 
 	t.Run("skips source in recovery", func(*testing.T) {
@@ -821,7 +818,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 			Source:      sources.Source{Name: "standby"},
 			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
 		}
-		r.CreateSourceHelpers(ctx, r.logger, md)
+		r.CreateSourceHelpers(ctx, md)
 	})
 
 	t.Run("creates extensions when configured", func(t *testing.T) {
@@ -836,7 +833,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 		mock.ExpectExec(`create extension if not exists`).
 			WillReturnResult(pgxmock.NewResult("CREATE", 1))
 
-		r.CreateSourceHelpers(ctx, r.logger, md)
+		r.CreateSourceHelpers(ctx, md)
 		a.NoError(mock.ExpectationsWereMet())
 	})
 
@@ -858,7 +855,7 @@ func TestReaper_CreateSourceHelpers(t *testing.T) {
 		mock.ExpectExec("CREATE OR REPLACE FUNCTION").
 			WillReturnResult(pgxmock.NewResult("CREATE", 1))
 
-		r.CreateSourceHelpers(ctx, r.logger, md)
+		r.CreateSourceHelpers(ctx, md)
 		a.NoError(mock.ExpectationsWereMet())
 	})
 }
@@ -935,7 +932,7 @@ func TestRace_CreateSourceHelpers(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for range iterations {
-			r.CreateSourceHelpers(ctx, r.logger, md)
+			r.CreateSourceHelpers(ctx, md)
 		}
 	}()
 

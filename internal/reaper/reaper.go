@@ -144,15 +144,15 @@ func (r *reaper) Reap(ctx context.Context) {
 				md.RUnlock()
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
 
-				if r.FilterByMasterOnly(ctx, srcL, md) {
+				if r.FilterByMasterOnly(ctx, md) {
 					continue
 				}
-				if r.FilterBySize(ctx, srcL, md, DBSizeMB) {
+				if r.FilterBySize(ctx, md, DBSizeMB) {
 					continue
 				}
-				r.CreateSourceHelpers(ctx, srcL, md)
-				r.TrackRecoveryStatus(srcL, src.Name, md)
-				r.SyncMetricsToSinks(srcL, src.Name, metricsConfig)
+				r.CreateSourceHelpers(ctx, md)
+				r.TrackRecoveryStatus(ctx, md)
+				r.SyncMetricsToSinks(ctx, md, metricsConfig)
 
 				// Start SourceReaper for this source if not already running
 				if _, exists := r.cancelFuncs[src.Name]; !exists {
@@ -186,16 +186,17 @@ func (r *reaper) Reap(ctx context.Context) {
 
 // FilterByMasterOnly returns true and immediately shuts down the source worker
 // when the source is in recovery and has the "only if master" flag set.
-func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, md *sources.DbConn) bool {
+func (r *reaper) FilterByMasterOnly(ctx context.Context, md *sources.DbConn) bool {
 	md.RLock()
 	isInRecovery := md.IsInRecovery
 	md.RUnlock()
 	if !isInRecovery || !md.OnlyIfMaster {
 		return false
 	}
-	srcL.Info("not added to monitoring due to 'master only' property")
+	l := log.GetLogger(ctx)
+	l.Info("not added to monitoring due to 'master only' property")
 	if md.IsPostgresSource() {
-		srcL.Info("to be removed from monitoring due to 'master only' property and status change")
+		l.Info("to be removed from monitoring due to 'master only' property and status change")
 		r.ShutdownWorker(ctx, md.Name)
 	}
 	return true
@@ -203,10 +204,10 @@ func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, md *so
 
 // FilterBySize returns true and immediately shuts down the source worker when
 // the DB is below the minimum size threshold, indicating the caller should skip it.
-func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, md *sources.DbConn, DBSizeMB int64) bool {
+func (r *reaper) FilterBySize(ctx context.Context, md *sources.DbConn, DBSizeMB int64) bool {
 	// only remove from monitoring when we're certain it's under the threshold
 	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-		srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+		log.GetLogger(ctx).Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
 		r.ShutdownWorker(ctx, md.Name)
 		return true
 	}
@@ -215,31 +216,33 @@ func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, md *sources.
 
 // TrackRecoveryStatus logs any primary/standby role changes and updates the
 // per-source recovery-status cache.
-func (r *reaper) TrackRecoveryStatus(srcL log.Logger, sourceName string, md *sources.DbConn) {
+func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 	md.RLock()
 	isInRecovery := md.IsInRecovery
 	hasStandbyConfig := len(md.MetricsStandby) > 0
 	md.RUnlock()
 
-	if r.hostRecoveryStatus[sourceName] != isInRecovery {
+	l := log.GetLogger(ctx)
+	if r.hostRecoveryStatus[md.Name] != isInRecovery {
 		if isInRecovery && hasStandbyConfig {
-			srcL.Warning("Switching metrics collection to standby config...")
+			l.Warning("Switching metrics collection to standby config...")
 		} else if !isInRecovery {
-			srcL.Warning("Switching metrics collection to primary config...")
+			l.Warning("Switching metrics collection to primary config...")
 		}
 		// else: standby without a dedicated standby config keeps primary config, no warn
 	}
-	r.hostRecoveryStatus[sourceName] = isInRecovery
+	r.hostRecoveryStatus[md.Name] = isInRecovery
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
-func (r *reaper) SyncMetricsToSinks(srcL log.Logger, sourceName string, metricsConfig metrics.MetricIntervals) {
+func (r *reaper) SyncMetricsToSinks(ctx context.Context, md *sources.DbConn, metricsConfig metrics.MetricIntervals) {
+	l := log.GetLogger(ctx)
 	for metricName := range metricsConfig {
 		mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
 		if !metricDefExists {
 			epoch, ok := lastSQLFetchError.Load(metricName)
 			if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
-				srcL.WithField("metric", metricName).Warning("metric definition not found")
+				l.WithField("metric", metricName).Warning("metric definition not found")
 				lastSQLFetchError.Store(metricName, time.Now().Unix())
 			}
 			continue
@@ -248,14 +251,14 @@ func (r *reaper) SyncMetricsToSinks(srcL log.Logger, sourceName string, metricsC
 		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
 			metricNameForStorage = mvp.StorageName
 		}
-		if err := r.SinksWriter.SyncMetric(sourceName, metricNameForStorage, sinks.AddOp); err != nil {
-			srcL.Error(err)
+		if err := r.SinksWriter.SyncMetric(md.Name, metricNameForStorage, sinks.AddOp); err != nil {
+			l.Error(err)
 		}
 	}
 }
 
 // CreateSourceHelpers creates the extensions and metric helpers for the monitored source
-func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.DbConn) {
+func (r *reaper) CreateSourceHelpers(ctx context.Context, monitoredSource *sources.DbConn) {
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
@@ -266,30 +269,30 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 		return // no need to create anything for non-postgres sources
 	}
 
+	l := log.GetLogger(ctx)
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
-		srcL.Info("trying to create extensions if missing")
+		l.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
 		extsCreated, err := monitoredSource.TryCreateMissingExtensions(ctx, extsToCreate)
 		if err != nil {
-			srcL.Warning(err)
+			l.Warning(err)
 		}
 		if extsCreated != "" {
-			srcL.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
+			l.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
 		}
 	}
 
 	if r.Sources.CreateHelpers {
-		srcL.Info("trying to create helper objects if missing")
+		l.Info("trying to create helper objects if missing")
 		if err := monitoredSource.TryCreateMetricsHelpers(ctx, func(metric string) string {
 			if m, ok := metricDefs.GetMetricDef(metric); ok {
 				return m.InitSQL
 			}
 			return ""
 		}); err != nil {
-			srcL.Warning(err)
+			l.Warning(err)
 		}
 	}
-
 }
 
 // ShutdownWorker stops the source reaper for a single named source, closes its
