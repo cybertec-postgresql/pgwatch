@@ -134,7 +134,6 @@ func (r *reaper) Reap(ctx context.Context) {
 			}
 		}
 		r.CleanupRemovedWorkers(ctx)
-		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
 			r.logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
@@ -312,6 +311,7 @@ func (r *reaper) CleanupRemovedWorkers(ctx context.Context) {
 			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
 		}
 	}
+	r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 }
 
 // LoadSources loads sources from the reader
