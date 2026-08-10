@@ -634,7 +634,6 @@ func (m *mockSyncWriter) Write(metrics.MeasurementEnvelope) error { return nil }
 
 func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-	md := sources.NewDbConn(sources.Source{Name: "mydb"})
 
 	// Populate the package-level metricDefs used by SyncMetricsToSinks.
 	origDefs := metricDefs
@@ -649,13 +648,18 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		PresetDefs: metrics.PresetDefs{},
 	})
 
+	newMd := func(config metrics.MetricIntervals) *sources.DbConn {
+		md := sources.NewDbConn(sources.Source{Name: "mydb"})
+		md.Metrics = config
+		return md
+	}
+
 	t.Run("syncs known metrics using metric name", func(t *testing.T) {
 		a := assert.New(t)
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
-		config := metrics.MetricIntervals{"cpu": 10}
 
-		r.SyncMetricsToSinks(ctx, md, config)
+		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{"cpu": 10}))
 
 		require.Len(t, sw.synced, 1)
 		a.Equal("mydb", sw.synced[0].source)
@@ -666,9 +670,8 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		a := assert.New(t)
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
-		config := metrics.MetricIntervals{"memory": 30}
 
-		r.SyncMetricsToSinks(ctx, md, config)
+		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{"memory": 30}))
 
 		require.Len(t, sw.synced, 1)
 		a.Equal("mem_storage", sw.synced[0].metric)
@@ -677,9 +680,8 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	t.Run("skips unknown metric definitions", func(t *testing.T) {
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
-		config := metrics.MetricIntervals{"unknown_metric": 60}
 
-		r.SyncMetricsToSinks(ctx, md, config)
+		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{"unknown_metric": 60}))
 
 		assert.Empty(t, sw.synced)
 	})
@@ -687,11 +689,9 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	t.Run("logs sink error but continues", func(t *testing.T) {
 		sw := &mockSyncWriter{err: errors.New("sink error")}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
-		config := metrics.MetricIntervals{"cpu": 10}
 
-		// Should not panic even when SyncMetric returns an error.
 		assert.NotPanics(t, func() {
-			r.SyncMetricsToSinks(ctx, md, config)
+			r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{"cpu": 10}))
 		})
 	})
 
@@ -699,18 +699,32 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
 
-		r.SyncMetricsToSinks(ctx, md, metrics.MetricIntervals{})
+		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{}))
 
 		assert.Empty(t, sw.synced)
+	})
+
+	t.Run("standby config used when in recovery", func(t *testing.T) {
+		a := assert.New(t)
+		sw := &mockSyncWriter{}
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
+		md := sources.NewDbConn(sources.Source{Name: "mydb"})
+		md.Metrics = metrics.MetricIntervals{"cpu": 10}
+		md.MetricsStandby = metrics.MetricIntervals{"memory": 20}
+		md.IsInRecovery = true
+
+		r.SyncMetricsToSinks(ctx, md)
+
+		require.Len(t, sw.synced, 1)
+		a.Equal("mem_storage", sw.synced[0].metric) // standby config used
 	})
 
 	t.Run("multiple metrics all synced", func(t *testing.T) {
 		a := assert.New(t)
 		sw := &mockSyncWriter{}
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: sw})
-		config := metrics.MetricIntervals{"cpu": 10, "memory": 20}
 
-		r.SyncMetricsToSinks(ctx, md, config)
+		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{"cpu": 10, "memory": 20}))
 
 		a.Len(sw.synced, 2)
 		synced := maps.Collect(func(yield func(string, bool) bool) {

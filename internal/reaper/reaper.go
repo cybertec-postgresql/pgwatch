@@ -2,7 +2,6 @@ package reaper
 
 import (
 	"context"
-	"maps"
 	"runtime"
 	"slices"
 	"strings"
@@ -135,12 +134,6 @@ func (r *reaper) Reap(ctx context.Context) {
 				isInRecovery := md.IsInRecovery
 				versionStr := md.VersionStr
 				DBSizeMB := md.ApproxDbSize / 1048576
-				var metricsConfig metrics.MetricIntervals
-				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-					metricsConfig = maps.Clone(md.MetricsStandby)
-				} else {
-					metricsConfig = maps.Clone(md.Metrics)
-				}
 				md.RUnlock()
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
 
@@ -152,7 +145,7 @@ func (r *reaper) Reap(ctx context.Context) {
 				}
 				r.CreateSourceHelpers(ctx, md)
 				r.TrackRecoveryStatus(ctx, md)
-				r.SyncMetricsToSinks(ctx, md, metricsConfig)
+				r.SyncMetricsToSinks(ctx, md)
 
 				// Start SourceReaper for this source if not already running
 				if _, exists := r.cancelFuncs[src.Name]; !exists {
@@ -235,9 +228,9 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
-func (r *reaper) SyncMetricsToSinks(ctx context.Context, md *sources.DbConn, metricsConfig metrics.MetricIntervals) {
+func (r *reaper) SyncMetricsToSinks(ctx context.Context, md *sources.DbConn) {
 	l := log.GetLogger(ctx)
-	for metricName := range metricsConfig {
+	for metricName := range md.ActiveMetrics() {
 		mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
 		if !metricDefExists {
 			epoch, ok := lastSQLFetchError.Load(metricName)
