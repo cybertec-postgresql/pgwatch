@@ -453,7 +453,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		r.cancelFuncs["testdb"] = func() {}
 
-		a.False(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, false, true)))
+		a.False(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, false, true)))
 		_, exists := r.cancelFuncs["testdb"]
 		a.True(exists, "worker should not be shut down for primary")
 	})
@@ -462,7 +462,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 
-		a.False(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, true, false)))
+		a.False(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, true, false)))
 	})
 
 	t.Run("standby, onlyIfMaster=true, postgres: worker shut down, returns true", func(t *testing.T) {
@@ -471,7 +471,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 
-		a.True(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, true, true)))
+		a.True(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePostgres, true, true)))
 		a.True(cancelCalled, "worker cancel should be called for standby postgres with onlyIfMaster")
 		_, exists := r.cancelFuncs["testdb"]
 		a.False(exists, "cancel func should be removed after shutdown")
@@ -482,7 +482,7 @@ func TestReaper_FilterByMasterOnly(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		r.cancelFuncs["testdb"] = func() { t.Error("cancel should not be called for non-postgres") }
 
-		a.True(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePgBouncer, true, true)))
+		a.True(r.FilterByMasterOnly(ctx, srcL, newMd(sources.SourcePgBouncer, true, true)))
 		_, exists := r.cancelFuncs["testdb"]
 		a.True(exists, "worker should not be shut down for non-postgres source")
 	})
@@ -501,7 +501,9 @@ func TestReaper_FilterBySize(t *testing.T) {
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 
-		a.True(r.FilterBySize(ctx, srcL, "testdb", 100))
+		md := sources.NewDbConn(sources.Source{Name: "testdb"})
+		r.monitoredSources = sources.SourceConns{md}
+		a.True(r.FilterBySize(ctx, srcL, md, 100))
 		a.True(cancelCalled, "expected worker cancel to be called")
 		_, exists := r.cancelFuncs["testdb"]
 		a.False(exists, "expected cancel func removed after shutdown")
@@ -511,7 +513,8 @@ func TestReaper_FilterBySize(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
 
-		a.False(r.FilterBySize(ctx, srcL, "testdb", 600))
+		md := sources.NewDbConn(sources.Source{Name: "testdb"})
+		a.False(r.FilterBySize(ctx, srcL, md, 600))
 		a.Empty(r.cancelFuncs)
 	})
 
@@ -519,21 +522,24 @@ func TestReaper_FilterBySize(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
 
-		a.False(r.FilterBySize(ctx, srcL, "testdb", 100))
+		md := sources.NewDbConn(sources.Source{Name: "testdb"})
+		a.False(r.FilterBySize(ctx, srcL, md, 100))
 	})
 
 	t.Run("zero DBSizeMB bypasses size check", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, srcL, "testdb", 0))
+		a.False(r.FilterBySize(ctx, srcL, md, 0))
 	})
 
 	t.Run("no min size configured: never skipped", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
+		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, srcL, "testdb", 1))
+		a.False(r.FilterBySize(ctx, srcL, md, 1))
 	})
 }
 

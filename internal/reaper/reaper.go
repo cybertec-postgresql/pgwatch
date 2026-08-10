@@ -144,10 +144,10 @@ func (r *reaper) Reap(ctx context.Context) {
 				md.RUnlock()
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
 
-				if r.FilterByMasterOnly(ctx, srcL, src.Name, md) {
+				if r.FilterByMasterOnly(ctx, srcL, md) {
 					continue
 				}
-				if r.FilterBySize(ctx, srcL, src.Name, DBSizeMB) {
+				if r.FilterBySize(ctx, srcL, md, DBSizeMB) {
 					continue
 				}
 				r.CreateSourceHelpers(ctx, srcL, md)
@@ -186,7 +186,7 @@ func (r *reaper) Reap(ctx context.Context) {
 
 // FilterByMasterOnly returns true and immediately shuts down the source worker
 // when the source is in recovery and has the "only if master" flag set.
-func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, sourceName string, md *sources.DbConn) bool {
+func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, md *sources.DbConn) bool {
 	md.RLock()
 	isInRecovery := md.IsInRecovery
 	md.RUnlock()
@@ -196,18 +196,18 @@ func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, source
 	srcL.Info("not added to monitoring due to 'master only' property")
 	if md.IsPostgresSource() {
 		srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-		r.ShutdownWorker(ctx, sourceName)
+		r.ShutdownWorker(ctx, md.Name)
 	}
 	return true
 }
 
 // FilterBySize returns true and immediately shuts down the source worker when
 // the DB is below the minimum size threshold, indicating the caller should skip it.
-func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, sourceName string, DBSizeMB int64) bool {
+func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, md *sources.DbConn, DBSizeMB int64) bool {
 	// only remove from monitoring when we're certain it's under the threshold
 	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 		srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-		r.ShutdownWorker(ctx, sourceName)
+		r.ShutdownWorker(ctx, md.Name)
 		return true
 	}
 	return false
