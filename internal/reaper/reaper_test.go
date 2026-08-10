@@ -745,6 +745,45 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	})
 }
 
+func TestReaper_StartWorker(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+
+	// minimal Reaper implementation that records whether Reap was called
+	type fakeReaper struct{ started bool }
+	newFake := func() *fakeReaper { return &fakeReaper{} }
+
+	t.Run("starts worker and registers cancel func", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		reaped := make(chan struct{}, 1)
+		fake := reaperFunc(func(ctx context.Context) { reaped <- struct{}{} })
+
+		r.StartWorker(ctx, "testdb", fake)
+
+		_, exists := r.cancelFuncs["testdb"]
+		a.True(exists, "cancel func should be registered")
+		<-reaped      // blocks until Reap is called
+		_ = newFake() // suppress unused warning
+	})
+
+	t.Run("no-op when worker already running", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		callCount := 0
+		fake := reaperFunc(func(ctx context.Context) { callCount++ })
+		r.cancelFuncs["testdb"] = func() {}
+
+		r.StartWorker(ctx, "testdb", fake)
+
+		a.Equal(0, callCount, "Reap should not be called when worker already exists")
+	})
+}
+
+// reaperFunc is a function that implements the Reaper interface.
+type reaperFunc func(ctx context.Context)
+
+func (f reaperFunc) Reap(ctx context.Context) { f(ctx) }
+
 func TestReaper_ShutdownWorker(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 

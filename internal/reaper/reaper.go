@@ -22,8 +22,6 @@ const (
 	specialMetricInstanceUp           = "instance_up"
 )
 
-var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
-
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
@@ -108,7 +106,6 @@ func (r *reaper) Reap(ctx context.Context) {
 			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
 		}
 
-		// UpdateMonitoredDBCache(r.monitoredSources)
 		for _, monitoredSource := range r.monitoredSources {
 			src := monitoredSource.GetSource()
 			srcL := logger.WithField("source", src.Name)
@@ -132,26 +129,11 @@ func (r *reaper) Reap(ctx context.Context) {
 				r.CreateSourceHelpers(ctx, md)
 				r.TrackRecoveryStatus(ctx, md)
 				r.SyncMetricsToSinks(ctx, md)
-
-				// Start SourceReaper for this source if not already running
-				if _, exists := r.cancelFuncs[src.Name]; !exists {
-					srcL.Info("starting source reaper")
-					sr := NewDbConnReaper(r, md)
-					sourceCtx, cancelFunc := context.WithCancel(ctx)
-					r.cancelFuncs[src.Name] = cancelFunc
-					go sr.Reap(sourceCtx)
-				}
+				r.StartWorker(ctx, src.Name, NewDbConnReaper(r, md))
 			case *sources.PromConn:
-				if _, exists := r.cancelFuncs[src.Name]; !exists {
-					srcL.Info("starting prometheus source reaper")
-					pr := NewPromSourceReaper(r, md)
-					sourceCtx, cancelFunc := context.WithCancel(ctx)
-					r.cancelFuncs[src.Name] = cancelFunc
-					go pr.Reap(sourceCtx)
-				}
+				r.StartWorker(ctx, src.Name, NewPromSourceReaper(r, md))
 			}
 		}
-
 		r.CleanupRemovedWorkers(ctx)
 		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 		select {
@@ -161,6 +143,18 @@ func (r *reaper) Reap(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// StartWorker launches a source reaper goroutine for the given source if one
+// is not already running. It is a no-op when a worker for that name exists.
+func (r *reaper) StartWorker(ctx context.Context, sourceName string, sr Reaper) {
+	if _, exists := r.cancelFuncs[sourceName]; exists {
+		return
+	}
+	log.GetLogger(ctx).Info("starting source reaper")
+	sourceCtx, cancelFunc := context.WithCancel(ctx)
+	r.cancelFuncs[sourceName] = cancelFunc
+	go sr.Reap(sourceCtx)
 }
 
 // FilterSource snapshots the mutable RuntimeInfo under a single RLock, logs
@@ -228,7 +222,7 @@ func (r *reaper) SyncMetricsToSinks(ctx context.Context, md *sources.DbConn) {
 			continue
 		}
 		metricNameForStorage := metricName
-		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
+		if !r.isSpecialMetric(metricName) && mvp.StorageName > "" {
 			metricNameForStorage = mvp.StorageName
 		}
 		if err := r.SinksWriter.SyncMetric(md.Name, metricNameForStorage, sinks.AddOp); err != nil {
@@ -273,6 +267,12 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, monitoredSource *sourc
 			l.Warning(err)
 		}
 	}
+}
+
+// isSpecialMetric reports whether a metric name has special handling that
+// bypasses the StorageName override.
+func (r *reaper) isSpecialMetric(name string) bool {
+	return name == specialMetricChangeEvents || name == specialMetricServerLogEventCounts
 }
 
 // ShutdownWorker stops the source reaper for a single named source, closes its
