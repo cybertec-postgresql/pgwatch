@@ -16,9 +16,33 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/pashagolub/pgxmock/v4"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// logCaptureHook captures all log entries for assertions in tests.
+type logCaptureHook struct {
+	mu      sync.Mutex
+	entries []*logrus.Entry
+}
+
+func (h *logCaptureHook) Levels() []logrus.Level { return logrus.AllLevels }
+func (h *logCaptureHook) Fire(e *logrus.Entry) error {
+	h.mu.Lock()
+	h.entries = append(h.entries, e)
+	h.mu.Unlock()
+	return nil
+}
+
+// newCapturingLogger returns a context whose logger captures entries via the returned hook.
+func newCapturingLogger(parent context.Context) (context.Context, *logCaptureHook) {
+	l := logrus.New()
+	l.SetLevel(logrus.TraceLevel)
+	hook := &logCaptureHook{}
+	l.AddHook(hook)
+	return log.WithLogger(parent, l), hook
+}
 
 func TestReaper_LoadSources(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
@@ -438,59 +462,46 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 	})
 }
 
-func TestReaper_FilterByMasterOnly(t *testing.T) {
+func TestReaper_FilterSource(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
-	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool) *sources.DbConn {
+	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool, approxDbSizeBytes int64) *sources.DbConn {
 		md := sources.NewDbConn(sources.Source{Name: "testdb", Kind: kind, OnlyIfMaster: onlyIfMaster})
 		md.IsInRecovery = isInRecovery
+		md.ApproxDbSize = approxDbSizeBytes
 		return md
 	}
 
-	t.Run("primary, onlyIfMaster=true: not filtered", func(t *testing.T) {
+	t.Run("primary with onlyIfMaster: not filtered", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		r.cancelFuncs["testdb"] = func() {}
 
-		a.False(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, false, true)))
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, true, 0)))
 		_, exists := r.cancelFuncs["testdb"]
 		a.True(exists, "worker should not be shut down for primary")
 	})
 
-	t.Run("standby, onlyIfMaster=false: not filtered", func(t *testing.T) {
+	t.Run("standby without onlyIfMaster: not filtered", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 
-		a.False(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, true, false)))
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, false, 0)))
 	})
 
-	t.Run("standby, onlyIfMaster=true, postgres: worker shut down, returns true", func(t *testing.T) {
+	t.Run("standby with onlyIfMaster, postgres: worker shut down", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
 
-		a.True(r.FilterByMasterOnly(ctx, newMd(sources.SourcePostgres, true, true)))
-		a.True(cancelCalled, "worker cancel should be called for standby postgres with onlyIfMaster")
+		a.True(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, true, 0)))
+		a.True(cancelCalled)
 		_, exists := r.cancelFuncs["testdb"]
-		a.False(exists, "cancel func should be removed after shutdown")
+		a.False(exists)
 	})
 
-	t.Run("standby, onlyIfMaster=true, pgbouncer: filtered but no worker shutdown", func(t *testing.T) {
-		a := assert.New(t)
-		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
-		r.cancelFuncs["testdb"] = func() { t.Error("cancel should not be called for non-postgres") }
-
-		a.True(r.FilterByMasterOnly(ctx, newMd(sources.SourcePgBouncer, true, true)))
-		_, exists := r.cancelFuncs["testdb"]
-		a.True(exists, "worker should not be shut down for non-postgres source")
-	})
-}
-
-func TestReaper_FilterBySize(t *testing.T) {
-	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-
-	t.Run("below threshold: worker shut down, returns true", func(t *testing.T) {
+	t.Run("below size threshold: worker shut down", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{
 			Sources:     sources.CmdOpts{MinDbSizeMB: 500},
@@ -498,46 +509,41 @@ func TestReaper_FilterBySize(t *testing.T) {
 		})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-
-		md := sources.NewDbConn(sources.Source{Name: "testdb"})
+		md := newMd(sources.SourcePostgres, false, false, 100*1048576) // 100 MB
 		r.monitoredSources = sources.SourceConns{md}
-		a.True(r.FilterBySize(ctx, md, 100))
-		a.True(cancelCalled, "expected worker cancel to be called")
+
+		a.True(r.FilterSource(ctx, md))
+		a.True(cancelCalled)
 		_, exists := r.cancelFuncs["testdb"]
-		a.False(exists, "expected cancel func removed after shutdown")
+		a.False(exists)
 	})
 
-	t.Run("above threshold: no shutdown, returns false", func(t *testing.T) {
+	t.Run("above size threshold: not filtered", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
 
-		md := sources.NewDbConn(sources.Source{Name: "testdb"})
-		a.False(r.FilterBySize(ctx, md, 600))
-		a.Empty(r.cancelFuncs)
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 600*1048576)))
 	})
 
-	t.Run("equal to threshold: not skipped", func(t *testing.T) {
+	t.Run("equal to size threshold: not filtered", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
 
-		md := sources.NewDbConn(sources.Source{Name: "testdb"})
-		a.False(r.FilterBySize(ctx, md, 100))
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 100*1048576)))
 	})
 
-	t.Run("zero DBSizeMB bypasses size check", func(t *testing.T) {
+	t.Run("zero ApproxDbSize bypasses size check", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
-		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, md, 0))
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 0)))
 	})
 
-	t.Run("no min size configured: never skipped", func(t *testing.T) {
+	t.Run("no min size configured: never size-filtered", func(t *testing.T) {
 		a := assert.New(t)
 		r := newReaper(ctx, &cmdopts.Options{})
-		md := sources.NewDbConn(sources.Source{Name: "testdb"})
 
-		a.False(r.FilterBySize(ctx, md, 1))
+		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 1*1048576)))
 	})
 }
 

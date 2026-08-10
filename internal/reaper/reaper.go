@@ -123,24 +123,10 @@ func (r *reaper) Reap(ctx context.Context) {
 			switch md := monitoredSource.(type) {
 			case *sources.DbConn:
 				if err = md.FetchRuntimeInfo(ctx, true); err != nil {
-					srcL.WithError(err).Error("could not start metric gathering")
+					srcL.Error("could not start metric gathering: %w", err)
 					continue
 				}
-
-				// Snapshot mutable RuntimeInfo fields under RLock so subsequent reads
-				// in this iteration are consistent and race-free against the per-source
-				// DbConnReaper goroutine calling FetchRuntimeInfo concurrently.
-				md.RLock()
-				isInRecovery := md.IsInRecovery
-				versionStr := md.VersionStr
-				DBSizeMB := md.ApproxDbSize / 1048576
-				md.RUnlock()
-				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
-
-				if r.FilterByMasterOnly(ctx, md) {
-					continue
-				}
-				if r.FilterBySize(ctx, md, DBSizeMB) {
+				if r.FilterSource(ctx, md) {
 					continue
 				}
 				r.CreateSourceHelpers(ctx, md)
@@ -177,33 +163,34 @@ func (r *reaper) Reap(ctx context.Context) {
 	}
 }
 
-// FilterByMasterOnly returns true and immediately shuts down the source worker
-// when the source is in recovery and has the "only if master" flag set.
-func (r *reaper) FilterByMasterOnly(ctx context.Context, md *sources.DbConn) bool {
+// FilterSource snapshots the mutable RuntimeInfo under a single RLock, logs
+// the connection status, and applies both eligibility filters:
+//   - OnlyIfMaster: skip standby sources that must not be monitored as standbys.
+//   - MinDbSizeMB:  skip sources whose database is below the configured size threshold.
+//
+// Returns true when the source should be skipped for this loop iteration.
+func (r *reaper) FilterSource(ctx context.Context, md *sources.DbConn) bool {
 	md.RLock()
 	isInRecovery := md.IsInRecovery
+	versionStr := md.VersionStr
+	DBSizeMB := md.ApproxDbSize / 1048576
 	md.RUnlock()
-	if !isInRecovery || !md.OnlyIfMaster {
-		return false
-	}
-	l := log.GetLogger(ctx)
-	l.Info("not added to monitoring due to 'master only' property")
-	if md.IsPostgresSource() {
-		l.Info("to be removed from monitoring due to 'master only' property and status change")
-		r.ShutdownWorker(ctx, md.Name)
-	}
-	return true
-}
 
-// FilterBySize returns true and immediately shuts down the source worker when
-// the DB is below the minimum size threshold, indicating the caller should skip it.
-func (r *reaper) FilterBySize(ctx context.Context, md *sources.DbConn, DBSizeMB int64) bool {
-	// only remove from monitoring when we're certain it's under the threshold
-	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-		log.GetLogger(ctx).Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+	l := log.GetLogger(ctx)
+
+	if isInRecovery && md.OnlyIfMaster {
+		l.Info("not added to monitoring due to 'master only' property and status change")
 		r.ShutdownWorker(ctx, md.Name)
 		return true
 	}
+
+	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+		l.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+		r.ShutdownWorker(ctx, md.Name)
+		return true
+	}
+
+	l.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
 	return false
 }
 
