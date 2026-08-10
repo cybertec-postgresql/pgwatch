@@ -438,6 +438,181 @@ func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
 	})
 }
 
+func TestReaper_FilterByMasterOnly(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	srcL := log.GetLogger(ctx)
+
+	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool) *sources.DbConn {
+		md := sources.NewDbConn(sources.Source{Name: "testdb", Kind: kind, OnlyIfMaster: onlyIfMaster})
+		md.IsInRecovery = isInRecovery
+		return md
+	}
+
+	t.Run("primary, onlyIfMaster=true: not filtered", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r.cancelFuncs["testdb"] = func() {}
+
+		a.False(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, false, true)))
+		_, exists := r.cancelFuncs["testdb"]
+		a.True(exists, "worker should not be shut down for primary")
+	})
+
+	t.Run("standby, onlyIfMaster=false: not filtered", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+
+		a.False(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, true, false)))
+	})
+
+	t.Run("standby, onlyIfMaster=true, postgres: worker shut down, returns true", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		cancelCalled := false
+		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
+
+		a.True(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePostgres, true, true)))
+		a.True(cancelCalled, "worker cancel should be called for standby postgres with onlyIfMaster")
+		_, exists := r.cancelFuncs["testdb"]
+		a.False(exists, "cancel func should be removed after shutdown")
+	})
+
+	t.Run("standby, onlyIfMaster=true, pgbouncer: filtered but no worker shutdown", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		r.cancelFuncs["testdb"] = func() { t.Error("cancel should not be called for non-postgres") }
+
+		a.True(r.FilterByMasterOnly(ctx, srcL, "testdb", newMd(sources.SourcePgBouncer, true, true)))
+		_, exists := r.cancelFuncs["testdb"]
+		a.True(exists, "worker should not be shut down for non-postgres source")
+	})
+}
+
+func TestReaper_FilterBySize(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	srcL := log.GetLogger(ctx)
+
+	t.Run("below threshold: worker shut down, returns true", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{
+			Sources:     sources.CmdOpts{MinDbSizeMB: 500},
+			SinksWriter: &sinks.MultiWriter{},
+		})
+		cancelCalled := false
+		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
+
+		a.True(r.FilterBySize(ctx, srcL, "testdb", 100))
+		a.True(cancelCalled, "expected worker cancel to be called")
+		_, exists := r.cancelFuncs["testdb"]
+		a.False(exists, "expected cancel func removed after shutdown")
+	})
+
+	t.Run("above threshold: no shutdown, returns false", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+
+		a.False(r.FilterBySize(ctx, srcL, "testdb", 600))
+		a.Empty(r.cancelFuncs)
+	})
+
+	t.Run("equal to threshold: not skipped", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
+
+		a.False(r.FilterBySize(ctx, srcL, "testdb", 100))
+	})
+
+	t.Run("zero DBSizeMB bypasses size check", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+
+		a.False(r.FilterBySize(ctx, srcL, "testdb", 0))
+	})
+
+	t.Run("no min size configured: never skipped", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+
+		a.False(r.FilterBySize(ctx, srcL, "testdb", 1))
+	})
+}
+
+func TestReaper_TrackRecoveryStatus(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	srcL := log.GetLogger(ctx)
+
+	newPgConn := func(kind sources.Kind, isInRecovery bool, standby metrics.MetricIntervals) *sources.DbConn {
+		md := sources.NewDbConn(sources.Source{Name: "testdb", Kind: kind})
+		md.IsInRecovery = isInRecovery
+		md.MetricsStandby = standby
+		return md
+	}
+
+	t.Run("no role change: cache updated silently", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		r.hostRecoveryStatus["testdb"] = false
+		md := newPgConn(sources.SourcePostgres, false, nil)
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.False(r.hostRecoveryStatus["testdb"])
+	})
+
+	t.Run("primary→standby with standby config: cache updated", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		r.hostRecoveryStatus["testdb"] = false
+		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{"cpu": 10})
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.True(r.hostRecoveryStatus["testdb"])
+	})
+
+	t.Run("standby→primary: cache updated", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		r.hostRecoveryStatus["testdb"] = true
+		md := newPgConn(sources.SourcePostgres, false, nil)
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.False(r.hostRecoveryStatus["testdb"])
+	})
+
+	t.Run("primary→standby without standby config: cache updated, no shutdown", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		r.hostRecoveryStatus["testdb"] = false
+		md := newPgConn(sources.SourcePostgres, true, nil)
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.True(r.hostRecoveryStatus["testdb"])
+	})
+
+	t.Run("pgbouncer: cache updated", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		md := newPgConn(sources.SourcePgBouncer, false, nil)
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.False(r.hostRecoveryStatus["testdb"])
+	})
+
+	t.Run("patroni discovery: cache updated", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{})
+		md := newPgConn(sources.SourcePatroniDiscovery, true, nil)
+
+		r.TrackRecoveryStatus(srcL, "testdb", md)
+
+		a.True(r.hostRecoveryStatus["testdb"])
+	})
+}
+
 // mockSyncWriter records SyncMetric calls for assertions.
 type mockSyncWriter struct {
 	synced []struct{ source, metric string }

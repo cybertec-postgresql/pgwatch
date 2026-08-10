@@ -110,7 +110,6 @@ func (r *reaper) Reap(ctx context.Context) {
 		}
 
 		// UpdateMonitoredDBCache(r.monitoredSources)
-		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range r.monitoredSources {
 			src := monitoredSource.GetSource()
 			srcL := logger.WithField("source", src.Name)
@@ -143,40 +142,16 @@ func (r *reaper) Reap(ctx context.Context) {
 					metricsConfig = maps.Clone(md.Metrics)
 				}
 				md.RUnlock()
-
 				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
-				if isInRecovery && md.OnlyIfMaster {
-					srcL.Info("not added to monitoring due to 'master only' property")
-					if md.IsPostgresSource() {
-						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-						hostsToShutDownDueToRoleChange[src.Name] = true
-					}
+
+				if r.FilterByMasterOnly(ctx, srcL, src.Name, md) {
 					continue
 				}
-
-				r.CreateSourceHelpers(ctx, srcL, md)
-
-				if md.IsPostgresSource() {
-					// only remove from monitoring when we're certain it's under the threshold
-					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-						hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
-						continue
-					}
-
-					lastKnownStatusInRecovery := r.hostRecoveryStatus[src.Name]
-					if lastKnownStatusInRecovery != md.IsInRecovery {
-						// metricsConfig was already selected above; here we only log the role change
-						if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-							srcL.Warning("Switching metrics collection to standby config...")
-						} else if !md.IsInRecovery {
-							srcL.Warning("Switching metrics collection to primary config...")
-						}
-						// else: standby without a dedicated standby config keeps primary config, no warn
-					}
+				if r.FilterBySize(ctx, srcL, src.Name, DBSizeMB) {
+					continue
 				}
-				r.hostRecoveryStatus[src.Name] = isInRecovery
-
+				r.CreateSourceHelpers(ctx, srcL, md)
+				r.TrackRecoveryStatus(srcL, src.Name, md)
 				r.SyncMetricsToSinks(srcL, src.Name, metricsConfig)
 
 				// Start SourceReaper for this source if not already running
@@ -198,8 +173,6 @@ func (r *reaper) Reap(ctx context.Context) {
 			}
 		}
 
-		r.ShutdownOldWorkers(ctx, hostsToShutDownDueToRoleChange)
-
 		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
@@ -208,6 +181,54 @@ func (r *reaper) Reap(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// FilterByMasterOnly returns true and immediately shuts down the source worker
+// when the source is in recovery and has the "only if master" flag set.
+func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, sourceName string, md *sources.DbConn) bool {
+	md.RLock()
+	isInRecovery := md.IsInRecovery
+	md.RUnlock()
+	if !isInRecovery || !md.OnlyIfMaster {
+		return false
+	}
+	srcL.Info("not added to monitoring due to 'master only' property")
+	if md.IsPostgresSource() {
+		srcL.Info("to be removed from monitoring due to 'master only' property and status change")
+		r.ShutdownOldWorkers(ctx, map[string]bool{sourceName: true})
+	}
+	return true
+}
+
+// FilterBySize returns true and immediately shuts down the source worker when
+// the DB is below the minimum size threshold, indicating the caller should skip it.
+func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, sourceName string, DBSizeMB int64) bool {
+	// only remove from monitoring when we're certain it's under the threshold
+	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+		srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+		r.ShutdownOldWorkers(ctx, map[string]bool{sourceName: true})
+		return true
+	}
+	return false
+}
+
+// TrackRecoveryStatus logs any primary/standby role changes and updates the
+// per-source recovery-status cache.
+func (r *reaper) TrackRecoveryStatus(srcL log.Logger, sourceName string, md *sources.DbConn) {
+	md.RLock()
+	isInRecovery := md.IsInRecovery
+	hasStandbyConfig := len(md.MetricsStandby) > 0
+	md.RUnlock()
+
+	if r.hostRecoveryStatus[sourceName] != isInRecovery {
+		if isInRecovery && hasStandbyConfig {
+			srcL.Warning("Switching metrics collection to standby config...")
+		} else if !isInRecovery {
+			srcL.Warning("Switching metrics collection to primary config...")
+		}
+		// else: standby without a dedicated standby config keeps primary config, no warn
+	}
+	r.hostRecoveryStatus[sourceName] = isInRecovery
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
