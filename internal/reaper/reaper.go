@@ -177,25 +177,7 @@ func (r *reaper) Reap(ctx context.Context) {
 				}
 				r.hostRecoveryStatus[src.Name] = isInRecovery
 
-				// Sync metric names with sinks for the active config
-				for metricName := range metricsConfig {
-					mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
-					if !metricDefExists {
-						epoch, ok := lastSQLFetchError.Load(metricName)
-						if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
-							srcL.WithField("metric", metricName).Warning("metric definition not found")
-							lastSQLFetchError.Store(metricName, time.Now().Unix())
-						}
-						continue
-					}
-					metricNameForStorage := metricName
-					if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
-						metricNameForStorage = mvp.StorageName
-					}
-					if err := r.SinksWriter.SyncMetric(src.Name, metricNameForStorage, sinks.AddOp); err != nil {
-						srcL.Error(err)
-					}
-				}
+				r.SyncMetricsToSinks(srcL, src.Name, metricsConfig)
 
 				// Start SourceReaper for this source if not already running
 				if _, exists := r.cancelFuncs[src.Name]; !exists {
@@ -224,6 +206,28 @@ func (r *reaper) Reap(ctx context.Context) {
 			logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
 		case <-ctx.Done():
 			return
+		}
+	}
+}
+
+// SyncMetricsToSinks syncs metric names with sinks for the active config
+func (r *reaper) SyncMetricsToSinks(srcL log.Logger, sourceName string, metricsConfig metrics.MetricIntervals) {
+	for metricName := range metricsConfig {
+		mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
+		if !metricDefExists {
+			epoch, ok := lastSQLFetchError.Load(metricName)
+			if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
+				srcL.WithField("metric", metricName).Warning("metric definition not found")
+				lastSQLFetchError.Store(metricName, time.Now().Unix())
+			}
+			continue
+		}
+		metricNameForStorage := metricName
+		if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
+			metricNameForStorage = mvp.StorageName
+		}
+		if err := r.SinksWriter.SyncMetric(sourceName, metricNameForStorage, sinks.AddOp); err != nil {
+			srcL.Error(err)
 		}
 	}
 }
