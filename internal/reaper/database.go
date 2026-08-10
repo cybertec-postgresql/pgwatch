@@ -11,7 +11,6 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/jackc/pgx/v5"
 )
@@ -817,17 +816,4 @@ func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.Db
 	return metrics.Measurements{m}, nil
 }
 
-func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
-	for _, prevDB := range r.prevLoopMonitoredDBs {
-		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil { // removed from config
-			prevDB.Close()
-			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
-		}
-	}
-	for toShutDownDB := range hostsToShutDown {
-		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
-			db.Close()
-		}
-		_ = r.SinksWriter.SyncMetric(toShutDownDB, "", sinks.DeleteOp)
-	}
-}
+

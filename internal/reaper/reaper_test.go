@@ -722,7 +722,29 @@ func TestReaper_SyncMetricsToSinks(t *testing.T) {
 	})
 }
 
-func TestReaper_ShutdownOldWorkers(t *testing.T) {
+func TestReaper_ShutdownWorker(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+
+	t.Run("cancels and removes the named worker", func(t *testing.T) {
+		a := assert.New(t)
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		cancelCalled := false
+		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
+
+		r.ShutdownWorker(ctx, "testdb")
+
+		a.True(cancelCalled)
+		a.NotContains(r.cancelFuncs, "testdb")
+	})
+
+	t.Run("no-op when source has no running worker", func(t *testing.T) {
+		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+		// must not panic
+		r.ShutdownWorker(ctx, "nonexistent")
+	})
+}
+
+func TestReaper_CleanupRemovedWorkers(t *testing.T) {
 	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 
 	t.Run("cancels worker for DB removed from config", func(t *testing.T) {
@@ -730,20 +752,9 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
 		cancelCalled := false
 		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
+		// monitoredSources is empty — testdb was removed
 
-		r.ShutdownOldWorkers(ctx, map[string]bool{})
-
-		a.True(cancelCalled)
-		a.NotContains(r.cancelFuncs, "testdb")
-	})
-
-	t.Run("cancels worker for whole DB shutdown", func(t *testing.T) {
-		a := assert.New(t)
-		r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
-		cancelCalled := false
-		r.cancelFuncs["testdb"] = func() { cancelCalled = true }
-
-		r.ShutdownOldWorkers(ctx, map[string]bool{"testdb": true})
+		r.CleanupRemovedWorkers(ctx)
 
 		a.True(cancelCalled)
 		a.NotContains(r.cancelFuncs, "testdb")
@@ -758,7 +769,7 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
-		r.ShutdownOldWorkers(ctx, map[string]bool{})
+		r.CleanupRemovedWorkers(ctx)
 
 		a.False(cancelCalled)
 		a.Contains(r.cancelFuncs, "testdb")
@@ -775,7 +786,7 @@ func TestReaper_ShutdownOldWorkers(t *testing.T) {
 			sources.NewDbConn(sources.Source{Name: "testdb", Metrics: metrics.MetricIntervals{"cpu": 10}}),
 		}
 
-		r.ShutdownOldWorkers(cancelledCtx, map[string]bool{})
+		r.CleanupRemovedWorkers(cancelledCtx)
 
 		a.True(cancelCalled)
 	})

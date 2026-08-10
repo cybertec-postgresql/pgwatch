@@ -173,6 +173,7 @@ func (r *reaper) Reap(ctx context.Context) {
 			}
 		}
 
+		r.CleanupRemovedWorkers(ctx)
 		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
@@ -195,7 +196,7 @@ func (r *reaper) FilterByMasterOnly(ctx context.Context, srcL log.Logger, source
 	srcL.Info("not added to monitoring due to 'master only' property")
 	if md.IsPostgresSource() {
 		srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-		r.ShutdownOldWorkers(ctx, map[string]bool{sourceName: true})
+		r.ShutdownWorker(ctx, sourceName)
 	}
 	return true
 }
@@ -206,7 +207,7 @@ func (r *reaper) FilterBySize(ctx context.Context, srcL log.Logger, sourceName s
 	// only remove from monitoring when we're certain it's under the threshold
 	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
 		srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-		r.ShutdownOldWorkers(ctx, map[string]bool{sourceName: true})
+		r.ShutdownWorker(ctx, sourceName)
 		return true
 	}
 	return false
@@ -291,35 +292,44 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 
 }
 
-func (r *reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
-	logger := r.logger
-	// loop over existing source reapers and stop if DB removed from config
-	// or state change makes it uninteresting
-	logger.Debug("checking if any workers need to be shut down...")
-	for sourceName, cancelFunc := range r.cancelFuncs {
-		var dbRemovedFromConfig bool
+// ShutdownWorker stops the source reaper for a single named source, closes its
+// connection pool, and deregisters it from the sinks.
+func (r *reaper) ShutdownWorker(ctx context.Context, sourceName string) {
+	if cancelFunc, exists := r.cancelFuncs[sourceName]; exists {
+		r.logger.WithField("source", sourceName).Info("stopping source reaper...")
+		cancelFunc()
+		delete(r.cancelFuncs, sourceName)
+	}
+	if db := r.monitoredSources.GetMonitoredDatabase(sourceName); db != nil {
+		db.Close()
+	}
+	if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
+		r.logger.Error(err)
+	}
+}
 
-		_, wholeDbShutDown := hostsToShutDown[sourceName]
-		if !wholeDbShutDown {
-			md := r.monitoredSources.GetMonitoredDatabase(sourceName)
-			if md == nil { // normal removing of DB from config
-				dbRemovedFromConfig = true
-				logger.Debugf("DB %s removed from config, shutting down source reaper...", sourceName)
-			}
+// CleanupRemovedWorkers stops workers for sources that are no longer in
+// monitoredSources or whose context has been cancelled, and closes connections
+// for any sources that disappeared from the previous loop without a running worker.
+func (r *reaper) CleanupRemovedWorkers(ctx context.Context) {
+	r.logger.Debug("checking if any workers need to be shut down...")
+	for sourceName := range r.cancelFuncs {
+		md := r.monitoredSources.GetMonitoredDatabase(sourceName)
+		if ctx.Err() == nil && md != nil {
+			continue // source still active
 		}
-
-		if ctx.Err() != nil || wholeDbShutDown || dbRemovedFromConfig {
-			logger.WithField("source", sourceName).Info("stopping source reaper...")
-			cancelFunc()
-			delete(r.cancelFuncs, sourceName)
-			if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
-				logger.Error(err)
-			}
+		if md == nil {
+			r.logger.Debugf("Source %s removed from config, shutting down source reaper...", sourceName)
+		}
+		r.ShutdownWorker(ctx, sourceName)
+	}
+	// Close connections for sources that disappeared without ever having a worker.
+	for _, prevDB := range r.prevLoopMonitoredDBs {
+		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil {
+			prevDB.Close()
+			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
 		}
 	}
-
-	// Destroy conn pools and metric writers
-	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDown)
 }
 
 // LoadSources loads sources from the reader
@@ -358,7 +368,7 @@ func (r *reaper) LoadSources(ctx context.Context) (err error) {
 		// Source configs changed, stop all running gatherers to trigger a restart
 		// TODO: Optimize this for single metric addition/deletion/interval-change cases to not do a full restart
 		r.logger.WithField("source", md.GetSource().Name).Info("Source configs changed, restarting all gatherers...")
-		r.ShutdownOldWorkers(ctx, map[string]bool{md.GetSource().Name: true})
+		r.ShutdownWorker(ctx, md.GetSource().Name)
 	}
 	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
