@@ -1094,10 +1094,11 @@ func TestSourceReaper_ExecuteBatch_BoundedByFetchDeadline(t *testing.T) {
 	// "context deadline exceeded"); goes GREEN once the call site derives
 	// a "batch"-tagged ctx and surfaces its cause.
 	require.ErrorContains(t, err, "batch")
-	// fetch deadline = max(1s interval, 50ms floor) = 1s. Allow a generous
-	// margin for goroutine scheduling.
-	if elapsed > 1500*time.Millisecond {
-		t.Fatalf("executeBatch took %v, want ~fetch deadline (max(interval, MinFetchTimeout))", elapsed)
+	// fetch deadline = max(1s interval, 50ms floor) = 1s. executeBatch may
+	// do a retry round-trip (fetchMetric) on top of the batch round-trip,
+	// so the total budget is 2 * deadline + a generous scheduling margin.
+	if elapsed > 2*time.Second+500*time.Millisecond {
+		t.Fatalf("executeBatch took %v, want ~2 * fetch deadline", elapsed)
 	}
 }
 

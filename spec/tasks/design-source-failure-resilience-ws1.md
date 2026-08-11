@@ -63,11 +63,11 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 - [x] T103 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `QueryMeasurements` with blocking `Query` returns within `db.ChangeDetectionTimeout` (REQ-103); same for one representative `Detect*Changes` function.
 ### Implementation for User Story 1
 
-- [ ] T104 [US1] Wire `DbConnReaper.executeBatch` (`internal/reaper/database.go`, `SendBatch` call site): derive ctx via `db.WithFetchTimeout(ctx, "batch", sr.calcTickInterval())` per REQ-101; defer cancel. Do NOT hold the deferred `br.Close()` across retries (preserve the #1412 deadlock fix).
-- [ ] T105 [US1] Wire `DbConnReaper.fetchMetric` (`internal/reaper/database.go`, `Conn.Query` call site): derive ctx via `db.WithFetchTimeout` with the entry's interval per REQ-102.
-- [ ] T106 [US1] Wire `QueryMeasurements` and the `Detect*Changes` family (`internal/reaper/database.go`) with `db.WithOpTimeout(ctx, op, db.ChangeDetectionTimeout)` per REQ-103.
-- [ ] T107 [US1] Error surfacing per REQ-107: on `context.DeadlineExceeded` (check `context.Cause`), log at `Error` level with `source` and operation fields; verify message is greppable and distinct from ordinary query errors.
-- [ ] T108 [US1] Run story gate: `go test -race ./internal/reaper/`
+- [x] T104 [US1] Wire `DbConnReaper.executeBatch` (`internal/reaper/database.go`, `SendBatch` call site): derive ctx via `db.WithFetchTimeout(ctx, "batch", sr.calcTickInterval())` per REQ-101; defer cancel. Do NOT hold the deferred `br.Close()` across retries (preserve the #1412 deadlock fix).
+- [x] T105 [US1] Wire `DbConnReaper.fetchMetric` (`internal/reaper/database.go`, `Conn.Query` call site): derive ctx via `db.WithFetchTimeout` with the entry's interval per REQ-102.
+- [x] T106 [US1] Wire `QueryMeasurements` and the `Detect*Changes` family (`internal/reaper/database.go`) with `db.WithOpTimeout(ctx, op, db.ChangeDetectionTimeout)` per REQ-103.
+- [x] T107 [US1] Error surfacing per REQ-107: on `context.DeadlineExceeded` (check `context.Cause`), log at `Error` level with `source` and `operation` fields; verify message is greppable and distinct from ordinary query errors.
+- [x] T108 [US1] Run story gate: `go test -race ./internal/reaper/`
 
 **Checkpoint**: US1 fully functional — fetch paths are deadline-bounded; healthy-fleet regression tests unchanged and green (AC-104 for fetch paths)
 

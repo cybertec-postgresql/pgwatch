@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
@@ -261,7 +262,14 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 		batch.Queue(e.sql)
 	}
 
-	br := sr.md.Conn.SendBatch(ctx, batch)
+	// Bound the batch round-trip by the tick interval (with the floor from
+	// db.MinFetchTimeout) so a wedged connection cannot stall the source
+	// worker past the next tick. The derived ctx embeds an op-named cause
+	// so the error chain is greppable per call site.
+	bctx, cancel := db.WithFetchTimeout(ctx, "batch", sr.calcTickInterval())
+	defer cancel()
+
+	br := sr.md.Conn.SendBatch(bctx, batch)
 	defer func() { _ = br.Close() }()
 
 	var (
@@ -285,11 +293,29 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 			sr.markDegraded(e.metricName)
 		}
 	}
-	return errors.Join(errs...)
+	if joined := errors.Join(errs...); joined != nil {
+		return fmt.Errorf("batch: %w", joined)
+	}
+	return nil
 }
 
 // fetchMetric executes a single SQL query and returns the resulting measurements.
 func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
+	// Bound the per-metric round-trip by max(GetMetricInterval, MinFetchTimeout).
+	// GetMetricInterval already returns a time.Duration in seconds — do NOT
+	// multiply by time.Second again.
+	interval := sr.md.GetMetricInterval(entry.metricName)
+	op := "fetch " + entry.metricName
+	fctx, cancel := db.WithFetchTimeout(ctx, op, interval)
+	defer cancel()
+	if err := sr.fetchMetricOnce(fctx, entry); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
+}
+
+// fetchMetricOnce is the unwrapped round-trip — deadline-bound by the caller.
+func (sr *DbConnReaper) fetchMetricOnce(ctx context.Context, entry batchEntry) error {
 	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
 	if err != nil {
 		return err
@@ -381,18 +407,26 @@ func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Me
 	}
 }
 
+// QueryMeasurements runs the given SQL on the source connection and returns
+// the collected rows. The round-trip is bounded by db.ChangeDetectionTimeout
+// so a hung source cannot block the change-detection sweep indefinitely.
 func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error) {
 	if strings.TrimSpace(sql) == "" {
 		return nil, errors.New("empty SQL")
 	}
+	qctx, cancel := db.WithOpTimeout(ctx, "change_detection_query", db.ChangeDetectionTimeout)
+	defer cancel()
 	// For non-postgres connections (e.g. pgbouncer, pgpool), use simple protocol
 	if !md.IsPostgresSource() {
 		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
 	}
 	// lock_timeout is set at connection level via RuntimeParams, no need for transaction wrapper
-	rows, err := md.Conn.Query(ctx, sql, args...)
+	rows, err := md.Conn.Query(qctx, sql, args...)
 	if err == nil {
 		return pgx.CollectRows(rows, metrics.RowToMeasurement)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return nil, fmt.Errorf("change_detection_query: %w", context.Cause(qctx))
 	}
 	return nil, err
 }
@@ -441,7 +475,6 @@ func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (ch
 	}
 	// detect deletes
 	if !firstRun && len(md.ChangeState["sproc_hashes"]) != len(data) {
-		// turn resultset to map => [oid]=true for faster checks
 		currentOidMap := make(map[string]bool)
 		for _, dr := range data {
 			currentOidMap[dr["tag_sproc"].(string)+dbMetricJoinStr+dr["tag_oid"].(string)] = true
@@ -808,5 +841,3 @@ func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.Db
 	m["details"] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, " ")
 	return metrics.Measurements{m}, nil
 }
-
-
