@@ -110,9 +110,9 @@ func (r *reaper) Reap(ctx context.Context) {
 			srcL := r.logger.WithField("source", src.Name)
 			ctx = log.WithLogger(ctx, srcL)
 
-			if monitoredSource.Connect(ctx, r.Sources) != nil {
+			if err = monitoredSource.Connect(ctx, r.Sources); err != nil {
 				r.WriteInstanceDown(src.Name)
-				srcL.Warning("could not init connection, retrying on next iteration")
+				srcL.Warning("could not init connection, retrying on next iteration: %w", err)
 				continue
 			}
 

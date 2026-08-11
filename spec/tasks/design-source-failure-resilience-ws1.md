@@ -89,10 +89,10 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 
 ### Implementation for User Story 2
 
-- [ ] T204 [US2] Wire `DbConn.Ping` (`internal/sources/conn.go:147-150`): derive ctx with `db.WithOpTimeout(ctx, "ping", md.ConnConfig.ConnConfig.ConnectTimeout + db.PingTimeoutMargin)` per REQ-104; guard nil `ConnConfig` (Ping is exported) by falling back to the 10 s default total. Applies to both branches (pgbouncer `SHOW VERSION` and regular `Conn.Ping`).
-- [ ] T205 [US2] Wire `DbConn.FetchRuntimeInfo` sub-queries (`internal/sources/conn.go`, incl. the extension query at :298 and available-extensions query at :371) with `db.WithOpTimeout(ctx, op, db.RuntimeInfoTimeout)` per REQ-105 — one derived ctx per sub-query, not per call.
-- [ ] T206 [US2] Warning-level surfacing per REQ-107: Ping deadline expiry must remain visible through the main loop's existing "could not init connection, retrying on next iteration" warning — ensure the wrapped cause is included in the log entry.
-- [ ] T207 [US2] Run story gate: `go test -race ./internal/sources/`
+- [x] T204 [US2] Wire `DbConn.Ping` (`internal/sources/conn.go:147-150`): derive ctx with `db.WithOpTimeout(ctx, "ping", md.ConnConfig.ConnConfig.ConnectTimeout + db.PingTimeoutMargin)` per REQ-104; guard nil `ConnConfig` (Ping is exported) by falling back to the 10 s default total. Applies to both branches (pgbouncer `SHOW VERSION` and regular `Conn.Ping`).
+- [x] T205 [US2] Wire `DbConn.FetchRuntimeInfo` sub-queries (`internal/sources/conn.go`, incl. the extension query at :298 and available-extensions query at :371) with `db.WithOpTimeout(ctx, op, db.RuntimeInfoTimeout)` per REQ-105 — one derived ctx per sub-query, not per call.
+- [x] T206 [US2] Warning-level surfacing per REQ-107: Ping deadline expiry must remain visible through the main loop's existing "could not init connection, retrying on next iteration" warning — ensure the wrapped cause is included in the log entry.
+- [x] T207 [US2] Run story gate: `go test -race ./internal/sources/`
 
 **Checkpoint**: US1 AND US2 both work independently — sweep liveness gate bounded, fetch paths bounded (AC-101, AC-102)
 
