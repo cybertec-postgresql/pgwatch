@@ -108,6 +108,19 @@ func (md *DbConn) GetSource() Source {
 	return md.Source
 }
 
+// ActiveMetrics returns a snapshot of the currently active metric intervals
+// based on the connection's recovery state: standby config wins when the source
+// is in recovery and a standby config is defined, otherwise the primary config is used.
+// The caller receives a cloned copy safe to iterate without holding the lock.
+func (md *DbConn) ActiveMetrics() metrics.MetricIntervals {
+	md.RLock()
+	defer md.RUnlock()
+	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+		return maps.Clone(md.MetricsStandby)
+	}
+	return maps.Clone(md.Metrics)
+}
+
 // SetMetricIntervals atomically sets metric intervals; nil means "no change".
 func (md *DbConn) SetMetricIntervals(main, standby metrics.MetricIntervals) {
 	md.Lock()

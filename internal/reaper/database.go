@@ -11,7 +11,6 @@ import (
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/jackc/pgx/v5"
 )
@@ -67,17 +66,10 @@ func (sr *DbConnReaper) clearDegraded(name string) {
 }
 
 // activeMetrics returns a snapshot copy of the currently active metric intervals
-// based on the source's recovery state. Copying under the lock prevents data
-// races when the caller iterates after the lock is released.
+// as durations, delegating recovery-state selection to md.ActiveMetrics().
 func (sr *DbConnReaper) activeMetrics() map[string]time.Duration {
-	sr.md.RLock()
-	defer sr.md.RUnlock()
-	am := sr.md.Metrics
-	if sr.md.IsInRecovery && len(sr.md.MetricsStandby) > 0 {
-		am = sr.md.MetricsStandby
-	}
-	c := make(map[string]time.Duration, len(am))
-	for k, v := range am {
+	c := make(map[string]time.Duration)
+	for k, v := range sr.md.ActiveMetrics() {
 		c[k] = time.Duration(v) * time.Second
 	}
 	return c
@@ -817,17 +809,4 @@ func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.Db
 	return metrics.Measurements{m}, nil
 }
 
-func (r *reaper) CloseResourcesForRemovedMonitoredDBs(hostsToShutDown map[string]bool) {
-	for _, prevDB := range r.prevLoopMonitoredDBs {
-		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil { // removed from config
-			prevDB.Close()
-			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
-		}
-	}
-	for toShutDownDB := range hostsToShutDown {
-		if db := r.monitoredSources.GetMonitoredDatabase(toShutDownDB); db != nil {
-			db.Close()
-		}
-		_ = r.SinksWriter.SyncMetric(toShutDownDB, "", sinks.DeleteOp)
-	}
-}
+

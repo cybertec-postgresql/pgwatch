@@ -2,7 +2,6 @@ package reaper
 
 import (
 	"context"
-	"maps"
 	"runtime"
 	"slices"
 	"strings"
@@ -23,9 +22,6 @@ const (
 	specialMetricInstanceUp           = "instance_up"
 )
 
-var specialMetrics = map[string]bool{specialMetricChangeEvents: true, specialMetricServerLogEventCounts: true}
-
-var hostLastKnownStatusInRecovery = make(map[string]bool) // isInRecovery
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
@@ -50,6 +46,7 @@ type reaper struct {
 	logger               log.Logger
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
+	srcRecoveryStatus    map[string]bool
 	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
@@ -65,6 +62,7 @@ func newReaper(ctx context.Context, opts *cmdopts.Options) (r *reaper) {
 		logger:               log.GetLogger(ctx),
 		monitoredSources:     make(sources.SourceConns, 0),
 		prevLoopMonitoredDBs: make(sources.SourceConns, 0),
+		srcRecoveryStatus:    make(map[string]bool),
 		cancelFuncs:          make(map[string]context.CancelFunc), // [sourceName]cancel()
 	}
 }
@@ -91,7 +89,6 @@ func (r *reaper) PrintMemStats() {
 // start or stop the gatherers accordingly.
 func (r *reaper) Reap(ctx context.Context) {
 	var err error
-	logger := r.logger
 
 	go r.WriteMeasurements(ctx)
 
@@ -102,17 +99,15 @@ func (r *reaper) Reap(ctx context.Context) {
 			r.PrintMemStats()
 		}
 		if err = r.LoadSources(ctx); err != nil {
-			logger.WithError(err).Error("could not refresh active sources, using last valid cache")
+			r.logger.Error("could not refresh active sources, using last valid cache: %w", err)
 		}
 		if err = r.LoadMetrics(); err != nil {
-			logger.WithError(err).Error("could not refresh metric definitions, using last valid cache")
+			r.logger.Error("could not refresh metric definitions, using last valid cache: %w", err)
 		}
 
-		// UpdateMonitoredDBCache(r.monitoredSources)
-		hostsToShutDownDueToRoleChange := make(map[string]bool) // hosts went from master to standby and have "only if master" set
 		for _, monitoredSource := range r.monitoredSources {
 			src := monitoredSource.GetSource()
-			srcL := logger.WithField("source", src.Name)
+			srcL := r.logger.WithField("source", src.Name)
 			ctx = log.WithLogger(ctx, srcL)
 
 			if monitoredSource.Connect(ctx, r.Sources) != nil {
@@ -124,111 +119,118 @@ func (r *reaper) Reap(ctx context.Context) {
 			switch md := monitoredSource.(type) {
 			case *sources.DbConn:
 				if err = md.FetchRuntimeInfo(ctx, true); err != nil {
-					srcL.WithError(err).Error("could not start metric gathering")
+					srcL.Error("could not start metric gathering: %w", err)
 					continue
 				}
-
-				// Snapshot mutable RuntimeInfo fields under RLock so subsequent reads
-				// in this iteration are consistent and race-free against the per-source
-				// DbConnReaper goroutine calling FetchRuntimeInfo concurrently.
-				md.RLock()
-				isInRecovery := md.IsInRecovery
-				versionStr := md.VersionStr
-				DBSizeMB := md.ApproxDbSize / 1048576
-				var metricsConfig metrics.MetricIntervals
-				if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-					metricsConfig = maps.Clone(md.MetricsStandby)
-				} else {
-					metricsConfig = maps.Clone(md.Metrics)
-				}
-				md.RUnlock()
-
-				srcL.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
-				if isInRecovery && md.OnlyIfMaster {
-					srcL.Info("not added to monitoring due to 'master only' property")
-					if md.IsPostgresSource() {
-						srcL.Info("to be removed from monitoring due to 'master only' property and status change")
-						hostsToShutDownDueToRoleChange[src.Name] = true
-					}
+				if r.FilterSource(ctx, md) {
 					continue
 				}
-
-				r.CreateSourceHelpers(ctx, srcL, md)
-
-				if md.IsPostgresSource() {
-					// only remove from monitoring when we're certain it's under the threshold
-					if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
-						srcL.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
-						hostsToShutDownDueToRoleChange[src.Name] = true // for the case when DB size was previously above the threshold
-						continue
-					}
-
-					lastKnownStatusInRecovery := hostLastKnownStatusInRecovery[src.Name]
-					if lastKnownStatusInRecovery != md.IsInRecovery {
-						// metricsConfig was already selected above; here we only log the role change
-						if md.IsInRecovery && len(md.MetricsStandby) > 0 {
-							srcL.Warning("Switching metrics collection to standby config...")
-						} else if !md.IsInRecovery {
-							srcL.Warning("Switching metrics collection to primary config...")
-						}
-						// else: standby without a dedicated standby config keeps primary config, no warn
-					}
-				}
-				hostLastKnownStatusInRecovery[src.Name] = isInRecovery
-
-				// Sync metric names with sinks for the active config
-				for metricName := range metricsConfig {
-					mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
-					if !metricDefExists {
-						epoch, ok := lastSQLFetchError.Load(metricName)
-						if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
-							srcL.WithField("metric", metricName).Warning("metric definition not found")
-							lastSQLFetchError.Store(metricName, time.Now().Unix())
-						}
-						continue
-					}
-					metricNameForStorage := metricName
-					if _, isSpecialMetric := specialMetrics[metricName]; !isSpecialMetric && mvp.StorageName > "" {
-						metricNameForStorage = mvp.StorageName
-					}
-					if err := r.SinksWriter.SyncMetric(src.Name, metricNameForStorage, sinks.AddOp); err != nil {
-						srcL.Error(err)
-					}
-				}
-
-				// Start SourceReaper for this source if not already running
-				if _, exists := r.cancelFuncs[src.Name]; !exists {
-					srcL.Info("starting source reaper")
-					sr := NewDbConnReaper(r, md)
-					sourceCtx, cancelFunc := context.WithCancel(ctx)
-					r.cancelFuncs[src.Name] = cancelFunc
-					go sr.Reap(sourceCtx)
-				}
+				r.CreateSourceHelpers(ctx, md)
+				r.TrackRecoveryStatus(ctx, md)
+				r.SyncMetricsToSinks(ctx, md)
+				r.StartWorker(ctx, src.Name, NewDbConnReaper(r, md))
 			case *sources.PromConn:
-				if _, exists := r.cancelFuncs[src.Name]; !exists {
-					srcL.Info("starting prometheus source reaper")
-					pr := NewPromSourceReaper(r, md)
-					sourceCtx, cancelFunc := context.WithCancel(ctx)
-					r.cancelFuncs[src.Name] = cancelFunc
-					go pr.Reap(sourceCtx)
-				}
+				r.StartWorker(ctx, src.Name, NewPromSourceReaper(r, md))
 			}
 		}
-
-		r.ShutdownOldWorkers(ctx, hostsToShutDownDueToRoleChange)
-
-		r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
+		r.CleanupRemovedWorkers(ctx)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
-			logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
+			r.logger.Debugf("wake up after %d seconds", r.Sources.Refresh)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
+// StartWorker launches a source reaper goroutine for the given source if one
+// is not already running. It is a no-op when a worker for that name exists.
+func (r *reaper) StartWorker(ctx context.Context, sourceName string, sr Reaper) {
+	if _, exists := r.cancelFuncs[sourceName]; exists {
+		return
+	}
+	log.GetLogger(ctx).Info("starting source reaper")
+	sourceCtx, cancelFunc := context.WithCancel(ctx)
+	r.cancelFuncs[sourceName] = cancelFunc
+	go sr.Reap(sourceCtx)
+}
+
+// FilterSource snapshots the mutable RuntimeInfo under a single RLock, logs
+// the connection status, and applies both eligibility filters:
+//   - OnlyIfMaster: skip standby sources that must not be monitored as standbys.
+//   - MinDbSizeMB:  skip sources whose database is below the configured size threshold.
+//
+// Returns true when the source should be skipped for this loop iteration.
+func (r *reaper) FilterSource(ctx context.Context, md *sources.DbConn) bool {
+	md.RLock()
+	isInRecovery := md.IsInRecovery
+	versionStr := md.VersionStr
+	DBSizeMB := md.ApproxDbSize / 1048576
+	md.RUnlock()
+
+	l := log.GetLogger(ctx)
+
+	if isInRecovery && md.OnlyIfMaster {
+		l.Info("not added to monitoring due to 'master only' property and status change")
+		r.ShutdownWorker(ctx, md.Name)
+		return true
+	}
+
+	if DBSizeMB != 0 && DBSizeMB < r.Sources.MinDbSizeMB {
+		l.Infof("ignored due to the --min-db-size-mb filter, current size %d MB", DBSizeMB)
+		r.ShutdownWorker(ctx, md.Name)
+		return true
+	}
+
+	l.WithField("recovery", isInRecovery).Infof("Connect OK. Version: %s", versionStr)
+	return false
+}
+
+// TrackRecoveryStatus logs any primary/standby role changes and updates the
+// per-source recovery-status cache.
+func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
+	md.RLock()
+	isInRecovery := md.IsInRecovery
+	hasStandbyConfig := len(md.MetricsStandby) > 0
+	md.RUnlock()
+
+	l := log.GetLogger(ctx)
+	if r.srcRecoveryStatus[md.Name] != isInRecovery {
+		if isInRecovery && hasStandbyConfig {
+			l.Warning("Switching metrics collection to standby config...")
+		} else if !isInRecovery {
+			l.Warning("Switching metrics collection to primary config...")
+		}
+		// else: standby without a dedicated standby config keeps primary config, no warn
+	}
+	r.srcRecoveryStatus[md.Name] = isInRecovery
+}
+
+// SyncMetricsToSinks syncs metric names with sinks for the active config
+func (r *reaper) SyncMetricsToSinks(ctx context.Context, md *sources.DbConn) {
+	l := log.GetLogger(ctx)
+	for metricName := range md.ActiveMetrics() {
+		mvp, metricDefExists := metricDefs.GetMetricDef(metricName)
+		if !metricDefExists {
+			epoch, ok := lastSQLFetchError.Load(metricName)
+			if !ok || ((time.Now().Unix() - epoch.(int64)) > 3600) {
+				l.WithField("metric", metricName).Warning("metric definition not found")
+				lastSQLFetchError.Store(metricName, time.Now().Unix())
+			}
+			continue
+		}
+		metricNameForStorage := metricName
+		if !r.isSpecialMetric(metricName) && mvp.StorageName > "" {
+			metricNameForStorage = mvp.StorageName
+		}
+		if err := r.SinksWriter.SyncMetric(md.Name, metricNameForStorage, sinks.AddOp); err != nil {
+			l.Error(err)
+		}
+	}
+}
+
 // CreateSourceHelpers creates the extensions and metric helpers for the monitored source
-func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monitoredSource *sources.DbConn) {
+func (r *reaper) CreateSourceHelpers(ctx context.Context, monitoredSource *sources.DbConn) {
 	if r.prevLoopMonitoredDBs.GetMonitoredDatabase(monitoredSource.Name) != nil {
 		return // already created
 	}
@@ -239,61 +241,77 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, srcL log.Logger, monit
 		return // no need to create anything for non-postgres sources
 	}
 
+	l := log.GetLogger(ctx)
 	if r.Sources.TryCreateListedExtsIfMissing > "" {
-		srcL.Info("trying to create extensions if missing")
+		l.Info("trying to create extensions if missing")
 		extsToCreate := strings.Split(r.Sources.TryCreateListedExtsIfMissing, ",")
 		extsCreated, err := monitoredSource.TryCreateMissingExtensions(ctx, extsToCreate)
 		if err != nil {
-			srcL.Warning(err)
+			l.Warning(err)
 		}
 		if extsCreated != "" {
-			srcL.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
+			l.Infof("%d/%d extensions created: %s", len(extsCreated), len(extsToCreate), extsCreated)
 		}
 	}
 
 	if r.Sources.CreateHelpers {
-		srcL.Info("trying to create helper objects if missing")
+		l.Info("trying to create helper objects if missing")
 		if err := monitoredSource.TryCreateMetricsHelpers(ctx, func(metric string) string {
 			if m, ok := metricDefs.GetMetricDef(metric); ok {
 				return m.InitSQL
 			}
 			return ""
 		}); err != nil {
-			srcL.Warning(err)
+			l.Warning(err)
 		}
 	}
-
 }
 
-func (r *reaper) ShutdownOldWorkers(ctx context.Context, hostsToShutDown map[string]bool) {
-	logger := r.logger
-	// loop over existing source reapers and stop if DB removed from config
-	// or state change makes it uninteresting
-	logger.Debug("checking if any workers need to be shut down...")
-	for sourceName, cancelFunc := range r.cancelFuncs {
-		var dbRemovedFromConfig bool
+// isSpecialMetric reports whether a metric name has special handling that
+// bypasses the StorageName override.
+func (r *reaper) isSpecialMetric(name string) bool {
+	return name == specialMetricChangeEvents || name == specialMetricServerLogEventCounts
+}
 
-		_, wholeDbShutDown := hostsToShutDown[sourceName]
-		if !wholeDbShutDown {
-			md := r.monitoredSources.GetMonitoredDatabase(sourceName)
-			if md == nil { // normal removing of DB from config
-				dbRemovedFromConfig = true
-				logger.Debugf("DB %s removed from config, shutting down source reaper...", sourceName)
-			}
+// ShutdownWorker stops the source reaper for a single named source, closes its
+// connection pool, and deregisters it from the sinks.
+func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
+	if cancelFunc, exists := r.cancelFuncs[sourceName]; exists {
+		r.logger.WithField("source", sourceName).Info("stopping source reaper...")
+		cancelFunc()
+		delete(r.cancelFuncs, sourceName)
+	}
+	if db := r.monitoredSources.GetMonitoredDatabase(sourceName); db != nil {
+		db.Close()
+	}
+	if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
+		r.logger.Error(err)
+	}
+}
+
+// CleanupRemovedWorkers stops workers for sources that are no longer in
+// monitoredSources or whose context has been cancelled, and closes connections
+// for any sources that disappeared from the previous loop without a running worker.
+func (r *reaper) CleanupRemovedWorkers(ctx context.Context) {
+	r.logger.Debug("checking if any workers need to be shut down...")
+	for sourceName := range r.cancelFuncs {
+		md := r.monitoredSources.GetMonitoredDatabase(sourceName)
+		if ctx.Err() == nil && md != nil {
+			continue // source still active
 		}
-
-		if ctx.Err() != nil || wholeDbShutDown || dbRemovedFromConfig {
-			logger.WithField("source", sourceName).Info("stopping source reaper...")
-			cancelFunc()
-			delete(r.cancelFuncs, sourceName)
-			if err := r.SinksWriter.SyncMetric(sourceName, "", sinks.DeleteOp); err != nil {
-				logger.Error(err)
-			}
+		if md == nil {
+			r.logger.Debugf("Source %s removed from config, shutting down source reaper...", sourceName)
+		}
+		r.ShutdownWorker(ctx, sourceName)
+	}
+	// Close connections for sources that disappeared without ever having a worker.
+	for _, prevDB := range r.prevLoopMonitoredDBs {
+		if r.monitoredSources.GetMonitoredDatabase(prevDB.GetSource().Name) == nil {
+			prevDB.Close()
+			_ = r.SinksWriter.SyncMetric(prevDB.GetSource().Name, "", sinks.DeleteOp)
 		}
 	}
-
-	// Destroy conn pools and metric writers
-	r.CloseResourcesForRemovedMonitoredDBs(hostsToShutDown)
+	r.prevLoopMonitoredDBs = slices.Clone(r.monitoredSources)
 }
 
 // LoadSources loads sources from the reader
@@ -332,7 +350,7 @@ func (r *reaper) LoadSources(ctx context.Context) (err error) {
 		// Source configs changed, stop all running gatherers to trigger a restart
 		// TODO: Optimize this for single metric addition/deletion/interval-change cases to not do a full restart
 		r.logger.WithField("source", md.GetSource().Name).Info("Source configs changed, restarting all gatherers...")
-		r.ShutdownOldWorkers(ctx, map[string]bool{md.GetSource().Name: true})
+		r.ShutdownWorker(ctx, md.GetSource().Name)
 	}
 	r.monitoredSources = newSrcs
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
