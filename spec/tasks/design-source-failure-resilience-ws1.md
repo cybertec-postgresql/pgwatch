@@ -58,11 +58,9 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 ### Tests for User Story 1 ⚠️
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (they fail by hanging until test timeout / by missing helper symbols)**
-
-- [ ] T101 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `executeBatch` over a `DbConn` whose `Conn` is `testutil.BlockingPool` (SendBatch blocks) returns within deadline; shrink `db.MinFetchTimeout` for the test duration. Assert error cause names the operation (REQ-107).
-- [ ] T102 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `fetchMetric` with blocking `Query` returns within `max(interval, MinFetchTimeout)` where interval comes from `md.GetMetricInterval(entry.metricName)` (REQ-102).
-- [ ] T103 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `QueryMeasurements` with blocking `Query` returns within `db.ChangeDetectionTimeout` (REQ-103); same for one representative `Detect*Changes` function.
-
+- [x] T101 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `executeBatch` over a `DbConn` whose `Conn` is `testutil.BlockingPool` (SendBatch blocks) returns within deadline; shrink `db.MinFetchTimeout` for the test duration. Assert error cause names the operation (REQ-107).
+- [x] T102 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `fetchMetric` with blocking `Query` returns within `max(interval, MinFetchTimeout)` where interval comes from `md.GetMetricInterval(entry.metricName)` (REQ-102).
+- [x] T103 [P] [US1] Add failing test in `internal/reaper/database_test.go`: `QueryMeasurements` with blocking `Query` returns within `db.ChangeDetectionTimeout` (REQ-103); same for one representative `Detect*Changes` function.
 ### Implementation for User Story 1
 
 - [ ] T104 [US1] Wire `DbConnReaper.executeBatch` (`internal/reaper/database.go`, `SendBatch` call site): derive ctx via `db.WithFetchTimeout(ctx, "batch", sr.calcTickInterval())` per REQ-101; defer cancel. Do NOT hold the deferred `br.Close()` across retries (preserve the #1412 deadlock fix).
