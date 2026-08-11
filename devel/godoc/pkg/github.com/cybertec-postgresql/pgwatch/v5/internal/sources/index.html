@@ -147,6 +147,9 @@ At the moment, sources definitions support two storages:
 				
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#DbConn.ActiveMetrics">func (md *DbConn) ActiveMetrics() metrics.MetricIntervals</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#DbConn.Close">func (md *DbConn) Close()</a></dd>
 				
 					
@@ -516,7 +519,7 @@ Examples: v1.2 -&gt; 01_02_00, v9.6.3 -&gt; 09_06_03, v11 -&gt; 11_00_00
 		
 			
 			
-			<h2 id="RedactURL">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L415">RedactURL</a>
+			<h2 id="RedactURL">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L428">RedactURL</a>
 				<a class="permalink" href="#RedactURL">&#xb6;</a>
 				
 				
@@ -531,7 +534,7 @@ If rawURL cannot be parsed or has no password, it is returned unchanged.
 		
 			
 			
-			<h2 id="VersionToInt">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L229">VersionToInt</a>
+			<h2 id="VersionToInt">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L242">VersionToInt</a>
 				<a class="permalink" href="#VersionToInt">&#xb6;</a>
 				
 				
@@ -645,7 +648,23 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="DbConn.Close">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L124">Close</a>
+				<h3 id="DbConn.ActiveMetrics">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L115">ActiveMetrics</a>
+					<a class="permalink" href="#DbConn.ActiveMetrics">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (md *<a href="#DbConn">DbConn</a>) ActiveMetrics() <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/">metrics</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/#MetricIntervals">MetricIntervals</a></pre>
+				<p>ActiveMetrics returns a snapshot of the currently active metric intervals
+based on the connection&apos;s recovery state: standby config wins when the source
+is in recovery and a standby config is defined, otherwise the primary config is used.
+The caller receives a cloned copy safe to iterate without holding the lock.
+
+				
+				
+				
+			
+				
+				<h3 id="DbConn.Close">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L137">Close</a>
 					<a class="permalink" href="#DbConn.Close">&#xb6;</a>
 					
 					
@@ -658,7 +677,7 @@ will produce multiple monitored databases structs based on the discovered databa
 				
 			
 				
-				<h3 id="DbConn.Connect">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L142">Connect</a>
+				<h3 id="DbConn.Connect">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L155">Connect</a>
 					<a class="permalink" href="#DbConn.Connect">&#xb6;</a>
 					
 					
@@ -672,7 +691,7 @@ If the connection is already established, it pings the server to ensure it&apos;
 				
 			
 				
-				<h3 id="DbConn.DiscoverPlatform">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L314">DiscoverPlatform</a>
+				<h3 id="DbConn.DiscoverPlatform">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L327">DiscoverPlatform</a>
 					<a class="permalink" href="#DbConn.DiscoverPlatform">&#xb6;</a>
 					
 					
@@ -686,7 +705,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="DbConn.FetchApproxSize">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L331">FetchApproxSize</a>
+				<h3 id="DbConn.FetchApproxSize">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L344">FetchApproxSize</a>
 					<a class="permalink" href="#DbConn.FetchApproxSize">&#xb6;</a>
 					
 					
@@ -699,7 +718,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="DbConn.FetchRuntimeInfo">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L238">FetchRuntimeInfo</a>
+				<h3 id="DbConn.FetchRuntimeInfo">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L251">FetchRuntimeInfo</a>
 					<a class="permalink" href="#DbConn.FetchRuntimeInfo">&#xb6;</a>
 					
 					
@@ -711,7 +730,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="DbConn.FetchVersion">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L304">FetchVersion</a>
+				<h3 id="DbConn.FetchVersion">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L317">FetchVersion</a>
 					<a class="permalink" href="#DbConn.FetchVersion">&#xb6;</a>
 					
 					
@@ -723,7 +742,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="DbConn.FunctionExists">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L338">FunctionExists</a>
+				<h3 id="DbConn.FunctionExists">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L351">FunctionExists</a>
 					<a class="permalink" href="#DbConn.FunctionExists">&#xb6;</a>
 					
 					
@@ -736,7 +755,7 @@ that are only available on certain platforms. Returns the platform name or &quot
 				
 			
 				
-				<h3 id="DbConn.GetClusterIdentifier">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L172">GetClusterIdentifier</a>
+				<h3 id="DbConn.GetClusterIdentifier">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L185">GetClusterIdentifier</a>
 					<a class="permalink" href="#DbConn.GetClusterIdentifier">&#xb6;</a>
 					
 					
@@ -750,7 +769,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.GetDatabaseName">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L182">GetDatabaseName</a>
+				<h3 id="DbConn.GetDatabaseName">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L195">GetDatabaseName</a>
 					<a class="permalink" href="#DbConn.GetDatabaseName">&#xb6;</a>
 					
 					
@@ -763,7 +782,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.GetMetricInterval">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L190">GetMetricInterval</a>
+				<h3 id="DbConn.GetMetricInterval">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L203">GetMetricInterval</a>
 					<a class="permalink" href="#DbConn.GetMetricInterval">&#xb6;</a>
 					
 					
@@ -789,7 +808,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.IsClientOnSameHost">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L200">IsClientOnSameHost</a>
+				<h3 id="DbConn.IsClientOnSameHost">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L213">IsClientOnSameHost</a>
 					<a class="permalink" href="#DbConn.IsClientOnSameHost">&#xb6;</a>
 					
 					
@@ -802,7 +821,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.IsPostgresSource">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L214">IsPostgresSource</a>
+				<h3 id="DbConn.IsPostgresSource">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L227">IsPostgresSource</a>
 					<a class="permalink" href="#DbConn.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -814,7 +833,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.ParseConfig">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L162">ParseConfig</a>
+				<h3 id="DbConn.ParseConfig">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L175">ParseConfig</a>
 					<a class="permalink" href="#DbConn.ParseConfig">&#xb6;</a>
 					
 					
@@ -827,7 +846,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.Ping">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L131">Ping</a>
+				<h3 id="DbConn.Ping">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L144">Ping</a>
 					<a class="permalink" href="#DbConn.Ping">&#xb6;</a>
 					
 					
@@ -840,7 +859,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.SetDatabaseName">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L206">SetDatabaseName</a>
+				<h3 id="DbConn.SetDatabaseName">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L219">SetDatabaseName</a>
 					<a class="permalink" href="#DbConn.SetDatabaseName">&#xb6;</a>
 					
 					
@@ -853,7 +872,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.SetMetricIntervals">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L112">SetMetricIntervals</a>
+				<h3 id="DbConn.SetMetricIntervals">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L125">SetMetricIntervals</a>
 					<a class="permalink" href="#DbConn.SetMetricIntervals">&#xb6;</a>
 					
 					
@@ -866,7 +885,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.TryCreateMetricsHelpers">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L385">TryCreateMetricsHelpers</a>
+				<h3 id="DbConn.TryCreateMetricsHelpers">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L398">TryCreateMetricsHelpers</a>
 					<a class="permalink" href="#DbConn.TryCreateMetricsHelpers">&#xb6;</a>
 					
 					
@@ -879,7 +898,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="DbConn.TryCreateMissingExtensions">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L349">TryCreateMissingExtensions</a>
+				<h3 id="DbConn.TryCreateMissingExtensions">func (*DbConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L362">TryCreateMissingExtensions</a>
 					<a class="permalink" href="#DbConn.TryCreateMissingExtensions">&#xb6;</a>
 					
 					
@@ -1066,7 +1085,7 @@ primary and all replicas but connection information is different
 		
 			
 			
-			<h2 id="PromConn">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L439">PromConn</a>
+			<h2 id="PromConn">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L452">PromConn</a>
 				<a class="permalink" href="#PromConn">&#xb6;</a>
 				
 				
@@ -1091,7 +1110,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="NewPromConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L446">NewPromConn</a>
+				<h3 id="NewPromConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L459">NewPromConn</a>
 					<a class="permalink" href="#NewPromConn">&#xb6;</a>
 					
 					
@@ -1104,7 +1123,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="PromConn.Close">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L571">Close</a>
+				<h3 id="PromConn.Close">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L584">Close</a>
 					<a class="permalink" href="#PromConn.Close">&#xb6;</a>
 					
 					
@@ -1116,7 +1135,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.Connect">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L491">Connect</a>
+				<h3 id="PromConn.Connect">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L504">Connect</a>
 					<a class="permalink" href="#PromConn.Connect">&#xb6;</a>
 					
 					
@@ -1128,7 +1147,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.FetchRuntimeInfo">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L570">FetchRuntimeInfo</a>
+				<h3 id="PromConn.FetchRuntimeInfo">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L583">FetchRuntimeInfo</a>
 					<a class="permalink" href="#PromConn.FetchRuntimeInfo">&#xb6;</a>
 					
 					
@@ -1140,7 +1159,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.GetMetricInterval">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L573">GetMetricInterval</a>
+				<h3 id="PromConn.GetMetricInterval">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L586">GetMetricInterval</a>
 					<a class="permalink" href="#PromConn.GetMetricInterval">&#xb6;</a>
 					
 					
@@ -1152,7 +1171,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.GetSource">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L569">GetSource</a>
+				<h3 id="PromConn.GetSource">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L582">GetSource</a>
 					<a class="permalink" href="#PromConn.GetSource">&#xb6;</a>
 					
 					
@@ -1164,7 +1183,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.IsPostgresSource">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L568">IsPostgresSource</a>
+				<h3 id="PromConn.IsPostgresSource">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L581">IsPostgresSource</a>
 					<a class="permalink" href="#PromConn.IsPostgresSource">&#xb6;</a>
 					
 					
@@ -1176,7 +1195,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="PromConn.ParseConfig">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L454">ParseConfig</a>
+				<h3 id="PromConn.ParseConfig">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L467">ParseConfig</a>
 					<a class="permalink" href="#PromConn.ParseConfig">&#xb6;</a>
 					
 					
@@ -1190,7 +1209,7 @@ Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.
 				
 			
 				
-				<h3 id="PromConn.Ping">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L536">Ping</a>
+				<h3 id="PromConn.Ping">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L549">Ping</a>
 					<a class="permalink" href="#PromConn.Ping">&#xb6;</a>
 					
 					
@@ -1202,7 +1221,7 @@ Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.
 				
 			
 				
-				<h3 id="PromConn.Scrape">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L514">Scrape</a>
+				<h3 id="PromConn.Scrape">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L527">Scrape</a>
 					<a class="permalink" href="#PromConn.Scrape">&#xb6;</a>
 					
 					
@@ -1218,7 +1237,7 @@ Connect must be called before Scrape.
 				
 			
 				
-				<h3 id="PromConn.SetMetricIntervals">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L579">SetMetricIntervals</a>
+				<h3 id="PromConn.SetMetricIntervals">func (*PromConn) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L592">SetMetricIntervals</a>
 					<a class="permalink" href="#PromConn.SetMetricIntervals">&#xb6;</a>
 					
 					
@@ -1536,7 +1555,7 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L404">GetMonitoredDatabase</a>
+				<h3 id="SourceConns.GetMonitoredDatabase">func (SourceConns) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L417">GetMonitoredDatabase</a>
 					<a class="permalink" href="#SourceConns.GetMonitoredDatabase">&#xb6;</a>
 					
 					
@@ -1878,7 +1897,7 @@ Each source is resolved concurrently so that a slow or unreachable source does n
 		
 			
 			
-			<h2 id="promConnConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L432">promConnConfig</a>
+			<h2 id="promConnConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L445">promConnConfig</a>
 				<a class="permalink" href="#promConnConfig">&#xb6;</a>
 				
 				

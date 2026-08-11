@@ -495,257 +495,590 @@
 <span id="L438" class="ln">   438  </span>	})
 <span id="L439" class="ln">   439  </span>}
 <span id="L440" class="ln">   440  </span>
-<span id="L441" class="ln">   441  </span>func TestReaper_ShutdownOldWorkers(t *testing.T) {
+<span id="L441" class="ln">   441  </span>func TestReaper_FilterSource(t *testing.T) {
 <span id="L442" class="ln">   442  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 <span id="L443" class="ln">   443  </span>
-<span id="L444" class="ln">   444  </span>	t.Run(&#34;cancels worker for DB removed from config&#34;, func(t *testing.T) {
-<span id="L445" class="ln">   445  </span>		a := assert.New(t)
-<span id="L446" class="ln">   446  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L447" class="ln">   447  </span>		cancelCalled := false
-<span id="L448" class="ln">   448  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L449" class="ln">   449  </span>
-<span id="L450" class="ln">   450  </span>		r.ShutdownOldWorkers(ctx, map[string]bool{})
-<span id="L451" class="ln">   451  </span>
-<span id="L452" class="ln">   452  </span>		a.True(cancelCalled)
-<span id="L453" class="ln">   453  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
-<span id="L454" class="ln">   454  </span>	})
+<span id="L444" class="ln">   444  </span>	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool, approxDbSizeBytes int64) *sources.DbConn {
+<span id="L445" class="ln">   445  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind, OnlyIfMaster: onlyIfMaster})
+<span id="L446" class="ln">   446  </span>		md.IsInRecovery = isInRecovery
+<span id="L447" class="ln">   447  </span>		md.ApproxDbSize = approxDbSizeBytes
+<span id="L448" class="ln">   448  </span>		return md
+<span id="L449" class="ln">   449  </span>	}
+<span id="L450" class="ln">   450  </span>
+<span id="L451" class="ln">   451  </span>	t.Run(&#34;primary with onlyIfMaster: not filtered&#34;, func(t *testing.T) {
+<span id="L452" class="ln">   452  </span>		a := assert.New(t)
+<span id="L453" class="ln">   453  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L454" class="ln">   454  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
 <span id="L455" class="ln">   455  </span>
-<span id="L456" class="ln">   456  </span>	t.Run(&#34;cancels worker for whole DB shutdown&#34;, func(t *testing.T) {
-<span id="L457" class="ln">   457  </span>		a := assert.New(t)
-<span id="L458" class="ln">   458  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L459" class="ln">   459  </span>		cancelCalled := false
-<span id="L460" class="ln">   460  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L461" class="ln">   461  </span>
-<span id="L462" class="ln">   462  </span>		r.ShutdownOldWorkers(ctx, map[string]bool{&#34;testdb&#34;: true})
-<span id="L463" class="ln">   463  </span>
-<span id="L464" class="ln">   464  </span>		a.True(cancelCalled)
-<span id="L465" class="ln">   465  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L456" class="ln">   456  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, true, 0)))
+<span id="L457" class="ln">   457  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L458" class="ln">   458  </span>		a.True(exists, &#34;worker should not be shut down for primary&#34;)
+<span id="L459" class="ln">   459  </span>	})
+<span id="L460" class="ln">   460  </span>
+<span id="L461" class="ln">   461  </span>	t.Run(&#34;standby without onlyIfMaster: not filtered&#34;, func(t *testing.T) {
+<span id="L462" class="ln">   462  </span>		a := assert.New(t)
+<span id="L463" class="ln">   463  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L464" class="ln">   464  </span>
+<span id="L465" class="ln">   465  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, false, 0)))
 <span id="L466" class="ln">   466  </span>	})
 <span id="L467" class="ln">   467  </span>
-<span id="L468" class="ln">   468  </span>	t.Run(&#34;keeps worker when source is still active&#34;, func(t *testing.T) {
+<span id="L468" class="ln">   468  </span>	t.Run(&#34;standby with onlyIfMaster, postgres: worker shut down&#34;, func(t *testing.T) {
 <span id="L469" class="ln">   469  </span>		a := assert.New(t)
 <span id="L470" class="ln">   470  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
 <span id="L471" class="ln">   471  </span>		cancelCalled := false
 <span id="L472" class="ln">   472  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L473" class="ln">   473  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L474" class="ln">   474  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
-<span id="L475" class="ln">   475  </span>		}
-<span id="L476" class="ln">   476  </span>
-<span id="L477" class="ln">   477  </span>		r.ShutdownOldWorkers(ctx, map[string]bool{})
-<span id="L478" class="ln">   478  </span>
-<span id="L479" class="ln">   479  </span>		a.False(cancelCalled)
-<span id="L480" class="ln">   480  </span>		a.Contains(r.cancelFuncs, &#34;testdb&#34;)
-<span id="L481" class="ln">   481  </span>	})
-<span id="L482" class="ln">   482  </span>
-<span id="L483" class="ln">   483  </span>	t.Run(&#34;cancels all workers when context is cancelled&#34;, func(t *testing.T) {
-<span id="L484" class="ln">   484  </span>		a := assert.New(t)
-<span id="L485" class="ln">   485  </span>		cancelledCtx, cancel := context.WithCancel(ctx)
-<span id="L486" class="ln">   486  </span>		cancel()
-<span id="L487" class="ln">   487  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L488" class="ln">   488  </span>		cancelCalled := false
-<span id="L489" class="ln">   489  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L490" class="ln">   490  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L491" class="ln">   491  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
-<span id="L492" class="ln">   492  </span>		}
-<span id="L493" class="ln">   493  </span>
-<span id="L494" class="ln">   494  </span>		r.ShutdownOldWorkers(cancelledCtx, map[string]bool{})
-<span id="L495" class="ln">   495  </span>
-<span id="L496" class="ln">   496  </span>		a.True(cancelCalled)
-<span id="L497" class="ln">   497  </span>	})
-<span id="L498" class="ln">   498  </span>}
-<span id="L499" class="ln">   499  </span>
-<span id="L500" class="ln">   500  </span>func TestReaper_CreateSourceHelpers(t *testing.T) {
-<span id="L501" class="ln">   501  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L502" class="ln">   502  </span>
-<span id="L503" class="ln">   503  </span>	t.Run(&#34;skips already initialized source&#34;, func(*testing.T) {
-<span id="L504" class="ln">   504  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L505" class="ln">   505  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;existing&#34;}}
-<span id="L506" class="ln">   506  </span>		r.prevLoopMonitoredDBs = sources.SourceConns{md}
-<span id="L507" class="ln">   507  </span>		<span class="comment">// Conn is nil — would panic if used, proving early return</span>
-<span id="L508" class="ln">   508  </span>		r.CreateSourceHelpers(ctx, r.logger, md)
+<span id="L473" class="ln">   473  </span>
+<span id="L474" class="ln">   474  </span>		a.True(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, true, 0)))
+<span id="L475" class="ln">   475  </span>		a.True(cancelCalled)
+<span id="L476" class="ln">   476  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L477" class="ln">   477  </span>		a.False(exists)
+<span id="L478" class="ln">   478  </span>	})
+<span id="L479" class="ln">   479  </span>
+<span id="L480" class="ln">   480  </span>	t.Run(&#34;below size threshold: worker shut down&#34;, func(t *testing.T) {
+<span id="L481" class="ln">   481  </span>		a := assert.New(t)
+<span id="L482" class="ln">   482  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L483" class="ln">   483  </span>			Sources:     sources.CmdOpts{MinDbSizeMB: 500},
+<span id="L484" class="ln">   484  </span>			SinksWriter: &amp;sinks.MultiWriter{},
+<span id="L485" class="ln">   485  </span>		})
+<span id="L486" class="ln">   486  </span>		cancelCalled := false
+<span id="L487" class="ln">   487  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L488" class="ln">   488  </span>		md := newMd(sources.SourcePostgres, false, false, 100*1048576) <span class="comment">// 100 MB</span>
+<span id="L489" class="ln">   489  </span>		r.monitoredSources = sources.SourceConns{md}
+<span id="L490" class="ln">   490  </span>
+<span id="L491" class="ln">   491  </span>		a.True(r.FilterSource(ctx, md))
+<span id="L492" class="ln">   492  </span>		a.True(cancelCalled)
+<span id="L493" class="ln">   493  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L494" class="ln">   494  </span>		a.False(exists)
+<span id="L495" class="ln">   495  </span>	})
+<span id="L496" class="ln">   496  </span>
+<span id="L497" class="ln">   497  </span>	t.Run(&#34;above size threshold: not filtered&#34;, func(t *testing.T) {
+<span id="L498" class="ln">   498  </span>		a := assert.New(t)
+<span id="L499" class="ln">   499  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L500" class="ln">   500  </span>
+<span id="L501" class="ln">   501  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 600*1048576)))
+<span id="L502" class="ln">   502  </span>	})
+<span id="L503" class="ln">   503  </span>
+<span id="L504" class="ln">   504  </span>	t.Run(&#34;equal to size threshold: not filtered&#34;, func(t *testing.T) {
+<span id="L505" class="ln">   505  </span>		a := assert.New(t)
+<span id="L506" class="ln">   506  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
+<span id="L507" class="ln">   507  </span>
+<span id="L508" class="ln">   508  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 100*1048576)))
 <span id="L509" class="ln">   509  </span>	})
 <span id="L510" class="ln">   510  </span>
-<span id="L511" class="ln">   511  </span>	t.Run(&#34;skips non-postgres source&#34;, func(*testing.T) {
-<span id="L512" class="ln">   512  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L513" class="ln">   513  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;pgbouncer&#34;, Kind: sources.SourcePgBouncer}}
-<span id="L514" class="ln">   514  </span>		r.CreateSourceHelpers(ctx, r.logger, md)
-<span id="L515" class="ln">   515  </span>	})
-<span id="L516" class="ln">   516  </span>
-<span id="L517" class="ln">   517  </span>	t.Run(&#34;skips source in recovery&#34;, func(*testing.T) {
-<span id="L518" class="ln">   518  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L519" class="ln">   519  </span>		md := &amp;sources.DbConn{
-<span id="L520" class="ln">   520  </span>			Source:      sources.Source{Name: &#34;standby&#34;},
-<span id="L521" class="ln">   521  </span>			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
-<span id="L522" class="ln">   522  </span>		}
-<span id="L523" class="ln">   523  </span>		r.CreateSourceHelpers(ctx, r.logger, md)
-<span id="L524" class="ln">   524  </span>	})
+<span id="L511" class="ln">   511  </span>	t.Run(&#34;zero ApproxDbSize bypasses size check&#34;, func(t *testing.T) {
+<span id="L512" class="ln">   512  </span>		a := assert.New(t)
+<span id="L513" class="ln">   513  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L514" class="ln">   514  </span>
+<span id="L515" class="ln">   515  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 0)))
+<span id="L516" class="ln">   516  </span>	})
+<span id="L517" class="ln">   517  </span>
+<span id="L518" class="ln">   518  </span>	t.Run(&#34;no min size configured: never size-filtered&#34;, func(t *testing.T) {
+<span id="L519" class="ln">   519  </span>		a := assert.New(t)
+<span id="L520" class="ln">   520  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L521" class="ln">   521  </span>
+<span id="L522" class="ln">   522  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 1*1048576)))
+<span id="L523" class="ln">   523  </span>	})
+<span id="L524" class="ln">   524  </span>}
 <span id="L525" class="ln">   525  </span>
-<span id="L526" class="ln">   526  </span>	t.Run(&#34;creates extensions when configured&#34;, func(t *testing.T) {
-<span id="L527" class="ln">   527  </span>		a := assert.New(t)
-<span id="L528" class="ln">   528  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L529" class="ln">   529  </span>			Sources: sources.CmdOpts{TryCreateListedExtsIfMissing: &#34;pg_stat_statements&#34;},
-<span id="L530" class="ln">   530  </span>		})
-<span id="L531" class="ln">   531  </span>		md, mock := createTestSourceConn(t)
-<span id="L532" class="ln">   532  </span>		defer mock.Close()
-<span id="L533" class="ln">   533  </span>		mock.ExpectQuery(&#34;pg_available_extensions&#34;).
-<span id="L534" class="ln">   534  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;pg_stat_statements&#34;))
-<span id="L535" class="ln">   535  </span>		mock.ExpectExec(`create extension if not exists`).
-<span id="L536" class="ln">   536  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
-<span id="L537" class="ln">   537  </span>
-<span id="L538" class="ln">   538  </span>		r.CreateSourceHelpers(ctx, r.logger, md)
-<span id="L539" class="ln">   539  </span>		a.NoError(mock.ExpectationsWereMet())
-<span id="L540" class="ln">   540  </span>	})
+<span id="L526" class="ln">   526  </span>func TestReaper_TrackRecoveryStatus(t *testing.T) {
+<span id="L527" class="ln">   527  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L528" class="ln">   528  </span>
+<span id="L529" class="ln">   529  </span>	newPgConn := func(kind sources.Kind, isInRecovery bool, standby metrics.MetricIntervals) *sources.DbConn {
+<span id="L530" class="ln">   530  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind})
+<span id="L531" class="ln">   531  </span>		md.IsInRecovery = isInRecovery
+<span id="L532" class="ln">   532  </span>		md.MetricsStandby = standby
+<span id="L533" class="ln">   533  </span>		return md
+<span id="L534" class="ln">   534  </span>	}
+<span id="L535" class="ln">   535  </span>
+<span id="L536" class="ln">   536  </span>	t.Run(&#34;no role change: cache updated silently&#34;, func(t *testing.T) {
+<span id="L537" class="ln">   537  </span>		a := assert.New(t)
+<span id="L538" class="ln">   538  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L539" class="ln">   539  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L540" class="ln">   540  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
 <span id="L541" class="ln">   541  </span>
-<span id="L542" class="ln">   542  </span>	t.Run(&#34;creates metric helpers when configured&#34;, func(t *testing.T) {
-<span id="L543" class="ln">   543  </span>		a := assert.New(t)
-<span id="L544" class="ln">   544  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L545" class="ln">   545  </span>			Sources: sources.CmdOpts{CreateHelpers: true},
-<span id="L546" class="ln">   546  </span>		})
-<span id="L547" class="ln">   547  </span>		md, mock := createTestSourceConn(t)
-<span id="L548" class="ln">   548  </span>		defer mock.Close()
-<span id="L549" class="ln">   549  </span>
-<span id="L550" class="ln">   550  </span>		const helperMetric = &#34;test_helper_metric&#34;
-<span id="L551" class="ln">   551  </span>		metricDefs.MetricDefs[helperMetric] = metrics.Metric{
-<span id="L552" class="ln">   552  </span>			InitSQL: &#34;CREATE OR REPLACE FUNCTION test_helper() RETURNS void LANGUAGE sql AS &#39;&#39;&#34;,
-<span id="L553" class="ln">   553  </span>		}
-<span id="L554" class="ln">   554  </span>		t.Cleanup(func() { delete(metricDefs.MetricDefs, helperMetric) })
-<span id="L555" class="ln">   555  </span>		md.Metrics = metrics.MetricIntervals{helperMetric: 10}
-<span id="L556" class="ln">   556  </span>
-<span id="L557" class="ln">   557  </span>		mock.ExpectExec(&#34;CREATE OR REPLACE FUNCTION&#34;).
-<span id="L558" class="ln">   558  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
-<span id="L559" class="ln">   559  </span>
-<span id="L560" class="ln">   560  </span>		r.CreateSourceHelpers(ctx, r.logger, md)
-<span id="L561" class="ln">   561  </span>		a.NoError(mock.ExpectationsWereMet())
-<span id="L562" class="ln">   562  </span>	})
-<span id="L563" class="ln">   563  </span>}
-<span id="L564" class="ln">   564  </span>
-<span id="L565" class="ln">   565  </span>func TestReaper_PrintMemStats(t *testing.T) {
-<span id="L566" class="ln">   566  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L567" class="ln">   567  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L568" class="ln">   568  </span>	assert.NotPanics(t, r.PrintMemStats)
-<span id="L569" class="ln">   569  </span>}
-<span id="L570" class="ln">   570  </span>
-<span id="L571" class="ln">   571  </span><span class="comment">// TestRace_AddSysinfoToMeasurements verifies no data race between concurrent</span>
-<span id="L572" class="ln">   572  </span><span class="comment">// RuntimeInfo writes (simulating FetchRuntimeInfo) and AddSysinfoToMeasurements reads.</span>
-<span id="L573" class="ln">   573  </span>func TestRace_AddSysinfoToMeasurements(*testing.T) {
-<span id="L574" class="ln">   574  </span>	r := &amp;reaper{
-<span id="L575" class="ln">   575  </span>		Options: &amp;cmdopts.Options{
-<span id="L576" class="ln">   576  </span>			Sinks: sinks.CmdOpts{
-<span id="L577" class="ln">   577  </span>				RealDbnameField:       &#34;real_dbname&#34;,
-<span id="L578" class="ln">   578  </span>				SystemIdentifierField: &#34;sys_id&#34;,
-<span id="L579" class="ln">   579  </span>			},
-<span id="L580" class="ln">   580  </span>		},
-<span id="L581" class="ln">   581  </span>	}
-<span id="L582" class="ln">   582  </span>	md := sources.NewDbConn(sources.Source{Name: &#34;race-test&#34;})
-<span id="L583" class="ln">   583  </span>
-<span id="L584" class="ln">   584  </span>	const iterations = 200
-<span id="L585" class="ln">   585  </span>	var wg sync.WaitGroup
-<span id="L586" class="ln">   586  </span>	wg.Add(2)
-<span id="L587" class="ln">   587  </span>
-<span id="L588" class="ln">   588  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
-<span id="L589" class="ln">   589  </span>	go func() {
-<span id="L590" class="ln">   590  </span>		defer wg.Done()
-<span id="L591" class="ln">   591  </span>		for range iterations {
-<span id="L592" class="ln">   592  </span>			md.Lock()
-<span id="L593" class="ln">   593  </span>			md.RealDbname = &#34;realdb&#34;
-<span id="L594" class="ln">   594  </span>			md.SystemIdentifier = &#34;12345&#34;
-<span id="L595" class="ln">   595  </span>			md.Unlock()
-<span id="L596" class="ln">   596  </span>		}
-<span id="L597" class="ln">   597  </span>	}()
-<span id="L598" class="ln">   598  </span>
-<span id="L599" class="ln">   599  </span>	<span class="comment">// Reader: AddSysinfoToMeasurements must RLock before reading.</span>
-<span id="L600" class="ln">   600  </span>	go func() {
-<span id="L601" class="ln">   601  </span>		defer wg.Done()
-<span id="L602" class="ln">   602  </span>		data := metrics.Measurements{metrics.Measurement{}}
-<span id="L603" class="ln">   603  </span>		for range iterations {
-<span id="L604" class="ln">   604  </span>			r.AddSysinfoToMeasurements(data, md)
-<span id="L605" class="ln">   605  </span>		}
-<span id="L606" class="ln">   606  </span>	}()
-<span id="L607" class="ln">   607  </span>
-<span id="L608" class="ln">   608  </span>	wg.Wait()
-<span id="L609" class="ln">   609  </span>}
-<span id="L610" class="ln">   610  </span>
-<span id="L611" class="ln">   611  </span><span class="comment">// TestRace_CreateSourceHelpers verifies no data race between concurrent</span>
-<span id="L612" class="ln">   612  </span><span class="comment">// RuntimeInfo writes and CreateSourceHelpers reading IsInRecovery.</span>
-<span id="L613" class="ln">   613  </span>func TestRace_CreateSourceHelpers(t *testing.T) {
-<span id="L614" class="ln">   614  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L615" class="ln">   615  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L616" class="ln">   616  </span>	md := sources.NewDbConn(sources.Source{
-<span id="L617" class="ln">   617  </span>		Name: &#34;race-test&#34;,
-<span id="L618" class="ln">   618  </span>		Kind: sources.SourcePostgres,
-<span id="L619" class="ln">   619  </span>	})
-<span id="L620" class="ln">   620  </span>
-<span id="L621" class="ln">   621  </span>	const iterations = 200
-<span id="L622" class="ln">   622  </span>	var wg sync.WaitGroup
-<span id="L623" class="ln">   623  </span>	wg.Add(2)
+<span id="L542" class="ln">   542  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L543" class="ln">   543  </span>
+<span id="L544" class="ln">   544  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L545" class="ln">   545  </span>	})
+<span id="L546" class="ln">   546  </span>
+<span id="L547" class="ln">   547  </span>	t.Run(&#34;primary→standby with standby config: cache updated&#34;, func(t *testing.T) {
+<span id="L548" class="ln">   548  </span>		a := assert.New(t)
+<span id="L549" class="ln">   549  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L550" class="ln">   550  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L551" class="ln">   551  </span>		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{&#34;cpu&#34;: 10})
+<span id="L552" class="ln">   552  </span>
+<span id="L553" class="ln">   553  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L554" class="ln">   554  </span>
+<span id="L555" class="ln">   555  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L556" class="ln">   556  </span>	})
+<span id="L557" class="ln">   557  </span>
+<span id="L558" class="ln">   558  </span>	t.Run(&#34;standby→primary: cache updated&#34;, func(t *testing.T) {
+<span id="L559" class="ln">   559  </span>		a := assert.New(t)
+<span id="L560" class="ln">   560  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L561" class="ln">   561  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = true
+<span id="L562" class="ln">   562  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
+<span id="L563" class="ln">   563  </span>
+<span id="L564" class="ln">   564  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L565" class="ln">   565  </span>
+<span id="L566" class="ln">   566  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L567" class="ln">   567  </span>	})
+<span id="L568" class="ln">   568  </span>
+<span id="L569" class="ln">   569  </span>	t.Run(&#34;primary→standby without standby config: cache updated, no shutdown&#34;, func(t *testing.T) {
+<span id="L570" class="ln">   570  </span>		a := assert.New(t)
+<span id="L571" class="ln">   571  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L572" class="ln">   572  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L573" class="ln">   573  </span>		md := newPgConn(sources.SourcePostgres, true, nil)
+<span id="L574" class="ln">   574  </span>
+<span id="L575" class="ln">   575  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L576" class="ln">   576  </span>
+<span id="L577" class="ln">   577  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L578" class="ln">   578  </span>	})
+<span id="L579" class="ln">   579  </span>
+<span id="L580" class="ln">   580  </span>	t.Run(&#34;pgbouncer: cache updated&#34;, func(t *testing.T) {
+<span id="L581" class="ln">   581  </span>		a := assert.New(t)
+<span id="L582" class="ln">   582  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L583" class="ln">   583  </span>		md := newPgConn(sources.SourcePgBouncer, false, nil)
+<span id="L584" class="ln">   584  </span>
+<span id="L585" class="ln">   585  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L586" class="ln">   586  </span>
+<span id="L587" class="ln">   587  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L588" class="ln">   588  </span>	})
+<span id="L589" class="ln">   589  </span>
+<span id="L590" class="ln">   590  </span>	t.Run(&#34;patroni discovery: cache updated&#34;, func(t *testing.T) {
+<span id="L591" class="ln">   591  </span>		a := assert.New(t)
+<span id="L592" class="ln">   592  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L593" class="ln">   593  </span>		md := newPgConn(sources.SourcePatroniDiscovery, true, nil)
+<span id="L594" class="ln">   594  </span>
+<span id="L595" class="ln">   595  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L596" class="ln">   596  </span>
+<span id="L597" class="ln">   597  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L598" class="ln">   598  </span>	})
+<span id="L599" class="ln">   599  </span>}
+<span id="L600" class="ln">   600  </span>
+<span id="L601" class="ln">   601  </span><span class="comment">// mockSyncWriter records SyncMetric calls for assertions.</span>
+<span id="L602" class="ln">   602  </span>type mockSyncWriter struct {
+<span id="L603" class="ln">   603  </span>	synced []struct{ source, metric string }
+<span id="L604" class="ln">   604  </span>	err    error
+<span id="L605" class="ln">   605  </span>}
+<span id="L606" class="ln">   606  </span>
+<span id="L607" class="ln">   607  </span>func (m *mockSyncWriter) SyncMetric(sourceName, metricName string, _ sinks.SyncOp) error {
+<span id="L608" class="ln">   608  </span>	if m.err != nil {
+<span id="L609" class="ln">   609  </span>		return m.err
+<span id="L610" class="ln">   610  </span>	}
+<span id="L611" class="ln">   611  </span>	m.synced = append(m.synced, struct{ source, metric string }{sourceName, metricName})
+<span id="L612" class="ln">   612  </span>	return nil
+<span id="L613" class="ln">   613  </span>}
+<span id="L614" class="ln">   614  </span>
+<span id="L615" class="ln">   615  </span>func (m *mockSyncWriter) Write(metrics.MeasurementEnvelope) error { return nil }
+<span id="L616" class="ln">   616  </span>
+<span id="L617" class="ln">   617  </span>func TestReaper_SyncMetricsToSinks(t *testing.T) {
+<span id="L618" class="ln">   618  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L619" class="ln">   619  </span>
+<span id="L620" class="ln">   620  </span>	<span class="comment">// Populate the package-level metricDefs used by SyncMetricsToSinks.</span>
+<span id="L621" class="ln">   621  </span>	origDefs := metricDefs
+<span id="L622" class="ln">   622  </span>	metricDefs = NewConcurrentMetricDefs()
+<span id="L623" class="ln">   623  </span>	t.Cleanup(func() { metricDefs = origDefs })
 <span id="L624" class="ln">   624  </span>
-<span id="L625" class="ln">   625  </span>	go func() {
-<span id="L626" class="ln">   626  </span>		defer wg.Done()
-<span id="L627" class="ln">   627  </span>		for range iterations {
-<span id="L628" class="ln">   628  </span>			md.Lock()
-<span id="L629" class="ln">   629  </span>			md.IsInRecovery = !md.IsInRecovery
-<span id="L630" class="ln">   630  </span>			md.Unlock()
-<span id="L631" class="ln">   631  </span>		}
-<span id="L632" class="ln">   632  </span>	}()
-<span id="L633" class="ln">   633  </span>
-<span id="L634" class="ln">   634  </span>	go func() {
-<span id="L635" class="ln">   635  </span>		defer wg.Done()
-<span id="L636" class="ln">   636  </span>		for range iterations {
-<span id="L637" class="ln">   637  </span>			r.CreateSourceHelpers(ctx, r.logger, md)
-<span id="L638" class="ln">   638  </span>		}
-<span id="L639" class="ln">   639  </span>	}()
-<span id="L640" class="ln">   640  </span>
-<span id="L641" class="ln">   641  </span>	wg.Wait()
-<span id="L642" class="ln">   642  </span>}
+<span id="L625" class="ln">   625  </span>	metricDefs.Assign(&amp;metrics.Metrics{
+<span id="L626" class="ln">   626  </span>		MetricDefs: metrics.MetricDefs{
+<span id="L627" class="ln">   627  </span>			&#34;cpu&#34;:    metrics.Metric{},
+<span id="L628" class="ln">   628  </span>			&#34;memory&#34;: metrics.Metric{StorageName: &#34;mem_storage&#34;},
+<span id="L629" class="ln">   629  </span>		},
+<span id="L630" class="ln">   630  </span>		PresetDefs: metrics.PresetDefs{},
+<span id="L631" class="ln">   631  </span>	})
+<span id="L632" class="ln">   632  </span>
+<span id="L633" class="ln">   633  </span>	newMd := func(config metrics.MetricIntervals) *sources.DbConn {
+<span id="L634" class="ln">   634  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
+<span id="L635" class="ln">   635  </span>		md.Metrics = config
+<span id="L636" class="ln">   636  </span>		return md
+<span id="L637" class="ln">   637  </span>	}
+<span id="L638" class="ln">   638  </span>
+<span id="L639" class="ln">   639  </span>	t.Run(&#34;syncs known metrics using metric name&#34;, func(t *testing.T) {
+<span id="L640" class="ln">   640  </span>		a := assert.New(t)
+<span id="L641" class="ln">   641  </span>		sw := &amp;mockSyncWriter{}
+<span id="L642" class="ln">   642  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
 <span id="L643" class="ln">   643  </span>
-<span id="L644" class="ln">   644  </span><span class="comment">// TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop&#39;s</span>
-<span id="L645" class="ln">   645  </span><span class="comment">// RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and</span>
-<span id="L646" class="ln">   646  </span><span class="comment">// MetricsStandby does not race against concurrent FetchRuntimeInfo writes.</span>
-<span id="L647" class="ln">   647  </span>func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
-<span id="L648" class="ln">   648  </span>	md := sources.NewDbConn(sources.Source{
-<span id="L649" class="ln">   649  </span>		Name: &#34;race-test&#34;,
-<span id="L650" class="ln">   650  </span>		Kind: sources.SourcePostgres,
-<span id="L651" class="ln">   651  </span>	})
-<span id="L652" class="ln">   652  </span>
-<span id="L653" class="ln">   653  </span>	const iterations = 200
-<span id="L654" class="ln">   654  </span>	var wg sync.WaitGroup
-<span id="L655" class="ln">   655  </span>	wg.Add(2)
-<span id="L656" class="ln">   656  </span>
-<span id="L657" class="ln">   657  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
-<span id="L658" class="ln">   658  </span>	go func() {
-<span id="L659" class="ln">   659  </span>		defer wg.Done()
-<span id="L660" class="ln">   660  </span>		for range iterations {
-<span id="L661" class="ln">   661  </span>			md.Lock()
-<span id="L662" class="ln">   662  </span>			md.IsInRecovery = !md.IsInRecovery
-<span id="L663" class="ln">   663  </span>			md.VersionStr = &#34;PostgreSQL 16.0&#34;
-<span id="L664" class="ln">   664  </span>			md.ApproxDbSize = 1024
-<span id="L665" class="ln">   665  </span>			md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 30}
-<span id="L666" class="ln">   666  </span>			md.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
-<span id="L667" class="ln">   667  </span>			md.Unlock()
-<span id="L668" class="ln">   668  </span>		}
-<span id="L669" class="ln">   669  </span>	}()
+<span id="L644" class="ln">   644  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
+<span id="L645" class="ln">   645  </span>
+<span id="L646" class="ln">   646  </span>		require.Len(t, sw.synced, 1)
+<span id="L647" class="ln">   647  </span>		a.Equal(&#34;mydb&#34;, sw.synced[0].source)
+<span id="L648" class="ln">   648  </span>		a.Equal(&#34;cpu&#34;, sw.synced[0].metric)
+<span id="L649" class="ln">   649  </span>	})
+<span id="L650" class="ln">   650  </span>
+<span id="L651" class="ln">   651  </span>	t.Run(&#34;uses StorageName when set and metric is not special&#34;, func(t *testing.T) {
+<span id="L652" class="ln">   652  </span>		a := assert.New(t)
+<span id="L653" class="ln">   653  </span>		sw := &amp;mockSyncWriter{}
+<span id="L654" class="ln">   654  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L655" class="ln">   655  </span>
+<span id="L656" class="ln">   656  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;memory&#34;: 30}))
+<span id="L657" class="ln">   657  </span>
+<span id="L658" class="ln">   658  </span>		require.Len(t, sw.synced, 1)
+<span id="L659" class="ln">   659  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric)
+<span id="L660" class="ln">   660  </span>	})
+<span id="L661" class="ln">   661  </span>
+<span id="L662" class="ln">   662  </span>	t.Run(&#34;skips unknown metric definitions&#34;, func(t *testing.T) {
+<span id="L663" class="ln">   663  </span>		sw := &amp;mockSyncWriter{}
+<span id="L664" class="ln">   664  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L665" class="ln">   665  </span>
+<span id="L666" class="ln">   666  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;unknown_metric&#34;: 60}))
+<span id="L667" class="ln">   667  </span>
+<span id="L668" class="ln">   668  </span>		assert.Empty(t, sw.synced)
+<span id="L669" class="ln">   669  </span>	})
 <span id="L670" class="ln">   670  </span>
-<span id="L671" class="ln">   671  </span>	<span class="comment">// Reader: snapshot under RLock exactly as the main loop does after FetchRuntimeInfo.</span>
-<span id="L672" class="ln">   672  </span>	go func() {
-<span id="L673" class="ln">   673  </span>		defer wg.Done()
-<span id="L674" class="ln">   674  </span>		for range iterations {
-<span id="L675" class="ln">   675  </span>			md.RLock()
-<span id="L676" class="ln">   676  </span>			_ = md.IsInRecovery
-<span id="L677" class="ln">   677  </span>			_ = md.VersionStr
-<span id="L678" class="ln">   678  </span>			_ = md.ApproxDbSize
-<span id="L679" class="ln">   679  </span>			if md.Metrics != nil {
-<span id="L680" class="ln">   680  </span>				_ = maps.Clone(md.Metrics)
-<span id="L681" class="ln">   681  </span>			}
-<span id="L682" class="ln">   682  </span>			if md.MetricsStandby != nil {
-<span id="L683" class="ln">   683  </span>				_ = maps.Clone(md.MetricsStandby)
-<span id="L684" class="ln">   684  </span>			}
-<span id="L685" class="ln">   685  </span>			md.RUnlock()
-<span id="L686" class="ln">   686  </span>		}
-<span id="L687" class="ln">   687  </span>	}()
+<span id="L671" class="ln">   671  </span>	t.Run(&#34;logs sink error but continues&#34;, func(t *testing.T) {
+<span id="L672" class="ln">   672  </span>		sw := &amp;mockSyncWriter{err: errors.New(&#34;sink error&#34;)}
+<span id="L673" class="ln">   673  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L674" class="ln">   674  </span>
+<span id="L675" class="ln">   675  </span>		assert.NotPanics(t, func() {
+<span id="L676" class="ln">   676  </span>			r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
+<span id="L677" class="ln">   677  </span>		})
+<span id="L678" class="ln">   678  </span>	})
+<span id="L679" class="ln">   679  </span>
+<span id="L680" class="ln">   680  </span>	t.Run(&#34;empty config results in no syncs&#34;, func(t *testing.T) {
+<span id="L681" class="ln">   681  </span>		sw := &amp;mockSyncWriter{}
+<span id="L682" class="ln">   682  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L683" class="ln">   683  </span>
+<span id="L684" class="ln">   684  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{}))
+<span id="L685" class="ln">   685  </span>
+<span id="L686" class="ln">   686  </span>		assert.Empty(t, sw.synced)
+<span id="L687" class="ln">   687  </span>	})
 <span id="L688" class="ln">   688  </span>
-<span id="L689" class="ln">   689  </span>	wg.Wait()
-<span id="L690" class="ln">   690  </span>}
-<span id="L691" class="ln">   691  </span>
+<span id="L689" class="ln">   689  </span>	t.Run(&#34;standby config used when in recovery&#34;, func(t *testing.T) {
+<span id="L690" class="ln">   690  </span>		a := assert.New(t)
+<span id="L691" class="ln">   691  </span>		sw := &amp;mockSyncWriter{}
+<span id="L692" class="ln">   692  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L693" class="ln">   693  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
+<span id="L694" class="ln">   694  </span>		md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
+<span id="L695" class="ln">   695  </span>		md.MetricsStandby = metrics.MetricIntervals{&#34;memory&#34;: 20}
+<span id="L696" class="ln">   696  </span>		md.IsInRecovery = true
+<span id="L697" class="ln">   697  </span>
+<span id="L698" class="ln">   698  </span>		r.SyncMetricsToSinks(ctx, md)
+<span id="L699" class="ln">   699  </span>
+<span id="L700" class="ln">   700  </span>		require.Len(t, sw.synced, 1)
+<span id="L701" class="ln">   701  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric) <span class="comment">// standby config used</span>
+<span id="L702" class="ln">   702  </span>	})
+<span id="L703" class="ln">   703  </span>
+<span id="L704" class="ln">   704  </span>	t.Run(&#34;multiple metrics all synced&#34;, func(t *testing.T) {
+<span id="L705" class="ln">   705  </span>		a := assert.New(t)
+<span id="L706" class="ln">   706  </span>		sw := &amp;mockSyncWriter{}
+<span id="L707" class="ln">   707  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L708" class="ln">   708  </span>
+<span id="L709" class="ln">   709  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20}))
+<span id="L710" class="ln">   710  </span>
+<span id="L711" class="ln">   711  </span>		a.Len(sw.synced, 2)
+<span id="L712" class="ln">   712  </span>		synced := maps.Collect(func(yield func(string, bool) bool) {
+<span id="L713" class="ln">   713  </span>			for _, s := range sw.synced {
+<span id="L714" class="ln">   714  </span>				if !yield(s.metric, true) {
+<span id="L715" class="ln">   715  </span>					return
+<span id="L716" class="ln">   716  </span>				}
+<span id="L717" class="ln">   717  </span>			}
+<span id="L718" class="ln">   718  </span>		})
+<span id="L719" class="ln">   719  </span>		a.True(synced[&#34;cpu&#34;])
+<span id="L720" class="ln">   720  </span>		a.True(synced[&#34;mem_storage&#34;])
+<span id="L721" class="ln">   721  </span>	})
+<span id="L722" class="ln">   722  </span>}
+<span id="L723" class="ln">   723  </span>
+<span id="L724" class="ln">   724  </span>func TestReaper_StartWorker(t *testing.T) {
+<span id="L725" class="ln">   725  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L726" class="ln">   726  </span>
+<span id="L727" class="ln">   727  </span>	<span class="comment">// minimal Reaper implementation that records whether Reap was called</span>
+<span id="L728" class="ln">   728  </span>	type fakeReaper struct{}
+<span id="L729" class="ln">   729  </span>	newFake := func() *fakeReaper { return &amp;fakeReaper{} }
+<span id="L730" class="ln">   730  </span>
+<span id="L731" class="ln">   731  </span>	t.Run(&#34;starts worker and registers cancel func&#34;, func(t *testing.T) {
+<span id="L732" class="ln">   732  </span>		a := assert.New(t)
+<span id="L733" class="ln">   733  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L734" class="ln">   734  </span>		reaped := make(chan struct{}, 1)
+<span id="L735" class="ln">   735  </span>		fake := reaperFunc(func(context.Context) { reaped &lt;- struct{}{} })
+<span id="L736" class="ln">   736  </span>
+<span id="L737" class="ln">   737  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
+<span id="L738" class="ln">   738  </span>
+<span id="L739" class="ln">   739  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L740" class="ln">   740  </span>		a.True(exists, &#34;cancel func should be registered&#34;)
+<span id="L741" class="ln">   741  </span>		&lt;-reaped      <span class="comment">// blocks until Reap is called</span>
+<span id="L742" class="ln">   742  </span>		_ = newFake() <span class="comment">// suppress unused warning</span>
+<span id="L743" class="ln">   743  </span>	})
+<span id="L744" class="ln">   744  </span>
+<span id="L745" class="ln">   745  </span>	t.Run(&#34;no-op when worker already running&#34;, func(t *testing.T) {
+<span id="L746" class="ln">   746  </span>		a := assert.New(t)
+<span id="L747" class="ln">   747  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L748" class="ln">   748  </span>		callCount := 0
+<span id="L749" class="ln">   749  </span>		fake := reaperFunc(func(context.Context) { callCount++ })
+<span id="L750" class="ln">   750  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
+<span id="L751" class="ln">   751  </span>
+<span id="L752" class="ln">   752  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
+<span id="L753" class="ln">   753  </span>
+<span id="L754" class="ln">   754  </span>		a.Equal(0, callCount, &#34;Reap should not be called when worker already exists&#34;)
+<span id="L755" class="ln">   755  </span>	})
+<span id="L756" class="ln">   756  </span>}
+<span id="L757" class="ln">   757  </span>
+<span id="L758" class="ln">   758  </span><span class="comment">// reaperFunc is a function that implements the Reaper interface.</span>
+<span id="L759" class="ln">   759  </span>type reaperFunc func(ctx context.Context)
+<span id="L760" class="ln">   760  </span>
+<span id="L761" class="ln">   761  </span>func (f reaperFunc) Reap(ctx context.Context) { f(ctx) }
+<span id="L762" class="ln">   762  </span>
+<span id="L763" class="ln">   763  </span>func TestReaper_ShutdownWorker(t *testing.T) {
+<span id="L764" class="ln">   764  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L765" class="ln">   765  </span>
+<span id="L766" class="ln">   766  </span>	t.Run(&#34;cancels and removes the named worker&#34;, func(t *testing.T) {
+<span id="L767" class="ln">   767  </span>		a := assert.New(t)
+<span id="L768" class="ln">   768  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L769" class="ln">   769  </span>		cancelCalled := false
+<span id="L770" class="ln">   770  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L771" class="ln">   771  </span>
+<span id="L772" class="ln">   772  </span>		r.ShutdownWorker(ctx, &#34;testdb&#34;)
+<span id="L773" class="ln">   773  </span>
+<span id="L774" class="ln">   774  </span>		a.True(cancelCalled)
+<span id="L775" class="ln">   775  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L776" class="ln">   776  </span>	})
+<span id="L777" class="ln">   777  </span>
+<span id="L778" class="ln">   778  </span>	t.Run(&#34;no-op when source has no running worker&#34;, func(*testing.T) {
+<span id="L779" class="ln">   779  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L780" class="ln">   780  </span>		<span class="comment">// must not panic</span>
+<span id="L781" class="ln">   781  </span>		r.ShutdownWorker(ctx, &#34;nonexistent&#34;)
+<span id="L782" class="ln">   782  </span>	})
+<span id="L783" class="ln">   783  </span>}
+<span id="L784" class="ln">   784  </span>
+<span id="L785" class="ln">   785  </span>func TestReaper_CleanupRemovedWorkers(t *testing.T) {
+<span id="L786" class="ln">   786  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L787" class="ln">   787  </span>
+<span id="L788" class="ln">   788  </span>	t.Run(&#34;cancels worker for DB removed from config&#34;, func(t *testing.T) {
+<span id="L789" class="ln">   789  </span>		a := assert.New(t)
+<span id="L790" class="ln">   790  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L791" class="ln">   791  </span>		cancelCalled := false
+<span id="L792" class="ln">   792  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L793" class="ln">   793  </span>		<span class="comment">// monitoredSources is empty — testdb was removed</span>
+<span id="L794" class="ln">   794  </span>
+<span id="L795" class="ln">   795  </span>		r.CleanupRemovedWorkers(ctx)
+<span id="L796" class="ln">   796  </span>
+<span id="L797" class="ln">   797  </span>		a.True(cancelCalled)
+<span id="L798" class="ln">   798  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L799" class="ln">   799  </span>	})
+<span id="L800" class="ln">   800  </span>
+<span id="L801" class="ln">   801  </span>	t.Run(&#34;keeps worker when source is still active&#34;, func(t *testing.T) {
+<span id="L802" class="ln">   802  </span>		a := assert.New(t)
+<span id="L803" class="ln">   803  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L804" class="ln">   804  </span>		cancelCalled := false
+<span id="L805" class="ln">   805  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L806" class="ln">   806  </span>		r.monitoredSources = sources.SourceConns{
+<span id="L807" class="ln">   807  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
+<span id="L808" class="ln">   808  </span>		}
+<span id="L809" class="ln">   809  </span>
+<span id="L810" class="ln">   810  </span>		r.CleanupRemovedWorkers(ctx)
+<span id="L811" class="ln">   811  </span>
+<span id="L812" class="ln">   812  </span>		a.False(cancelCalled)
+<span id="L813" class="ln">   813  </span>		a.Contains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L814" class="ln">   814  </span>	})
+<span id="L815" class="ln">   815  </span>
+<span id="L816" class="ln">   816  </span>	t.Run(&#34;cancels all workers when context is cancelled&#34;, func(t *testing.T) {
+<span id="L817" class="ln">   817  </span>		a := assert.New(t)
+<span id="L818" class="ln">   818  </span>		cancelledCtx, cancel := context.WithCancel(ctx)
+<span id="L819" class="ln">   819  </span>		cancel()
+<span id="L820" class="ln">   820  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L821" class="ln">   821  </span>		cancelCalled := false
+<span id="L822" class="ln">   822  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L823" class="ln">   823  </span>		r.monitoredSources = sources.SourceConns{
+<span id="L824" class="ln">   824  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
+<span id="L825" class="ln">   825  </span>		}
+<span id="L826" class="ln">   826  </span>
+<span id="L827" class="ln">   827  </span>		r.CleanupRemovedWorkers(cancelledCtx)
+<span id="L828" class="ln">   828  </span>
+<span id="L829" class="ln">   829  </span>		a.True(cancelCalled)
+<span id="L830" class="ln">   830  </span>	})
+<span id="L831" class="ln">   831  </span>}
+<span id="L832" class="ln">   832  </span>
+<span id="L833" class="ln">   833  </span>func TestReaper_CreateSourceHelpers(t *testing.T) {
+<span id="L834" class="ln">   834  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L835" class="ln">   835  </span>
+<span id="L836" class="ln">   836  </span>	t.Run(&#34;skips already initialized source&#34;, func(*testing.T) {
+<span id="L837" class="ln">   837  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L838" class="ln">   838  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;existing&#34;}}
+<span id="L839" class="ln">   839  </span>		r.prevLoopMonitoredDBs = sources.SourceConns{md}
+<span id="L840" class="ln">   840  </span>		<span class="comment">// Conn is nil — would panic if used, proving early return</span>
+<span id="L841" class="ln">   841  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L842" class="ln">   842  </span>	})
+<span id="L843" class="ln">   843  </span>
+<span id="L844" class="ln">   844  </span>	t.Run(&#34;skips non-postgres source&#34;, func(*testing.T) {
+<span id="L845" class="ln">   845  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L846" class="ln">   846  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;pgbouncer&#34;, Kind: sources.SourcePgBouncer}}
+<span id="L847" class="ln">   847  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L848" class="ln">   848  </span>	})
+<span id="L849" class="ln">   849  </span>
+<span id="L850" class="ln">   850  </span>	t.Run(&#34;skips source in recovery&#34;, func(*testing.T) {
+<span id="L851" class="ln">   851  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L852" class="ln">   852  </span>		md := &amp;sources.DbConn{
+<span id="L853" class="ln">   853  </span>			Source:      sources.Source{Name: &#34;standby&#34;},
+<span id="L854" class="ln">   854  </span>			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
+<span id="L855" class="ln">   855  </span>		}
+<span id="L856" class="ln">   856  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L857" class="ln">   857  </span>	})
+<span id="L858" class="ln">   858  </span>
+<span id="L859" class="ln">   859  </span>	t.Run(&#34;creates extensions when configured&#34;, func(t *testing.T) {
+<span id="L860" class="ln">   860  </span>		a := assert.New(t)
+<span id="L861" class="ln">   861  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L862" class="ln">   862  </span>			Sources: sources.CmdOpts{TryCreateListedExtsIfMissing: &#34;pg_stat_statements&#34;},
+<span id="L863" class="ln">   863  </span>		})
+<span id="L864" class="ln">   864  </span>		md, mock := createTestSourceConn(t)
+<span id="L865" class="ln">   865  </span>		defer mock.Close()
+<span id="L866" class="ln">   866  </span>		mock.ExpectQuery(&#34;pg_available_extensions&#34;).
+<span id="L867" class="ln">   867  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;pg_stat_statements&#34;))
+<span id="L868" class="ln">   868  </span>		mock.ExpectExec(`create extension if not exists`).
+<span id="L869" class="ln">   869  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
+<span id="L870" class="ln">   870  </span>
+<span id="L871" class="ln">   871  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L872" class="ln">   872  </span>		a.NoError(mock.ExpectationsWereMet())
+<span id="L873" class="ln">   873  </span>	})
+<span id="L874" class="ln">   874  </span>
+<span id="L875" class="ln">   875  </span>	t.Run(&#34;creates metric helpers when configured&#34;, func(t *testing.T) {
+<span id="L876" class="ln">   876  </span>		a := assert.New(t)
+<span id="L877" class="ln">   877  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L878" class="ln">   878  </span>			Sources: sources.CmdOpts{CreateHelpers: true},
+<span id="L879" class="ln">   879  </span>		})
+<span id="L880" class="ln">   880  </span>		md, mock := createTestSourceConn(t)
+<span id="L881" class="ln">   881  </span>		defer mock.Close()
+<span id="L882" class="ln">   882  </span>
+<span id="L883" class="ln">   883  </span>		const helperMetric = &#34;test_helper_metric&#34;
+<span id="L884" class="ln">   884  </span>		metricDefs.MetricDefs[helperMetric] = metrics.Metric{
+<span id="L885" class="ln">   885  </span>			InitSQL: &#34;CREATE OR REPLACE FUNCTION test_helper() RETURNS void LANGUAGE sql AS &#39;&#39;&#34;,
+<span id="L886" class="ln">   886  </span>		}
+<span id="L887" class="ln">   887  </span>		t.Cleanup(func() { delete(metricDefs.MetricDefs, helperMetric) })
+<span id="L888" class="ln">   888  </span>		md.Metrics = metrics.MetricIntervals{helperMetric: 10}
+<span id="L889" class="ln">   889  </span>
+<span id="L890" class="ln">   890  </span>		mock.ExpectExec(&#34;CREATE OR REPLACE FUNCTION&#34;).
+<span id="L891" class="ln">   891  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
+<span id="L892" class="ln">   892  </span>
+<span id="L893" class="ln">   893  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L894" class="ln">   894  </span>		a.NoError(mock.ExpectationsWereMet())
+<span id="L895" class="ln">   895  </span>	})
+<span id="L896" class="ln">   896  </span>}
+<span id="L897" class="ln">   897  </span>
+<span id="L898" class="ln">   898  </span>func TestReaper_PrintMemStats(t *testing.T) {
+<span id="L899" class="ln">   899  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L900" class="ln">   900  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L901" class="ln">   901  </span>	assert.NotPanics(t, r.PrintMemStats)
+<span id="L902" class="ln">   902  </span>}
+<span id="L903" class="ln">   903  </span>
+<span id="L904" class="ln">   904  </span><span class="comment">// TestRace_AddSysinfoToMeasurements verifies no data race between concurrent</span>
+<span id="L905" class="ln">   905  </span><span class="comment">// RuntimeInfo writes (simulating FetchRuntimeInfo) and AddSysinfoToMeasurements reads.</span>
+<span id="L906" class="ln">   906  </span>func TestRace_AddSysinfoToMeasurements(*testing.T) {
+<span id="L907" class="ln">   907  </span>	r := &amp;reaper{
+<span id="L908" class="ln">   908  </span>		Options: &amp;cmdopts.Options{
+<span id="L909" class="ln">   909  </span>			Sinks: sinks.CmdOpts{
+<span id="L910" class="ln">   910  </span>				RealDbnameField:       &#34;real_dbname&#34;,
+<span id="L911" class="ln">   911  </span>				SystemIdentifierField: &#34;sys_id&#34;,
+<span id="L912" class="ln">   912  </span>			},
+<span id="L913" class="ln">   913  </span>		},
+<span id="L914" class="ln">   914  </span>	}
+<span id="L915" class="ln">   915  </span>	md := sources.NewDbConn(sources.Source{Name: &#34;race-test&#34;})
+<span id="L916" class="ln">   916  </span>
+<span id="L917" class="ln">   917  </span>	const iterations = 200
+<span id="L918" class="ln">   918  </span>	var wg sync.WaitGroup
+<span id="L919" class="ln">   919  </span>	wg.Add(2)
+<span id="L920" class="ln">   920  </span>
+<span id="L921" class="ln">   921  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
+<span id="L922" class="ln">   922  </span>	go func() {
+<span id="L923" class="ln">   923  </span>		defer wg.Done()
+<span id="L924" class="ln">   924  </span>		for range iterations {
+<span id="L925" class="ln">   925  </span>			md.Lock()
+<span id="L926" class="ln">   926  </span>			md.RealDbname = &#34;realdb&#34;
+<span id="L927" class="ln">   927  </span>			md.SystemIdentifier = &#34;12345&#34;
+<span id="L928" class="ln">   928  </span>			md.Unlock()
+<span id="L929" class="ln">   929  </span>		}
+<span id="L930" class="ln">   930  </span>	}()
+<span id="L931" class="ln">   931  </span>
+<span id="L932" class="ln">   932  </span>	<span class="comment">// Reader: AddSysinfoToMeasurements must RLock before reading.</span>
+<span id="L933" class="ln">   933  </span>	go func() {
+<span id="L934" class="ln">   934  </span>		defer wg.Done()
+<span id="L935" class="ln">   935  </span>		data := metrics.Measurements{metrics.Measurement{}}
+<span id="L936" class="ln">   936  </span>		for range iterations {
+<span id="L937" class="ln">   937  </span>			r.AddSysinfoToMeasurements(data, md)
+<span id="L938" class="ln">   938  </span>		}
+<span id="L939" class="ln">   939  </span>	}()
+<span id="L940" class="ln">   940  </span>
+<span id="L941" class="ln">   941  </span>	wg.Wait()
+<span id="L942" class="ln">   942  </span>}
+<span id="L943" class="ln">   943  </span>
+<span id="L944" class="ln">   944  </span><span class="comment">// TestRace_CreateSourceHelpers verifies no data race between concurrent</span>
+<span id="L945" class="ln">   945  </span><span class="comment">// RuntimeInfo writes and CreateSourceHelpers reading IsInRecovery.</span>
+<span id="L946" class="ln">   946  </span>func TestRace_CreateSourceHelpers(t *testing.T) {
+<span id="L947" class="ln">   947  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L948" class="ln">   948  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L949" class="ln">   949  </span>	md := sources.NewDbConn(sources.Source{
+<span id="L950" class="ln">   950  </span>		Name: &#34;race-test&#34;,
+<span id="L951" class="ln">   951  </span>		Kind: sources.SourcePostgres,
+<span id="L952" class="ln">   952  </span>	})
+<span id="L953" class="ln">   953  </span>
+<span id="L954" class="ln">   954  </span>	const iterations = 200
+<span id="L955" class="ln">   955  </span>	var wg sync.WaitGroup
+<span id="L956" class="ln">   956  </span>	wg.Add(2)
+<span id="L957" class="ln">   957  </span>
+<span id="L958" class="ln">   958  </span>	go func() {
+<span id="L959" class="ln">   959  </span>		defer wg.Done()
+<span id="L960" class="ln">   960  </span>		for range iterations {
+<span id="L961" class="ln">   961  </span>			md.Lock()
+<span id="L962" class="ln">   962  </span>			md.IsInRecovery = !md.IsInRecovery
+<span id="L963" class="ln">   963  </span>			md.Unlock()
+<span id="L964" class="ln">   964  </span>		}
+<span id="L965" class="ln">   965  </span>	}()
+<span id="L966" class="ln">   966  </span>
+<span id="L967" class="ln">   967  </span>	go func() {
+<span id="L968" class="ln">   968  </span>		defer wg.Done()
+<span id="L969" class="ln">   969  </span>		for range iterations {
+<span id="L970" class="ln">   970  </span>			r.CreateSourceHelpers(ctx, md)
+<span id="L971" class="ln">   971  </span>		}
+<span id="L972" class="ln">   972  </span>	}()
+<span id="L973" class="ln">   973  </span>
+<span id="L974" class="ln">   974  </span>	wg.Wait()
+<span id="L975" class="ln">   975  </span>}
+<span id="L976" class="ln">   976  </span>
+<span id="L977" class="ln">   977  </span><span class="comment">// TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop&#39;s</span>
+<span id="L978" class="ln">   978  </span><span class="comment">// RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and</span>
+<span id="L979" class="ln">   979  </span><span class="comment">// MetricsStandby does not race against concurrent FetchRuntimeInfo writes.</span>
+<span id="L980" class="ln">   980  </span>func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
+<span id="L981" class="ln">   981  </span>	md := sources.NewDbConn(sources.Source{
+<span id="L982" class="ln">   982  </span>		Name: &#34;race-test&#34;,
+<span id="L983" class="ln">   983  </span>		Kind: sources.SourcePostgres,
+<span id="L984" class="ln">   984  </span>	})
+<span id="L985" class="ln">   985  </span>
+<span id="L986" class="ln">   986  </span>	const iterations = 200
+<span id="L987" class="ln">   987  </span>	var wg sync.WaitGroup
+<span id="L988" class="ln">   988  </span>	wg.Add(2)
+<span id="L989" class="ln">   989  </span>
+<span id="L990" class="ln">   990  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
+<span id="L991" class="ln">   991  </span>	go func() {
+<span id="L992" class="ln">   992  </span>		defer wg.Done()
+<span id="L993" class="ln">   993  </span>		for range iterations {
+<span id="L994" class="ln">   994  </span>			md.Lock()
+<span id="L995" class="ln">   995  </span>			md.IsInRecovery = !md.IsInRecovery
+<span id="L996" class="ln">   996  </span>			md.VersionStr = &#34;PostgreSQL 16.0&#34;
+<span id="L997" class="ln">   997  </span>			md.ApproxDbSize = 1024
+<span id="L998" class="ln">   998  </span>			md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 30}
+<span id="L999" class="ln">   999  </span>			md.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
+<span id="L1000" class="ln">  1000  </span>			md.Unlock()
+<span id="L1001" class="ln">  1001  </span>		}
+<span id="L1002" class="ln">  1002  </span>	}()
+<span id="L1003" class="ln">  1003  </span>
+<span id="L1004" class="ln">  1004  </span>	<span class="comment">// Reader: snapshot under RLock exactly as the main loop does after FetchRuntimeInfo.</span>
+<span id="L1005" class="ln">  1005  </span>	go func() {
+<span id="L1006" class="ln">  1006  </span>		defer wg.Done()
+<span id="L1007" class="ln">  1007  </span>		for range iterations {
+<span id="L1008" class="ln">  1008  </span>			md.RLock()
+<span id="L1009" class="ln">  1009  </span>			_ = md.IsInRecovery
+<span id="L1010" class="ln">  1010  </span>			_ = md.VersionStr
+<span id="L1011" class="ln">  1011  </span>			_ = md.ApproxDbSize
+<span id="L1012" class="ln">  1012  </span>			if md.Metrics != nil {
+<span id="L1013" class="ln">  1013  </span>				_ = maps.Clone(md.Metrics)
+<span id="L1014" class="ln">  1014  </span>			}
+<span id="L1015" class="ln">  1015  </span>			if md.MetricsStandby != nil {
+<span id="L1016" class="ln">  1016  </span>				_ = maps.Clone(md.MetricsStandby)
+<span id="L1017" class="ln">  1017  </span>			}
+<span id="L1018" class="ln">  1018  </span>			md.RUnlock()
+<span id="L1019" class="ln">  1019  </span>		}
+<span id="L1020" class="ln">  1020  </span>	}()
+<span id="L1021" class="ln">  1021  </span>
+<span id="L1022" class="ln">  1022  </span>	wg.Wait()
+<span id="L1023" class="ln">  1023  </span>}
+<span id="L1024" class="ln">  1024  </span>
 </pre><p></p>
 
 <div id="footer">
