@@ -44,7 +44,7 @@ func BlackholeListener(t *testing.T) (string, func()) {
 				return
 			}
 			wg.Add(1)
-			go func(c net.Conn) {
+			go func(net.Conn) {
 				defer wg.Done()
 				// Hold the connection until the listener is closed.
 				// Intentionally no read/write/close — we are simulating
@@ -54,11 +54,11 @@ func BlackholeListener(t *testing.T) (string, func()) {
 		}
 	}()
 
-	close := func() {
+	c := func() {
 		cancel()
 		_ = ln.Close()
 		wg.Wait()
 	}
-	t.Cleanup(close)
-	return ln.Addr().String(), close
+	t.Cleanup(c)
+	return ln.Addr().String(), c
 }
