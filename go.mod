@@ -18,7 +18,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.7
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.43.0
+	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/etcd v0.43.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
 	go.etcd.io/etcd/client/v3 v3.7.1
