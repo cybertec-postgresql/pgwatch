@@ -9,7 +9,7 @@ services:
     environment:
       PGUSER: postgres
       PW_SOURCES: postgresql://pgwatch@postgres:5432/pgwatch
-      # PW_METRICS: /etc/pgwatch/metrics.yml
+      PW_METRICS: /etc/pgwatch/metrics.yml
     command:
       - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
       - "--sink=prometheus://pgwatch:9187/pgwatch"

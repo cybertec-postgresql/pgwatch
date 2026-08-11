@@ -35,3 +35,6 @@ debug
 
 # MCP and AI related output
 .playwright-mcp/
+
+# Task-specific files
+.task/
