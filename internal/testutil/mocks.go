@@ -5,8 +5,12 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -105,4 +109,103 @@ func (m *MockSourcesReaderWriter) DeleteSource(name string) error {
 }
 func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
 	return m.WriteSourcesFunc(srcs)
+}
+
+
+// BlockingPool is a wedged PgxPoolIface used by fault-injection tests.
+//
+// It embeds db.PgxPoolIface as a nil interface so the type satisfies
+// db.PgxPoolIface; only the methods overridden below are usable. Any
+// direct call to a non-overridden method panics (nil interface call).
+//
+// Ping, Query, SendBatch, and Acquire all block until the supplied
+// context is cancelled, then return ctx.Err(). This simulates a pool
+// whose connections are stuck on the wire — the failure mode that
+// client-side deadlines must convert into bounded failures.
+type BlockingPool struct {
+	db.PgxPoolIface
+}
+
+// Ping blocks until ctx.Done() and returns ctx.Err().
+func (BlockingPool) Ping(ctx context.Context) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+// Query blocks until ctx.Done() and returns ctx.Err().
+func (BlockingPool) Query(ctx context.Context, _ string, _ ...any) (pgx.Rows, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+// QueryRow blocks until ctx.Done() and returns a row whose Scan returns ctx.Err().
+func (BlockingPool) QueryRow(ctx context.Context, _ string, _ ...any) pgx.Row {
+	return blockingRow{ctx: ctx}
+}
+
+// Exec blocks until ctx.Done() and returns ctx.Err().
+func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.CommandTag, error) {
+	<-ctx.Done()
+	return pgconn.CommandTag{}, ctx.Err()
+}
+// first Query call returns ctx.Err().
+// SendBatch blocks until ctx.Done() and returns a BatchResults whose
+// first Query call returns ctx.Err().
+func (BlockingPool) SendBatch(ctx context.Context, _ *pgx.Batch) pgx.BatchResults {
+	return &blockingBatchResults{ctx: ctx}
+}
+
+// Acquire blocks until ctx.Done() and returns ctx.Err().
+func (BlockingPool) Acquire(ctx context.Context) (*pgxpool.Conn, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+// Close is a no-op so the pool can be embedded without panicking.
+func (BlockingPool) Close() {}
+
+// blockingRow makes pgx.Row.Scan honor ctx cancellation.
+type blockingRow struct {
+	ctx context.Context
+}
+
+// Scan blocks until ctx.Done() and returns ctx.Err().
+func (b blockingRow) Scan(_ ...any) error {
+	<-b.ctx.Done()
+	return b.ctx.Err()
+}
+
+// blockingBatchResults makes the first Query call honor ctx cancellation.
+type blockingBatchResults struct {
+	ctx    context.Context
+	closed bool
+}
+
+// Query blocks until ctx.Done() and returns ctx.Err().
+func (b *blockingBatchResults) Query() (pgx.Rows, error) {
+	<-b.ctx.Done()
+	return nil, b.ctx.Err()
+}
+
+// Exec blocks until ctx.Done() and returns ctx.Err().
+func (b *blockingBatchResults) Exec() (pgconn.CommandTag, error) {
+	<-b.ctx.Done()
+	return pgconn.CommandTag{}, b.ctx.Err()
+}
+func (b *blockingBatchResults) Close() error {
+	b.closed = true
+	return nil
+}
+
+// Err returns ctx.Err() if the batch was closed via Close.
+
+// QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
+func (b *blockingBatchResults) QueryRow() pgx.Row {
+	return blockingRow{ctx: b.ctx}
+}
+func (b *blockingBatchResults) Err() error {
+	if b.closed {
+		return b.ctx.Err()
+	}
+	return nil
 }
