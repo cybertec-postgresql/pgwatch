@@ -83,9 +83,9 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T201 [P] [US2] Add failing test in `internal/sources/conn_test.go`: Ping against `testutil.BlackholeListener` returns within the REQ-104 bound (shrink `db.PingTimeoutMargin` and set a small `connect_timeout` in the conn string).
-- [ ] T202 [P] [US2] Add failing test in `internal/sources/conn_test.go`: Ping on a `DbConn` whose pool is `testutil.BlockingPool` (Acquire blocks) fails at the REQ-104 bound — covers the queued-behind-wedged-conns case.
-- [ ] T203 [P] [US2] Add failing test in `internal/sources/conn_test.go`: `FetchRuntimeInfo` with blocking `Query` completes (with error) within `db.RuntimeInfoTimeout` per REQ-105.
+- [x] T201 [P] [US2] Add failing test in `internal/sources/conn_test.go`: Ping against `testutil.BlackholeListener` returns within the REQ-104 bound (shrink `db.PingTimeoutMargin` and set a small `connect_timeout` in the conn string).
+- [x] T202 [P] [US2] Add failing test in `internal/sources/conn_test.go`: Ping on a `DbConn` whose pool is `testutil.BlockingPool` (Acquire blocks) fails at the REQ-104 bound — covers the queued-behind-wedged-conns case.
+- [x] T203 [P] [US2] Add failing test in `internal/sources/conn_test.go`: `FetchRuntimeInfo` with blocking `Query` completes (with error) within `db.RuntimeInfoTimeout` per REQ-105.
 
 ### Implementation for User Story 2
 

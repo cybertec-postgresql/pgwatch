@@ -9,7 +9,9 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
+
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -862,4 +864,155 @@ func TestRace_FetchRuntimeInfoAtomicCache(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+// Ping against a half-open TCP peer (BlackholeListener) must return
+// within PingTimeoutMargin (ConnectTimeout is unset in the conn string,
+// so the wired bound collapses to PingTimeoutMargin alone). Today Ping
+// has no client-side bound: pgx's net.Dialer fallback is on the order
+// of minutes, so the test fails RED at the safety-net cancel. With the
+// wiring added to Ping, Ping derives a "ping"-tagged ctx and the call
+// returns at ~PingTimeoutMargin.
+func TestSourceConn_Ping_BoundedAgainstHalfOpenTCP(t *testing.T) {
+	addr, _ := testutil.BlackholeListener(t)
+
+	// Shrink the margin so the bound is small. Do NOT set connect_timeout
+	// in the conn string — that would let pgx bound the dial itself and
+	// mask whether the wiring is actually firing.
+	origMargin := db.PingTimeoutMargin
+	t.Cleanup(func() { db.PingTimeoutMargin = origMargin })
+	db.PingTimeoutMargin = 100 * time.Millisecond
+
+	connStr := "postgres://x@" + addr + "/postgres"
+	cfg, err := pgxpool.ParseConfig(connStr)
+	require.NoError(t, err)
+	require.Zero(t, cfg.ConnConfig.ConnectTimeout, "precondition: no connect_timeout in conn string")
+	// Use a real pgxpool so Ping's Acquire→dial exercises the half-open
+	// peer. The pool does not dial until Acquire is called; the dial is
+	// what we want to bound.
+	pool, err := pgxpool.NewWithConfig(context.Background(), cfg)
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
+
+	md := &sources.DbConn{
+		Source: sources.Source{
+			Name:    "blackhole_ping_src",
+			Kind:    sources.SourcePostgres,
+			ConnStr: connStr,
+		},
+		Conn:       pool,
+		ConnConfig: cfg,
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// Safety net so a regressed implementation does not hang the test
+	// indefinitely. With the wiring the ping deadline fires first.
+	time.AfterFunc(5*time.Second, cancel)
+
+	start := time.Now()
+	err = md.Ping(ctx)
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	// Without wiring, pgx waits its OS dialer fallback (~75s on Windows,
+	// often tens of seconds elsewhere) so the test only finishes when the
+	// safety net fires. With wiring the call returns at ~PingTimeoutMargin.
+	if elapsed > 1500*time.Millisecond {
+		t.Fatalf("Ping took %v, want ~PingTimeoutMargin (100ms)", elapsed)
+	}
+}
+
+// Ping on a DbConn whose pool Acquire() blocks (every conn in the pool
+// is wedged) must fail at the PingTimeoutMargin bound rather than
+// hanging. Today Ping forwards the caller's ctx directly to pool.Ping,
+// which internally acquires a conn — Acquire blocks until ctx is
+// cancelled. With the wiring, the derived ctx fires first.
+//
+// Runs in a synctest bubble: BlockingPool.Acquire blocks durably on
+// ctx.Done(), so the test goroutine drives Ping on a worker and uses
+// time.Sleep to schedule a bubble wake-up past the 100ms bound.
+func TestSourceConn_Ping_BoundedBehindWedgedPool(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		// Shrink the margin so the bound is small. The BlockingPool
+		// ignores ConnectTimeout, so the effective bound comes
+		// entirely from PingTimeoutMargin.
+		db.PingTimeoutMargin = 100 * time.Millisecond
+		t.Cleanup(func() { db.PingTimeoutMargin = 5 * time.Second })
+
+		md := &sources.DbConn{
+			Source: sources.Source{
+				Name: "wedged_pool_ping_src",
+				Kind: sources.SourcePostgres,
+			},
+			Conn: testutil.BlockingPool{},
+		}
+		// Provide a minimal ConnConfig so Ping's derived ctx can read
+		// ConnectTimeout (zero here, so the wired bound collapses to
+		// just PingTimeoutMargin).
+		md.ConnConfig = &pgxpool.Config{}
+
+		// Bounded callCtx so the bubble has a wake-up event even when
+		// the production call blocks indefinitely (RED). With the
+		// wiring, Ping derives a 100ms ctx internally and returns long
+		// before callCtx fires; without the wiring the call hangs
+		// until callCtx fires at t=2s and the elapsed-time assertion
+		// catches it.
+		callCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		done := make(chan error, 1)
+		start := time.Now()
+		go func() { done <- md.Ping(callCtx) }()
+
+		// Yield to the bubble, then sleep past the expected bound. The
+		// bubble advances virtual time either when the wired call
+		// returns (GREEN) or when callCtx fires (RED).
+		time.Sleep(500 * time.Millisecond)
+		synctest.Wait()
+
+		err := <-done
+		elapsed := time.Since(start)
+
+		require.Error(t, err)
+		if elapsed > 1500*time.Millisecond {
+			t.Fatalf("Ping took %v, want ~PingTimeoutMargin (100ms)", elapsed)
+		}
+	})
+}
+func TestSourceConn_FetchRuntimeInfo_BoundedByRuntimeInfoTimeout(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		db.RuntimeInfoTimeout = 100 * time.Millisecond
+		t.Cleanup(func() { db.RuntimeInfoTimeout = 30 * time.Second })
+
+		md := sources.NewDbConn(sources.Source{
+			Name: "bounded_runtime_info_src",
+			Kind: sources.SourcePostgres,
+		})
+		md.Conn = testutil.BlockingPool{}
+
+		// Bounded callCtx so the bubble has a wake-up event even when
+		// the production call blocks indefinitely (RED). With the
+		// wiring, each sub-query derives a 100ms ctx internally and
+		// returns long before callCtx fires; without the wiring the
+		// call hangs until callCtx fires at t=2s and the elapsed-time
+		// assertion catches it.
+		callCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		done := make(chan error, 1)
+		start := time.Now()
+		go func() { done <- md.FetchRuntimeInfo(callCtx, true) }()
+
+		time.Sleep(500 * time.Millisecond)
+		synctest.Wait()
+
+		err := <-done
+		elapsed := time.Since(start)
+
+		require.Error(t, err)
+		if elapsed > 1500*time.Millisecond {
+			t.Fatalf("FetchRuntimeInfo took %v, want ~RuntimeInfoTimeout (100ms)", elapsed)
+		}
+	})
 }
