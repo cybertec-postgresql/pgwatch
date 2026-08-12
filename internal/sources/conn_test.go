@@ -12,7 +12,6 @@ import (
 	"testing/synctest"
 	"time"
 
-
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -121,9 +120,9 @@ func TestSourceConn_DiscoverPlatform(t *testing.T) {
 	md := &sources.DbConn{Conn: mock}
 
 	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"exec_env"}).AddRow("AZURE_SINGLE"))
-	md.ExecEnv = md.DiscoverPlatform(ctx)
+	assert.NoError(t, md.DiscoverPlatform(ctx))
 	assert.Equal(t, "AZURE_SINGLE", md.ExecEnv)
-	assert.Equal(t, "AZURE_SINGLE", md.DiscoverPlatform(ctx)) // cached
+	assert.NoError(t, md.DiscoverPlatform(ctx)) // cached, no query expected
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -134,9 +133,83 @@ func TestSourceConn_GetApproxSize(t *testing.T) {
 
 	mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"size"}).AddRow(42))
 
-	assert.EqualValues(t, 42, md.FetchApproxSize(ctx))
-	assert.NoError(t, err)
+	assert.NoError(t, md.FetchApproxSize(ctx))
+	assert.EqualValues(t, 42, md.ApproxDbSize)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceConn_FetchControlInfo(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		md := &sources.DbConn{Conn: mock}
+
+		mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows(
+			[]string{"ver", "version", "pg_is_in_recovery", "current_database", "system_identifier", "is_superuser"},
+		).AddRow(16, "PostgreSQL 16.0", false, "testdb", "12345", true))
+
+		assert.NoError(t, md.FetchControlInfo(ctx))
+		assert.Equal(t, 16, md.Version)
+		assert.Equal(t, "PostgreSQL 16.0", md.VersionStr)
+		assert.False(t, md.IsInRecovery)
+		assert.Equal(t, "testdb", md.RealDbname)
+		assert.Equal(t, "12345", md.SystemIdentifier)
+		assert.True(t, md.IsSuperuser)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		md := &sources.DbConn{Conn: mock}
+
+		mock.ExpectQuery("select").WillReturnError(assert.AnError)
+		assert.Error(t, md.FetchControlInfo(ctx))
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestSourceConn_FetchExtensions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		md := &sources.DbConn{Conn: mock, RuntimeInfo: sources.RuntimeInfo{Extensions: make(map[string]int)}}
+
+		mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"extname", "extversion"}).
+			AddRow("pg_stat_statements", "1.10").
+			AddRow("plpgsql", "1.0"))
+
+		assert.NoError(t, md.FetchExtensions(ctx))
+		assert.Equal(t, 1_10_00, md.Extensions["pg_stat_statements"])
+		assert.Equal(t, 1_00_00, md.Extensions["plpgsql"])
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("invalid extension version", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		md := &sources.DbConn{Conn: mock, RuntimeInfo: sources.RuntimeInfo{Extensions: make(map[string]int)}}
+
+		mock.ExpectQuery("select").WillReturnRows(pgxmock.NewRows([]string{"extname", "extversion"}).
+			AddRow("badext", "notaversion"))
+
+		assert.Error(t, md.FetchExtensions(ctx))
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		md := &sources.DbConn{Conn: mock, RuntimeInfo: sources.RuntimeInfo{Extensions: make(map[string]int)}}
+
+		mock.ExpectQuery("select").WillReturnError(assert.AnError)
+		assert.Error(t, md.FetchExtensions(ctx))
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }
 
 func TestSourceConn_FunctionExists(t *testing.T) {
@@ -325,39 +398,36 @@ func TestSourceConn_FetchVersion(t *testing.T) {
 	t.Run("valid version string", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.DbConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock, Source: sources.Source{Kind: sources.SourcePgBouncer}}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("FooBar 1.12.0"))
-		verStr, verInt, err := md.FetchVersion(ctx, "SHOW VERSION")
-		assert.NoError(t, err)
-		assert.Equal(t, "FooBar 1.12.0", verStr)
-		assert.Equal(t, 1_12_00, verInt)
+		assert.NoError(t, md.FetchVersion(ctx, sources.SourcePgBouncer))
+		assert.Equal(t, "FooBar 1.12.0", md.VersionStr)
+		assert.Equal(t, 1_12_00, md.Version)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("invalid version string", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.DbConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock, Source: sources.Source{Kind: sources.SourcePgBouncer}}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnRows(pgxmock.NewRows([]string{"version"}).AddRow("invalid version"))
-		_, verInt, err := md.FetchVersion(ctx, "SHOW VERSION")
-		assert.Equal(t, 0, verInt)
-		assert.NoError(t, err)
+		assert.NoError(t, md.FetchVersion(ctx, sources.SourcePgBouncer))
+		assert.Equal(t, 0, md.Version)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("query error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		md := &sources.DbConn{Conn: mock}
+		md := &sources.DbConn{Conn: mock, Source: sources.Source{Kind: sources.SourcePgBouncer}}
 		mock.ExpectQuery("SHOW VERSION").
 			WithArgs(pgx.QueryExecModeSimpleProtocol).
 			WillReturnError(assert.AnError)
-		_, _, err = md.FetchVersion(ctx, "SHOW VERSION")
-		assert.Error(t, err)
+		assert.Error(t, md.FetchVersion(ctx, sources.SourcePgBouncer))
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
