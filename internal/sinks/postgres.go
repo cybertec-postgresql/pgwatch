@@ -8,6 +8,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -71,6 +72,8 @@ type PostgresWriter struct {
 	lastError               chan error
 	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
 	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
+	// mu guards partitionMapMetric and serializes the DDL issued by SyncMetric.
+	mu sync.Mutex
 }
 
 // make sure *dbMetricReaderWriter implements the Migrator interface
@@ -201,6 +204,8 @@ func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
 func (pgw *PostgresWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
 	if op == AddOp {
 		return errors.Join(
 			pgw.AddDBUniqueMetricToListingTable(sourceName, metricName),
@@ -439,6 +444,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 }
 
 func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo) (err error) {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
 	logger := log.GetLogger(pgw.ctx)
 	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
 	for metric := range pgPartBounds {
@@ -454,6 +461,8 @@ func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]Existin
 }
 
 func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) error {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
 	var err error
 	var rows pgx.Rows
 	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2, $3)`

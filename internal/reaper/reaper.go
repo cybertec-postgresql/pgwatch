@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"sync/atomic"
@@ -48,11 +49,17 @@ type reaper struct {
 	ready                atomic.Bool
 	measurementCh        chan metrics.MeasurementEnvelope
 	measurementCache     *InstanceMetricCache
-	logger               log.Logger
+	logger log.Logger
+	// monitoredSources and prevLoopMonitoredDBs are only mutated in the
+	// sequential sections of the main loop (LoadSources before the sweep and
+	// CleanupRemovedWorkers after the sweep barrier); they are read-only
+	// while per-source workers run, so they need no lock.
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
-	srcRecoveryStatus    map[string]bool
-	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
+	// mu guards srcRecoveryStatus and cancelFuncs.
+	mu                sync.Mutex
+	srcRecoveryStatus map[string]bool
+	cancelFuncs       map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
 func NewReaper(ctx context.Context, opts *cmdopts.Options) ReadierReaper {
@@ -151,12 +158,16 @@ func (r *reaper) Reap(ctx context.Context) {
 // StartWorker launches a source reaper goroutine for the given source if one
 // is not already running. It is a no-op when a worker for that name exists.
 func (r *reaper) StartWorker(ctx context.Context, sourceName string, sr Reaper) {
+	sourceCtx, cancelFunc := context.WithCancel(ctx)
+	r.mu.Lock()
 	if _, exists := r.cancelFuncs[sourceName]; exists {
+		r.mu.Unlock()
+		cancelFunc()
 		return
 	}
-	log.GetLogger(ctx).Info("starting source reaper")
-	sourceCtx, cancelFunc := context.WithCancel(ctx)
 	r.cancelFuncs[sourceName] = cancelFunc
+	r.mu.Unlock()
+	log.GetLogger(ctx).Info("starting source reaper")
 	go sr.Reap(sourceCtx)
 }
 
@@ -199,8 +210,13 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 	hasStandbyConfig := len(md.MetricsStandby) > 0
 	md.RUnlock()
 
-	l := log.GetLogger(ctx)
-	if r.srcRecoveryStatus[md.Name] != isInRecovery {
+	r.mu.Lock()
+	statusChanged := r.srcRecoveryStatus[md.Name] != isInRecovery
+	r.srcRecoveryStatus[md.Name] = isInRecovery
+	r.mu.Unlock()
+
+	if statusChanged {
+		l := log.GetLogger(ctx)
 		if isInRecovery && hasStandbyConfig {
 			l.Warning("Switching metrics collection to standby config...")
 		} else if !isInRecovery {
@@ -208,7 +224,6 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 		}
 		// else: standby without a dedicated standby config keeps primary config, no warn
 	}
-	r.srcRecoveryStatus[md.Name] = isInRecovery
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
@@ -281,10 +296,15 @@ func (r *reaper) isSpecialMetric(name string) bool {
 // ShutdownWorker stops the source reaper for a single named source, closes its
 // connection pool, and deregisters it from the sinks.
 func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
-	if cancelFunc, exists := r.cancelFuncs[sourceName]; exists {
+	r.mu.Lock()
+	cancelFunc, exists := r.cancelFuncs[sourceName]
+	if exists {
+		delete(r.cancelFuncs, sourceName)
+	}
+	r.mu.Unlock()
+	if exists {
 		r.logger.WithField("source", sourceName).Info("stopping source reaper...")
 		cancelFunc()
-		delete(r.cancelFuncs, sourceName)
 	}
 	if db := r.monitoredSources.GetMonitoredDatabase(sourceName); db != nil {
 		db.Close()
@@ -299,7 +319,15 @@ func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
 // for any sources that disappeared from the previous loop without a running worker.
 func (r *reaper) CleanupRemovedWorkers(ctx context.Context) {
 	r.logger.Debug("checking if any workers need to be shut down...")
+	// Snapshot the worker names under the lock; ShutdownWorker locks per call,
+	// so iterating the live map while deleting from it is not an option.
+	r.mu.Lock()
+	sourceNames := make([]string, 0, len(r.cancelFuncs))
 	for sourceName := range r.cancelFuncs {
+		sourceNames = append(sourceNames, sourceName)
+	}
+	r.mu.Unlock()
+	for _, sourceName := range sourceNames {
 		md := r.monitoredSources.GetMonitoredDatabase(sourceName)
 		if ctx.Err() == nil && md != nil {
 			continue // source still active
