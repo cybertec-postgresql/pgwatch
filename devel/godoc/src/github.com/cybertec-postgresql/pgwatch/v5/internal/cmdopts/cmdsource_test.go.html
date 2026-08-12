@@ -148,17 +148,29 @@
 <span id="L91" class="ln">    91  </span>	})
 <span id="L92" class="ln">    92  </span>
 <span id="L93" class="ln">    93  </span>	t.Run(&#34;ResolveError&#34;, func(t *testing.T) {
-<span id="L94" class="ln">    94  </span>		mock.ExpectQuery(&#34;select.+datname&#34;).
-<span id="L95" class="ln">    95  </span>			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
-<span id="L96" class="ln">    96  </span>			WillReturnError(assert.AnError)
-<span id="L97" class="ln">    97  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--sources=&#34; + f.Name(), &#34;source&#34;, &#34;resolve&#34;}
-<span id="L98" class="ln">    98  </span>		_, err = New(nil)
-<span id="L99" class="ln">    99  </span>		assert.ErrorIs(t, err, assert.AnError)
-<span id="L100" class="ln">   100  </span>		assert.NoError(t, mock.ExpectationsWereMet())
-<span id="L101" class="ln">   101  </span>	})
-<span id="L102" class="ln">   102  </span>
-<span id="L103" class="ln">   103  </span>}
-<span id="L104" class="ln">   104  </span>
+<span id="L94" class="ln">    94  </span>		<span class="comment">// a distinct conn_str has no cached resolution, so the error propagates</span>
+<span id="L95" class="ln">    95  </span>		f2, err := os.CreateTemp(t.TempDir(), &#34;sample.config.yaml&#34;)
+<span id="L96" class="ln">    96  </span>		require.NoError(t, err)
+<span id="L97" class="ln">    97  </span>		defer f2.Close()
+<span id="L98" class="ln">    98  </span>
+<span id="L99" class="ln">    99  </span>		_, err = f2.WriteString(`
+<span id="L100" class="ln">   100  </span>- name: test1
+<span id="L101" class="ln">   101  </span>  kind: postgres-continuous-discovery
+<span id="L102" class="ln">   102  </span>  is_enabled: true
+<span id="L103" class="ln">   103  </span>  conn_str: postgresql://foo@quux/baz`)
+<span id="L104" class="ln">   104  </span>		require.NoError(t, err)
+<span id="L105" class="ln">   105  </span>
+<span id="L106" class="ln">   106  </span>		mock.ExpectQuery(&#34;select.+datname&#34;).
+<span id="L107" class="ln">   107  </span>			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+<span id="L108" class="ln">   108  </span>			WillReturnError(assert.AnError)
+<span id="L109" class="ln">   109  </span>		os.Args = []string{0: &#34;config_test&#34;, &#34;--sources=&#34; + f2.Name(), &#34;source&#34;, &#34;resolve&#34;}
+<span id="L110" class="ln">   110  </span>		_, err = New(nil)
+<span id="L111" class="ln">   111  </span>		assert.ErrorIs(t, err, assert.AnError)
+<span id="L112" class="ln">   112  </span>		assert.NoError(t, mock.ExpectationsWereMet())
+<span id="L113" class="ln">   113  </span>	})
+<span id="L114" class="ln">   114  </span>
+<span id="L115" class="ln">   115  </span>}
+<span id="L116" class="ln">   116  </span>
 </pre><p></p>
 
 <div id="footer">

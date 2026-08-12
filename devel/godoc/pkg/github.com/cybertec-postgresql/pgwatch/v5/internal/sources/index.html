@@ -239,9 +239,6 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#getConsulClusterMembers">func getConsulClusterMembers(Source) ([]PatroniClusterMember, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#getEtcdClusterMembers">func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error)</a></dd>
-				
-					
 					<dd>&nbsp; &nbsp; <a href="#getZookeeperClusterMembers">func getZookeeperClusterMembers(Source, HostConfig) ([]PatroniClusterMember, error)</a></dd>
 				
 				
@@ -307,6 +304,29 @@ At the moment, sources definitions support two storages:
 				
 			
 				
+				<dd><a href="#Resolver">type Resolver</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewResolver">func NewResolver() *Resolver</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Resolver.ResolveDatabase">func (r *Resolver) ResolveDatabase(s Source) (SourceConns, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Resolver.ResolveDatabases">func (r *Resolver) ResolveDatabases(srcs Sources, onError func(string)) (_ SourceConns, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Resolver.ResolveDatabasesFromPatroni">func (r *Resolver) ResolveDatabasesFromPatroni(source Source) (SourceConns, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Resolver.ResolveDatabasesFromPostgres">func (r *Resolver) ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Resolver.getEtcdClusterMembers">func (r *Resolver) getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error)</a></dd>
+				
+			
+				
 				<dd><a href="#RuntimeInfo">type RuntimeInfo</a></dd>
 				
 				
@@ -340,10 +360,7 @@ At the moment, sources definitions support two storages:
 				<dd><a href="#SourceConns">type SourceConns</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPatroni">func ResolveDatabasesFromPatroni(source Source) (SourceConns, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#ResolveDatabasesFromPostgres">func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#resolveDatabasesFromPostgres">func resolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)</a></dd>
 				
 				
 					
@@ -355,7 +372,7 @@ At the moment, sources definitions support two storages:
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="#Sources.ResolveDatabases">func (srcs Sources) ResolveDatabases(onError func(string)) (SourceConns, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#Sources.Validate">func (srcs Sources) Validate() (Sources, error)</a></dd>
@@ -422,6 +439,14 @@ At the moment, sources definitions support two storages:
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#fileSourcesReaderWriter.writeSources">func (fcr *fileSourcesReaderWriter) writeSources(mds Sources) error</a></dd>
+				
+			
+				
+				<dd><a href="#postgresDiscoveryKey">type postgresDiscoveryKey</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#postgresDiscoveryKeyOf">func postgresDiscoveryKeyOf(s Source) postgresDiscoveryKey</a></dd>
+				
 				
 			
 				
@@ -507,9 +532,11 @@ At the moment, sources definitions support two storages:
     <a href="#SourcePrometheus">SourcePrometheus</a>,
 }</pre>
 			
-				
-				<pre>var <span id="lastFoundClusterMembers">lastFoundClusterMembers</span> = <a href="https://pkg.go.dev/builtin/#make">make</a>(map[<a href="https://pkg.go.dev/builtin/#string">string</a>][]<a href="#PatroniClusterMember">PatroniClusterMember</a>) <span class="comment">// needed for cases where DCS is temporarily down</span>
-</pre>
+				<p>defaultResolver backs the convenience methods on Source and Sources so that
+existing callers keep a single process-wide fallback cache without having to
+thread a Resolver through.
+
+				<pre>var <span id="defaultResolver">defaultResolver</span> = <a href="#NewResolver">NewResolver</a>()</pre>
 			
 				
 				<pre>var <span id="logger">logger</span> <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#Logger">Logger</a> = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#FallbackLogger">FallbackLogger</a></pre>
@@ -553,7 +580,7 @@ If rawURL cannot be parsed or has no password, it is returned unchanged.
 		
 			
 			
-			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L111">getTransport</a>
+			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L174">getTransport</a>
 				<a class="permalink" href="#getTransport">&#xb6;</a>
 				
 				
@@ -566,7 +593,7 @@ If rawURL cannot be parsed or has no password, it is returned unchanged.
 		
 			
 			
-			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L96">jsonTextToStringMap</a>
+			<h2 id="jsonTextToStringMap">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L159">jsonTextToStringMap</a>
 				<a class="permalink" href="#jsonTextToStringMap">&#xb6;</a>
 				
 				
@@ -945,7 +972,7 @@ primary and all replicas but connection information is different
 		
 			
 			
-			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L217">HostConfig</a>
+			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L282">HostConfig</a>
 				<a class="permalink" href="#HostConfig">&#xb6;</a>
 				
 				
@@ -973,7 +1000,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L234">NewHostConfig</a>
+				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L299">NewHostConfig</a>
 					<a class="permalink" href="#NewHostConfig">&#xb6;</a>
 					
 					
@@ -986,7 +1013,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L228">IsScopeSpecified</a>
+				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L293">IsScopeSpecified</a>
 					<a class="permalink" href="#HostConfig.IsScopeSpecified">&#xb6;</a>
 					
 					
@@ -1044,7 +1071,7 @@ primary and all replicas but connection information is different
 		
 			
 			
-			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L72">PatroniClusterMember</a>
+			<h2 id="PatroniClusterMember">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L119">PatroniClusterMember</a>
 				<a class="permalink" href="#PatroniClusterMember">&#xb6;</a>
 				
 				
@@ -1068,7 +1095,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L88">getConsulClusterMembers</a>
+				<h3 id="getConsulClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L151">getConsulClusterMembers</a>
 					<a class="permalink" href="#getConsulClusterMembers">&#xb6;</a>
 					
 					
@@ -1079,18 +1106,7 @@ primary and all replicas but connection information is different
 				
 			
 				
-				<h3 id="getEtcdClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L149">getEtcdClusterMembers</a>
-					<a class="permalink" href="#getEtcdClusterMembers">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func getEtcdClusterMembers(s <a href="#Source">Source</a>, hc <a href="#HostConfig">HostConfig</a>) ([]<a href="#PatroniClusterMember">PatroniClusterMember</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
-			
-				
-				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L92">getZookeeperClusterMembers</a>
+				<h3 id="getZookeeperClusterMembers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L155">getZookeeperClusterMembers</a>
 					<a class="permalink" href="#getZookeeperClusterMembers">&#xb6;</a>
 					
 					
@@ -1103,7 +1119,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="PatroniClusterMember.IsPrimary">func (PatroniClusterMember) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L79">IsPrimary</a>
+				<h3 id="PatroniClusterMember.IsPrimary">func (PatroniClusterMember) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L126">IsPrimary</a>
 					<a class="permalink" href="#PatroniClusterMember.IsPrimary">&#xb6;</a>
 					
 					
@@ -1365,6 +1381,132 @@ Connect must be called before Scrape.
 		
 			
 			
+			<h2 id="Resolver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L37">Resolver</a>
+				<a class="permalink" href="#Resolver">&#xb6;</a>
+				
+				
+			</h2>
+			<p>Resolver discovers the monitored databases behind continuous-monitoring
+sources (Patroni, Postgres discovery). It owns the last-known-good fallback
+caches so that a transient DCS/DB outage does not tear down monitoring of
+already-known databases.
+<p>A Resolver is safe for concurrent use. Create independent Resolvers via
+NewResolver when isolated cache state is desired (e.g. in tests or when
+running several unrelated resolution pipelines in one process).
+
+			<pre>type Resolver struct {
+<span id="Resolver.mu"></span>    mu <a href="https://pkg.go.dev/sync/">sync</a>.<a href="https://pkg.go.dev/sync/#Mutex">Mutex</a> <span class="comment">// guards the fallback caches below</span>
+<span id="Resolver.lastFoundClusterMembers"></span>    <span class="comment">// lastFoundClusterMembers is needed for cases where DCS is temporarily down;</span>
+    <span class="comment">// we don&#39;t want to immediately remove monitoring of DBs. Keyed by source name.</span>
+    lastFoundClusterMembers map[<a href="https://pkg.go.dev/builtin/#string">string</a>][]<a href="#PatroniClusterMember">PatroniClusterMember</a>
+<span id="Resolver.lastFoundDatabases"></span>    <span class="comment">// lastFoundDatabases is keyed by the source&#39;s identity (name + conn string +</span>
+    <span class="comment">// include/exclude patterns) so a reconfigured source never inherits the</span>
+    <span class="comment">// previous target&#39;s database list.</span>
+    lastFoundDatabases map[postgresDiscoveryKey]<a href="#SourceConns">SourceConns</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewResolver">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L49">NewResolver</a>
+					<a class="permalink" href="#NewResolver">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewResolver() *<a href="#Resolver">Resolver</a></pre>
+				<p>NewResolver returns a Resolver with freshly initialized, empty caches.
+
+				
+				
+			
+
+			
+				
+				<h3 id="Resolver.ResolveDatabase">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L107">ResolveDatabase</a>
+					<a class="permalink" href="#Resolver.ResolveDatabase">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Resolver">Resolver</a>) ResolveDatabase(s <a href="#Source">Source</a>) (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabase returns a slice of found databases for a single continuous
+monitoring source, e.g. patroni.
+
+				
+				
+				
+			
+				
+				<h3 id="Resolver.ResolveDatabases">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L77">ResolveDatabases</a>
+					<a class="permalink" href="#Resolver.ResolveDatabases">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Resolver">Resolver</a>) ResolveDatabases(srcs <a href="#Sources">Sources</a>, onError func(<a href="https://pkg.go.dev/builtin/#string">string</a>)) (_ <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabases updates the list of monitored objects from continuous monitoring
+sources, e.g. patroni. Each source is resolved concurrently so that a slow or
+unreachable source does not block the others.
+
+				
+				
+				
+			
+				
+				<h3 id="Resolver.ResolveDatabasesFromPatroni">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L368">ResolveDatabasesFromPatroni</a>
+					<a class="permalink" href="#Resolver.ResolveDatabasesFromPatroni">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Resolver">Resolver</a>) ResolveDatabasesFromPatroni(source <a href="#Source">Source</a>) (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Resolver.ResolveDatabasesFromPostgres">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L441">ResolveDatabasesFromPostgres</a>
+					<a class="permalink" href="#Resolver.ResolveDatabasesFromPostgres">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Resolver">Resolver</a>) ResolveDatabasesFromPostgres(s <a href="#Source">Source</a>) (resolvedDbs <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>ResolveDatabasesFromPostgres reads all the databases from the given cluster,
+additionally matching/not matching specified regex patterns.
+<p>On any helper error (pool create or discovery query) and the presence of a
+previously-cached successful result for the same source identity, the cached
+list is returned with a nil error: a transient discovery failure (DNS hiccup,
+connect timeout, discovery-SQL permission error) must not tear down monitoring
+of already-known databases. The accepted trade-off is that a database dropped
+server-side while discovery keeps failing stays monitored from cache (surfaced
+as per-cycle connect errors reported as down) until the next successful
+resolution replaces the entry.
+
+				
+				
+				
+			
+				
+				<h3 id="Resolver.getEtcdClusterMembers">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L212">getEtcdClusterMembers</a>
+					<a class="permalink" href="#Resolver.getEtcdClusterMembers">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *<a href="#Resolver">Resolver</a>) getEtcdClusterMembers(s <a href="#Source">Source</a>, hc <a href="#HostConfig">HostConfig</a>) ([]<a href="#PatroniClusterMember">PatroniClusterMember</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+		
+			
+			
 			<h2 id="RuntimeInfo">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/conn.go.html#L57">RuntimeInfo</a>
 				<a class="permalink" href="#RuntimeInfo">&#xb6;</a>
 				
@@ -1475,13 +1617,14 @@ those additional metrics, it is ok to specify the connection details as a regula
 				
 			
 				
-				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L60">ResolveDatabases</a>
+				<h3 id="Source.ResolveDatabases">func (Source) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L70">ResolveDatabases</a>
 					<a class="permalink" href="#Source.ResolveDatabases">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (s <a href="#Source">Source</a>) ResolveDatabases() (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
+				<p>ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni.
+It delegates to the package-wide defaultResolver.
 
 				
 				
@@ -1561,25 +1704,13 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="ResolveDatabasesFromPatroni">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L303">ResolveDatabasesFromPatroni</a>
-					<a class="permalink" href="#ResolveDatabasesFromPatroni">&#xb6;</a>
+				<h3 id="resolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L459">resolveDatabasesFromPostgres</a>
+					<a class="permalink" href="#resolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func ResolveDatabasesFromPatroni(source <a href="#Source">Source</a>) (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				
-				
-				
-			
-				
-				<h3 id="ResolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L362">ResolveDatabasesFromPostgres</a>
-					<a class="permalink" href="#ResolveDatabasesFromPostgres">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func ResolveDatabasesFromPostgres(s <a href="#Source">Source</a>) (resolvedDbs <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>ResolveDatabasesFromPostgres reads all the databases from the given cluster,
-additionally matching/not matching specified regex patterns
+				<pre>func resolveDatabasesFromPostgres(s <a href="#Source">Source</a>) (resolvedDbs <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>resolveDatabasesFromPostgres is the inner helper that actually runs the discovery query.
 
 				
 				
@@ -1621,14 +1752,15 @@ additionally matching/not matching specified regex patterns
 
 			
 				
-				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L31">ResolveDatabases</a>
+				<h3 id="Sources.ResolveDatabases">func (Sources) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L64">ResolveDatabases</a>
 					<a class="permalink" href="#Sources.ResolveDatabases">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases(onError func(<a href="https://pkg.go.dev/builtin/#string">string</a>)) (_ <a href="#SourceConns">SourceConns</a>, err <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<pre>func (srcs <a href="#Sources">Sources</a>) ResolveDatabases(onError func(<a href="https://pkg.go.dev/builtin/#string">string</a>)) (<a href="#SourceConns">SourceConns</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
 Each source is resolved concurrently so that a slow or unreachable source does not block the others.
+It delegates to the package-wide defaultResolver.
 
 				
 				
@@ -1925,6 +2057,48 @@ Each source is resolved concurrently so that a slow or unreachable source does n
 				
 				
 				
+			
+		
+			
+			
+			<h2 id="postgresDiscoveryKey">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L135">postgresDiscoveryKey</a>
+				<a class="permalink" href="#postgresDiscoveryKey">&#xb6;</a>
+				
+				
+			</h2>
+			<p>postgresDiscoveryKey uniquely identifies a Postgres discovery source for caching purposes.
+It MUST incorporate every field that would change the set of discovered databases; otherwise a
+reconfigured source could be served the previous target&apos;s last-known-good list.
+
+			<pre>type postgresDiscoveryKey struct {
+<span id="postgresDiscoveryKey.name"></span>    name           <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="postgresDiscoveryKey.connStr"></span>    connStr        <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="postgresDiscoveryKey.includePattern"></span>    includePattern <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="postgresDiscoveryKey.excludePattern"></span>    excludePattern <a href="https://pkg.go.dev/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="postgresDiscoveryKeyOf">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/resolver.go.html#L142">postgresDiscoveryKeyOf</a>
+					<a class="permalink" href="#postgresDiscoveryKeyOf">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func postgresDiscoveryKeyOf(s <a href="#Source">Source</a>) postgresDiscoveryKey</pre>
+				
+				
+				
+			
+
 			
 		
 			

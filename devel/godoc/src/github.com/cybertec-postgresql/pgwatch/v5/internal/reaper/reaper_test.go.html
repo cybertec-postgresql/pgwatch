@@ -60,1025 +60,1390 @@
 <span id="L3" class="ln">     3  </span>import (
 <span id="L4" class="ln">     4  </span>	&#34;context&#34;
 <span id="L5" class="ln">     5  </span>	&#34;errors&#34;
-<span id="L6" class="ln">     6  </span>	&#34;maps&#34;
-<span id="L7" class="ln">     7  </span>	&#34;os&#34;
-<span id="L8" class="ln">     8  </span>	&#34;path/filepath&#34;
-<span id="L9" class="ln">     9  </span>	&#34;sync&#34;
-<span id="L10" class="ln">    10  </span>	&#34;testing&#34;
-<span id="L11" class="ln">    11  </span>
-<span id="L12" class="ln">    12  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts&#34;
-<span id="L13" class="ln">    13  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
-<span id="L14" class="ln">    14  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/metrics&#34;
-<span id="L15" class="ln">    15  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sinks&#34;
-<span id="L16" class="ln">    16  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sources&#34;
-<span id="L17" class="ln">    17  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/testutil&#34;
-<span id="L18" class="ln">    18  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
-<span id="L19" class="ln">    19  </span>	&#34;github.com/stretchr/testify/assert&#34;
-<span id="L20" class="ln">    20  </span>	&#34;github.com/stretchr/testify/require&#34;
-<span id="L21" class="ln">    21  </span>)
-<span id="L22" class="ln">    22  </span>
-<span id="L23" class="ln">    23  </span>func TestReaper_LoadSources(t *testing.T) {
-<span id="L24" class="ln">    24  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
-<span id="L25" class="ln">    25  </span>
-<span id="L26" class="ln">    26  </span>	t.Run(&#34;Test pause trigger file&#34;, func(t *testing.T) {
-<span id="L27" class="ln">    27  </span>		a := assert.New(t)
-<span id="L28" class="ln">    28  </span>		pausefile := filepath.Join(t.TempDir(), &#34;pausefile&#34;)
-<span id="L29" class="ln">    29  </span>		require.NoError(t, os.WriteFile(pausefile, []byte(&#34;foo&#34;), 0644))
-<span id="L30" class="ln">    30  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Metrics: metrics.CmdOpts{EmergencyPauseTriggerfile: pausefile}})
-<span id="L31" class="ln">    31  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L32" class="ln">    32  </span>		a.True(len(r.monitoredSources) == 0, &#34;Expected no monitored sources when pause trigger file exists&#34;)
-<span id="L33" class="ln">    33  </span>	})
-<span id="L34" class="ln">    34  </span>
-<span id="L35" class="ln">    35  </span>	t.Run(&#34;Test SyncFromReader errror&#34;, func(t *testing.T) {
-<span id="L36" class="ln">    36  </span>		a := assert.New(t)
-<span id="L37" class="ln">    37  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L38" class="ln">    38  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L39" class="ln">    39  </span>				return nil, assert.AnError
-<span id="L40" class="ln">    40  </span>			},
-<span id="L41" class="ln">    41  </span>		}
-<span id="L42" class="ln">    42  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
-<span id="L43" class="ln">    43  </span>		a.Error(r.LoadSources(ctx))
-<span id="L44" class="ln">    44  </span>		a.Equal(0, len(r.monitoredSources), &#34;Expected no monitored sources after error&#34;)
-<span id="L45" class="ln">    45  </span>	})
-<span id="L46" class="ln">    46  </span>
-<span id="L47" class="ln">    47  </span>	t.Run(&#34;Test SyncFromReader success&#34;, func(t *testing.T) {
-<span id="L48" class="ln">    48  </span>		a := assert.New(t)
-<span id="L49" class="ln">    49  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
-<span id="L50" class="ln">    50  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
-<span id="L51" class="ln">    51  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L52" class="ln">    52  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L53" class="ln">    53  </span>				return sources.Sources{source1, source2}, nil
-<span id="L54" class="ln">    54  </span>			},
-<span id="L55" class="ln">    55  </span>		}
-<span id="L56" class="ln">    56  </span>
-<span id="L57" class="ln">    57  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
-<span id="L58" class="ln">    58  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L59" class="ln">    59  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored sources after successful load&#34;)
-<span id="L60" class="ln">    60  </span>		a.NotNil(r.monitoredSources.GetMonitoredDatabase(source1.Name))
-<span id="L61" class="ln">    61  </span>		a.NotNil(r.monitoredSources.GetMonitoredDatabase(source2.Name))
-<span id="L62" class="ln">    62  </span>	})
-<span id="L63" class="ln">    63  </span>
-<span id="L64" class="ln">    64  </span>	t.Run(&#34;Test repeated load&#34;, func(t *testing.T) {
-<span id="L65" class="ln">    65  </span>		a := assert.New(t)
-<span id="L66" class="ln">    66  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
-<span id="L67" class="ln">    67  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
-<span id="L68" class="ln">    68  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L69" class="ln">    69  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L70" class="ln">    70  </span>				return sources.Sources{source1, source2}, nil
-<span id="L71" class="ln">    71  </span>			},
-<span id="L72" class="ln">    72  </span>		}
-<span id="L73" class="ln">    73  </span>
-<span id="L74" class="ln">    74  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
-<span id="L75" class="ln">    75  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L76" class="ln">    76  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored sources after first load&#34;)
+<span id="L6" class="ln">     6  </span>	&#34;fmt&#34;
+<span id="L7" class="ln">     7  </span>	&#34;maps&#34;
+<span id="L8" class="ln">     8  </span>	&#34;os&#34;
+<span id="L9" class="ln">     9  </span>	&#34;path/filepath&#34;
+<span id="L10" class="ln">    10  </span>	&#34;runtime&#34;
+<span id="L11" class="ln">    11  </span>	&#34;sync&#34;
+<span id="L12" class="ln">    12  </span>	&#34;sync/atomic&#34;
+<span id="L13" class="ln">    13  </span>	&#34;testing&#34;
+<span id="L14" class="ln">    14  </span>	&#34;time&#34;
+<span id="L15" class="ln">    15  </span>
+<span id="L16" class="ln">    16  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts&#34;
+<span id="L17" class="ln">    17  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/log&#34;
+<span id="L18" class="ln">    18  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/metrics&#34;
+<span id="L19" class="ln">    19  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sinks&#34;
+<span id="L20" class="ln">    20  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/sources&#34;
+<span id="L21" class="ln">    21  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v5/internal/testutil&#34;
+<span id="L22" class="ln">    22  </span>	&#34;github.com/pashagolub/pgxmock/v4&#34;
+<span id="L23" class="ln">    23  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L24" class="ln">    24  </span>	&#34;github.com/stretchr/testify/require&#34;
+<span id="L25" class="ln">    25  </span>)
+<span id="L26" class="ln">    26  </span>
+<span id="L27" class="ln">    27  </span>func TestReaper_LoadSources(t *testing.T) {
+<span id="L28" class="ln">    28  </span>	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span>	t.Run(&#34;Test pause trigger file&#34;, func(t *testing.T) {
+<span id="L31" class="ln">    31  </span>		a := assert.New(t)
+<span id="L32" class="ln">    32  </span>		pausefile := filepath.Join(t.TempDir(), &#34;pausefile&#34;)
+<span id="L33" class="ln">    33  </span>		require.NoError(t, os.WriteFile(pausefile, []byte(&#34;foo&#34;), 0644))
+<span id="L34" class="ln">    34  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Metrics: metrics.CmdOpts{EmergencyPauseTriggerfile: pausefile}})
+<span id="L35" class="ln">    35  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L36" class="ln">    36  </span>		a.True(len(r.monitoredSources) == 0, &#34;Expected no monitored sources when pause trigger file exists&#34;)
+<span id="L37" class="ln">    37  </span>	})
+<span id="L38" class="ln">    38  </span>
+<span id="L39" class="ln">    39  </span>	t.Run(&#34;Test SyncFromReader errror&#34;, func(t *testing.T) {
+<span id="L40" class="ln">    40  </span>		a := assert.New(t)
+<span id="L41" class="ln">    41  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L42" class="ln">    42  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L43" class="ln">    43  </span>				return nil, assert.AnError
+<span id="L44" class="ln">    44  </span>			},
+<span id="L45" class="ln">    45  </span>		}
+<span id="L46" class="ln">    46  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
+<span id="L47" class="ln">    47  </span>		a.Error(r.LoadSources(ctx))
+<span id="L48" class="ln">    48  </span>		a.Equal(0, len(r.monitoredSources), &#34;Expected no monitored sources after error&#34;)
+<span id="L49" class="ln">    49  </span>	})
+<span id="L50" class="ln">    50  </span>
+<span id="L51" class="ln">    51  </span>	t.Run(&#34;Test SyncFromReader success&#34;, func(t *testing.T) {
+<span id="L52" class="ln">    52  </span>		a := assert.New(t)
+<span id="L53" class="ln">    53  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
+<span id="L54" class="ln">    54  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
+<span id="L55" class="ln">    55  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L56" class="ln">    56  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L57" class="ln">    57  </span>				return sources.Sources{source1, source2}, nil
+<span id="L58" class="ln">    58  </span>			},
+<span id="L59" class="ln">    59  </span>		}
+<span id="L60" class="ln">    60  </span>
+<span id="L61" class="ln">    61  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
+<span id="L62" class="ln">    62  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L63" class="ln">    63  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored sources after successful load&#34;)
+<span id="L64" class="ln">    64  </span>		a.NotNil(r.monitoredSources.GetMonitoredDatabase(source1.Name))
+<span id="L65" class="ln">    65  </span>		a.NotNil(r.monitoredSources.GetMonitoredDatabase(source2.Name))
+<span id="L66" class="ln">    66  </span>	})
+<span id="L67" class="ln">    67  </span>
+<span id="L68" class="ln">    68  </span>	t.Run(&#34;Test repeated load&#34;, func(t *testing.T) {
+<span id="L69" class="ln">    69  </span>		a := assert.New(t)
+<span id="L70" class="ln">    70  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
+<span id="L71" class="ln">    71  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres}
+<span id="L72" class="ln">    72  </span>		reader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L73" class="ln">    73  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L74" class="ln">    74  </span>				return sources.Sources{source1, source2}, nil
+<span id="L75" class="ln">    75  </span>			},
+<span id="L76" class="ln">    76  </span>		}
 <span id="L77" class="ln">    77  </span>
-<span id="L78" class="ln">    78  </span>		<span class="comment">// Load again with the same sources</span>
+<span id="L78" class="ln">    78  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: reader})
 <span id="L79" class="ln">    79  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L80" class="ln">    80  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected still two monitored sources after second load&#34;)
-<span id="L81" class="ln">    81  </span>	})
-<span id="L82" class="ln">    82  </span>
-<span id="L83" class="ln">    83  </span>	t.Run(&#34;Test group limited sources&#34;, func(t *testing.T) {
-<span id="L84" class="ln">    84  </span>		a := assert.New(t)
-<span id="L85" class="ln">    85  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;&#34;}
-<span id="L86" class="ln">    86  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group1&#34;}
-<span id="L87" class="ln">    87  </span>		source3 := sources.Source{Name: &#34;Source 3&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group1&#34;}
-<span id="L88" class="ln">    88  </span>		source4 := sources.Source{Name: &#34;Source 4&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group2&#34;}
-<span id="L89" class="ln">    89  </span>		source5 := sources.Source{Name: &#34;Source 5&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;default&#34;}
-<span id="L90" class="ln">    90  </span>		newReader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L91" class="ln">    91  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L92" class="ln">    92  </span>				return sources.Sources{source1, source2, source3, source4, source5}, nil
-<span id="L93" class="ln">    93  </span>			},
-<span id="L94" class="ln">    94  </span>		}
-<span id="L95" class="ln">    95  </span>
-<span id="L96" class="ln">    96  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{&#34;group1&#34;, &#34;group2&#34;}}})
-<span id="L97" class="ln">    97  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L98" class="ln">    98  </span>		a.Equal(3, len(r.monitoredSources), &#34;Expected three monitored sources after load&#34;)
+<span id="L80" class="ln">    80  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored sources after first load&#34;)
+<span id="L81" class="ln">    81  </span>
+<span id="L82" class="ln">    82  </span>		<span class="comment">// Load again with the same sources</span>
+<span id="L83" class="ln">    83  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L84" class="ln">    84  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected still two monitored sources after second load&#34;)
+<span id="L85" class="ln">    85  </span>	})
+<span id="L86" class="ln">    86  </span>
+<span id="L87" class="ln">    87  </span>	t.Run(&#34;Test group limited sources&#34;, func(t *testing.T) {
+<span id="L88" class="ln">    88  </span>		a := assert.New(t)
+<span id="L89" class="ln">    89  </span>		source1 := sources.Source{Name: &#34;Source 1&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;&#34;}
+<span id="L90" class="ln">    90  </span>		source2 := sources.Source{Name: &#34;Source 2&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group1&#34;}
+<span id="L91" class="ln">    91  </span>		source3 := sources.Source{Name: &#34;Source 3&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group1&#34;}
+<span id="L92" class="ln">    92  </span>		source4 := sources.Source{Name: &#34;Source 4&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;group2&#34;}
+<span id="L93" class="ln">    93  </span>		source5 := sources.Source{Name: &#34;Source 5&#34;, IsEnabled: true, Kind: sources.SourcePostgres, Group: &#34;default&#34;}
+<span id="L94" class="ln">    94  </span>		newReader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L95" class="ln">    95  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L96" class="ln">    96  </span>				return sources.Sources{source1, source2, source3, source4, source5}, nil
+<span id="L97" class="ln">    97  </span>			},
+<span id="L98" class="ln">    98  </span>		}
 <span id="L99" class="ln">    99  </span>
-<span id="L100" class="ln">   100  </span>		r = newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{&#34;group1&#34;}}})
+<span id="L100" class="ln">   100  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{&#34;group1&#34;, &#34;group2&#34;}}})
 <span id="L101" class="ln">   101  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L102" class="ln">   102  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored source after group filtering&#34;)
+<span id="L102" class="ln">   102  </span>		a.Equal(3, len(r.monitoredSources), &#34;Expected three monitored sources after load&#34;)
 <span id="L103" class="ln">   103  </span>
-<span id="L104" class="ln">   104  </span>		r = newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader})
+<span id="L104" class="ln">   104  </span>		r = newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader, Sources: sources.CmdOpts{Groups: []string{&#34;group1&#34;}}})
 <span id="L105" class="ln">   105  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L106" class="ln">   106  </span>		a.Equal(5, len(r.monitoredSources), &#34;Expected five monitored sources after resetting groups&#34;)
-<span id="L107" class="ln">   107  </span>	})
-<span id="L108" class="ln">   108  </span>
-<span id="L109" class="ln">   109  </span>	t.Run(&#34;Test source config changes trigger restart&#34;, func(t *testing.T) {
-<span id="L110" class="ln">   110  </span>		baseSource := sources.Source{
-<span id="L111" class="ln">   111  </span>			Name:           &#34;TestSource&#34;,
-<span id="L112" class="ln">   112  </span>			IsEnabled:      true,
-<span id="L113" class="ln">   113  </span>			Kind:           sources.SourcePostgres,
-<span id="L114" class="ln">   114  </span>			ConnStr:        &#34;postgres://localhost:5432/testdb&#34;,
-<span id="L115" class="ln">   115  </span>			Metrics:        metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20},
-<span id="L116" class="ln">   116  </span>			MetricsStandby: metrics.MetricIntervals{&#34;cpu&#34;: 30},
-<span id="L117" class="ln">   117  </span>			CustomTags:     map[string]string{&#34;env&#34;: &#34;test&#34;},
-<span id="L118" class="ln">   118  </span>			Group:          &#34;default&#34;,
-<span id="L119" class="ln">   119  </span>		}
-<span id="L120" class="ln">   120  </span>
-<span id="L121" class="ln">   121  </span>		testCases := []struct {
-<span id="L122" class="ln">   122  </span>			name         string
-<span id="L123" class="ln">   123  </span>			modifySource func(s *sources.Source)
-<span id="L124" class="ln">   124  </span>			expectCancel bool
-<span id="L125" class="ln">   125  </span>		}{
-<span id="L126" class="ln">   126  </span>			{
-<span id="L127" class="ln">   127  </span>				name: &#34;custom tags change&#34;,
-<span id="L128" class="ln">   128  </span>				modifySource: func(s *sources.Source) {
-<span id="L129" class="ln">   129  </span>					s.CustomTags = map[string]string{&#34;env&#34;: &#34;production&#34;}
-<span id="L130" class="ln">   130  </span>				},
-<span id="L131" class="ln">   131  </span>				expectCancel: true,
-<span id="L132" class="ln">   132  </span>			},
-<span id="L133" class="ln">   133  </span>			{
-<span id="L134" class="ln">   134  </span>				name: &#34;custom tags add new tag&#34;,
-<span id="L135" class="ln">   135  </span>				modifySource: func(s *sources.Source) {
-<span id="L136" class="ln">   136  </span>					s.CustomTags = map[string]string{&#34;env&#34;: &#34;test&#34;, &#34;region&#34;: &#34;us-east&#34;}
-<span id="L137" class="ln">   137  </span>				},
-<span id="L138" class="ln">   138  </span>				expectCancel: true,
-<span id="L139" class="ln">   139  </span>			},
-<span id="L140" class="ln">   140  </span>			{
-<span id="L141" class="ln">   141  </span>				name: &#34;custom tags remove tag&#34;,
-<span id="L142" class="ln">   142  </span>				modifySource: func(s *sources.Source) {
-<span id="L143" class="ln">   143  </span>					s.CustomTags = map[string]string{}
-<span id="L144" class="ln">   144  </span>				},
-<span id="L145" class="ln">   145  </span>				expectCancel: true,
-<span id="L146" class="ln">   146  </span>			},
-<span id="L147" class="ln">   147  </span>			{
-<span id="L148" class="ln">   148  </span>				name: &#34;preset metrics change&#34;,
-<span id="L149" class="ln">   149  </span>				modifySource: func(s *sources.Source) {
-<span id="L150" class="ln">   150  </span>					s.PresetMetrics = &#34;exhaustive&#34;
-<span id="L151" class="ln">   151  </span>				},
-<span id="L152" class="ln">   152  </span>				expectCancel: true,
-<span id="L153" class="ln">   153  </span>			},
-<span id="L154" class="ln">   154  </span>			{
-<span id="L155" class="ln">   155  </span>				name: &#34;preset standby metrics change&#34;,
-<span id="L156" class="ln">   156  </span>				modifySource: func(s *sources.Source) {
-<span id="L157" class="ln">   157  </span>					s.PresetMetricsStandby = &#34;standby-preset&#34;
-<span id="L158" class="ln">   158  </span>				},
-<span id="L159" class="ln">   159  </span>				expectCancel: true,
-<span id="L160" class="ln">   160  </span>			},
-<span id="L161" class="ln">   161  </span>			{
-<span id="L162" class="ln">   162  </span>				name: &#34;connection string change&#34;,
-<span id="L163" class="ln">   163  </span>				modifySource: func(s *sources.Source) {
-<span id="L164" class="ln">   164  </span>					s.ConnStr = &#34;postgres://localhost:5433/newdb&#34;
-<span id="L165" class="ln">   165  </span>				},
-<span id="L166" class="ln">   166  </span>				expectCancel: true,
-<span id="L167" class="ln">   167  </span>			},
-<span id="L168" class="ln">   168  </span>			{
-<span id="L169" class="ln">   169  </span>				name: &#34;custom metrics change interval&#34;,
-<span id="L170" class="ln">   170  </span>				modifySource: func(s *sources.Source) {
-<span id="L171" class="ln">   171  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 15, &#34;memory&#34;: 20}
-<span id="L172" class="ln">   172  </span>				},
-<span id="L173" class="ln">   173  </span>				expectCancel: true,
-<span id="L174" class="ln">   174  </span>			},
-<span id="L175" class="ln">   175  </span>			{
-<span id="L176" class="ln">   176  </span>				name: &#34;custom metrics add new metric&#34;,
-<span id="L177" class="ln">   177  </span>				modifySource: func(s *sources.Source) {
-<span id="L178" class="ln">   178  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20, &#34;disk&#34;: 30}
-<span id="L179" class="ln">   179  </span>				},
-<span id="L180" class="ln">   180  </span>				expectCancel: true,
-<span id="L181" class="ln">   181  </span>			},
-<span id="L182" class="ln">   182  </span>			{
-<span id="L183" class="ln">   183  </span>				name: &#34;custom metrics remove metric&#34;,
-<span id="L184" class="ln">   184  </span>				modifySource: func(s *sources.Source) {
-<span id="L185" class="ln">   185  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
-<span id="L186" class="ln">   186  </span>				},
-<span id="L187" class="ln">   187  </span>				expectCancel: true,
-<span id="L188" class="ln">   188  </span>			},
-<span id="L189" class="ln">   189  </span>			{
-<span id="L190" class="ln">   190  </span>				name: &#34;standby metrics change&#34;,
-<span id="L191" class="ln">   191  </span>				modifySource: func(s *sources.Source) {
-<span id="L192" class="ln">   192  </span>					s.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
-<span id="L193" class="ln">   193  </span>				},
-<span id="L194" class="ln">   194  </span>				expectCancel: true,
-<span id="L195" class="ln">   195  </span>			},
-<span id="L196" class="ln">   196  </span>			{
-<span id="L197" class="ln">   197  </span>				name: &#34;group change&#34;,
-<span id="L198" class="ln">   198  </span>				modifySource: func(s *sources.Source) {
-<span id="L199" class="ln">   199  </span>					s.Group = &#34;new-group&#34;
-<span id="L200" class="ln">   200  </span>				},
-<span id="L201" class="ln">   201  </span>				expectCancel: true,
-<span id="L202" class="ln">   202  </span>			},
-<span id="L203" class="ln">   203  </span>			{
-<span id="L204" class="ln">   204  </span>				name: &#34;kind change&#34;,
-<span id="L205" class="ln">   205  </span>				modifySource: func(s *sources.Source) {
-<span id="L206" class="ln">   206  </span>					s.Kind = sources.SourcePgBouncer
-<span id="L207" class="ln">   207  </span>				},
-<span id="L208" class="ln">   208  </span>				expectCancel: true,
-<span id="L209" class="ln">   209  </span>			},
-<span id="L210" class="ln">   210  </span>			{
-<span id="L211" class="ln">   211  </span>				name: &#34;only if master change&#34;,
-<span id="L212" class="ln">   212  </span>				modifySource: func(s *sources.Source) {
-<span id="L213" class="ln">   213  </span>					s.OnlyIfMaster = true
-<span id="L214" class="ln">   214  </span>				},
-<span id="L215" class="ln">   215  </span>				expectCancel: true,
-<span id="L216" class="ln">   216  </span>			},
-<span id="L217" class="ln">   217  </span>			{
-<span id="L218" class="ln">   218  </span>				name: &#34;no change - same config&#34;,
-<span id="L219" class="ln">   219  </span>				modifySource: func(_ *sources.Source) {
-<span id="L220" class="ln">   220  </span>					<span class="comment">// No modifications - source stays the same</span>
-<span id="L221" class="ln">   221  </span>				},
-<span id="L222" class="ln">   222  </span>				expectCancel: false,
-<span id="L223" class="ln">   223  </span>			},
-<span id="L224" class="ln">   224  </span>		}
-<span id="L225" class="ln">   225  </span>
-<span id="L226" class="ln">   226  </span>		for _, tc := range testCases {
-<span id="L227" class="ln">   227  </span>			t.Run(tc.name, func(t *testing.T) {
-<span id="L228" class="ln">   228  </span>				a := assert.New(t)
-<span id="L229" class="ln">   229  </span>				initialSource := *baseSource.Clone()
-<span id="L230" class="ln">   230  </span>				initialReader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L231" class="ln">   231  </span>					GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L232" class="ln">   232  </span>						return sources.Sources{initialSource}, nil
-<span id="L233" class="ln">   233  </span>					},
-<span id="L234" class="ln">   234  </span>				}
-<span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>				r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L237" class="ln">   237  </span>					SourcesReaderWriter: initialReader,
-<span id="L238" class="ln">   238  </span>					SinksWriter:         &amp;sinks.MultiWriter{},
-<span id="L239" class="ln">   239  </span>				})
-<span id="L240" class="ln">   240  </span>				a.NoError(r.LoadSources(ctx))
-<span id="L241" class="ln">   241  </span>				a.Equal(1, len(r.monitoredSources), &#34;Expected one monitored source after initial load&#34;)
-<span id="L242" class="ln">   242  </span>
-<span id="L243" class="ln">   243  </span>				mockConn, err := pgxmock.NewPool()
-<span id="L244" class="ln">   244  </span>				require.NoError(t, err)
-<span id="L245" class="ln">   245  </span>				mockConn.ExpectClose()
-<span id="L246" class="ln">   246  </span>				r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
-<span id="L247" class="ln">   247  </span>
-<span id="L248" class="ln">   248  </span>				<span class="comment">// Add a mock cancel function for the source reaper</span>
-<span id="L249" class="ln">   249  </span>				cancelCalled := make(map[string]bool)
-<span id="L250" class="ln">   250  </span>				r.cancelFuncs[initialSource.Name] = func() {
-<span id="L251" class="ln">   251  </span>					cancelCalled[initialSource.Name] = true
-<span id="L252" class="ln">   252  </span>				}
-<span id="L253" class="ln">   253  </span>
-<span id="L254" class="ln">   254  </span>				<span class="comment">// Create modified source</span>
-<span id="L255" class="ln">   255  </span>				modifiedSource := *baseSource.Clone()
-<span id="L256" class="ln">   256  </span>				tc.modifySource(&amp;modifiedSource)
+<span id="L106" class="ln">   106  </span>		a.Equal(2, len(r.monitoredSources), &#34;Expected two monitored source after group filtering&#34;)
+<span id="L107" class="ln">   107  </span>
+<span id="L108" class="ln">   108  </span>		r = newReaper(ctx, &amp;cmdopts.Options{SourcesReaderWriter: newReader})
+<span id="L109" class="ln">   109  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L110" class="ln">   110  </span>		a.Equal(5, len(r.monitoredSources), &#34;Expected five monitored sources after resetting groups&#34;)
+<span id="L111" class="ln">   111  </span>	})
+<span id="L112" class="ln">   112  </span>
+<span id="L113" class="ln">   113  </span>	t.Run(&#34;Test source config changes trigger restart&#34;, func(t *testing.T) {
+<span id="L114" class="ln">   114  </span>		baseSource := sources.Source{
+<span id="L115" class="ln">   115  </span>			Name:           &#34;TestSource&#34;,
+<span id="L116" class="ln">   116  </span>			IsEnabled:      true,
+<span id="L117" class="ln">   117  </span>			Kind:           sources.SourcePostgres,
+<span id="L118" class="ln">   118  </span>			ConnStr:        &#34;postgres://localhost:5432/testdb&#34;,
+<span id="L119" class="ln">   119  </span>			Metrics:        metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20},
+<span id="L120" class="ln">   120  </span>			MetricsStandby: metrics.MetricIntervals{&#34;cpu&#34;: 30},
+<span id="L121" class="ln">   121  </span>			CustomTags:     map[string]string{&#34;env&#34;: &#34;test&#34;},
+<span id="L122" class="ln">   122  </span>			Group:          &#34;default&#34;,
+<span id="L123" class="ln">   123  </span>		}
+<span id="L124" class="ln">   124  </span>
+<span id="L125" class="ln">   125  </span>		testCases := []struct {
+<span id="L126" class="ln">   126  </span>			name         string
+<span id="L127" class="ln">   127  </span>			modifySource func(s *sources.Source)
+<span id="L128" class="ln">   128  </span>			expectCancel bool
+<span id="L129" class="ln">   129  </span>		}{
+<span id="L130" class="ln">   130  </span>			{
+<span id="L131" class="ln">   131  </span>				name: &#34;custom tags change&#34;,
+<span id="L132" class="ln">   132  </span>				modifySource: func(s *sources.Source) {
+<span id="L133" class="ln">   133  </span>					s.CustomTags = map[string]string{&#34;env&#34;: &#34;production&#34;}
+<span id="L134" class="ln">   134  </span>				},
+<span id="L135" class="ln">   135  </span>				expectCancel: true,
+<span id="L136" class="ln">   136  </span>			},
+<span id="L137" class="ln">   137  </span>			{
+<span id="L138" class="ln">   138  </span>				name: &#34;custom tags add new tag&#34;,
+<span id="L139" class="ln">   139  </span>				modifySource: func(s *sources.Source) {
+<span id="L140" class="ln">   140  </span>					s.CustomTags = map[string]string{&#34;env&#34;: &#34;test&#34;, &#34;region&#34;: &#34;us-east&#34;}
+<span id="L141" class="ln">   141  </span>				},
+<span id="L142" class="ln">   142  </span>				expectCancel: true,
+<span id="L143" class="ln">   143  </span>			},
+<span id="L144" class="ln">   144  </span>			{
+<span id="L145" class="ln">   145  </span>				name: &#34;custom tags remove tag&#34;,
+<span id="L146" class="ln">   146  </span>				modifySource: func(s *sources.Source) {
+<span id="L147" class="ln">   147  </span>					s.CustomTags = map[string]string{}
+<span id="L148" class="ln">   148  </span>				},
+<span id="L149" class="ln">   149  </span>				expectCancel: true,
+<span id="L150" class="ln">   150  </span>			},
+<span id="L151" class="ln">   151  </span>			{
+<span id="L152" class="ln">   152  </span>				name: &#34;preset metrics change&#34;,
+<span id="L153" class="ln">   153  </span>				modifySource: func(s *sources.Source) {
+<span id="L154" class="ln">   154  </span>					s.PresetMetrics = &#34;exhaustive&#34;
+<span id="L155" class="ln">   155  </span>				},
+<span id="L156" class="ln">   156  </span>				expectCancel: true,
+<span id="L157" class="ln">   157  </span>			},
+<span id="L158" class="ln">   158  </span>			{
+<span id="L159" class="ln">   159  </span>				name: &#34;preset standby metrics change&#34;,
+<span id="L160" class="ln">   160  </span>				modifySource: func(s *sources.Source) {
+<span id="L161" class="ln">   161  </span>					s.PresetMetricsStandby = &#34;standby-preset&#34;
+<span id="L162" class="ln">   162  </span>				},
+<span id="L163" class="ln">   163  </span>				expectCancel: true,
+<span id="L164" class="ln">   164  </span>			},
+<span id="L165" class="ln">   165  </span>			{
+<span id="L166" class="ln">   166  </span>				name: &#34;connection string change&#34;,
+<span id="L167" class="ln">   167  </span>				modifySource: func(s *sources.Source) {
+<span id="L168" class="ln">   168  </span>					s.ConnStr = &#34;postgres://localhost:5433/newdb&#34;
+<span id="L169" class="ln">   169  </span>				},
+<span id="L170" class="ln">   170  </span>				expectCancel: true,
+<span id="L171" class="ln">   171  </span>			},
+<span id="L172" class="ln">   172  </span>			{
+<span id="L173" class="ln">   173  </span>				name: &#34;custom metrics change interval&#34;,
+<span id="L174" class="ln">   174  </span>				modifySource: func(s *sources.Source) {
+<span id="L175" class="ln">   175  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 15, &#34;memory&#34;: 20}
+<span id="L176" class="ln">   176  </span>				},
+<span id="L177" class="ln">   177  </span>				expectCancel: true,
+<span id="L178" class="ln">   178  </span>			},
+<span id="L179" class="ln">   179  </span>			{
+<span id="L180" class="ln">   180  </span>				name: &#34;custom metrics add new metric&#34;,
+<span id="L181" class="ln">   181  </span>				modifySource: func(s *sources.Source) {
+<span id="L182" class="ln">   182  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20, &#34;disk&#34;: 30}
+<span id="L183" class="ln">   183  </span>				},
+<span id="L184" class="ln">   184  </span>				expectCancel: true,
+<span id="L185" class="ln">   185  </span>			},
+<span id="L186" class="ln">   186  </span>			{
+<span id="L187" class="ln">   187  </span>				name: &#34;custom metrics remove metric&#34;,
+<span id="L188" class="ln">   188  </span>				modifySource: func(s *sources.Source) {
+<span id="L189" class="ln">   189  </span>					s.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
+<span id="L190" class="ln">   190  </span>				},
+<span id="L191" class="ln">   191  </span>				expectCancel: true,
+<span id="L192" class="ln">   192  </span>			},
+<span id="L193" class="ln">   193  </span>			{
+<span id="L194" class="ln">   194  </span>				name: &#34;standby metrics change&#34;,
+<span id="L195" class="ln">   195  </span>				modifySource: func(s *sources.Source) {
+<span id="L196" class="ln">   196  </span>					s.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
+<span id="L197" class="ln">   197  </span>				},
+<span id="L198" class="ln">   198  </span>				expectCancel: true,
+<span id="L199" class="ln">   199  </span>			},
+<span id="L200" class="ln">   200  </span>			{
+<span id="L201" class="ln">   201  </span>				name: &#34;group change&#34;,
+<span id="L202" class="ln">   202  </span>				modifySource: func(s *sources.Source) {
+<span id="L203" class="ln">   203  </span>					s.Group = &#34;new-group&#34;
+<span id="L204" class="ln">   204  </span>				},
+<span id="L205" class="ln">   205  </span>				expectCancel: true,
+<span id="L206" class="ln">   206  </span>			},
+<span id="L207" class="ln">   207  </span>			{
+<span id="L208" class="ln">   208  </span>				name: &#34;kind change&#34;,
+<span id="L209" class="ln">   209  </span>				modifySource: func(s *sources.Source) {
+<span id="L210" class="ln">   210  </span>					s.Kind = sources.SourcePgBouncer
+<span id="L211" class="ln">   211  </span>				},
+<span id="L212" class="ln">   212  </span>				expectCancel: true,
+<span id="L213" class="ln">   213  </span>			},
+<span id="L214" class="ln">   214  </span>			{
+<span id="L215" class="ln">   215  </span>				name: &#34;only if master change&#34;,
+<span id="L216" class="ln">   216  </span>				modifySource: func(s *sources.Source) {
+<span id="L217" class="ln">   217  </span>					s.OnlyIfMaster = true
+<span id="L218" class="ln">   218  </span>				},
+<span id="L219" class="ln">   219  </span>				expectCancel: true,
+<span id="L220" class="ln">   220  </span>			},
+<span id="L221" class="ln">   221  </span>			{
+<span id="L222" class="ln">   222  </span>				name: &#34;no change - same config&#34;,
+<span id="L223" class="ln">   223  </span>				modifySource: func(_ *sources.Source) {
+<span id="L224" class="ln">   224  </span>					<span class="comment">// No modifications - source stays the same</span>
+<span id="L225" class="ln">   225  </span>				},
+<span id="L226" class="ln">   226  </span>				expectCancel: false,
+<span id="L227" class="ln">   227  </span>			},
+<span id="L228" class="ln">   228  </span>		}
+<span id="L229" class="ln">   229  </span>
+<span id="L230" class="ln">   230  </span>		for _, tc := range testCases {
+<span id="L231" class="ln">   231  </span>			t.Run(tc.name, func(t *testing.T) {
+<span id="L232" class="ln">   232  </span>				a := assert.New(t)
+<span id="L233" class="ln">   233  </span>				initialSource := *baseSource.Clone()
+<span id="L234" class="ln">   234  </span>				initialReader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L235" class="ln">   235  </span>					GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L236" class="ln">   236  </span>						return sources.Sources{initialSource}, nil
+<span id="L237" class="ln">   237  </span>					},
+<span id="L238" class="ln">   238  </span>				}
+<span id="L239" class="ln">   239  </span>
+<span id="L240" class="ln">   240  </span>				r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L241" class="ln">   241  </span>					SourcesReaderWriter: initialReader,
+<span id="L242" class="ln">   242  </span>					SinksWriter:         &amp;sinks.MultiWriter{},
+<span id="L243" class="ln">   243  </span>				})
+<span id="L244" class="ln">   244  </span>				a.NoError(r.LoadSources(ctx))
+<span id="L245" class="ln">   245  </span>				a.Equal(1, len(r.monitoredSources), &#34;Expected one monitored source after initial load&#34;)
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>				mockConn, err := pgxmock.NewPool()
+<span id="L248" class="ln">   248  </span>				require.NoError(t, err)
+<span id="L249" class="ln">   249  </span>				mockConn.ExpectClose()
+<span id="L250" class="ln">   250  </span>				r.monitoredSources[0].(*sources.DbConn).Conn = mockConn
+<span id="L251" class="ln">   251  </span>
+<span id="L252" class="ln">   252  </span>				<span class="comment">// Add a mock cancel function for the source reaper</span>
+<span id="L253" class="ln">   253  </span>				cancelCalled := make(map[string]bool)
+<span id="L254" class="ln">   254  </span>				r.cancelFuncs[initialSource.Name] = func() {
+<span id="L255" class="ln">   255  </span>					cancelCalled[initialSource.Name] = true
+<span id="L256" class="ln">   256  </span>				}
 <span id="L257" class="ln">   257  </span>
-<span id="L258" class="ln">   258  </span>				modifiedReader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L259" class="ln">   259  </span>					GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L260" class="ln">   260  </span>						return sources.Sources{modifiedSource}, nil
-<span id="L261" class="ln">   261  </span>					},
-<span id="L262" class="ln">   262  </span>				}
-<span id="L263" class="ln">   263  </span>				r.SourcesReaderWriter = modifiedReader
-<span id="L264" class="ln">   264  </span>
-<span id="L265" class="ln">   265  </span>				<span class="comment">// Reload sources</span>
-<span id="L266" class="ln">   266  </span>				a.NoError(r.LoadSources(ctx))
-<span id="L267" class="ln">   267  </span>				a.Equal(1, len(r.monitoredSources), &#34;Expected one monitored source after reload&#34;)
-<span id="L268" class="ln">   268  </span>				a.Equal(modifiedSource, r.monitoredSources[0].GetSource())
-<span id="L269" class="ln">   269  </span>
-<span id="L270" class="ln">   270  </span>				assert.Equal(t, tc.expectCancel, cancelCalled[initialSource.Name])
-<span id="L271" class="ln">   271  </span>				if tc.expectCancel {
-<span id="L272" class="ln">   272  </span>					assert.Nil(t, mockConn.ExpectationsWereMet(), &#34;Expected all mock expectations to be met&#34;)
-<span id="L273" class="ln">   273  </span>					_, exists := r.cancelFuncs[initialSource.Name]
-<span id="L274" class="ln">   274  </span>					assert.False(t, exists, &#34;Expected cancel func to be removed from map after cancellation&#34;)
-<span id="L275" class="ln">   275  </span>				}
-<span id="L276" class="ln">   276  </span>			})
-<span id="L277" class="ln">   277  </span>		}
-<span id="L278" class="ln">   278  </span>	})
-<span id="L279" class="ln">   279  </span>
-<span id="L280" class="ln">   280  </span>	t.Run(&#34;Test only changed source cancelled in multi-source setup&#34;, func(t *testing.T) {
-<span id="L281" class="ln">   281  </span>		a := assert.New(t)
-<span id="L282" class="ln">   282  </span>		source1 := sources.Source{
-<span id="L283" class="ln">   283  </span>			Name:      &#34;Source1&#34;,
-<span id="L284" class="ln">   284  </span>			IsEnabled: true,
-<span id="L285" class="ln">   285  </span>			Kind:      sources.SourcePostgres,
-<span id="L286" class="ln">   286  </span>			ConnStr:   &#34;postgres://localhost:5432/db1&#34;,
-<span id="L287" class="ln">   287  </span>			Metrics:   metrics.MetricIntervals{&#34;cpu&#34;: 10},
-<span id="L288" class="ln">   288  </span>		}
-<span id="L289" class="ln">   289  </span>		source2 := sources.Source{
-<span id="L290" class="ln">   290  </span>			Name:      &#34;Source2&#34;,
-<span id="L291" class="ln">   291  </span>			IsEnabled: true,
-<span id="L292" class="ln">   292  </span>			Kind:      sources.SourcePostgres,
-<span id="L293" class="ln">   293  </span>			ConnStr:   &#34;postgres://localhost:5432/db2&#34;,
-<span id="L294" class="ln">   294  </span>			Metrics:   metrics.MetricIntervals{&#34;memory&#34;: 20},
-<span id="L295" class="ln">   295  </span>		}
-<span id="L296" class="ln">   296  </span>
-<span id="L297" class="ln">   297  </span>		initialReader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L298" class="ln">   298  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L299" class="ln">   299  </span>				return sources.Sources{source1, source2}, nil
-<span id="L300" class="ln">   300  </span>			},
-<span id="L301" class="ln">   301  </span>		}
-<span id="L302" class="ln">   302  </span>
-<span id="L303" class="ln">   303  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L304" class="ln">   304  </span>			SourcesReaderWriter: initialReader,
-<span id="L305" class="ln">   305  </span>			SinksWriter:         &amp;sinks.MultiWriter{},
-<span id="L306" class="ln">   306  </span>		})
-<span id="L307" class="ln">   307  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L308" class="ln">   308  </span>
-<span id="L309" class="ln">   309  </span>		<span class="comment">// Set mock connections for both sources to avoid nil pointer on Close()</span>
-<span id="L310" class="ln">   310  </span>		mockConn1, err := pgxmock.NewPool()
-<span id="L311" class="ln">   311  </span>		require.NoError(t, err)
-<span id="L312" class="ln">   312  </span>		mockConn1.ExpectClose()
-<span id="L313" class="ln">   313  </span>		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn1
-<span id="L314" class="ln">   314  </span>
-<span id="L315" class="ln">   315  </span>		source1Cancelled := false
-<span id="L316" class="ln">   316  </span>		source2Cancelled := false
-<span id="L317" class="ln">   317  </span>		r.cancelFuncs[source1.Name] = func() { source1Cancelled = true }
-<span id="L318" class="ln">   318  </span>		r.cancelFuncs[source2.Name] = func() { source2Cancelled = true }
-<span id="L319" class="ln">   319  </span>
-<span id="L320" class="ln">   320  </span>		<span class="comment">// Only modify source1</span>
-<span id="L321" class="ln">   321  </span>		modifiedSource1 := *source1.Clone()
-<span id="L322" class="ln">   322  </span>		modifiedSource1.ConnStr = &#34;postgres://localhost:5433/db1_new&#34;
+<span id="L258" class="ln">   258  </span>				<span class="comment">// Create modified source</span>
+<span id="L259" class="ln">   259  </span>				modifiedSource := *baseSource.Clone()
+<span id="L260" class="ln">   260  </span>				tc.modifySource(&amp;modifiedSource)
+<span id="L261" class="ln">   261  </span>
+<span id="L262" class="ln">   262  </span>				modifiedReader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L263" class="ln">   263  </span>					GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L264" class="ln">   264  </span>						return sources.Sources{modifiedSource}, nil
+<span id="L265" class="ln">   265  </span>					},
+<span id="L266" class="ln">   266  </span>				}
+<span id="L267" class="ln">   267  </span>				r.SourcesReaderWriter = modifiedReader
+<span id="L268" class="ln">   268  </span>
+<span id="L269" class="ln">   269  </span>				<span class="comment">// Reload sources</span>
+<span id="L270" class="ln">   270  </span>				a.NoError(r.LoadSources(ctx))
+<span id="L271" class="ln">   271  </span>				a.Equal(1, len(r.monitoredSources), &#34;Expected one monitored source after reload&#34;)
+<span id="L272" class="ln">   272  </span>				a.Equal(modifiedSource, r.monitoredSources[0].GetSource())
+<span id="L273" class="ln">   273  </span>
+<span id="L274" class="ln">   274  </span>				assert.Equal(t, tc.expectCancel, cancelCalled[initialSource.Name])
+<span id="L275" class="ln">   275  </span>				if tc.expectCancel {
+<span id="L276" class="ln">   276  </span>					assert.Nil(t, mockConn.ExpectationsWereMet(), &#34;Expected all mock expectations to be met&#34;)
+<span id="L277" class="ln">   277  </span>					_, exists := r.cancelFuncs[initialSource.Name]
+<span id="L278" class="ln">   278  </span>					assert.False(t, exists, &#34;Expected cancel func to be removed from map after cancellation&#34;)
+<span id="L279" class="ln">   279  </span>				}
+<span id="L280" class="ln">   280  </span>			})
+<span id="L281" class="ln">   281  </span>		}
+<span id="L282" class="ln">   282  </span>	})
+<span id="L283" class="ln">   283  </span>
+<span id="L284" class="ln">   284  </span>	t.Run(&#34;Test only changed source cancelled in multi-source setup&#34;, func(t *testing.T) {
+<span id="L285" class="ln">   285  </span>		a := assert.New(t)
+<span id="L286" class="ln">   286  </span>		source1 := sources.Source{
+<span id="L287" class="ln">   287  </span>			Name:      &#34;Source1&#34;,
+<span id="L288" class="ln">   288  </span>			IsEnabled: true,
+<span id="L289" class="ln">   289  </span>			Kind:      sources.SourcePostgres,
+<span id="L290" class="ln">   290  </span>			ConnStr:   &#34;postgres://localhost:5432/db1&#34;,
+<span id="L291" class="ln">   291  </span>			Metrics:   metrics.MetricIntervals{&#34;cpu&#34;: 10},
+<span id="L292" class="ln">   292  </span>		}
+<span id="L293" class="ln">   293  </span>		source2 := sources.Source{
+<span id="L294" class="ln">   294  </span>			Name:      &#34;Source2&#34;,
+<span id="L295" class="ln">   295  </span>			IsEnabled: true,
+<span id="L296" class="ln">   296  </span>			Kind:      sources.SourcePostgres,
+<span id="L297" class="ln">   297  </span>			ConnStr:   &#34;postgres://localhost:5432/db2&#34;,
+<span id="L298" class="ln">   298  </span>			Metrics:   metrics.MetricIntervals{&#34;memory&#34;: 20},
+<span id="L299" class="ln">   299  </span>		}
+<span id="L300" class="ln">   300  </span>
+<span id="L301" class="ln">   301  </span>		initialReader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L302" class="ln">   302  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L303" class="ln">   303  </span>				return sources.Sources{source1, source2}, nil
+<span id="L304" class="ln">   304  </span>			},
+<span id="L305" class="ln">   305  </span>		}
+<span id="L306" class="ln">   306  </span>
+<span id="L307" class="ln">   307  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L308" class="ln">   308  </span>			SourcesReaderWriter: initialReader,
+<span id="L309" class="ln">   309  </span>			SinksWriter:         &amp;sinks.MultiWriter{},
+<span id="L310" class="ln">   310  </span>		})
+<span id="L311" class="ln">   311  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L312" class="ln">   312  </span>
+<span id="L313" class="ln">   313  </span>		<span class="comment">// Set mock connections for both sources to avoid nil pointer on Close()</span>
+<span id="L314" class="ln">   314  </span>		mockConn1, err := pgxmock.NewPool()
+<span id="L315" class="ln">   315  </span>		require.NoError(t, err)
+<span id="L316" class="ln">   316  </span>		mockConn1.ExpectClose()
+<span id="L317" class="ln">   317  </span>		r.monitoredSources[0].(*sources.DbConn).Conn = mockConn1
+<span id="L318" class="ln">   318  </span>
+<span id="L319" class="ln">   319  </span>		source1Cancelled := false
+<span id="L320" class="ln">   320  </span>		source2Cancelled := false
+<span id="L321" class="ln">   321  </span>		r.cancelFuncs[source1.Name] = func() { source1Cancelled = true }
+<span id="L322" class="ln">   322  </span>		r.cancelFuncs[source2.Name] = func() { source2Cancelled = true }
 <span id="L323" class="ln">   323  </span>
-<span id="L324" class="ln">   324  </span>		modifiedReader := &amp;testutil.MockSourcesReaderWriter{
-<span id="L325" class="ln">   325  </span>			GetSourcesFunc: func() (sources.Sources, error) {
-<span id="L326" class="ln">   326  </span>				return sources.Sources{modifiedSource1, source2}, nil
-<span id="L327" class="ln">   327  </span>			},
-<span id="L328" class="ln">   328  </span>		}
-<span id="L329" class="ln">   329  </span>		r.SourcesReaderWriter = modifiedReader
-<span id="L330" class="ln">   330  </span>
-<span id="L331" class="ln">   331  </span>		a.NoError(r.LoadSources(ctx))
-<span id="L332" class="ln">   332  </span>
-<span id="L333" class="ln">   333  </span>		a.True(source1Cancelled, &#34;Source1 should be cancelled due to config change&#34;)
-<span id="L334" class="ln">   334  </span>		a.False(source2Cancelled, &#34;Source2 should NOT be cancelled as it was not modified&#34;)
-<span id="L335" class="ln">   335  </span>		a.Nil(mockConn1.ExpectationsWereMet(), &#34;Expected all mock expectations to be met&#34;)
-<span id="L336" class="ln">   336  </span>	})
-<span id="L337" class="ln">   337  </span>}
-<span id="L338" class="ln">   338  </span>
-<span id="L339" class="ln">   339  </span>type mockErr string
-<span id="L340" class="ln">   340  </span>
-<span id="L341" class="ln">   341  </span>func (m mockErr) SyncMetric(string, string, sinks.SyncOp) error {
-<span id="L342" class="ln">   342  </span>	return errors.New(string(m))
-<span id="L343" class="ln">   343  </span>}
+<span id="L324" class="ln">   324  </span>		<span class="comment">// Only modify source1</span>
+<span id="L325" class="ln">   325  </span>		modifiedSource1 := *source1.Clone()
+<span id="L326" class="ln">   326  </span>		modifiedSource1.ConnStr = &#34;postgres://localhost:5433/db1_new&#34;
+<span id="L327" class="ln">   327  </span>
+<span id="L328" class="ln">   328  </span>		modifiedReader := &amp;testutil.MockSourcesReaderWriter{
+<span id="L329" class="ln">   329  </span>			GetSourcesFunc: func() (sources.Sources, error) {
+<span id="L330" class="ln">   330  </span>				return sources.Sources{modifiedSource1, source2}, nil
+<span id="L331" class="ln">   331  </span>			},
+<span id="L332" class="ln">   332  </span>		}
+<span id="L333" class="ln">   333  </span>		r.SourcesReaderWriter = modifiedReader
+<span id="L334" class="ln">   334  </span>
+<span id="L335" class="ln">   335  </span>		a.NoError(r.LoadSources(ctx))
+<span id="L336" class="ln">   336  </span>
+<span id="L337" class="ln">   337  </span>		a.True(source1Cancelled, &#34;Source1 should be cancelled due to config change&#34;)
+<span id="L338" class="ln">   338  </span>		a.False(source2Cancelled, &#34;Source2 should NOT be cancelled as it was not modified&#34;)
+<span id="L339" class="ln">   339  </span>		a.Nil(mockConn1.ExpectationsWereMet(), &#34;Expected all mock expectations to be met&#34;)
+<span id="L340" class="ln">   340  </span>	})
+<span id="L341" class="ln">   341  </span>}
+<span id="L342" class="ln">   342  </span>
+<span id="L343" class="ln">   343  </span>type mockErr string
 <span id="L344" class="ln">   344  </span>
-<span id="L345" class="ln">   345  </span>func (m mockErr) Write(metrics.MeasurementEnvelope) error {
+<span id="L345" class="ln">   345  </span>func (m mockErr) SyncMetric(string, string, sinks.SyncOp) error {
 <span id="L346" class="ln">   346  </span>	return errors.New(string(m))
 <span id="L347" class="ln">   347  </span>}
 <span id="L348" class="ln">   348  </span>
-<span id="L349" class="ln">   349  </span>func TestWriteMeasurements(t *testing.T) {
-<span id="L350" class="ln">   350  </span>	ctx, cancel := context.WithCancel(log.WithLogger(t.Context(), log.NewNoopLogger()))
-<span id="L351" class="ln">   351  </span>	defer cancel()
-<span id="L352" class="ln">   352  </span>	var err mockErr = &#34;write error&#34;
-<span id="L353" class="ln">   353  </span>	r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L354" class="ln">   354  </span>		SinksWriter: err,
-<span id="L355" class="ln">   355  </span>	})
-<span id="L356" class="ln">   356  </span>	go r.WriteMeasurements(ctx)
-<span id="L357" class="ln">   357  </span>	r.WriteInstanceDown(&#34;foo&#34;)
-<span id="L358" class="ln">   358  </span>}
-<span id="L359" class="ln">   359  </span>
-<span id="L360" class="ln">   360  </span>func TestReaper_Ready(t *testing.T) {
-<span id="L361" class="ln">   361  </span>	a := assert.New(t)
-<span id="L362" class="ln">   362  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L363" class="ln">   363  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L364" class="ln">   364  </span>	a.False(r.Ready())
-<span id="L365" class="ln">   365  </span>	r.ready.Store(true)
-<span id="L366" class="ln">   366  </span>	a.True(r.Ready())
-<span id="L367" class="ln">   367  </span>}
-<span id="L368" class="ln">   368  </span>
-<span id="L369" class="ln">   369  </span>func TestReaper_WriteInstanceDown(t *testing.T) {
-<span id="L370" class="ln">   370  </span>	a := assert.New(t)
-<span id="L371" class="ln">   371  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L372" class="ln">   372  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L373" class="ln">   373  </span>	r.WriteInstanceDown(&#34;testdb&#34;)
-<span id="L374" class="ln">   374  </span>	select {
-<span id="L375" class="ln">   375  </span>	case msg := &lt;-r.measurementCh:
-<span id="L376" class="ln">   376  </span>		a.Equal(&#34;testdb&#34;, msg.DBName)
-<span id="L377" class="ln">   377  </span>		a.Equal(specialMetricInstanceUp, msg.MetricName)
-<span id="L378" class="ln">   378  </span>		require.Len(t, msg.Data, 1)
-<span id="L379" class="ln">   379  </span>		a.Equal(0, msg.Data[0][specialMetricInstanceUp])
-<span id="L380" class="ln">   380  </span>	default:
-<span id="L381" class="ln">   381  </span>		t.Error(&#34;expected message in measurementCh&#34;)
-<span id="L382" class="ln">   382  </span>	}
-<span id="L383" class="ln">   383  </span>}
-<span id="L384" class="ln">   384  </span>
-<span id="L385" class="ln">   385  </span>func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
-<span id="L386" class="ln">   386  </span>	t.Run(&#34;adds real dbname and system identifier fields&#34;, func(t *testing.T) {
-<span id="L387" class="ln">   387  </span>		a := assert.New(t)
-<span id="L388" class="ln">   388  </span>		r := &amp;reaper{
-<span id="L389" class="ln">   389  </span>			Options: &amp;cmdopts.Options{
-<span id="L390" class="ln">   390  </span>				Sinks: sinks.CmdOpts{
-<span id="L391" class="ln">   391  </span>					RealDbnameField:       &#34;real_dbname&#34;,
-<span id="L392" class="ln">   392  </span>					SystemIdentifierField: &#34;sys_id&#34;,
-<span id="L393" class="ln">   393  </span>				},
-<span id="L394" class="ln">   394  </span>			},
-<span id="L395" class="ln">   395  </span>		}
-<span id="L396" class="ln">   396  </span>		md := &amp;sources.DbConn{
-<span id="L397" class="ln">   397  </span>			RuntimeInfo: sources.RuntimeInfo{
-<span id="L398" class="ln">   398  </span>				RealDbname:       &#34;realdb&#34;,
-<span id="L399" class="ln">   399  </span>				SystemIdentifier: &#34;12345&#34;,
-<span id="L400" class="ln">   400  </span>			},
-<span id="L401" class="ln">   401  </span>		}
-<span id="L402" class="ln">   402  </span>		data := metrics.Measurements{metrics.Measurement{}}
-<span id="L403" class="ln">   403  </span>		r.AddSysinfoToMeasurements(data, md)
-<span id="L404" class="ln">   404  </span>		a.Equal(&#34;realdb&#34;, data[0][&#34;real_dbname&#34;])
-<span id="L405" class="ln">   405  </span>		a.Equal(&#34;12345&#34;, data[0][&#34;sys_id&#34;])
-<span id="L406" class="ln">   406  </span>	})
-<span id="L407" class="ln">   407  </span>
-<span id="L408" class="ln">   408  </span>	t.Run(&#34;skips fields when config field names are empty&#34;, func(t *testing.T) {
-<span id="L409" class="ln">   409  </span>		a := assert.New(t)
-<span id="L410" class="ln">   410  </span>		r := &amp;reaper{Options: &amp;cmdopts.Options{}}
-<span id="L411" class="ln">   411  </span>		md := &amp;sources.DbConn{
-<span id="L412" class="ln">   412  </span>			RuntimeInfo: sources.RuntimeInfo{
-<span id="L413" class="ln">   413  </span>				RealDbname:       &#34;realdb&#34;,
-<span id="L414" class="ln">   414  </span>				SystemIdentifier: &#34;12345&#34;,
-<span id="L415" class="ln">   415  </span>			},
-<span id="L416" class="ln">   416  </span>		}
-<span id="L417" class="ln">   417  </span>		data := metrics.Measurements{metrics.Measurement{}}
-<span id="L418" class="ln">   418  </span>		r.AddSysinfoToMeasurements(data, md)
-<span id="L419" class="ln">   419  </span>		a.NotContains(data[0], &#34;real_dbname&#34;)
-<span id="L420" class="ln">   420  </span>		a.NotContains(data[0], &#34;sys_id&#34;)
-<span id="L421" class="ln">   421  </span>	})
-<span id="L422" class="ln">   422  </span>
-<span id="L423" class="ln">   423  </span>	t.Run(&#34;skips fields when md values are empty&#34;, func(t *testing.T) {
-<span id="L424" class="ln">   424  </span>		a := assert.New(t)
-<span id="L425" class="ln">   425  </span>		r := &amp;reaper{
-<span id="L426" class="ln">   426  </span>			Options: &amp;cmdopts.Options{
-<span id="L427" class="ln">   427  </span>				Sinks: sinks.CmdOpts{
-<span id="L428" class="ln">   428  </span>					RealDbnameField:       &#34;real_dbname&#34;,
-<span id="L429" class="ln">   429  </span>					SystemIdentifierField: &#34;sys_id&#34;,
-<span id="L430" class="ln">   430  </span>				},
-<span id="L431" class="ln">   431  </span>			},
-<span id="L432" class="ln">   432  </span>		}
-<span id="L433" class="ln">   433  </span>		md := &amp;sources.DbConn{}
-<span id="L434" class="ln">   434  </span>		data := metrics.Measurements{metrics.Measurement{}}
-<span id="L435" class="ln">   435  </span>		r.AddSysinfoToMeasurements(data, md)
-<span id="L436" class="ln">   436  </span>		a.NotContains(data[0], &#34;real_dbname&#34;)
-<span id="L437" class="ln">   437  </span>		a.NotContains(data[0], &#34;sys_id&#34;)
-<span id="L438" class="ln">   438  </span>	})
-<span id="L439" class="ln">   439  </span>}
-<span id="L440" class="ln">   440  </span>
-<span id="L441" class="ln">   441  </span>func TestReaper_FilterSource(t *testing.T) {
-<span id="L442" class="ln">   442  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L443" class="ln">   443  </span>
-<span id="L444" class="ln">   444  </span>	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool, approxDbSizeBytes int64) *sources.DbConn {
-<span id="L445" class="ln">   445  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind, OnlyIfMaster: onlyIfMaster})
-<span id="L446" class="ln">   446  </span>		md.IsInRecovery = isInRecovery
-<span id="L447" class="ln">   447  </span>		md.ApproxDbSize = approxDbSizeBytes
-<span id="L448" class="ln">   448  </span>		return md
-<span id="L449" class="ln">   449  </span>	}
-<span id="L450" class="ln">   450  </span>
-<span id="L451" class="ln">   451  </span>	t.Run(&#34;primary with onlyIfMaster: not filtered&#34;, func(t *testing.T) {
-<span id="L452" class="ln">   452  </span>		a := assert.New(t)
-<span id="L453" class="ln">   453  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L454" class="ln">   454  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
-<span id="L455" class="ln">   455  </span>
-<span id="L456" class="ln">   456  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, true, 0)))
-<span id="L457" class="ln">   457  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
-<span id="L458" class="ln">   458  </span>		a.True(exists, &#34;worker should not be shut down for primary&#34;)
-<span id="L459" class="ln">   459  </span>	})
-<span id="L460" class="ln">   460  </span>
-<span id="L461" class="ln">   461  </span>	t.Run(&#34;standby without onlyIfMaster: not filtered&#34;, func(t *testing.T) {
-<span id="L462" class="ln">   462  </span>		a := assert.New(t)
-<span id="L463" class="ln">   463  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L349" class="ln">   349  </span>func (m mockErr) Write(metrics.MeasurementEnvelope) error {
+<span id="L350" class="ln">   350  </span>	return errors.New(string(m))
+<span id="L351" class="ln">   351  </span>}
+<span id="L352" class="ln">   352  </span>
+<span id="L353" class="ln">   353  </span>func TestWriteMeasurements(t *testing.T) {
+<span id="L354" class="ln">   354  </span>	ctx, cancel := context.WithCancel(log.WithLogger(t.Context(), log.NewNoopLogger()))
+<span id="L355" class="ln">   355  </span>	defer cancel()
+<span id="L356" class="ln">   356  </span>	var err mockErr = &#34;write error&#34;
+<span id="L357" class="ln">   357  </span>	r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L358" class="ln">   358  </span>		SinksWriter: err,
+<span id="L359" class="ln">   359  </span>	})
+<span id="L360" class="ln">   360  </span>	go r.WriteMeasurements(ctx)
+<span id="L361" class="ln">   361  </span>	r.WriteInstanceDown(&#34;foo&#34;)
+<span id="L362" class="ln">   362  </span>}
+<span id="L363" class="ln">   363  </span>
+<span id="L364" class="ln">   364  </span>func TestReaper_Ready(t *testing.T) {
+<span id="L365" class="ln">   365  </span>	a := assert.New(t)
+<span id="L366" class="ln">   366  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L367" class="ln">   367  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L368" class="ln">   368  </span>	a.False(r.Ready())
+<span id="L369" class="ln">   369  </span>	r.ready.Store(true)
+<span id="L370" class="ln">   370  </span>	a.True(r.Ready())
+<span id="L371" class="ln">   371  </span>}
+<span id="L372" class="ln">   372  </span>
+<span id="L373" class="ln">   373  </span>func TestReaper_WriteInstanceDown(t *testing.T) {
+<span id="L374" class="ln">   374  </span>	a := assert.New(t)
+<span id="L375" class="ln">   375  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L376" class="ln">   376  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L377" class="ln">   377  </span>	r.WriteInstanceDown(&#34;testdb&#34;)
+<span id="L378" class="ln">   378  </span>	select {
+<span id="L379" class="ln">   379  </span>	case msg := &lt;-r.measurementCh:
+<span id="L380" class="ln">   380  </span>		a.Equal(&#34;testdb&#34;, msg.DBName)
+<span id="L381" class="ln">   381  </span>		a.Equal(specialMetricInstanceUp, msg.MetricName)
+<span id="L382" class="ln">   382  </span>		require.Len(t, msg.Data, 1)
+<span id="L383" class="ln">   383  </span>		a.Equal(0, msg.Data[0][specialMetricInstanceUp])
+<span id="L384" class="ln">   384  </span>	default:
+<span id="L385" class="ln">   385  </span>		t.Error(&#34;expected message in measurementCh&#34;)
+<span id="L386" class="ln">   386  </span>	}
+<span id="L387" class="ln">   387  </span>}
+<span id="L388" class="ln">   388  </span>
+<span id="L389" class="ln">   389  </span>func TestReaper_AddSysinfoToMeasurements(t *testing.T) {
+<span id="L390" class="ln">   390  </span>	t.Run(&#34;adds real dbname and system identifier fields&#34;, func(t *testing.T) {
+<span id="L391" class="ln">   391  </span>		a := assert.New(t)
+<span id="L392" class="ln">   392  </span>		r := &amp;reaper{
+<span id="L393" class="ln">   393  </span>			Options: &amp;cmdopts.Options{
+<span id="L394" class="ln">   394  </span>				Sinks: sinks.CmdOpts{
+<span id="L395" class="ln">   395  </span>					RealDbnameField:       &#34;real_dbname&#34;,
+<span id="L396" class="ln">   396  </span>					SystemIdentifierField: &#34;sys_id&#34;,
+<span id="L397" class="ln">   397  </span>				},
+<span id="L398" class="ln">   398  </span>			},
+<span id="L399" class="ln">   399  </span>		}
+<span id="L400" class="ln">   400  </span>		md := &amp;sources.DbConn{
+<span id="L401" class="ln">   401  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L402" class="ln">   402  </span>				RealDbname:       &#34;realdb&#34;,
+<span id="L403" class="ln">   403  </span>				SystemIdentifier: &#34;12345&#34;,
+<span id="L404" class="ln">   404  </span>			},
+<span id="L405" class="ln">   405  </span>		}
+<span id="L406" class="ln">   406  </span>		data := metrics.Measurements{metrics.Measurement{}}
+<span id="L407" class="ln">   407  </span>		r.AddSysinfoToMeasurements(data, md)
+<span id="L408" class="ln">   408  </span>		a.Equal(&#34;realdb&#34;, data[0][&#34;real_dbname&#34;])
+<span id="L409" class="ln">   409  </span>		a.Equal(&#34;12345&#34;, data[0][&#34;sys_id&#34;])
+<span id="L410" class="ln">   410  </span>	})
+<span id="L411" class="ln">   411  </span>
+<span id="L412" class="ln">   412  </span>	t.Run(&#34;skips fields when config field names are empty&#34;, func(t *testing.T) {
+<span id="L413" class="ln">   413  </span>		a := assert.New(t)
+<span id="L414" class="ln">   414  </span>		r := &amp;reaper{Options: &amp;cmdopts.Options{}}
+<span id="L415" class="ln">   415  </span>		md := &amp;sources.DbConn{
+<span id="L416" class="ln">   416  </span>			RuntimeInfo: sources.RuntimeInfo{
+<span id="L417" class="ln">   417  </span>				RealDbname:       &#34;realdb&#34;,
+<span id="L418" class="ln">   418  </span>				SystemIdentifier: &#34;12345&#34;,
+<span id="L419" class="ln">   419  </span>			},
+<span id="L420" class="ln">   420  </span>		}
+<span id="L421" class="ln">   421  </span>		data := metrics.Measurements{metrics.Measurement{}}
+<span id="L422" class="ln">   422  </span>		r.AddSysinfoToMeasurements(data, md)
+<span id="L423" class="ln">   423  </span>		a.NotContains(data[0], &#34;real_dbname&#34;)
+<span id="L424" class="ln">   424  </span>		a.NotContains(data[0], &#34;sys_id&#34;)
+<span id="L425" class="ln">   425  </span>	})
+<span id="L426" class="ln">   426  </span>
+<span id="L427" class="ln">   427  </span>	t.Run(&#34;skips fields when md values are empty&#34;, func(t *testing.T) {
+<span id="L428" class="ln">   428  </span>		a := assert.New(t)
+<span id="L429" class="ln">   429  </span>		r := &amp;reaper{
+<span id="L430" class="ln">   430  </span>			Options: &amp;cmdopts.Options{
+<span id="L431" class="ln">   431  </span>				Sinks: sinks.CmdOpts{
+<span id="L432" class="ln">   432  </span>					RealDbnameField:       &#34;real_dbname&#34;,
+<span id="L433" class="ln">   433  </span>					SystemIdentifierField: &#34;sys_id&#34;,
+<span id="L434" class="ln">   434  </span>				},
+<span id="L435" class="ln">   435  </span>			},
+<span id="L436" class="ln">   436  </span>		}
+<span id="L437" class="ln">   437  </span>		md := &amp;sources.DbConn{}
+<span id="L438" class="ln">   438  </span>		data := metrics.Measurements{metrics.Measurement{}}
+<span id="L439" class="ln">   439  </span>		r.AddSysinfoToMeasurements(data, md)
+<span id="L440" class="ln">   440  </span>		a.NotContains(data[0], &#34;real_dbname&#34;)
+<span id="L441" class="ln">   441  </span>		a.NotContains(data[0], &#34;sys_id&#34;)
+<span id="L442" class="ln">   442  </span>	})
+<span id="L443" class="ln">   443  </span>}
+<span id="L444" class="ln">   444  </span>
+<span id="L445" class="ln">   445  </span>func TestReaper_FilterSource(t *testing.T) {
+<span id="L446" class="ln">   446  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L447" class="ln">   447  </span>
+<span id="L448" class="ln">   448  </span>	newMd := func(kind sources.Kind, isInRecovery, onlyIfMaster bool, approxDbSizeBytes int64) *sources.DbConn {
+<span id="L449" class="ln">   449  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind, OnlyIfMaster: onlyIfMaster})
+<span id="L450" class="ln">   450  </span>		md.IsInRecovery = isInRecovery
+<span id="L451" class="ln">   451  </span>		md.ApproxDbSize = approxDbSizeBytes
+<span id="L452" class="ln">   452  </span>		return md
+<span id="L453" class="ln">   453  </span>	}
+<span id="L454" class="ln">   454  </span>
+<span id="L455" class="ln">   455  </span>	t.Run(&#34;primary with onlyIfMaster: not filtered&#34;, func(t *testing.T) {
+<span id="L456" class="ln">   456  </span>		a := assert.New(t)
+<span id="L457" class="ln">   457  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L458" class="ln">   458  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
+<span id="L459" class="ln">   459  </span>
+<span id="L460" class="ln">   460  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, true, 0)))
+<span id="L461" class="ln">   461  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L462" class="ln">   462  </span>		a.True(exists, &#34;worker should not be shut down for primary&#34;)
+<span id="L463" class="ln">   463  </span>	})
 <span id="L464" class="ln">   464  </span>
-<span id="L465" class="ln">   465  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, false, 0)))
-<span id="L466" class="ln">   466  </span>	})
-<span id="L467" class="ln">   467  </span>
-<span id="L468" class="ln">   468  </span>	t.Run(&#34;standby with onlyIfMaster, postgres: worker shut down&#34;, func(t *testing.T) {
-<span id="L469" class="ln">   469  </span>		a := assert.New(t)
-<span id="L470" class="ln">   470  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L471" class="ln">   471  </span>		cancelCalled := false
-<span id="L472" class="ln">   472  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L473" class="ln">   473  </span>
-<span id="L474" class="ln">   474  </span>		a.True(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, true, 0)))
-<span id="L475" class="ln">   475  </span>		a.True(cancelCalled)
-<span id="L476" class="ln">   476  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
-<span id="L477" class="ln">   477  </span>		a.False(exists)
-<span id="L478" class="ln">   478  </span>	})
-<span id="L479" class="ln">   479  </span>
-<span id="L480" class="ln">   480  </span>	t.Run(&#34;below size threshold: worker shut down&#34;, func(t *testing.T) {
-<span id="L481" class="ln">   481  </span>		a := assert.New(t)
-<span id="L482" class="ln">   482  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L483" class="ln">   483  </span>			Sources:     sources.CmdOpts{MinDbSizeMB: 500},
-<span id="L484" class="ln">   484  </span>			SinksWriter: &amp;sinks.MultiWriter{},
-<span id="L485" class="ln">   485  </span>		})
-<span id="L486" class="ln">   486  </span>		cancelCalled := false
-<span id="L487" class="ln">   487  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L488" class="ln">   488  </span>		md := newMd(sources.SourcePostgres, false, false, 100*1048576) <span class="comment">// 100 MB</span>
-<span id="L489" class="ln">   489  </span>		r.monitoredSources = sources.SourceConns{md}
-<span id="L490" class="ln">   490  </span>
-<span id="L491" class="ln">   491  </span>		a.True(r.FilterSource(ctx, md))
-<span id="L492" class="ln">   492  </span>		a.True(cancelCalled)
-<span id="L493" class="ln">   493  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
-<span id="L494" class="ln">   494  </span>		a.False(exists)
-<span id="L495" class="ln">   495  </span>	})
-<span id="L496" class="ln">   496  </span>
-<span id="L497" class="ln">   497  </span>	t.Run(&#34;above size threshold: not filtered&#34;, func(t *testing.T) {
-<span id="L498" class="ln">   498  </span>		a := assert.New(t)
-<span id="L499" class="ln">   499  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L465" class="ln">   465  </span>	t.Run(&#34;standby without onlyIfMaster: not filtered&#34;, func(t *testing.T) {
+<span id="L466" class="ln">   466  </span>		a := assert.New(t)
+<span id="L467" class="ln">   467  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L468" class="ln">   468  </span>
+<span id="L469" class="ln">   469  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, false, 0)))
+<span id="L470" class="ln">   470  </span>	})
+<span id="L471" class="ln">   471  </span>
+<span id="L472" class="ln">   472  </span>	t.Run(&#34;standby with onlyIfMaster, postgres: worker shut down&#34;, func(t *testing.T) {
+<span id="L473" class="ln">   473  </span>		a := assert.New(t)
+<span id="L474" class="ln">   474  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L475" class="ln">   475  </span>		cancelCalled := false
+<span id="L476" class="ln">   476  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L477" class="ln">   477  </span>
+<span id="L478" class="ln">   478  </span>		a.True(r.FilterSource(ctx, newMd(sources.SourcePostgres, true, true, 0)))
+<span id="L479" class="ln">   479  </span>		a.True(cancelCalled)
+<span id="L480" class="ln">   480  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L481" class="ln">   481  </span>		a.False(exists)
+<span id="L482" class="ln">   482  </span>	})
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	t.Run(&#34;below size threshold: worker shut down&#34;, func(t *testing.T) {
+<span id="L485" class="ln">   485  </span>		a := assert.New(t)
+<span id="L486" class="ln">   486  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L487" class="ln">   487  </span>			Sources:     sources.CmdOpts{MinDbSizeMB: 500},
+<span id="L488" class="ln">   488  </span>			SinksWriter: &amp;sinks.MultiWriter{},
+<span id="L489" class="ln">   489  </span>		})
+<span id="L490" class="ln">   490  </span>		cancelCalled := false
+<span id="L491" class="ln">   491  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L492" class="ln">   492  </span>		md := newMd(sources.SourcePostgres, false, false, 100*1048576) <span class="comment">// 100 MB</span>
+<span id="L493" class="ln">   493  </span>		r.monitoredSources = sources.SourceConns{md}
+<span id="L494" class="ln">   494  </span>
+<span id="L495" class="ln">   495  </span>		a.True(r.FilterSource(ctx, md))
+<span id="L496" class="ln">   496  </span>		a.True(cancelCalled)
+<span id="L497" class="ln">   497  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L498" class="ln">   498  </span>		a.False(exists)
+<span id="L499" class="ln">   499  </span>	})
 <span id="L500" class="ln">   500  </span>
-<span id="L501" class="ln">   501  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 600*1048576)))
-<span id="L502" class="ln">   502  </span>	})
-<span id="L503" class="ln">   503  </span>
-<span id="L504" class="ln">   504  </span>	t.Run(&#34;equal to size threshold: not filtered&#34;, func(t *testing.T) {
-<span id="L505" class="ln">   505  </span>		a := assert.New(t)
-<span id="L506" class="ln">   506  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
+<span id="L501" class="ln">   501  </span>	t.Run(&#34;above size threshold: not filtered&#34;, func(t *testing.T) {
+<span id="L502" class="ln">   502  </span>		a := assert.New(t)
+<span id="L503" class="ln">   503  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L504" class="ln">   504  </span>
+<span id="L505" class="ln">   505  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 600*1048576)))
+<span id="L506" class="ln">   506  </span>	})
 <span id="L507" class="ln">   507  </span>
-<span id="L508" class="ln">   508  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 100*1048576)))
-<span id="L509" class="ln">   509  </span>	})
-<span id="L510" class="ln">   510  </span>
-<span id="L511" class="ln">   511  </span>	t.Run(&#34;zero ApproxDbSize bypasses size check&#34;, func(t *testing.T) {
-<span id="L512" class="ln">   512  </span>		a := assert.New(t)
-<span id="L513" class="ln">   513  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L508" class="ln">   508  </span>	t.Run(&#34;equal to size threshold: not filtered&#34;, func(t *testing.T) {
+<span id="L509" class="ln">   509  </span>		a := assert.New(t)
+<span id="L510" class="ln">   510  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 100}})
+<span id="L511" class="ln">   511  </span>
+<span id="L512" class="ln">   512  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 100*1048576)))
+<span id="L513" class="ln">   513  </span>	})
 <span id="L514" class="ln">   514  </span>
-<span id="L515" class="ln">   515  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 0)))
-<span id="L516" class="ln">   516  </span>	})
-<span id="L517" class="ln">   517  </span>
-<span id="L518" class="ln">   518  </span>	t.Run(&#34;no min size configured: never size-filtered&#34;, func(t *testing.T) {
-<span id="L519" class="ln">   519  </span>		a := assert.New(t)
-<span id="L520" class="ln">   520  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L515" class="ln">   515  </span>	t.Run(&#34;zero ApproxDbSize bypasses size check&#34;, func(t *testing.T) {
+<span id="L516" class="ln">   516  </span>		a := assert.New(t)
+<span id="L517" class="ln">   517  </span>		r := newReaper(ctx, &amp;cmdopts.Options{Sources: sources.CmdOpts{MinDbSizeMB: 500}})
+<span id="L518" class="ln">   518  </span>
+<span id="L519" class="ln">   519  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 0)))
+<span id="L520" class="ln">   520  </span>	})
 <span id="L521" class="ln">   521  </span>
-<span id="L522" class="ln">   522  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 1*1048576)))
-<span id="L523" class="ln">   523  </span>	})
-<span id="L524" class="ln">   524  </span>}
+<span id="L522" class="ln">   522  </span>	t.Run(&#34;no min size configured: never size-filtered&#34;, func(t *testing.T) {
+<span id="L523" class="ln">   523  </span>		a := assert.New(t)
+<span id="L524" class="ln">   524  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
 <span id="L525" class="ln">   525  </span>
-<span id="L526" class="ln">   526  </span>func TestReaper_TrackRecoveryStatus(t *testing.T) {
-<span id="L527" class="ln">   527  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L528" class="ln">   528  </span>
-<span id="L529" class="ln">   529  </span>	newPgConn := func(kind sources.Kind, isInRecovery bool, standby metrics.MetricIntervals) *sources.DbConn {
-<span id="L530" class="ln">   530  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind})
-<span id="L531" class="ln">   531  </span>		md.IsInRecovery = isInRecovery
-<span id="L532" class="ln">   532  </span>		md.MetricsStandby = standby
-<span id="L533" class="ln">   533  </span>		return md
-<span id="L534" class="ln">   534  </span>	}
-<span id="L535" class="ln">   535  </span>
-<span id="L536" class="ln">   536  </span>	t.Run(&#34;no role change: cache updated silently&#34;, func(t *testing.T) {
-<span id="L537" class="ln">   537  </span>		a := assert.New(t)
-<span id="L538" class="ln">   538  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L539" class="ln">   539  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
-<span id="L540" class="ln">   540  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
-<span id="L541" class="ln">   541  </span>
-<span id="L542" class="ln">   542  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L543" class="ln">   543  </span>
-<span id="L544" class="ln">   544  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L545" class="ln">   545  </span>	})
-<span id="L546" class="ln">   546  </span>
-<span id="L547" class="ln">   547  </span>	t.Run(&#34;primary→standby with standby config: cache updated&#34;, func(t *testing.T) {
-<span id="L548" class="ln">   548  </span>		a := assert.New(t)
-<span id="L549" class="ln">   549  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L550" class="ln">   550  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
-<span id="L551" class="ln">   551  </span>		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{&#34;cpu&#34;: 10})
-<span id="L552" class="ln">   552  </span>
-<span id="L553" class="ln">   553  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L554" class="ln">   554  </span>
-<span id="L555" class="ln">   555  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L556" class="ln">   556  </span>	})
-<span id="L557" class="ln">   557  </span>
-<span id="L558" class="ln">   558  </span>	t.Run(&#34;standby→primary: cache updated&#34;, func(t *testing.T) {
-<span id="L559" class="ln">   559  </span>		a := assert.New(t)
-<span id="L560" class="ln">   560  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L561" class="ln">   561  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = true
-<span id="L562" class="ln">   562  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
-<span id="L563" class="ln">   563  </span>
-<span id="L564" class="ln">   564  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L565" class="ln">   565  </span>
-<span id="L566" class="ln">   566  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L567" class="ln">   567  </span>	})
-<span id="L568" class="ln">   568  </span>
-<span id="L569" class="ln">   569  </span>	t.Run(&#34;primary→standby without standby config: cache updated, no shutdown&#34;, func(t *testing.T) {
-<span id="L570" class="ln">   570  </span>		a := assert.New(t)
-<span id="L571" class="ln">   571  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L572" class="ln">   572  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
-<span id="L573" class="ln">   573  </span>		md := newPgConn(sources.SourcePostgres, true, nil)
-<span id="L574" class="ln">   574  </span>
-<span id="L575" class="ln">   575  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L576" class="ln">   576  </span>
-<span id="L577" class="ln">   577  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L578" class="ln">   578  </span>	})
-<span id="L579" class="ln">   579  </span>
-<span id="L580" class="ln">   580  </span>	t.Run(&#34;pgbouncer: cache updated&#34;, func(t *testing.T) {
-<span id="L581" class="ln">   581  </span>		a := assert.New(t)
-<span id="L582" class="ln">   582  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L583" class="ln">   583  </span>		md := newPgConn(sources.SourcePgBouncer, false, nil)
-<span id="L584" class="ln">   584  </span>
-<span id="L585" class="ln">   585  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L586" class="ln">   586  </span>
-<span id="L587" class="ln">   587  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L588" class="ln">   588  </span>	})
-<span id="L589" class="ln">   589  </span>
-<span id="L590" class="ln">   590  </span>	t.Run(&#34;patroni discovery: cache updated&#34;, func(t *testing.T) {
-<span id="L591" class="ln">   591  </span>		a := assert.New(t)
-<span id="L592" class="ln">   592  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L593" class="ln">   593  </span>		md := newPgConn(sources.SourcePatroniDiscovery, true, nil)
-<span id="L594" class="ln">   594  </span>
-<span id="L595" class="ln">   595  </span>		r.TrackRecoveryStatus(ctx, md)
-<span id="L596" class="ln">   596  </span>
-<span id="L597" class="ln">   597  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
-<span id="L598" class="ln">   598  </span>	})
-<span id="L599" class="ln">   599  </span>}
+<span id="L526" class="ln">   526  </span>		a.False(r.FilterSource(ctx, newMd(sources.SourcePostgres, false, false, 1*1048576)))
+<span id="L527" class="ln">   527  </span>	})
+<span id="L528" class="ln">   528  </span>}
+<span id="L529" class="ln">   529  </span>
+<span id="L530" class="ln">   530  </span>func TestReaper_TrackRecoveryStatus(t *testing.T) {
+<span id="L531" class="ln">   531  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L532" class="ln">   532  </span>
+<span id="L533" class="ln">   533  </span>	newPgConn := func(kind sources.Kind, isInRecovery bool, standby metrics.MetricIntervals) *sources.DbConn {
+<span id="L534" class="ln">   534  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Kind: kind})
+<span id="L535" class="ln">   535  </span>		md.IsInRecovery = isInRecovery
+<span id="L536" class="ln">   536  </span>		md.MetricsStandby = standby
+<span id="L537" class="ln">   537  </span>		return md
+<span id="L538" class="ln">   538  </span>	}
+<span id="L539" class="ln">   539  </span>
+<span id="L540" class="ln">   540  </span>	t.Run(&#34;no role change: cache updated silently&#34;, func(t *testing.T) {
+<span id="L541" class="ln">   541  </span>		a := assert.New(t)
+<span id="L542" class="ln">   542  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L543" class="ln">   543  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L544" class="ln">   544  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
+<span id="L545" class="ln">   545  </span>
+<span id="L546" class="ln">   546  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L547" class="ln">   547  </span>
+<span id="L548" class="ln">   548  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L549" class="ln">   549  </span>	})
+<span id="L550" class="ln">   550  </span>
+<span id="L551" class="ln">   551  </span>	t.Run(&#34;primary→standby with standby config: cache updated&#34;, func(t *testing.T) {
+<span id="L552" class="ln">   552  </span>		a := assert.New(t)
+<span id="L553" class="ln">   553  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L554" class="ln">   554  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L555" class="ln">   555  </span>		md := newPgConn(sources.SourcePostgres, true, metrics.MetricIntervals{&#34;cpu&#34;: 10})
+<span id="L556" class="ln">   556  </span>
+<span id="L557" class="ln">   557  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L558" class="ln">   558  </span>
+<span id="L559" class="ln">   559  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L560" class="ln">   560  </span>	})
+<span id="L561" class="ln">   561  </span>
+<span id="L562" class="ln">   562  </span>	t.Run(&#34;standby→primary: cache updated&#34;, func(t *testing.T) {
+<span id="L563" class="ln">   563  </span>		a := assert.New(t)
+<span id="L564" class="ln">   564  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L565" class="ln">   565  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = true
+<span id="L566" class="ln">   566  </span>		md := newPgConn(sources.SourcePostgres, false, nil)
+<span id="L567" class="ln">   567  </span>
+<span id="L568" class="ln">   568  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L569" class="ln">   569  </span>
+<span id="L570" class="ln">   570  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L571" class="ln">   571  </span>	})
+<span id="L572" class="ln">   572  </span>
+<span id="L573" class="ln">   573  </span>	t.Run(&#34;primary→standby without standby config: cache updated, no shutdown&#34;, func(t *testing.T) {
+<span id="L574" class="ln">   574  </span>		a := assert.New(t)
+<span id="L575" class="ln">   575  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L576" class="ln">   576  </span>		r.srcRecoveryStatus[&#34;testdb&#34;] = false
+<span id="L577" class="ln">   577  </span>		md := newPgConn(sources.SourcePostgres, true, nil)
+<span id="L578" class="ln">   578  </span>
+<span id="L579" class="ln">   579  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L580" class="ln">   580  </span>
+<span id="L581" class="ln">   581  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L582" class="ln">   582  </span>	})
+<span id="L583" class="ln">   583  </span>
+<span id="L584" class="ln">   584  </span>	t.Run(&#34;pgbouncer: cache updated&#34;, func(t *testing.T) {
+<span id="L585" class="ln">   585  </span>		a := assert.New(t)
+<span id="L586" class="ln">   586  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L587" class="ln">   587  </span>		md := newPgConn(sources.SourcePgBouncer, false, nil)
+<span id="L588" class="ln">   588  </span>
+<span id="L589" class="ln">   589  </span>		r.TrackRecoveryStatus(ctx, md)
+<span id="L590" class="ln">   590  </span>
+<span id="L591" class="ln">   591  </span>		a.False(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L592" class="ln">   592  </span>	})
+<span id="L593" class="ln">   593  </span>
+<span id="L594" class="ln">   594  </span>	t.Run(&#34;patroni discovery: cache updated&#34;, func(t *testing.T) {
+<span id="L595" class="ln">   595  </span>		a := assert.New(t)
+<span id="L596" class="ln">   596  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L597" class="ln">   597  </span>		md := newPgConn(sources.SourcePatroniDiscovery, true, nil)
+<span id="L598" class="ln">   598  </span>
+<span id="L599" class="ln">   599  </span>		r.TrackRecoveryStatus(ctx, md)
 <span id="L600" class="ln">   600  </span>
-<span id="L601" class="ln">   601  </span><span class="comment">// mockSyncWriter records SyncMetric calls for assertions.</span>
-<span id="L602" class="ln">   602  </span>type mockSyncWriter struct {
-<span id="L603" class="ln">   603  </span>	synced []struct{ source, metric string }
-<span id="L604" class="ln">   604  </span>	err    error
-<span id="L605" class="ln">   605  </span>}
-<span id="L606" class="ln">   606  </span>
-<span id="L607" class="ln">   607  </span>func (m *mockSyncWriter) SyncMetric(sourceName, metricName string, _ sinks.SyncOp) error {
-<span id="L608" class="ln">   608  </span>	if m.err != nil {
-<span id="L609" class="ln">   609  </span>		return m.err
-<span id="L610" class="ln">   610  </span>	}
-<span id="L611" class="ln">   611  </span>	m.synced = append(m.synced, struct{ source, metric string }{sourceName, metricName})
-<span id="L612" class="ln">   612  </span>	return nil
-<span id="L613" class="ln">   613  </span>}
-<span id="L614" class="ln">   614  </span>
-<span id="L615" class="ln">   615  </span>func (m *mockSyncWriter) Write(metrics.MeasurementEnvelope) error { return nil }
-<span id="L616" class="ln">   616  </span>
-<span id="L617" class="ln">   617  </span>func TestReaper_SyncMetricsToSinks(t *testing.T) {
-<span id="L618" class="ln">   618  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L619" class="ln">   619  </span>
-<span id="L620" class="ln">   620  </span>	<span class="comment">// Populate the package-level metricDefs used by SyncMetricsToSinks.</span>
-<span id="L621" class="ln">   621  </span>	origDefs := metricDefs
-<span id="L622" class="ln">   622  </span>	metricDefs = NewConcurrentMetricDefs()
-<span id="L623" class="ln">   623  </span>	t.Cleanup(func() { metricDefs = origDefs })
-<span id="L624" class="ln">   624  </span>
-<span id="L625" class="ln">   625  </span>	metricDefs.Assign(&amp;metrics.Metrics{
-<span id="L626" class="ln">   626  </span>		MetricDefs: metrics.MetricDefs{
-<span id="L627" class="ln">   627  </span>			&#34;cpu&#34;:    metrics.Metric{},
-<span id="L628" class="ln">   628  </span>			&#34;memory&#34;: metrics.Metric{StorageName: &#34;mem_storage&#34;},
-<span id="L629" class="ln">   629  </span>		},
-<span id="L630" class="ln">   630  </span>		PresetDefs: metrics.PresetDefs{},
-<span id="L631" class="ln">   631  </span>	})
-<span id="L632" class="ln">   632  </span>
-<span id="L633" class="ln">   633  </span>	newMd := func(config metrics.MetricIntervals) *sources.DbConn {
-<span id="L634" class="ln">   634  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
-<span id="L635" class="ln">   635  </span>		md.Metrics = config
-<span id="L636" class="ln">   636  </span>		return md
-<span id="L637" class="ln">   637  </span>	}
-<span id="L638" class="ln">   638  </span>
-<span id="L639" class="ln">   639  </span>	t.Run(&#34;syncs known metrics using metric name&#34;, func(t *testing.T) {
-<span id="L640" class="ln">   640  </span>		a := assert.New(t)
-<span id="L641" class="ln">   641  </span>		sw := &amp;mockSyncWriter{}
-<span id="L642" class="ln">   642  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
-<span id="L643" class="ln">   643  </span>
-<span id="L644" class="ln">   644  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
-<span id="L645" class="ln">   645  </span>
-<span id="L646" class="ln">   646  </span>		require.Len(t, sw.synced, 1)
-<span id="L647" class="ln">   647  </span>		a.Equal(&#34;mydb&#34;, sw.synced[0].source)
-<span id="L648" class="ln">   648  </span>		a.Equal(&#34;cpu&#34;, sw.synced[0].metric)
-<span id="L649" class="ln">   649  </span>	})
-<span id="L650" class="ln">   650  </span>
-<span id="L651" class="ln">   651  </span>	t.Run(&#34;uses StorageName when set and metric is not special&#34;, func(t *testing.T) {
-<span id="L652" class="ln">   652  </span>		a := assert.New(t)
-<span id="L653" class="ln">   653  </span>		sw := &amp;mockSyncWriter{}
-<span id="L654" class="ln">   654  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
-<span id="L655" class="ln">   655  </span>
-<span id="L656" class="ln">   656  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;memory&#34;: 30}))
-<span id="L657" class="ln">   657  </span>
-<span id="L658" class="ln">   658  </span>		require.Len(t, sw.synced, 1)
-<span id="L659" class="ln">   659  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric)
-<span id="L660" class="ln">   660  </span>	})
+<span id="L601" class="ln">   601  </span>		a.True(r.srcRecoveryStatus[&#34;testdb&#34;])
+<span id="L602" class="ln">   602  </span>	})
+<span id="L603" class="ln">   603  </span>}
+<span id="L604" class="ln">   604  </span>
+<span id="L605" class="ln">   605  </span><span class="comment">// mockSyncWriter records SyncMetric calls for assertions.</span>
+<span id="L606" class="ln">   606  </span>type mockSyncWriter struct {
+<span id="L607" class="ln">   607  </span>	synced []struct{ source, metric string }
+<span id="L608" class="ln">   608  </span>	err    error
+<span id="L609" class="ln">   609  </span>}
+<span id="L610" class="ln">   610  </span>
+<span id="L611" class="ln">   611  </span>func (m *mockSyncWriter) SyncMetric(sourceName, metricName string, _ sinks.SyncOp) error {
+<span id="L612" class="ln">   612  </span>	if m.err != nil {
+<span id="L613" class="ln">   613  </span>		return m.err
+<span id="L614" class="ln">   614  </span>	}
+<span id="L615" class="ln">   615  </span>	m.synced = append(m.synced, struct{ source, metric string }{sourceName, metricName})
+<span id="L616" class="ln">   616  </span>	return nil
+<span id="L617" class="ln">   617  </span>}
+<span id="L618" class="ln">   618  </span>
+<span id="L619" class="ln">   619  </span>func (m *mockSyncWriter) Write(metrics.MeasurementEnvelope) error { return nil }
+<span id="L620" class="ln">   620  </span>
+<span id="L621" class="ln">   621  </span>func TestReaper_SyncMetricsToSinks(t *testing.T) {
+<span id="L622" class="ln">   622  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L623" class="ln">   623  </span>
+<span id="L624" class="ln">   624  </span>	<span class="comment">// Populate the package-level metricDefs used by SyncMetricsToSinks.</span>
+<span id="L625" class="ln">   625  </span>	origDefs := metricDefs
+<span id="L626" class="ln">   626  </span>	metricDefs = NewConcurrentMetricDefs()
+<span id="L627" class="ln">   627  </span>	t.Cleanup(func() { metricDefs = origDefs })
+<span id="L628" class="ln">   628  </span>
+<span id="L629" class="ln">   629  </span>	metricDefs.Assign(&amp;metrics.Metrics{
+<span id="L630" class="ln">   630  </span>		MetricDefs: metrics.MetricDefs{
+<span id="L631" class="ln">   631  </span>			&#34;cpu&#34;:    metrics.Metric{},
+<span id="L632" class="ln">   632  </span>			&#34;memory&#34;: metrics.Metric{StorageName: &#34;mem_storage&#34;},
+<span id="L633" class="ln">   633  </span>		},
+<span id="L634" class="ln">   634  </span>		PresetDefs: metrics.PresetDefs{},
+<span id="L635" class="ln">   635  </span>	})
+<span id="L636" class="ln">   636  </span>
+<span id="L637" class="ln">   637  </span>	newMd := func(config metrics.MetricIntervals) *sources.DbConn {
+<span id="L638" class="ln">   638  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
+<span id="L639" class="ln">   639  </span>		md.Metrics = config
+<span id="L640" class="ln">   640  </span>		return md
+<span id="L641" class="ln">   641  </span>	}
+<span id="L642" class="ln">   642  </span>
+<span id="L643" class="ln">   643  </span>	t.Run(&#34;syncs known metrics using metric name&#34;, func(t *testing.T) {
+<span id="L644" class="ln">   644  </span>		a := assert.New(t)
+<span id="L645" class="ln">   645  </span>		sw := &amp;mockSyncWriter{}
+<span id="L646" class="ln">   646  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L647" class="ln">   647  </span>
+<span id="L648" class="ln">   648  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
+<span id="L649" class="ln">   649  </span>
+<span id="L650" class="ln">   650  </span>		require.Len(t, sw.synced, 1)
+<span id="L651" class="ln">   651  </span>		a.Equal(&#34;mydb&#34;, sw.synced[0].source)
+<span id="L652" class="ln">   652  </span>		a.Equal(&#34;cpu&#34;, sw.synced[0].metric)
+<span id="L653" class="ln">   653  </span>	})
+<span id="L654" class="ln">   654  </span>
+<span id="L655" class="ln">   655  </span>	t.Run(&#34;uses StorageName when set and metric is not special&#34;, func(t *testing.T) {
+<span id="L656" class="ln">   656  </span>		a := assert.New(t)
+<span id="L657" class="ln">   657  </span>		sw := &amp;mockSyncWriter{}
+<span id="L658" class="ln">   658  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L659" class="ln">   659  </span>
+<span id="L660" class="ln">   660  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;memory&#34;: 30}))
 <span id="L661" class="ln">   661  </span>
-<span id="L662" class="ln">   662  </span>	t.Run(&#34;skips unknown metric definitions&#34;, func(t *testing.T) {
-<span id="L663" class="ln">   663  </span>		sw := &amp;mockSyncWriter{}
-<span id="L664" class="ln">   664  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L662" class="ln">   662  </span>		require.Len(t, sw.synced, 1)
+<span id="L663" class="ln">   663  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric)
+<span id="L664" class="ln">   664  </span>	})
 <span id="L665" class="ln">   665  </span>
-<span id="L666" class="ln">   666  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;unknown_metric&#34;: 60}))
-<span id="L667" class="ln">   667  </span>
-<span id="L668" class="ln">   668  </span>		assert.Empty(t, sw.synced)
-<span id="L669" class="ln">   669  </span>	})
-<span id="L670" class="ln">   670  </span>
-<span id="L671" class="ln">   671  </span>	t.Run(&#34;logs sink error but continues&#34;, func(t *testing.T) {
-<span id="L672" class="ln">   672  </span>		sw := &amp;mockSyncWriter{err: errors.New(&#34;sink error&#34;)}
-<span id="L673" class="ln">   673  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L666" class="ln">   666  </span>	t.Run(&#34;skips unknown metric definitions&#34;, func(t *testing.T) {
+<span id="L667" class="ln">   667  </span>		sw := &amp;mockSyncWriter{}
+<span id="L668" class="ln">   668  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L669" class="ln">   669  </span>
+<span id="L670" class="ln">   670  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;unknown_metric&#34;: 60}))
+<span id="L671" class="ln">   671  </span>
+<span id="L672" class="ln">   672  </span>		assert.Empty(t, sw.synced)
+<span id="L673" class="ln">   673  </span>	})
 <span id="L674" class="ln">   674  </span>
-<span id="L675" class="ln">   675  </span>		assert.NotPanics(t, func() {
-<span id="L676" class="ln">   676  </span>			r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
-<span id="L677" class="ln">   677  </span>		})
-<span id="L678" class="ln">   678  </span>	})
-<span id="L679" class="ln">   679  </span>
-<span id="L680" class="ln">   680  </span>	t.Run(&#34;empty config results in no syncs&#34;, func(t *testing.T) {
-<span id="L681" class="ln">   681  </span>		sw := &amp;mockSyncWriter{}
-<span id="L682" class="ln">   682  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L675" class="ln">   675  </span>	t.Run(&#34;logs sink error but continues&#34;, func(t *testing.T) {
+<span id="L676" class="ln">   676  </span>		sw := &amp;mockSyncWriter{err: errors.New(&#34;sink error&#34;)}
+<span id="L677" class="ln">   677  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L678" class="ln">   678  </span>
+<span id="L679" class="ln">   679  </span>		assert.NotPanics(t, func() {
+<span id="L680" class="ln">   680  </span>			r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10}))
+<span id="L681" class="ln">   681  </span>		})
+<span id="L682" class="ln">   682  </span>	})
 <span id="L683" class="ln">   683  </span>
-<span id="L684" class="ln">   684  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{}))
-<span id="L685" class="ln">   685  </span>
-<span id="L686" class="ln">   686  </span>		assert.Empty(t, sw.synced)
-<span id="L687" class="ln">   687  </span>	})
-<span id="L688" class="ln">   688  </span>
-<span id="L689" class="ln">   689  </span>	t.Run(&#34;standby config used when in recovery&#34;, func(t *testing.T) {
-<span id="L690" class="ln">   690  </span>		a := assert.New(t)
-<span id="L691" class="ln">   691  </span>		sw := &amp;mockSyncWriter{}
-<span id="L692" class="ln">   692  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
-<span id="L693" class="ln">   693  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
-<span id="L694" class="ln">   694  </span>		md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
-<span id="L695" class="ln">   695  </span>		md.MetricsStandby = metrics.MetricIntervals{&#34;memory&#34;: 20}
-<span id="L696" class="ln">   696  </span>		md.IsInRecovery = true
-<span id="L697" class="ln">   697  </span>
-<span id="L698" class="ln">   698  </span>		r.SyncMetricsToSinks(ctx, md)
-<span id="L699" class="ln">   699  </span>
-<span id="L700" class="ln">   700  </span>		require.Len(t, sw.synced, 1)
-<span id="L701" class="ln">   701  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric) <span class="comment">// standby config used</span>
-<span id="L702" class="ln">   702  </span>	})
+<span id="L684" class="ln">   684  </span>	t.Run(&#34;empty config results in no syncs&#34;, func(t *testing.T) {
+<span id="L685" class="ln">   685  </span>		sw := &amp;mockSyncWriter{}
+<span id="L686" class="ln">   686  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L687" class="ln">   687  </span>
+<span id="L688" class="ln">   688  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{}))
+<span id="L689" class="ln">   689  </span>
+<span id="L690" class="ln">   690  </span>		assert.Empty(t, sw.synced)
+<span id="L691" class="ln">   691  </span>	})
+<span id="L692" class="ln">   692  </span>
+<span id="L693" class="ln">   693  </span>	t.Run(&#34;standby config used when in recovery&#34;, func(t *testing.T) {
+<span id="L694" class="ln">   694  </span>		a := assert.New(t)
+<span id="L695" class="ln">   695  </span>		sw := &amp;mockSyncWriter{}
+<span id="L696" class="ln">   696  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L697" class="ln">   697  </span>		md := sources.NewDbConn(sources.Source{Name: &#34;mydb&#34;})
+<span id="L698" class="ln">   698  </span>		md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 10}
+<span id="L699" class="ln">   699  </span>		md.MetricsStandby = metrics.MetricIntervals{&#34;memory&#34;: 20}
+<span id="L700" class="ln">   700  </span>		md.IsInRecovery = true
+<span id="L701" class="ln">   701  </span>
+<span id="L702" class="ln">   702  </span>		r.SyncMetricsToSinks(ctx, md)
 <span id="L703" class="ln">   703  </span>
-<span id="L704" class="ln">   704  </span>	t.Run(&#34;multiple metrics all synced&#34;, func(t *testing.T) {
-<span id="L705" class="ln">   705  </span>		a := assert.New(t)
-<span id="L706" class="ln">   706  </span>		sw := &amp;mockSyncWriter{}
-<span id="L707" class="ln">   707  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
-<span id="L708" class="ln">   708  </span>
-<span id="L709" class="ln">   709  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20}))
-<span id="L710" class="ln">   710  </span>
-<span id="L711" class="ln">   711  </span>		a.Len(sw.synced, 2)
-<span id="L712" class="ln">   712  </span>		synced := maps.Collect(func(yield func(string, bool) bool) {
-<span id="L713" class="ln">   713  </span>			for _, s := range sw.synced {
-<span id="L714" class="ln">   714  </span>				if !yield(s.metric, true) {
-<span id="L715" class="ln">   715  </span>					return
-<span id="L716" class="ln">   716  </span>				}
-<span id="L717" class="ln">   717  </span>			}
-<span id="L718" class="ln">   718  </span>		})
-<span id="L719" class="ln">   719  </span>		a.True(synced[&#34;cpu&#34;])
-<span id="L720" class="ln">   720  </span>		a.True(synced[&#34;mem_storage&#34;])
-<span id="L721" class="ln">   721  </span>	})
-<span id="L722" class="ln">   722  </span>}
-<span id="L723" class="ln">   723  </span>
-<span id="L724" class="ln">   724  </span>func TestReaper_StartWorker(t *testing.T) {
-<span id="L725" class="ln">   725  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L726" class="ln">   726  </span>
-<span id="L727" class="ln">   727  </span>	<span class="comment">// minimal Reaper implementation that records whether Reap was called</span>
-<span id="L728" class="ln">   728  </span>	type fakeReaper struct{}
-<span id="L729" class="ln">   729  </span>	newFake := func() *fakeReaper { return &amp;fakeReaper{} }
+<span id="L704" class="ln">   704  </span>		require.Len(t, sw.synced, 1)
+<span id="L705" class="ln">   705  </span>		a.Equal(&#34;mem_storage&#34;, sw.synced[0].metric) <span class="comment">// standby config used</span>
+<span id="L706" class="ln">   706  </span>	})
+<span id="L707" class="ln">   707  </span>
+<span id="L708" class="ln">   708  </span>	t.Run(&#34;multiple metrics all synced&#34;, func(t *testing.T) {
+<span id="L709" class="ln">   709  </span>		a := assert.New(t)
+<span id="L710" class="ln">   710  </span>		sw := &amp;mockSyncWriter{}
+<span id="L711" class="ln">   711  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: sw})
+<span id="L712" class="ln">   712  </span>
+<span id="L713" class="ln">   713  </span>		r.SyncMetricsToSinks(ctx, newMd(metrics.MetricIntervals{&#34;cpu&#34;: 10, &#34;memory&#34;: 20}))
+<span id="L714" class="ln">   714  </span>
+<span id="L715" class="ln">   715  </span>		a.Len(sw.synced, 2)
+<span id="L716" class="ln">   716  </span>		synced := maps.Collect(func(yield func(string, bool) bool) {
+<span id="L717" class="ln">   717  </span>			for _, s := range sw.synced {
+<span id="L718" class="ln">   718  </span>				if !yield(s.metric, true) {
+<span id="L719" class="ln">   719  </span>					return
+<span id="L720" class="ln">   720  </span>				}
+<span id="L721" class="ln">   721  </span>			}
+<span id="L722" class="ln">   722  </span>		})
+<span id="L723" class="ln">   723  </span>		a.True(synced[&#34;cpu&#34;])
+<span id="L724" class="ln">   724  </span>		a.True(synced[&#34;mem_storage&#34;])
+<span id="L725" class="ln">   725  </span>	})
+<span id="L726" class="ln">   726  </span>}
+<span id="L727" class="ln">   727  </span>
+<span id="L728" class="ln">   728  </span>func TestReaper_StartWorker(t *testing.T) {
+<span id="L729" class="ln">   729  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
 <span id="L730" class="ln">   730  </span>
-<span id="L731" class="ln">   731  </span>	t.Run(&#34;starts worker and registers cancel func&#34;, func(t *testing.T) {
-<span id="L732" class="ln">   732  </span>		a := assert.New(t)
-<span id="L733" class="ln">   733  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L734" class="ln">   734  </span>		reaped := make(chan struct{}, 1)
-<span id="L735" class="ln">   735  </span>		fake := reaperFunc(func(context.Context) { reaped &lt;- struct{}{} })
-<span id="L736" class="ln">   736  </span>
-<span id="L737" class="ln">   737  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
-<span id="L738" class="ln">   738  </span>
-<span id="L739" class="ln">   739  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
-<span id="L740" class="ln">   740  </span>		a.True(exists, &#34;cancel func should be registered&#34;)
-<span id="L741" class="ln">   741  </span>		&lt;-reaped      <span class="comment">// blocks until Reap is called</span>
-<span id="L742" class="ln">   742  </span>		_ = newFake() <span class="comment">// suppress unused warning</span>
-<span id="L743" class="ln">   743  </span>	})
-<span id="L744" class="ln">   744  </span>
-<span id="L745" class="ln">   745  </span>	t.Run(&#34;no-op when worker already running&#34;, func(t *testing.T) {
-<span id="L746" class="ln">   746  </span>		a := assert.New(t)
-<span id="L747" class="ln">   747  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L748" class="ln">   748  </span>		callCount := 0
-<span id="L749" class="ln">   749  </span>		fake := reaperFunc(func(context.Context) { callCount++ })
-<span id="L750" class="ln">   750  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
-<span id="L751" class="ln">   751  </span>
-<span id="L752" class="ln">   752  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
-<span id="L753" class="ln">   753  </span>
-<span id="L754" class="ln">   754  </span>		a.Equal(0, callCount, &#34;Reap should not be called when worker already exists&#34;)
-<span id="L755" class="ln">   755  </span>	})
-<span id="L756" class="ln">   756  </span>}
+<span id="L731" class="ln">   731  </span>	<span class="comment">// minimal Reaper implementation that records whether Reap was called</span>
+<span id="L732" class="ln">   732  </span>	type fakeReaper struct{}
+<span id="L733" class="ln">   733  </span>	newFake := func() *fakeReaper { return &amp;fakeReaper{} }
+<span id="L734" class="ln">   734  </span>
+<span id="L735" class="ln">   735  </span>	t.Run(&#34;starts worker and registers cancel func&#34;, func(t *testing.T) {
+<span id="L736" class="ln">   736  </span>		a := assert.New(t)
+<span id="L737" class="ln">   737  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L738" class="ln">   738  </span>		reaped := make(chan struct{}, 1)
+<span id="L739" class="ln">   739  </span>		fake := reaperFunc(func(context.Context) { reaped &lt;- struct{}{} })
+<span id="L740" class="ln">   740  </span>
+<span id="L741" class="ln">   741  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
+<span id="L742" class="ln">   742  </span>
+<span id="L743" class="ln">   743  </span>		_, exists := r.cancelFuncs[&#34;testdb&#34;]
+<span id="L744" class="ln">   744  </span>		a.True(exists, &#34;cancel func should be registered&#34;)
+<span id="L745" class="ln">   745  </span>		&lt;-reaped      <span class="comment">// blocks until Reap is called</span>
+<span id="L746" class="ln">   746  </span>		_ = newFake() <span class="comment">// suppress unused warning</span>
+<span id="L747" class="ln">   747  </span>	})
+<span id="L748" class="ln">   748  </span>
+<span id="L749" class="ln">   749  </span>	t.Run(&#34;no-op when worker already running&#34;, func(t *testing.T) {
+<span id="L750" class="ln">   750  </span>		a := assert.New(t)
+<span id="L751" class="ln">   751  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L752" class="ln">   752  </span>		callCount := 0
+<span id="L753" class="ln">   753  </span>		fake := reaperFunc(func(context.Context) { callCount++ })
+<span id="L754" class="ln">   754  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() {}
+<span id="L755" class="ln">   755  </span>
+<span id="L756" class="ln">   756  </span>		r.StartWorker(ctx, &#34;testdb&#34;, fake)
 <span id="L757" class="ln">   757  </span>
-<span id="L758" class="ln">   758  </span><span class="comment">// reaperFunc is a function that implements the Reaper interface.</span>
-<span id="L759" class="ln">   759  </span>type reaperFunc func(ctx context.Context)
-<span id="L760" class="ln">   760  </span>
-<span id="L761" class="ln">   761  </span>func (f reaperFunc) Reap(ctx context.Context) { f(ctx) }
-<span id="L762" class="ln">   762  </span>
-<span id="L763" class="ln">   763  </span>func TestReaper_ShutdownWorker(t *testing.T) {
-<span id="L764" class="ln">   764  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L765" class="ln">   765  </span>
-<span id="L766" class="ln">   766  </span>	t.Run(&#34;cancels and removes the named worker&#34;, func(t *testing.T) {
-<span id="L767" class="ln">   767  </span>		a := assert.New(t)
-<span id="L768" class="ln">   768  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L769" class="ln">   769  </span>		cancelCalled := false
-<span id="L770" class="ln">   770  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L771" class="ln">   771  </span>
-<span id="L772" class="ln">   772  </span>		r.ShutdownWorker(ctx, &#34;testdb&#34;)
-<span id="L773" class="ln">   773  </span>
-<span id="L774" class="ln">   774  </span>		a.True(cancelCalled)
-<span id="L775" class="ln">   775  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
-<span id="L776" class="ln">   776  </span>	})
+<span id="L758" class="ln">   758  </span>		a.Equal(0, callCount, &#34;Reap should not be called when worker already exists&#34;)
+<span id="L759" class="ln">   759  </span>	})
+<span id="L760" class="ln">   760  </span>}
+<span id="L761" class="ln">   761  </span>
+<span id="L762" class="ln">   762  </span><span class="comment">// reaperFunc is a function that implements the Reaper interface.</span>
+<span id="L763" class="ln">   763  </span>type reaperFunc func(ctx context.Context)
+<span id="L764" class="ln">   764  </span>
+<span id="L765" class="ln">   765  </span>func (f reaperFunc) Reap(ctx context.Context) { f(ctx) }
+<span id="L766" class="ln">   766  </span>
+<span id="L767" class="ln">   767  </span>func TestReaper_ShutdownWorker(t *testing.T) {
+<span id="L768" class="ln">   768  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L769" class="ln">   769  </span>
+<span id="L770" class="ln">   770  </span>	t.Run(&#34;cancels and removes the named worker&#34;, func(t *testing.T) {
+<span id="L771" class="ln">   771  </span>		a := assert.New(t)
+<span id="L772" class="ln">   772  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L773" class="ln">   773  </span>		cancelCalled := false
+<span id="L774" class="ln">   774  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L775" class="ln">   775  </span>
+<span id="L776" class="ln">   776  </span>		r.ShutdownWorker(ctx, &#34;testdb&#34;)
 <span id="L777" class="ln">   777  </span>
-<span id="L778" class="ln">   778  </span>	t.Run(&#34;no-op when source has no running worker&#34;, func(*testing.T) {
-<span id="L779" class="ln">   779  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L780" class="ln">   780  </span>		<span class="comment">// must not panic</span>
-<span id="L781" class="ln">   781  </span>		r.ShutdownWorker(ctx, &#34;nonexistent&#34;)
-<span id="L782" class="ln">   782  </span>	})
-<span id="L783" class="ln">   783  </span>}
-<span id="L784" class="ln">   784  </span>
-<span id="L785" class="ln">   785  </span>func TestReaper_CleanupRemovedWorkers(t *testing.T) {
-<span id="L786" class="ln">   786  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L787" class="ln">   787  </span>
-<span id="L788" class="ln">   788  </span>	t.Run(&#34;cancels worker for DB removed from config&#34;, func(t *testing.T) {
-<span id="L789" class="ln">   789  </span>		a := assert.New(t)
-<span id="L790" class="ln">   790  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L791" class="ln">   791  </span>		cancelCalled := false
-<span id="L792" class="ln">   792  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L793" class="ln">   793  </span>		<span class="comment">// monitoredSources is empty — testdb was removed</span>
-<span id="L794" class="ln">   794  </span>
-<span id="L795" class="ln">   795  </span>		r.CleanupRemovedWorkers(ctx)
-<span id="L796" class="ln">   796  </span>
-<span id="L797" class="ln">   797  </span>		a.True(cancelCalled)
-<span id="L798" class="ln">   798  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
-<span id="L799" class="ln">   799  </span>	})
+<span id="L778" class="ln">   778  </span>		a.True(cancelCalled)
+<span id="L779" class="ln">   779  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L780" class="ln">   780  </span>	})
+<span id="L781" class="ln">   781  </span>
+<span id="L782" class="ln">   782  </span>	t.Run(&#34;no-op when source has no running worker&#34;, func(*testing.T) {
+<span id="L783" class="ln">   783  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L784" class="ln">   784  </span>		<span class="comment">// must not panic</span>
+<span id="L785" class="ln">   785  </span>		r.ShutdownWorker(ctx, &#34;nonexistent&#34;)
+<span id="L786" class="ln">   786  </span>	})
+<span id="L787" class="ln">   787  </span>}
+<span id="L788" class="ln">   788  </span>
+<span id="L789" class="ln">   789  </span>func TestReaper_CleanupRemovedWorkers(t *testing.T) {
+<span id="L790" class="ln">   790  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L791" class="ln">   791  </span>
+<span id="L792" class="ln">   792  </span>	t.Run(&#34;cancels worker for DB removed from config&#34;, func(t *testing.T) {
+<span id="L793" class="ln">   793  </span>		a := assert.New(t)
+<span id="L794" class="ln">   794  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L795" class="ln">   795  </span>		cancelCalled := false
+<span id="L796" class="ln">   796  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L797" class="ln">   797  </span>		<span class="comment">// monitoredSources is empty — testdb was removed</span>
+<span id="L798" class="ln">   798  </span>
+<span id="L799" class="ln">   799  </span>		r.CleanupRemovedWorkers(ctx)
 <span id="L800" class="ln">   800  </span>
-<span id="L801" class="ln">   801  </span>	t.Run(&#34;keeps worker when source is still active&#34;, func(t *testing.T) {
-<span id="L802" class="ln">   802  </span>		a := assert.New(t)
-<span id="L803" class="ln">   803  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L804" class="ln">   804  </span>		cancelCalled := false
-<span id="L805" class="ln">   805  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L806" class="ln">   806  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L807" class="ln">   807  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
-<span id="L808" class="ln">   808  </span>		}
-<span id="L809" class="ln">   809  </span>
-<span id="L810" class="ln">   810  </span>		r.CleanupRemovedWorkers(ctx)
-<span id="L811" class="ln">   811  </span>
-<span id="L812" class="ln">   812  </span>		a.False(cancelCalled)
-<span id="L813" class="ln">   813  </span>		a.Contains(r.cancelFuncs, &#34;testdb&#34;)
-<span id="L814" class="ln">   814  </span>	})
+<span id="L801" class="ln">   801  </span>		a.True(cancelCalled)
+<span id="L802" class="ln">   802  </span>		a.NotContains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L803" class="ln">   803  </span>	})
+<span id="L804" class="ln">   804  </span>
+<span id="L805" class="ln">   805  </span>	t.Run(&#34;keeps worker when source is still active&#34;, func(t *testing.T) {
+<span id="L806" class="ln">   806  </span>		a := assert.New(t)
+<span id="L807" class="ln">   807  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L808" class="ln">   808  </span>		cancelCalled := false
+<span id="L809" class="ln">   809  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L810" class="ln">   810  </span>		r.monitoredSources = sources.SourceConns{
+<span id="L811" class="ln">   811  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
+<span id="L812" class="ln">   812  </span>		}
+<span id="L813" class="ln">   813  </span>
+<span id="L814" class="ln">   814  </span>		r.CleanupRemovedWorkers(ctx)
 <span id="L815" class="ln">   815  </span>
-<span id="L816" class="ln">   816  </span>	t.Run(&#34;cancels all workers when context is cancelled&#34;, func(t *testing.T) {
-<span id="L817" class="ln">   817  </span>		a := assert.New(t)
-<span id="L818" class="ln">   818  </span>		cancelledCtx, cancel := context.WithCancel(ctx)
-<span id="L819" class="ln">   819  </span>		cancel()
-<span id="L820" class="ln">   820  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
-<span id="L821" class="ln">   821  </span>		cancelCalled := false
-<span id="L822" class="ln">   822  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
-<span id="L823" class="ln">   823  </span>		r.monitoredSources = sources.SourceConns{
-<span id="L824" class="ln">   824  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
-<span id="L825" class="ln">   825  </span>		}
-<span id="L826" class="ln">   826  </span>
-<span id="L827" class="ln">   827  </span>		r.CleanupRemovedWorkers(cancelledCtx)
-<span id="L828" class="ln">   828  </span>
-<span id="L829" class="ln">   829  </span>		a.True(cancelCalled)
-<span id="L830" class="ln">   830  </span>	})
-<span id="L831" class="ln">   831  </span>}
+<span id="L816" class="ln">   816  </span>		a.False(cancelCalled)
+<span id="L817" class="ln">   817  </span>		a.Contains(r.cancelFuncs, &#34;testdb&#34;)
+<span id="L818" class="ln">   818  </span>	})
+<span id="L819" class="ln">   819  </span>
+<span id="L820" class="ln">   820  </span>	t.Run(&#34;cancels all workers when context is cancelled&#34;, func(t *testing.T) {
+<span id="L821" class="ln">   821  </span>		a := assert.New(t)
+<span id="L822" class="ln">   822  </span>		cancelledCtx, cancel := context.WithCancel(ctx)
+<span id="L823" class="ln">   823  </span>		cancel()
+<span id="L824" class="ln">   824  </span>		r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L825" class="ln">   825  </span>		cancelCalled := false
+<span id="L826" class="ln">   826  </span>		r.cancelFuncs[&#34;testdb&#34;] = func() { cancelCalled = true }
+<span id="L827" class="ln">   827  </span>		r.monitoredSources = sources.SourceConns{
+<span id="L828" class="ln">   828  </span>			sources.NewDbConn(sources.Source{Name: &#34;testdb&#34;, Metrics: metrics.MetricIntervals{&#34;cpu&#34;: 10}}),
+<span id="L829" class="ln">   829  </span>		}
+<span id="L830" class="ln">   830  </span>
+<span id="L831" class="ln">   831  </span>		r.CleanupRemovedWorkers(cancelledCtx)
 <span id="L832" class="ln">   832  </span>
-<span id="L833" class="ln">   833  </span>func TestReaper_CreateSourceHelpers(t *testing.T) {
-<span id="L834" class="ln">   834  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L835" class="ln">   835  </span>
-<span id="L836" class="ln">   836  </span>	t.Run(&#34;skips already initialized source&#34;, func(*testing.T) {
-<span id="L837" class="ln">   837  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L838" class="ln">   838  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;existing&#34;}}
-<span id="L839" class="ln">   839  </span>		r.prevLoopMonitoredDBs = sources.SourceConns{md}
-<span id="L840" class="ln">   840  </span>		<span class="comment">// Conn is nil — would panic if used, proving early return</span>
-<span id="L841" class="ln">   841  </span>		r.CreateSourceHelpers(ctx, md)
-<span id="L842" class="ln">   842  </span>	})
-<span id="L843" class="ln">   843  </span>
-<span id="L844" class="ln">   844  </span>	t.Run(&#34;skips non-postgres source&#34;, func(*testing.T) {
-<span id="L845" class="ln">   845  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L846" class="ln">   846  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;pgbouncer&#34;, Kind: sources.SourcePgBouncer}}
-<span id="L847" class="ln">   847  </span>		r.CreateSourceHelpers(ctx, md)
-<span id="L848" class="ln">   848  </span>	})
-<span id="L849" class="ln">   849  </span>
-<span id="L850" class="ln">   850  </span>	t.Run(&#34;skips source in recovery&#34;, func(*testing.T) {
-<span id="L851" class="ln">   851  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L852" class="ln">   852  </span>		md := &amp;sources.DbConn{
-<span id="L853" class="ln">   853  </span>			Source:      sources.Source{Name: &#34;standby&#34;},
-<span id="L854" class="ln">   854  </span>			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
-<span id="L855" class="ln">   855  </span>		}
-<span id="L856" class="ln">   856  </span>		r.CreateSourceHelpers(ctx, md)
-<span id="L857" class="ln">   857  </span>	})
-<span id="L858" class="ln">   858  </span>
-<span id="L859" class="ln">   859  </span>	t.Run(&#34;creates extensions when configured&#34;, func(t *testing.T) {
-<span id="L860" class="ln">   860  </span>		a := assert.New(t)
-<span id="L861" class="ln">   861  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L862" class="ln">   862  </span>			Sources: sources.CmdOpts{TryCreateListedExtsIfMissing: &#34;pg_stat_statements&#34;},
-<span id="L863" class="ln">   863  </span>		})
-<span id="L864" class="ln">   864  </span>		md, mock := createTestSourceConn(t)
-<span id="L865" class="ln">   865  </span>		defer mock.Close()
-<span id="L866" class="ln">   866  </span>		mock.ExpectQuery(&#34;pg_available_extensions&#34;).
-<span id="L867" class="ln">   867  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;pg_stat_statements&#34;))
-<span id="L868" class="ln">   868  </span>		mock.ExpectExec(`create extension if not exists`).
-<span id="L869" class="ln">   869  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
-<span id="L870" class="ln">   870  </span>
-<span id="L871" class="ln">   871  </span>		r.CreateSourceHelpers(ctx, md)
-<span id="L872" class="ln">   872  </span>		a.NoError(mock.ExpectationsWereMet())
-<span id="L873" class="ln">   873  </span>	})
+<span id="L833" class="ln">   833  </span>		a.True(cancelCalled)
+<span id="L834" class="ln">   834  </span>	})
+<span id="L835" class="ln">   835  </span>}
+<span id="L836" class="ln">   836  </span>
+<span id="L837" class="ln">   837  </span>func TestReaper_CreateSourceHelpers(t *testing.T) {
+<span id="L838" class="ln">   838  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L839" class="ln">   839  </span>
+<span id="L840" class="ln">   840  </span>	t.Run(&#34;skips already initialized source&#34;, func(*testing.T) {
+<span id="L841" class="ln">   841  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L842" class="ln">   842  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;existing&#34;}}
+<span id="L843" class="ln">   843  </span>		r.prevLoopMonitoredDBs = sources.SourceConns{md}
+<span id="L844" class="ln">   844  </span>		<span class="comment">// Conn is nil — would panic if used, proving early return</span>
+<span id="L845" class="ln">   845  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L846" class="ln">   846  </span>	})
+<span id="L847" class="ln">   847  </span>
+<span id="L848" class="ln">   848  </span>	t.Run(&#34;skips non-postgres source&#34;, func(*testing.T) {
+<span id="L849" class="ln">   849  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L850" class="ln">   850  </span>		md := &amp;sources.DbConn{Source: sources.Source{Name: &#34;pgbouncer&#34;, Kind: sources.SourcePgBouncer}}
+<span id="L851" class="ln">   851  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L852" class="ln">   852  </span>	})
+<span id="L853" class="ln">   853  </span>
+<span id="L854" class="ln">   854  </span>	t.Run(&#34;skips source in recovery&#34;, func(*testing.T) {
+<span id="L855" class="ln">   855  </span>		r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L856" class="ln">   856  </span>		md := &amp;sources.DbConn{
+<span id="L857" class="ln">   857  </span>			Source:      sources.Source{Name: &#34;standby&#34;},
+<span id="L858" class="ln">   858  </span>			RuntimeInfo: sources.RuntimeInfo{IsInRecovery: true},
+<span id="L859" class="ln">   859  </span>		}
+<span id="L860" class="ln">   860  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L861" class="ln">   861  </span>	})
+<span id="L862" class="ln">   862  </span>
+<span id="L863" class="ln">   863  </span>	t.Run(&#34;creates extensions when configured&#34;, func(t *testing.T) {
+<span id="L864" class="ln">   864  </span>		a := assert.New(t)
+<span id="L865" class="ln">   865  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L866" class="ln">   866  </span>			Sources: sources.CmdOpts{TryCreateListedExtsIfMissing: &#34;pg_stat_statements&#34;},
+<span id="L867" class="ln">   867  </span>		})
+<span id="L868" class="ln">   868  </span>		md, mock := createTestSourceConn(t)
+<span id="L869" class="ln">   869  </span>		defer mock.Close()
+<span id="L870" class="ln">   870  </span>		mock.ExpectQuery(&#34;pg_available_extensions&#34;).
+<span id="L871" class="ln">   871  </span>			WillReturnRows(pgxmock.NewRows([]string{&#34;name&#34;}).AddRow(&#34;pg_stat_statements&#34;))
+<span id="L872" class="ln">   872  </span>		mock.ExpectExec(`create extension if not exists`).
+<span id="L873" class="ln">   873  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
 <span id="L874" class="ln">   874  </span>
-<span id="L875" class="ln">   875  </span>	t.Run(&#34;creates metric helpers when configured&#34;, func(t *testing.T) {
-<span id="L876" class="ln">   876  </span>		a := assert.New(t)
-<span id="L877" class="ln">   877  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
-<span id="L878" class="ln">   878  </span>			Sources: sources.CmdOpts{CreateHelpers: true},
-<span id="L879" class="ln">   879  </span>		})
-<span id="L880" class="ln">   880  </span>		md, mock := createTestSourceConn(t)
-<span id="L881" class="ln">   881  </span>		defer mock.Close()
-<span id="L882" class="ln">   882  </span>
-<span id="L883" class="ln">   883  </span>		const helperMetric = &#34;test_helper_metric&#34;
-<span id="L884" class="ln">   884  </span>		metricDefs.MetricDefs[helperMetric] = metrics.Metric{
-<span id="L885" class="ln">   885  </span>			InitSQL: &#34;CREATE OR REPLACE FUNCTION test_helper() RETURNS void LANGUAGE sql AS &#39;&#39;&#34;,
-<span id="L886" class="ln">   886  </span>		}
-<span id="L887" class="ln">   887  </span>		t.Cleanup(func() { delete(metricDefs.MetricDefs, helperMetric) })
-<span id="L888" class="ln">   888  </span>		md.Metrics = metrics.MetricIntervals{helperMetric: 10}
-<span id="L889" class="ln">   889  </span>
-<span id="L890" class="ln">   890  </span>		mock.ExpectExec(&#34;CREATE OR REPLACE FUNCTION&#34;).
-<span id="L891" class="ln">   891  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
-<span id="L892" class="ln">   892  </span>
-<span id="L893" class="ln">   893  </span>		r.CreateSourceHelpers(ctx, md)
-<span id="L894" class="ln">   894  </span>		a.NoError(mock.ExpectationsWereMet())
-<span id="L895" class="ln">   895  </span>	})
-<span id="L896" class="ln">   896  </span>}
-<span id="L897" class="ln">   897  </span>
-<span id="L898" class="ln">   898  </span>func TestReaper_PrintMemStats(t *testing.T) {
-<span id="L899" class="ln">   899  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L900" class="ln">   900  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L901" class="ln">   901  </span>	assert.NotPanics(t, r.PrintMemStats)
-<span id="L902" class="ln">   902  </span>}
-<span id="L903" class="ln">   903  </span>
-<span id="L904" class="ln">   904  </span><span class="comment">// TestRace_AddSysinfoToMeasurements verifies no data race between concurrent</span>
-<span id="L905" class="ln">   905  </span><span class="comment">// RuntimeInfo writes (simulating FetchRuntimeInfo) and AddSysinfoToMeasurements reads.</span>
-<span id="L906" class="ln">   906  </span>func TestRace_AddSysinfoToMeasurements(*testing.T) {
-<span id="L907" class="ln">   907  </span>	r := &amp;reaper{
-<span id="L908" class="ln">   908  </span>		Options: &amp;cmdopts.Options{
-<span id="L909" class="ln">   909  </span>			Sinks: sinks.CmdOpts{
-<span id="L910" class="ln">   910  </span>				RealDbnameField:       &#34;real_dbname&#34;,
-<span id="L911" class="ln">   911  </span>				SystemIdentifierField: &#34;sys_id&#34;,
-<span id="L912" class="ln">   912  </span>			},
-<span id="L913" class="ln">   913  </span>		},
-<span id="L914" class="ln">   914  </span>	}
-<span id="L915" class="ln">   915  </span>	md := sources.NewDbConn(sources.Source{Name: &#34;race-test&#34;})
-<span id="L916" class="ln">   916  </span>
-<span id="L917" class="ln">   917  </span>	const iterations = 200
-<span id="L918" class="ln">   918  </span>	var wg sync.WaitGroup
-<span id="L919" class="ln">   919  </span>	wg.Add(2)
+<span id="L875" class="ln">   875  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L876" class="ln">   876  </span>		a.NoError(mock.ExpectationsWereMet())
+<span id="L877" class="ln">   877  </span>	})
+<span id="L878" class="ln">   878  </span>
+<span id="L879" class="ln">   879  </span>	t.Run(&#34;creates metric helpers when configured&#34;, func(t *testing.T) {
+<span id="L880" class="ln">   880  </span>		a := assert.New(t)
+<span id="L881" class="ln">   881  </span>		r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L882" class="ln">   882  </span>			Sources: sources.CmdOpts{CreateHelpers: true},
+<span id="L883" class="ln">   883  </span>		})
+<span id="L884" class="ln">   884  </span>		md, mock := createTestSourceConn(t)
+<span id="L885" class="ln">   885  </span>		defer mock.Close()
+<span id="L886" class="ln">   886  </span>
+<span id="L887" class="ln">   887  </span>		const helperMetric = &#34;test_helper_metric&#34;
+<span id="L888" class="ln">   888  </span>		metricDefs.MetricDefs[helperMetric] = metrics.Metric{
+<span id="L889" class="ln">   889  </span>			InitSQL: &#34;CREATE OR REPLACE FUNCTION test_helper() RETURNS void LANGUAGE sql AS &#39;&#39;&#34;,
+<span id="L890" class="ln">   890  </span>		}
+<span id="L891" class="ln">   891  </span>		t.Cleanup(func() { delete(metricDefs.MetricDefs, helperMetric) })
+<span id="L892" class="ln">   892  </span>		md.Metrics = metrics.MetricIntervals{helperMetric: 10}
+<span id="L893" class="ln">   893  </span>
+<span id="L894" class="ln">   894  </span>		mock.ExpectExec(&#34;CREATE OR REPLACE FUNCTION&#34;).
+<span id="L895" class="ln">   895  </span>			WillReturnResult(pgxmock.NewResult(&#34;CREATE&#34;, 1))
+<span id="L896" class="ln">   896  </span>
+<span id="L897" class="ln">   897  </span>		r.CreateSourceHelpers(ctx, md)
+<span id="L898" class="ln">   898  </span>		a.NoError(mock.ExpectationsWereMet())
+<span id="L899" class="ln">   899  </span>	})
+<span id="L900" class="ln">   900  </span>}
+<span id="L901" class="ln">   901  </span>
+<span id="L902" class="ln">   902  </span>func TestReaper_PrintMemStats(t *testing.T) {
+<span id="L903" class="ln">   903  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L904" class="ln">   904  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L905" class="ln">   905  </span>	assert.NotPanics(t, r.PrintMemStats)
+<span id="L906" class="ln">   906  </span>}
+<span id="L907" class="ln">   907  </span>
+<span id="L908" class="ln">   908  </span><span class="comment">// TestRace_AddSysinfoToMeasurements verifies no data race between concurrent</span>
+<span id="L909" class="ln">   909  </span><span class="comment">// RuntimeInfo writes (simulating FetchRuntimeInfo) and AddSysinfoToMeasurements reads.</span>
+<span id="L910" class="ln">   910  </span>func TestRace_AddSysinfoToMeasurements(*testing.T) {
+<span id="L911" class="ln">   911  </span>	r := &amp;reaper{
+<span id="L912" class="ln">   912  </span>		Options: &amp;cmdopts.Options{
+<span id="L913" class="ln">   913  </span>			Sinks: sinks.CmdOpts{
+<span id="L914" class="ln">   914  </span>				RealDbnameField:       &#34;real_dbname&#34;,
+<span id="L915" class="ln">   915  </span>				SystemIdentifierField: &#34;sys_id&#34;,
+<span id="L916" class="ln">   916  </span>			},
+<span id="L917" class="ln">   917  </span>		},
+<span id="L918" class="ln">   918  </span>	}
+<span id="L919" class="ln">   919  </span>	md := sources.NewDbConn(sources.Source{Name: &#34;race-test&#34;})
 <span id="L920" class="ln">   920  </span>
-<span id="L921" class="ln">   921  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
-<span id="L922" class="ln">   922  </span>	go func() {
-<span id="L923" class="ln">   923  </span>		defer wg.Done()
-<span id="L924" class="ln">   924  </span>		for range iterations {
-<span id="L925" class="ln">   925  </span>			md.Lock()
-<span id="L926" class="ln">   926  </span>			md.RealDbname = &#34;realdb&#34;
-<span id="L927" class="ln">   927  </span>			md.SystemIdentifier = &#34;12345&#34;
-<span id="L928" class="ln">   928  </span>			md.Unlock()
-<span id="L929" class="ln">   929  </span>		}
-<span id="L930" class="ln">   930  </span>	}()
-<span id="L931" class="ln">   931  </span>
-<span id="L932" class="ln">   932  </span>	<span class="comment">// Reader: AddSysinfoToMeasurements must RLock before reading.</span>
-<span id="L933" class="ln">   933  </span>	go func() {
-<span id="L934" class="ln">   934  </span>		defer wg.Done()
-<span id="L935" class="ln">   935  </span>		data := metrics.Measurements{metrics.Measurement{}}
-<span id="L936" class="ln">   936  </span>		for range iterations {
-<span id="L937" class="ln">   937  </span>			r.AddSysinfoToMeasurements(data, md)
-<span id="L938" class="ln">   938  </span>		}
-<span id="L939" class="ln">   939  </span>	}()
-<span id="L940" class="ln">   940  </span>
-<span id="L941" class="ln">   941  </span>	wg.Wait()
-<span id="L942" class="ln">   942  </span>}
-<span id="L943" class="ln">   943  </span>
-<span id="L944" class="ln">   944  </span><span class="comment">// TestRace_CreateSourceHelpers verifies no data race between concurrent</span>
-<span id="L945" class="ln">   945  </span><span class="comment">// RuntimeInfo writes and CreateSourceHelpers reading IsInRecovery.</span>
-<span id="L946" class="ln">   946  </span>func TestRace_CreateSourceHelpers(t *testing.T) {
-<span id="L947" class="ln">   947  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L948" class="ln">   948  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
-<span id="L949" class="ln">   949  </span>	md := sources.NewDbConn(sources.Source{
-<span id="L950" class="ln">   950  </span>		Name: &#34;race-test&#34;,
-<span id="L951" class="ln">   951  </span>		Kind: sources.SourcePostgres,
-<span id="L952" class="ln">   952  </span>	})
-<span id="L953" class="ln">   953  </span>
-<span id="L954" class="ln">   954  </span>	const iterations = 200
-<span id="L955" class="ln">   955  </span>	var wg sync.WaitGroup
-<span id="L956" class="ln">   956  </span>	wg.Add(2)
+<span id="L921" class="ln">   921  </span>	const iterations = 200
+<span id="L922" class="ln">   922  </span>	var wg sync.WaitGroup
+<span id="L923" class="ln">   923  </span>	wg.Add(2)
+<span id="L924" class="ln">   924  </span>
+<span id="L925" class="ln">   925  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
+<span id="L926" class="ln">   926  </span>	go func() {
+<span id="L927" class="ln">   927  </span>		defer wg.Done()
+<span id="L928" class="ln">   928  </span>		for range iterations {
+<span id="L929" class="ln">   929  </span>			md.Lock()
+<span id="L930" class="ln">   930  </span>			md.RealDbname = &#34;realdb&#34;
+<span id="L931" class="ln">   931  </span>			md.SystemIdentifier = &#34;12345&#34;
+<span id="L932" class="ln">   932  </span>			md.Unlock()
+<span id="L933" class="ln">   933  </span>		}
+<span id="L934" class="ln">   934  </span>	}()
+<span id="L935" class="ln">   935  </span>
+<span id="L936" class="ln">   936  </span>	<span class="comment">// Reader: AddSysinfoToMeasurements must RLock before reading.</span>
+<span id="L937" class="ln">   937  </span>	go func() {
+<span id="L938" class="ln">   938  </span>		defer wg.Done()
+<span id="L939" class="ln">   939  </span>		data := metrics.Measurements{metrics.Measurement{}}
+<span id="L940" class="ln">   940  </span>		for range iterations {
+<span id="L941" class="ln">   941  </span>			r.AddSysinfoToMeasurements(data, md)
+<span id="L942" class="ln">   942  </span>		}
+<span id="L943" class="ln">   943  </span>	}()
+<span id="L944" class="ln">   944  </span>
+<span id="L945" class="ln">   945  </span>	wg.Wait()
+<span id="L946" class="ln">   946  </span>}
+<span id="L947" class="ln">   947  </span>
+<span id="L948" class="ln">   948  </span><span class="comment">// TestRace_CreateSourceHelpers verifies no data race between concurrent</span>
+<span id="L949" class="ln">   949  </span><span class="comment">// RuntimeInfo writes and CreateSourceHelpers reading IsInRecovery.</span>
+<span id="L950" class="ln">   950  </span>func TestRace_CreateSourceHelpers(t *testing.T) {
+<span id="L951" class="ln">   951  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L952" class="ln">   952  </span>	r := newReaper(ctx, &amp;cmdopts.Options{})
+<span id="L953" class="ln">   953  </span>	md := sources.NewDbConn(sources.Source{
+<span id="L954" class="ln">   954  </span>		Name: &#34;race-test&#34;,
+<span id="L955" class="ln">   955  </span>		Kind: sources.SourcePostgres,
+<span id="L956" class="ln">   956  </span>	})
 <span id="L957" class="ln">   957  </span>
-<span id="L958" class="ln">   958  </span>	go func() {
-<span id="L959" class="ln">   959  </span>		defer wg.Done()
-<span id="L960" class="ln">   960  </span>		for range iterations {
-<span id="L961" class="ln">   961  </span>			md.Lock()
-<span id="L962" class="ln">   962  </span>			md.IsInRecovery = !md.IsInRecovery
-<span id="L963" class="ln">   963  </span>			md.Unlock()
-<span id="L964" class="ln">   964  </span>		}
-<span id="L965" class="ln">   965  </span>	}()
-<span id="L966" class="ln">   966  </span>
-<span id="L967" class="ln">   967  </span>	go func() {
-<span id="L968" class="ln">   968  </span>		defer wg.Done()
-<span id="L969" class="ln">   969  </span>		for range iterations {
-<span id="L970" class="ln">   970  </span>			r.CreateSourceHelpers(ctx, md)
-<span id="L971" class="ln">   971  </span>		}
-<span id="L972" class="ln">   972  </span>	}()
-<span id="L973" class="ln">   973  </span>
-<span id="L974" class="ln">   974  </span>	wg.Wait()
-<span id="L975" class="ln">   975  </span>}
-<span id="L976" class="ln">   976  </span>
-<span id="L977" class="ln">   977  </span><span class="comment">// TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop&#39;s</span>
-<span id="L978" class="ln">   978  </span><span class="comment">// RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and</span>
-<span id="L979" class="ln">   979  </span><span class="comment">// MetricsStandby does not race against concurrent FetchRuntimeInfo writes.</span>
-<span id="L980" class="ln">   980  </span>func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
-<span id="L981" class="ln">   981  </span>	md := sources.NewDbConn(sources.Source{
-<span id="L982" class="ln">   982  </span>		Name: &#34;race-test&#34;,
-<span id="L983" class="ln">   983  </span>		Kind: sources.SourcePostgres,
-<span id="L984" class="ln">   984  </span>	})
-<span id="L985" class="ln">   985  </span>
-<span id="L986" class="ln">   986  </span>	const iterations = 200
-<span id="L987" class="ln">   987  </span>	var wg sync.WaitGroup
-<span id="L988" class="ln">   988  </span>	wg.Add(2)
+<span id="L958" class="ln">   958  </span>	const iterations = 200
+<span id="L959" class="ln">   959  </span>	var wg sync.WaitGroup
+<span id="L960" class="ln">   960  </span>	wg.Add(2)
+<span id="L961" class="ln">   961  </span>
+<span id="L962" class="ln">   962  </span>	go func() {
+<span id="L963" class="ln">   963  </span>		defer wg.Done()
+<span id="L964" class="ln">   964  </span>		for range iterations {
+<span id="L965" class="ln">   965  </span>			md.Lock()
+<span id="L966" class="ln">   966  </span>			md.IsInRecovery = !md.IsInRecovery
+<span id="L967" class="ln">   967  </span>			md.Unlock()
+<span id="L968" class="ln">   968  </span>		}
+<span id="L969" class="ln">   969  </span>	}()
+<span id="L970" class="ln">   970  </span>
+<span id="L971" class="ln">   971  </span>	go func() {
+<span id="L972" class="ln">   972  </span>		defer wg.Done()
+<span id="L973" class="ln">   973  </span>		for range iterations {
+<span id="L974" class="ln">   974  </span>			r.CreateSourceHelpers(ctx, md)
+<span id="L975" class="ln">   975  </span>		}
+<span id="L976" class="ln">   976  </span>	}()
+<span id="L977" class="ln">   977  </span>
+<span id="L978" class="ln">   978  </span>	wg.Wait()
+<span id="L979" class="ln">   979  </span>}
+<span id="L980" class="ln">   980  </span>
+<span id="L981" class="ln">   981  </span><span class="comment">// TestRace_MainLoopRuntimeInfoSnapshot verifies that the main reaper loop&#39;s</span>
+<span id="L982" class="ln">   982  </span><span class="comment">// RLock snapshot of IsInRecovery, VersionStr, ApproxDbSize, Metrics, and</span>
+<span id="L983" class="ln">   983  </span><span class="comment">// MetricsStandby does not race against concurrent FetchRuntimeInfo writes.</span>
+<span id="L984" class="ln">   984  </span>func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
+<span id="L985" class="ln">   985  </span>	md := sources.NewDbConn(sources.Source{
+<span id="L986" class="ln">   986  </span>		Name: &#34;race-test&#34;,
+<span id="L987" class="ln">   987  </span>		Kind: sources.SourcePostgres,
+<span id="L988" class="ln">   988  </span>	})
 <span id="L989" class="ln">   989  </span>
-<span id="L990" class="ln">   990  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
-<span id="L991" class="ln">   991  </span>	go func() {
-<span id="L992" class="ln">   992  </span>		defer wg.Done()
-<span id="L993" class="ln">   993  </span>		for range iterations {
-<span id="L994" class="ln">   994  </span>			md.Lock()
-<span id="L995" class="ln">   995  </span>			md.IsInRecovery = !md.IsInRecovery
-<span id="L996" class="ln">   996  </span>			md.VersionStr = &#34;PostgreSQL 16.0&#34;
-<span id="L997" class="ln">   997  </span>			md.ApproxDbSize = 1024
-<span id="L998" class="ln">   998  </span>			md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 30}
-<span id="L999" class="ln">   999  </span>			md.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
-<span id="L1000" class="ln">  1000  </span>			md.Unlock()
-<span id="L1001" class="ln">  1001  </span>		}
-<span id="L1002" class="ln">  1002  </span>	}()
-<span id="L1003" class="ln">  1003  </span>
-<span id="L1004" class="ln">  1004  </span>	<span class="comment">// Reader: snapshot under RLock exactly as the main loop does after FetchRuntimeInfo.</span>
-<span id="L1005" class="ln">  1005  </span>	go func() {
-<span id="L1006" class="ln">  1006  </span>		defer wg.Done()
-<span id="L1007" class="ln">  1007  </span>		for range iterations {
-<span id="L1008" class="ln">  1008  </span>			md.RLock()
-<span id="L1009" class="ln">  1009  </span>			_ = md.IsInRecovery
-<span id="L1010" class="ln">  1010  </span>			_ = md.VersionStr
-<span id="L1011" class="ln">  1011  </span>			_ = md.ApproxDbSize
-<span id="L1012" class="ln">  1012  </span>			if md.Metrics != nil {
-<span id="L1013" class="ln">  1013  </span>				_ = maps.Clone(md.Metrics)
-<span id="L1014" class="ln">  1014  </span>			}
-<span id="L1015" class="ln">  1015  </span>			if md.MetricsStandby != nil {
-<span id="L1016" class="ln">  1016  </span>				_ = maps.Clone(md.MetricsStandby)
-<span id="L1017" class="ln">  1017  </span>			}
-<span id="L1018" class="ln">  1018  </span>			md.RUnlock()
-<span id="L1019" class="ln">  1019  </span>		}
-<span id="L1020" class="ln">  1020  </span>	}()
-<span id="L1021" class="ln">  1021  </span>
-<span id="L1022" class="ln">  1022  </span>	wg.Wait()
-<span id="L1023" class="ln">  1023  </span>}
-<span id="L1024" class="ln">  1024  </span>
+<span id="L990" class="ln">   990  </span>	const iterations = 200
+<span id="L991" class="ln">   991  </span>	var wg sync.WaitGroup
+<span id="L992" class="ln">   992  </span>	wg.Add(2)
+<span id="L993" class="ln">   993  </span>
+<span id="L994" class="ln">   994  </span>	<span class="comment">// Writer: simulate FetchRuntimeInfo updating RuntimeInfo fields under Lock.</span>
+<span id="L995" class="ln">   995  </span>	go func() {
+<span id="L996" class="ln">   996  </span>		defer wg.Done()
+<span id="L997" class="ln">   997  </span>		for range iterations {
+<span id="L998" class="ln">   998  </span>			md.Lock()
+<span id="L999" class="ln">   999  </span>			md.IsInRecovery = !md.IsInRecovery
+<span id="L1000" class="ln">  1000  </span>			md.VersionStr = &#34;PostgreSQL 16.0&#34;
+<span id="L1001" class="ln">  1001  </span>			md.ApproxDbSize = 1024
+<span id="L1002" class="ln">  1002  </span>			md.Metrics = metrics.MetricIntervals{&#34;cpu&#34;: 30}
+<span id="L1003" class="ln">  1003  </span>			md.MetricsStandby = metrics.MetricIntervals{&#34;cpu&#34;: 60}
+<span id="L1004" class="ln">  1004  </span>			md.Unlock()
+<span id="L1005" class="ln">  1005  </span>		}
+<span id="L1006" class="ln">  1006  </span>	}()
+<span id="L1007" class="ln">  1007  </span>
+<span id="L1008" class="ln">  1008  </span>	<span class="comment">// Reader: snapshot under RLock exactly as the main loop does after FetchRuntimeInfo.</span>
+<span id="L1009" class="ln">  1009  </span>	go func() {
+<span id="L1010" class="ln">  1010  </span>		defer wg.Done()
+<span id="L1011" class="ln">  1011  </span>		for range iterations {
+<span id="L1012" class="ln">  1012  </span>			md.RLock()
+<span id="L1013" class="ln">  1013  </span>			_ = md.IsInRecovery
+<span id="L1014" class="ln">  1014  </span>			_ = md.VersionStr
+<span id="L1015" class="ln">  1015  </span>			_ = md.ApproxDbSize
+<span id="L1016" class="ln">  1016  </span>			if md.Metrics != nil {
+<span id="L1017" class="ln">  1017  </span>				_ = maps.Clone(md.Metrics)
+<span id="L1018" class="ln">  1018  </span>			}
+<span id="L1019" class="ln">  1019  </span>			if md.MetricsStandby != nil {
+<span id="L1020" class="ln">  1020  </span>				_ = maps.Clone(md.MetricsStandby)
+<span id="L1021" class="ln">  1021  </span>			}
+<span id="L1022" class="ln">  1022  </span>			md.RUnlock()
+<span id="L1023" class="ln">  1023  </span>		}
+<span id="L1024" class="ln">  1024  </span>	}()
+<span id="L1025" class="ln">  1025  </span>
+<span id="L1026" class="ln">  1026  </span>	wg.Wait()
+<span id="L1027" class="ln">  1027  </span>}
+<span id="L1028" class="ln">  1028  </span>
+<span id="L1029" class="ln">  1029  </span><span class="comment">// fakeSourceConn is a SourceConn with a programmable Connect. It is neither</span>
+<span id="L1030" class="ln">  1030  </span><span class="comment">// *sources.DbConn nor *sources.PromConn, so after a successful Connect the</span>
+<span id="L1031" class="ln">  1031  </span><span class="comment">// sweep does nothing further for it — Connect behavior is the only observable.</span>
+<span id="L1032" class="ln">  1032  </span>type fakeSourceConn struct {
+<span id="L1033" class="ln">  1033  </span>	src     sources.Source
+<span id="L1034" class="ln">  1034  </span>	connect func(ctx context.Context) error
+<span id="L1035" class="ln">  1035  </span>}
+<span id="L1036" class="ln">  1036  </span>
+<span id="L1037" class="ln">  1037  </span>func (f *fakeSourceConn) Connect(ctx context.Context, _ sources.CmdOpts) error {
+<span id="L1038" class="ln">  1038  </span>	return f.connect(ctx)
+<span id="L1039" class="ln">  1039  </span>}
+<span id="L1040" class="ln">  1040  </span>func (f *fakeSourceConn) Ping(context.Context) error                      { return nil }
+<span id="L1041" class="ln">  1041  </span>func (f *fakeSourceConn) IsPostgresSource() bool                          { return false }
+<span id="L1042" class="ln">  1042  </span>func (f *fakeSourceConn) GetSource() sources.Source                       { return f.src }
+<span id="L1043" class="ln">  1043  </span>func (f *fakeSourceConn) GetMetricInterval(string) time.Duration          { return 0 }
+<span id="L1044" class="ln">  1044  </span>func (f *fakeSourceConn) SetMetricIntervals(_, _ metrics.MetricIntervals) {}
+<span id="L1045" class="ln">  1045  </span>func (f *fakeSourceConn) Close()                                          {}
+<span id="L1046" class="ln">  1046  </span>
+<span id="L1047" class="ln">  1047  </span><span class="comment">// captureWriter is a sinks.Writer that records every Write envelope.</span>
+<span id="L1048" class="ln">  1048  </span>type captureWriter struct {
+<span id="L1049" class="ln">  1049  </span>	mu   sync.Mutex
+<span id="L1050" class="ln">  1050  </span>	envs []metrics.MeasurementEnvelope
+<span id="L1051" class="ln">  1051  </span>	ch   chan metrics.MeasurementEnvelope
+<span id="L1052" class="ln">  1052  </span>}
+<span id="L1053" class="ln">  1053  </span>
+<span id="L1054" class="ln">  1054  </span>func newCaptureWriter(size int) *captureWriter {
+<span id="L1055" class="ln">  1055  </span>	return &amp;captureWriter{ch: make(chan metrics.MeasurementEnvelope, size)}
+<span id="L1056" class="ln">  1056  </span>}
+<span id="L1057" class="ln">  1057  </span>
+<span id="L1058" class="ln">  1058  </span>func (w *captureWriter) SyncMetric(string, string, sinks.SyncOp) error { return nil }
+<span id="L1059" class="ln">  1059  </span>
+<span id="L1060" class="ln">  1060  </span>func (w *captureWriter) Write(env metrics.MeasurementEnvelope) error {
+<span id="L1061" class="ln">  1061  </span>	w.mu.Lock()
+<span id="L1062" class="ln">  1062  </span>	w.envs = append(w.envs, env)
+<span id="L1063" class="ln">  1063  </span>	w.mu.Unlock()
+<span id="L1064" class="ln">  1064  </span>	w.ch &lt;- env
+<span id="L1065" class="ln">  1065  </span>	return nil
+<span id="L1066" class="ln">  1066  </span>}
+<span id="L1067" class="ln">  1067  </span>
+<span id="L1068" class="ln">  1068  </span><span class="comment">// count returns how many envelopes were written for the named source.</span>
+<span id="L1069" class="ln">  1069  </span>func (w *captureWriter) count(name string) int {
+<span id="L1070" class="ln">  1070  </span>	w.mu.Lock()
+<span id="L1071" class="ln">  1071  </span>	defer w.mu.Unlock()
+<span id="L1072" class="ln">  1072  </span>	n := 0
+<span id="L1073" class="ln">  1073  </span>	for _, e := range w.envs {
+<span id="L1074" class="ln">  1074  </span>		if e.DBName == name {
+<span id="L1075" class="ln">  1075  </span>			n++
+<span id="L1076" class="ln">  1076  </span>		}
+<span id="L1077" class="ln">  1077  </span>	}
+<span id="L1078" class="ln">  1078  </span>	return n
+<span id="L1079" class="ln">  1079  </span>}
+<span id="L1080" class="ln">  1080  </span>
+<span id="L1081" class="ln">  1081  </span><span class="comment">// waitEnvelope waits for an envelope for the named source or fails the test</span>
+<span id="L1082" class="ln">  1082  </span><span class="comment">// after the timeout.</span>
+<span id="L1083" class="ln">  1083  </span>func (w *captureWriter) waitEnvelope(t *testing.T, name string, timeout time.Duration) {
+<span id="L1084" class="ln">  1084  </span>	t.Helper()
+<span id="L1085" class="ln">  1085  </span>	deadline := time.After(timeout)
+<span id="L1086" class="ln">  1086  </span>	for {
+<span id="L1087" class="ln">  1087  </span>		select {
+<span id="L1088" class="ln">  1088  </span>		case env := &lt;-w.ch:
+<span id="L1089" class="ln">  1089  </span>			if env.DBName == name {
+<span id="L1090" class="ln">  1090  </span>				return
+<span id="L1091" class="ln">  1091  </span>			}
+<span id="L1092" class="ln">  1092  </span>		case &lt;-deadline:
+<span id="L1093" class="ln">  1093  </span>			t.Fatalf(&#34;timed out after %s waiting for an envelope for source %q&#34;, timeout, name)
+<span id="L1094" class="ln">  1094  </span>		}
+<span id="L1095" class="ln">  1095  </span>	}
+<span id="L1096" class="ln">  1096  </span>}
+<span id="L1097" class="ln">  1097  </span>
+<span id="L1098" class="ln">  1098  </span><span class="comment">// newSweepReaper builds a reaper whose source and metric readers fail, so the</span>
+<span id="L1099" class="ln">  1099  </span><span class="comment">// main loop keeps the seeded monitoredSources untouched. The refresh interval</span>
+<span id="L1100" class="ln">  1100  </span><span class="comment">// is huge, so exactly one sweep runs per Reap invocation.</span>
+<span id="L1101" class="ln">  1101  </span>func newSweepReaper(ctx context.Context, sink sinks.Writer, srcs ...sources.SourceConn) *reaper {
+<span id="L1102" class="ln">  1102  </span>	r := newReaper(ctx, &amp;cmdopts.Options{
+<span id="L1103" class="ln">  1103  </span>		Sources: sources.CmdOpts{Refresh: 3600},
+<span id="L1104" class="ln">  1104  </span>		SourcesReaderWriter: &amp;testutil.MockSourcesReaderWriter{
+<span id="L1105" class="ln">  1105  </span>			GetSourcesFunc: func() (sources.Sources, error) { return nil, errors.New(&#34;no sources&#34;) },
+<span id="L1106" class="ln">  1106  </span>		},
+<span id="L1107" class="ln">  1107  </span>		MetricsReaderWriter: &amp;testutil.MockMetricsReaderWriter{
+<span id="L1108" class="ln">  1108  </span>			GetMetricsFunc: func() (*metrics.Metrics, error) { return nil, errors.New(&#34;no metrics&#34;) },
+<span id="L1109" class="ln">  1109  </span>		},
+<span id="L1110" class="ln">  1110  </span>		SinksWriter: sink,
+<span id="L1111" class="ln">  1111  </span>	})
+<span id="L1112" class="ln">  1112  </span>	r.monitoredSources = sources.SourceConns(srcs)
+<span id="L1113" class="ln">  1113  </span>	return r
+<span id="L1114" class="ln">  1114  </span>}
+<span id="L1115" class="ln">  1115  </span>
+<span id="L1116" class="ln">  1116  </span><span class="comment">// TestReaper_SweepSourceIsolation verifies that one stalled source cannot</span>
+<span id="L1117" class="ln">  1117  </span><span class="comment">// delay the processing of the sources behind it in the list.</span>
+<span id="L1118" class="ln">  1118  </span>func TestReaper_SweepSourceIsolation(t *testing.T) {
+<span id="L1119" class="ln">  1119  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1120" class="ln">  1120  </span>	sink := newCaptureWriter(16)
+<span id="L1121" class="ln">  1121  </span>	fail := func(context.Context) error { return errors.New(&#34;connect failed&#34;) }
+<span id="L1122" class="ln">  1122  </span>	stall := func(ctx context.Context) error {
+<span id="L1123" class="ln">  1123  </span>		select {
+<span id="L1124" class="ln">  1124  </span>		case &lt;-time.After(2 * time.Second):
+<span id="L1125" class="ln">  1125  </span>			return errors.New(&#34;connect failed&#34;)
+<span id="L1126" class="ln">  1126  </span>		case &lt;-ctx.Done():
+<span id="L1127" class="ln">  1127  </span>			return ctx.Err()
+<span id="L1128" class="ln">  1128  </span>		}
+<span id="L1129" class="ln">  1129  </span>	}
+<span id="L1130" class="ln">  1130  </span>	r := newSweepReaper(ctx, sink,
+<span id="L1131" class="ln">  1131  </span>		&amp;fakeSourceConn{src: sources.Source{Name: &#34;s1&#34;}, connect: fail},
+<span id="L1132" class="ln">  1132  </span>		&amp;fakeSourceConn{src: sources.Source{Name: &#34;s2&#34;}, connect: stall},
+<span id="L1133" class="ln">  1133  </span>		&amp;fakeSourceConn{src: sources.Source{Name: &#34;s3&#34;}, connect: fail},
+<span id="L1134" class="ln">  1134  </span>	)
+<span id="L1135" class="ln">  1135  </span>	reapCtx, cancel := context.WithCancel(ctx)
+<span id="L1136" class="ln">  1136  </span>	defer cancel()
+<span id="L1137" class="ln">  1137  </span>	start := time.Now()
+<span id="L1138" class="ln">  1138  </span>	go r.Reap(reapCtx)
+<span id="L1139" class="ln">  1139  </span>
+<span id="L1140" class="ln">  1140  </span>	<span class="comment">// s3 sits behind the stalled s2 in the source list. A sequential sweep</span>
+<span id="L1141" class="ln">  1141  </span>	<span class="comment">// cannot report s3 before s2&#39;s 2s stall elapses; allow 1/4 of the stall.</span>
+<span id="L1142" class="ln">  1142  </span>	sink.waitEnvelope(t, &#34;s3&#34;, 500*time.Millisecond)
+<span id="L1143" class="ln">  1143  </span>	assert.Less(t, time.Since(start), 500*time.Millisecond)
+<span id="L1144" class="ln">  1144  </span>	cancel()
+<span id="L1145" class="ln">  1145  </span>}
+<span id="L1146" class="ln">  1146  </span>
+<span id="L1147" class="ln">  1147  </span><span class="comment">// TestReaper_SweepBoundedParallelism verifies that sources are processed</span>
+<span id="L1148" class="ln">  1148  </span><span class="comment">// concurrently but never more than maxConcurrentSourceConnects at a time.</span>
+<span id="L1149" class="ln">  1149  </span>func TestReaper_SweepBoundedParallelism(t *testing.T) {
+<span id="L1150" class="ln">  1150  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1151" class="ln">  1151  </span>	const total = 64
+<span id="L1152" class="ln">  1152  </span>	const sleep = 50 * time.Millisecond
+<span id="L1153" class="ln">  1153  </span>	sink := newCaptureWriter(total)
+<span id="L1154" class="ln">  1154  </span>
+<span id="L1155" class="ln">  1155  </span>	var inFlight, maxSeen atomic.Int64
+<span id="L1156" class="ln">  1156  </span>	srcs := make([]sources.SourceConn, 0, total)
+<span id="L1157" class="ln">  1157  </span>	for i := range total {
+<span id="L1158" class="ln">  1158  </span>		srcs = append(srcs, &amp;fakeSourceConn{
+<span id="L1159" class="ln">  1159  </span>			src: sources.Source{Name: fmt.Sprintf(&#34;db%02d&#34;, i)},
+<span id="L1160" class="ln">  1160  </span>			connect: func(context.Context) error {
+<span id="L1161" class="ln">  1161  </span>				cur := inFlight.Add(1)
+<span id="L1162" class="ln">  1162  </span>				defer inFlight.Add(-1)
+<span id="L1163" class="ln">  1163  </span>				for {
+<span id="L1164" class="ln">  1164  </span>					if m := maxSeen.Load(); cur &lt;= m || maxSeen.CompareAndSwap(m, cur) {
+<span id="L1165" class="ln">  1165  </span>						break
+<span id="L1166" class="ln">  1166  </span>					}
+<span id="L1167" class="ln">  1167  </span>				}
+<span id="L1168" class="ln">  1168  </span>				time.Sleep(sleep)
+<span id="L1169" class="ln">  1169  </span>				return errors.New(&#34;connect failed&#34;)
+<span id="L1170" class="ln">  1170  </span>			},
+<span id="L1171" class="ln">  1171  </span>		})
+<span id="L1172" class="ln">  1172  </span>	}
+<span id="L1173" class="ln">  1173  </span>	r := newSweepReaper(ctx, sink, srcs...)
+<span id="L1174" class="ln">  1174  </span>	reapCtx, cancel := context.WithCancel(ctx)
+<span id="L1175" class="ln">  1175  </span>	defer cancel()
+<span id="L1176" class="ln">  1176  </span>	start := time.Now()
+<span id="L1177" class="ln">  1177  </span>	go r.Reap(reapCtx)
+<span id="L1178" class="ln">  1178  </span>
+<span id="L1179" class="ln">  1179  </span>	<span class="comment">// Every processed source reports exactly one instance_up=0 envelope.</span>
+<span id="L1180" class="ln">  1180  </span>	seen := make(map[string]struct{}, total)
+<span id="L1181" class="ln">  1181  </span>	deadline := time.After(10 * time.Second)
+<span id="L1182" class="ln">  1182  </span>	var elapsed time.Duration
+<span id="L1183" class="ln">  1183  </span>	for len(seen) &lt; total {
+<span id="L1184" class="ln">  1184  </span>		select {
+<span id="L1185" class="ln">  1185  </span>		case env := &lt;-sink.ch:
+<span id="L1186" class="ln">  1186  </span>			seen[env.DBName] = struct{}{}
+<span id="L1187" class="ln">  1187  </span>			elapsed = time.Since(start)
+<span id="L1188" class="ln">  1188  </span>		case &lt;-deadline:
+<span id="L1189" class="ln">  1189  </span>			t.Fatalf(&#34;only %d of %d sources processed&#34;, len(seen), total)
+<span id="L1190" class="ln">  1190  </span>		}
+<span id="L1191" class="ln">  1191  </span>	}
+<span id="L1192" class="ln">  1192  </span>	cancel()
+<span id="L1193" class="ln">  1193  </span>
+<span id="L1194" class="ln">  1194  </span>	assert.Len(t, seen, total, &#34;every source must be processed&#34;)
+<span id="L1195" class="ln">  1195  </span>	assert.Greater(t, maxSeen.Load(), int64(1), &#34;sources must be processed concurrently&#34;)
+<span id="L1196" class="ln">  1196  </span>	assert.LessOrEqual(t, maxSeen.Load(), int64(maxConcurrentSourceConnects), &#34;concurrency must be bounded&#34;)
+<span id="L1197" class="ln">  1197  </span>	<span class="comment">// A sequential sweep needs at least total*sleep (3.2s); allow half of that.</span>
+<span id="L1198" class="ln">  1198  </span>	assert.Less(t, elapsed, total*sleep/2, &#34;sweep must be faster than sequential&#34;)
+<span id="L1199" class="ln">  1199  </span>}
+<span id="L1200" class="ln">  1200  </span>
+<span id="L1201" class="ln">  1201  </span><span class="comment">// TestReaper_WorkerChurn exercises StartWorker/ShutdownWorker under</span>
+<span id="L1202" class="ln">  1202  </span><span class="comment">// concurrency: exactly one worker per name, reusable names, no deadlocks.</span>
+<span id="L1203" class="ln">  1203  </span>func TestReaper_WorkerChurn(t *testing.T) {
+<span id="L1204" class="ln">  1204  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1205" class="ln">  1205  </span>	r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L1206" class="ln">  1206  </span>
+<span id="L1207" class="ln">  1207  </span>	const contenders = 16
+<span id="L1208" class="ln">  1208  </span>	var started atomic.Int64
+<span id="L1209" class="ln">  1209  </span>	blocking := func() Reaper {
+<span id="L1210" class="ln">  1210  </span>		return reaperFunc(func(ctx context.Context) {
+<span id="L1211" class="ln">  1211  </span>			started.Add(1)
+<span id="L1212" class="ln">  1212  </span>			&lt;-ctx.Done()
+<span id="L1213" class="ln">  1213  </span>		})
+<span id="L1214" class="ln">  1214  </span>	}
+<span id="L1215" class="ln">  1215  </span>
+<span id="L1216" class="ln">  1216  </span>	<span class="comment">// Concurrent StartWorker calls for the same name start exactly one worker.</span>
+<span id="L1217" class="ln">  1217  </span>	var wg sync.WaitGroup
+<span id="L1218" class="ln">  1218  </span>	for range contenders {
+<span id="L1219" class="ln">  1219  </span>		wg.Add(1)
+<span id="L1220" class="ln">  1220  </span>		go func() {
+<span id="L1221" class="ln">  1221  </span>			defer wg.Done()
+<span id="L1222" class="ln">  1222  </span>			r.StartWorker(ctx, &#34;hot&#34;, blocking())
+<span id="L1223" class="ln">  1223  </span>		}()
+<span id="L1224" class="ln">  1224  </span>	}
+<span id="L1225" class="ln">  1225  </span>	wg.Wait()
+<span id="L1226" class="ln">  1226  </span>	require.Eventually(t, func() bool { return started.Load() == 1 }, 5*time.Second, time.Millisecond)
+<span id="L1227" class="ln">  1227  </span>	assert.Equal(t, int64(1), started.Load(), &#34;exactly one worker must run for a name&#34;)
+<span id="L1228" class="ln">  1228  </span>
+<span id="L1229" class="ln">  1229  </span>	<span class="comment">// After ShutdownWorker the name is free and a new worker starts.</span>
+<span id="L1230" class="ln">  1230  </span>	r.ShutdownWorker(ctx, &#34;hot&#34;)
+<span id="L1231" class="ln">  1231  </span>	r.StartWorker(ctx, &#34;hot&#34;, blocking())
+<span id="L1232" class="ln">  1232  </span>	require.Eventually(t, func() bool { return started.Load() == 2 }, 5*time.Second, time.Millisecond)
+<span id="L1233" class="ln">  1233  </span>	r.ShutdownWorker(ctx, &#34;hot&#34;)
+<span id="L1234" class="ln">  1234  </span>
+<span id="L1235" class="ln">  1235  </span>	<span class="comment">// Churn: overlapping Start/Shutdown on several names must not deadlock.</span>
+<span id="L1236" class="ln">  1236  </span>	names := []string{&#34;a&#34;, &#34;b&#34;, &#34;c&#34;, &#34;d&#34;}
+<span id="L1237" class="ln">  1237  </span>	done := make(chan struct{})
+<span id="L1238" class="ln">  1238  </span>	go func() {
+<span id="L1239" class="ln">  1239  </span>		defer close(done)
+<span id="L1240" class="ln">  1240  </span>		var churn sync.WaitGroup
+<span id="L1241" class="ln">  1241  </span>		for i := range 64 {
+<span id="L1242" class="ln">  1242  </span>			churn.Add(1)
+<span id="L1243" class="ln">  1243  </span>			go func() {
+<span id="L1244" class="ln">  1244  </span>				defer churn.Done()
+<span id="L1245" class="ln">  1245  </span>				name := names[i%len(names)]
+<span id="L1246" class="ln">  1246  </span>				r.StartWorker(ctx, name, blocking())
+<span id="L1247" class="ln">  1247  </span>				r.ShutdownWorker(ctx, name)
+<span id="L1248" class="ln">  1248  </span>			}()
+<span id="L1249" class="ln">  1249  </span>		}
+<span id="L1250" class="ln">  1250  </span>		churn.Wait()
+<span id="L1251" class="ln">  1251  </span>	}()
+<span id="L1252" class="ln">  1252  </span>	select {
+<span id="L1253" class="ln">  1253  </span>	case &lt;-done:
+<span id="L1254" class="ln">  1254  </span>	case &lt;-time.After(10 * time.Second):
+<span id="L1255" class="ln">  1255  </span>		t.Fatal(&#34;worker churn deadlocked&#34;)
+<span id="L1256" class="ln">  1256  </span>	}
+<span id="L1257" class="ln">  1257  </span>	for _, name := range names {
+<span id="L1258" class="ln">  1258  </span>		r.ShutdownWorker(ctx, name)
+<span id="L1259" class="ln">  1259  </span>	}
+<span id="L1260" class="ln">  1260  </span>	assert.Empty(t, r.cancelFuncs)
+<span id="L1261" class="ln">  1261  </span>}
+<span id="L1262" class="ln">  1262  </span>
+<span id="L1263" class="ln">  1263  </span><span class="comment">// TestReaper_InstanceUpWrittenOncePerSweep verifies that a failing source</span>
+<span id="L1264" class="ln">  1264  </span><span class="comment">// produces exactly one instance_up=0 envelope per sweep.</span>
+<span id="L1265" class="ln">  1265  </span>func TestReaper_InstanceUpWrittenOncePerSweep(t *testing.T) {
+<span id="L1266" class="ln">  1266  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1267" class="ln">  1267  </span>	sink := newCaptureWriter(16)
+<span id="L1268" class="ln">  1268  </span>	r := newSweepReaper(ctx, sink,
+<span id="L1269" class="ln">  1269  </span>		&amp;fakeSourceConn{src: sources.Source{Name: &#34;db1&#34;},
+<span id="L1270" class="ln">  1270  </span>			connect: func(context.Context) error { return errors.New(&#34;down&#34;) }},
+<span id="L1271" class="ln">  1271  </span>	)
+<span id="L1272" class="ln">  1272  </span>	reapCtx, cancel := context.WithCancel(ctx)
+<span id="L1273" class="ln">  1273  </span>	defer cancel()
+<span id="L1274" class="ln">  1274  </span>	go r.Reap(reapCtx)
+<span id="L1275" class="ln">  1275  </span>
+<span id="L1276" class="ln">  1276  </span>	sink.waitEnvelope(t, &#34;db1&#34;, 5*time.Second)
+<span id="L1277" class="ln">  1277  </span>	<span class="comment">// Drain for a bounded window; no duplicate failure envelope may appear.</span>
+<span id="L1278" class="ln">  1278  </span>	time.Sleep(200 * time.Millisecond)
+<span id="L1279" class="ln">  1279  </span>	cancel()
+<span id="L1280" class="ln">  1280  </span>	assert.Equal(t, 1, sink.count(&#34;db1&#34;), &#34;instance_up=0 must be written exactly once per sweep&#34;)
+<span id="L1281" class="ln">  1281  </span>}
+<span id="L1282" class="ln">  1282  </span>
+<span id="L1283" class="ln">  1283  </span><span class="comment">// TestReaper_StartWorkerDuplicateIsNoOp verifies that a second StartWorker</span>
+<span id="L1284" class="ln">  1284  </span><span class="comment">// call for an existing name leaves the running worker untouched.</span>
+<span id="L1285" class="ln">  1285  </span>func TestReaper_StartWorkerDuplicateIsNoOp(t *testing.T) {
+<span id="L1286" class="ln">  1286  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1287" class="ln">  1287  </span>	r := newReaper(ctx, &amp;cmdopts.Options{SinksWriter: &amp;sinks.MultiWriter{}})
+<span id="L1288" class="ln">  1288  </span>
+<span id="L1289" class="ln">  1289  </span>	firstStarted := make(chan struct{})
+<span id="L1290" class="ln">  1290  </span>	firstStopped := make(chan struct{})
+<span id="L1291" class="ln">  1291  </span>	first := reaperFunc(func(ctx context.Context) {
+<span id="L1292" class="ln">  1292  </span>		close(firstStarted)
+<span id="L1293" class="ln">  1293  </span>		&lt;-ctx.Done()
+<span id="L1294" class="ln">  1294  </span>		close(firstStopped)
+<span id="L1295" class="ln">  1295  </span>	})
+<span id="L1296" class="ln">  1296  </span>	var secondRuns atomic.Int64
+<span id="L1297" class="ln">  1297  </span>	second := reaperFunc(func(context.Context) { secondRuns.Add(1) })
+<span id="L1298" class="ln">  1298  </span>
+<span id="L1299" class="ln">  1299  </span>	r.StartWorker(ctx, &#34;db&#34;, first)
+<span id="L1300" class="ln">  1300  </span>	&lt;-firstStarted
+<span id="L1301" class="ln">  1301  </span>	r.StartWorker(ctx, &#34;db&#34;, second)
+<span id="L1302" class="ln">  1302  </span>
+<span id="L1303" class="ln">  1303  </span>	assert.Equal(t, int64(0), secondRuns.Load(), &#34;second StartWorker must never start its worker&#34;)
+<span id="L1304" class="ln">  1304  </span>	select {
+<span id="L1305" class="ln">  1305  </span>	case &lt;-firstStopped:
+<span id="L1306" class="ln">  1306  </span>		t.Fatal(&#34;first worker must keep running after a duplicate StartWorker&#34;)
+<span id="L1307" class="ln">  1307  </span>	default:
+<span id="L1308" class="ln">  1308  </span>	}
+<span id="L1309" class="ln">  1309  </span>
+<span id="L1310" class="ln">  1310  </span>	r.ShutdownWorker(ctx, &#34;db&#34;)
+<span id="L1311" class="ln">  1311  </span>	&lt;-firstStopped
+<span id="L1312" class="ln">  1312  </span>	_, exists := r.cancelFuncs[&#34;db&#34;]
+<span id="L1313" class="ln">  1313  </span>	assert.False(t, exists, &#34;worker must be deregistered after shutdown&#34;)
+<span id="L1314" class="ln">  1314  </span>}
+<span id="L1315" class="ln">  1315  </span>
+<span id="L1316" class="ln">  1316  </span><span class="comment">// TestReaper_SweepGoroutineHygiene simulates a brownout in which every source</span>
+<span id="L1317" class="ln">  1317  </span><span class="comment">// wedges inside Connect, then verifies that cancelling the Reap context lets</span>
+<span id="L1318" class="ln">  1318  </span><span class="comment">// the process return to its baseline goroutine count: the sweep fan-out is</span>
+<span id="L1319" class="ln">  1319  </span><span class="comment">// joined via g.Wait() and WriteMeasurements exits on ctx.Done(), so no sweep</span>
+<span id="L1320" class="ln">  1320  </span><span class="comment">// or writer goroutine may outlive Reap.</span>
+<span id="L1321" class="ln">  1321  </span>func TestReaper_SweepGoroutineHygiene(t *testing.T) {
+<span id="L1322" class="ln">  1322  </span>	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L1323" class="ln">  1323  </span>	sink := newCaptureWriter(16)
+<span id="L1324" class="ln">  1324  </span>
+<span id="L1325" class="ln">  1325  </span>	<span class="comment">// 8 wedged sources stay well under maxConcurrentSourceConnects, so the</span>
+<span id="L1326" class="ln">  1326  </span>	<span class="comment">// whole fan-out is inside Connect at the same time.</span>
+<span id="L1327" class="ln">  1327  </span>	const numSources = 8
+<span id="L1328" class="ln">  1328  </span>	var inside atomic.Int64
+<span id="L1329" class="ln">  1329  </span>	allInside := make(chan struct{})
+<span id="L1330" class="ln">  1330  </span>	wedge := func(ctx context.Context) error {
+<span id="L1331" class="ln">  1331  </span>		if inside.Add(1) == numSources {
+<span id="L1332" class="ln">  1332  </span>			close(allInside)
+<span id="L1333" class="ln">  1333  </span>		}
+<span id="L1334" class="ln">  1334  </span>		&lt;-ctx.Done()
+<span id="L1335" class="ln">  1335  </span>		return ctx.Err()
+<span id="L1336" class="ln">  1336  </span>	}
+<span id="L1337" class="ln">  1337  </span>	srcs := make([]sources.SourceConn, 0, numSources)
+<span id="L1338" class="ln">  1338  </span>	for i := range numSources {
+<span id="L1339" class="ln">  1339  </span>		srcs = append(srcs, &amp;fakeSourceConn{
+<span id="L1340" class="ln">  1340  </span>			src:     sources.Source{Name: fmt.Sprintf(&#34;wedge%02d&#34;, i)},
+<span id="L1341" class="ln">  1341  </span>			connect: wedge,
+<span id="L1342" class="ln">  1342  </span>		})
+<span id="L1343" class="ln">  1343  </span>	}
+<span id="L1344" class="ln">  1344  </span>	r := newSweepReaper(ctx, sink, srcs...)
+<span id="L1345" class="ln">  1345  </span>
+<span id="L1346" class="ln">  1346  </span>	<span class="comment">// Baseline is taken after every fixture exists but before Reap starts its</span>
+<span id="L1347" class="ln">  1347  </span>	<span class="comment">// writer and sweep goroutines.</span>
+<span id="L1348" class="ln">  1348  </span>	baseline := runtime.NumGoroutine()
+<span id="L1349" class="ln">  1349  </span>
+<span id="L1350" class="ln">  1350  </span>	reapCtx, cancel := context.WithCancel(ctx)
+<span id="L1351" class="ln">  1351  </span>	done := make(chan struct{})
+<span id="L1352" class="ln">  1352  </span>	go func() {
+<span id="L1353" class="ln">  1353  </span>		r.Reap(reapCtx)
+<span id="L1354" class="ln">  1354  </span>		close(done)
+<span id="L1355" class="ln">  1355  </span>	}()
+<span id="L1356" class="ln">  1356  </span>
+<span id="L1357" class="ln">  1357  </span>	<span class="comment">// Brownout: wait until every source is wedged inside Connect.</span>
+<span id="L1358" class="ln">  1358  </span>	select {
+<span id="L1359" class="ln">  1359  </span>	case &lt;-allInside:
+<span id="L1360" class="ln">  1360  </span>	case &lt;-time.After(5 * time.Second):
+<span id="L1361" class="ln">  1361  </span>		t.Fatal(&#34;timed out waiting for all sources to enter Connect&#34;)
+<span id="L1362" class="ln">  1362  </span>	}
+<span id="L1363" class="ln">  1363  </span>
+<span id="L1364" class="ln">  1364  </span>	<span class="comment">// Brownout clears: the wedged Connect calls must observe the cancellation</span>
+<span id="L1365" class="ln">  1365  </span>	<span class="comment">// and Reap must unwind.</span>
+<span id="L1366" class="ln">  1366  </span>	cancel()
+<span id="L1367" class="ln">  1367  </span>	select {
+<span id="L1368" class="ln">  1368  </span>	case &lt;-done:
+<span id="L1369" class="ln">  1369  </span>	case &lt;-time.After(5 * time.Second):
+<span id="L1370" class="ln">  1370  </span>		t.Fatal(&#34;Reap did not return after context cancellation&#34;)
+<span id="L1371" class="ln">  1371  </span>	}
+<span id="L1372" class="ln">  1372  </span>
+<span id="L1373" class="ln">  1373  </span>	<span class="comment">// Goroutine exit is observed asynchronously by the runtime, so poll until</span>
+<span id="L1374" class="ln">  1374  </span>	<span class="comment">// the count settles. Tolerance of 2 absorbs runtime background goroutines</span>
+<span id="L1375" class="ln">  1375  </span>	<span class="comment">// (timers, GC workers) that may start independently of the reaper; a real</span>
+<span id="L1376" class="ln">  1376  </span>	<span class="comment">// leak of the sweep fan-out would be one goroutine per wedged source (8</span>
+<span id="L1377" class="ln">  1377  </span>	<span class="comment">// here) plus the writer, far above the tolerance.</span>
+<span id="L1378" class="ln">  1378  </span>	const tolerance = 2
+<span id="L1379" class="ln">  1379  </span>	deadline := time.Now().Add(5 * time.Second)
+<span id="L1380" class="ln">  1380  </span>	for {
+<span id="L1381" class="ln">  1381  </span>		if n := runtime.NumGoroutine(); n &lt;= baseline+tolerance {
+<span id="L1382" class="ln">  1382  </span>			break
+<span id="L1383" class="ln">  1383  </span>		} else if time.Now().After(deadline) {
+<span id="L1384" class="ln">  1384  </span>			t.Fatalf(&#34;goroutine leak: baseline %d, still %d goroutines after Reap returned&#34;, baseline, n)
+<span id="L1385" class="ln">  1385  </span>		}
+<span id="L1386" class="ln">  1386  </span>		time.Sleep(50 * time.Millisecond)
+<span id="L1387" class="ln">  1387  </span>	}
+<span id="L1388" class="ln">  1388  </span>}
+<span id="L1389" class="ln">  1389  </span>
 </pre><p></p>
 
 <div id="footer">
