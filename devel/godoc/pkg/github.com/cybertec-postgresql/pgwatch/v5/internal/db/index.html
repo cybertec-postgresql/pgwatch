@@ -109,6 +109,8 @@
 				<dd><a href="#pkg-constants">Constants</a></dd>
 			
 			
+				<dd><a href="#pkg-variables">Variables</a></dd>
+			
 			
 				
 				<dd><a href="#DoesSchemaExist">func DoesSchemaExist(ctx context.Context, conn PgxIface, schema string) (bool, error)</a></dd>
@@ -130,6 +132,15 @@
 			
 				
 				<dd><a href="#Ping">func Ping(ctx context.Context, connStr string) error</a></dd>
+			
+				
+				<dd><a href="#WithFetchTimeout">func WithFetchTimeout(ctx context.Context, op string, interval time.Duration) (context.Context, context.CancelFunc)</a></dd>
+			
+				
+				<dd><a href="#WithOpTimeout">func WithOpTimeout(ctx context.Context, op string, d time.Duration) (context.Context, context.CancelFunc)</a></dd>
+			
+				
+				<dd><a href="#deadlineCause">func deadlineCause(op string) error</a></dd>
 			
 			
 				
@@ -188,6 +199,8 @@
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/conn.go.html">conn.go</a>
 			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/deadlines.go.html">deadlines.go</a>
+			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/doc.go.html">doc.go</a>
 			
 			</span>
@@ -208,6 +221,41 @@
 )</pre>
 			
 		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				<p>Deadline defaults for the various database round-trips pgwatch performs.
+<p>These are package-level vars rather than consts so tests can shrink them
+(e.g. to a few milliseconds) to exercise fault-injection paths quickly.
+<p>`internal/db` is a leaf package — it MUST NOT import `internal/reaper` or
+`internal/sources`. Tests of the call sites shrink these vars locally and
+restore them on cleanup.
+
+				<pre>var (
+    <span class="comment">// MinFetchTimeout is the floor applied to fetch-path deadlines. Very</span>
+    <span class="comment">// short metric intervals still get a usable window to dial, authenticate,</span>
+    <span class="comment">// and return a meaningful error rather than aborting before the round-trip</span>
+    <span class="comment">// starts.</span>
+    <span id="MinFetchTimeout">MinFetchTimeout</span> = 30 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
+
+    <span class="comment">// ChangeDetectionTimeout bounds the Detect*Changes family and the</span>
+    <span class="comment">// QueryMeasurements helper used by them.</span>
+    <span id="ChangeDetectionTimeout">ChangeDetectionTimeout</span> = 60 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
+
+    <span class="comment">// RuntimeInfoTimeout bounds each sub-query of FetchRuntimeInfo:</span>
+    <span class="comment">// version, platform discovery, approximate size, extensions, available</span>
+    <span class="comment">// extensions.</span>
+    <span id="RuntimeInfoTimeout">RuntimeInfoTimeout</span> = 30 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
+
+    <span class="comment">// ResolverTimeout bounds a single ResolveDatabasesFromPostgres call</span>
+    <span class="comment">// (pool creation + discovery query).</span>
+    <span id="ResolverTimeout">ResolverTimeout</span> = 15 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
+
+    <span class="comment">// PingTimeoutMargin is added on top of the configured ConnectTimeout when</span>
+    <span class="comment">// bounding the main-loop Ping gate. Default 5s + 5s = 10s total.</span>
+    <span id="PingTimeoutMargin">PingTimeoutMargin</span> = 5 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
+)</pre>
+			
 		
 		
 			
@@ -300,6 +348,57 @@
 			</h2>
 			<pre>func Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, connStr <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 			
+			
+			
+
+		
+			
+			
+			<h2 id="WithFetchTimeout">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/deadlines.go.html#L55">WithFetchTimeout</a>
+				<a class="permalink" href="#WithFetchTimeout">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func WithFetchTimeout(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, op <a href="https://pkg.go.dev/builtin/#string">string</a>, interval <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>) (<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#CancelFunc">CancelFunc</a>)</pre>
+			<p>WithFetchTimeout returns a child of ctx whose deadline is
+max(interval, MinFetchTimeout). The op string is embedded in the context&apos;s
+cause so a context.DeadlineExceeded is distinguishable per call site.
+<p>The cancel func MUST be called by the caller to release the timer once
+the work completes (or fails) — same convention as context.WithTimeout.
+
+			
+			
+
+		
+			
+			
+			<h2 id="WithOpTimeout">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/deadlines.go.html#L64">WithOpTimeout</a>
+				<a class="permalink" href="#WithOpTimeout">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func WithOpTimeout(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, op <a href="https://pkg.go.dev/builtin/#string">string</a>, d <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>) (<a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#CancelFunc">CancelFunc</a>)</pre>
+			<p>WithOpTimeout returns a child of ctx with a fixed deadline of d. The op
+string is embedded in the context&apos;s cause so a context.DeadlineExceeded is
+distinguishable per call site.
+<p>The cancel func MUST be called by the caller to release the timer.
+
+			
+			
+
+		
+			
+			
+			<h2 id="deadlineCause">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/db/deadlines.go.html#L45">deadlineCause</a>
+				<a class="permalink" href="#deadlineCause">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func deadlineCause(op <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<p>deadlineCause builds the canonical cause string attached to a derived
+context via context.WithTimeoutCause. The format &quot;&lt;op&gt; deadline&quot; is
+greppable and distinct per call site.
+
 			
 			
 

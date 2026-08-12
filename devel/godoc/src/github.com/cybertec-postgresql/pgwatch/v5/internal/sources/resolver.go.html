@@ -422,40 +422,43 @@
 <span id="L365" class="ln">   365  </span>		dbname string
 <span id="L366" class="ln">   366  </span>		rows   pgx.Rows
 <span id="L367" class="ln">   367  </span>	)
-<span id="L368" class="ln">   368  </span>	c, err = NewConn(context.TODO(), s.ConnStr)
-<span id="L369" class="ln">   369  </span>	if err != nil {
-<span id="L370" class="ln">   370  </span>		return
-<span id="L371" class="ln">   371  </span>	}
-<span id="L372" class="ln">   372  </span>	defer c.Close()
-<span id="L373" class="ln">   373  </span>
-<span id="L374" class="ln">   374  </span>	sql := `select /* pgwatch_generated */
-<span id="L375" class="ln">   375  </span>	datname
-<span id="L376" class="ln">   376  </span>	from pg_database
-<span id="L377" class="ln">   377  </span>	where not datistemplate
-<span id="L378" class="ln">   378  </span>	and datallowconn
-<span id="L379" class="ln">   379  </span>	and has_database_privilege (datname, &#39;CONNECT&#39;)
-<span id="L380" class="ln">   380  </span>	and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
-<span id="L381" class="ln">   381  </span>	and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
-<span id="L382" class="ln">   382  </span>
-<span id="L383" class="ln">   383  </span>	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
-<span id="L384" class="ln">   384  </span>		return nil, err
-<span id="L385" class="ln">   385  </span>	}
-<span id="L386" class="ln">   386  </span>	for rows.Next() {
-<span id="L387" class="ln">   387  </span>		if err = rows.Scan(&amp;dbname); err != nil {
-<span id="L388" class="ln">   388  </span>			return nil, err
-<span id="L389" class="ln">   389  </span>		}
-<span id="L390" class="ln">   390  </span>		rdb := NewDbConn(*s.Clone())
-<span id="L391" class="ln">   391  </span>		rdb.Name += &#34;_&#34; + dbname
-<span id="L392" class="ln">   392  </span>		rdb.SetDatabaseName(dbname)
-<span id="L393" class="ln">   393  </span>		resolvedDbs = append(resolvedDbs, rdb)
-<span id="L394" class="ln">   394  </span>	}
-<span id="L395" class="ln">   395  </span>
-<span id="L396" class="ln">   396  </span>	if err := rows.Err(); err != nil {
-<span id="L397" class="ln">   397  </span>		return nil, err
-<span id="L398" class="ln">   398  </span>	}
-<span id="L399" class="ln">   399  </span>	return
-<span id="L400" class="ln">   400  </span>}
-<span id="L401" class="ln">   401  </span>
+<span id="L368" class="ln">   368  </span>	ctx, cancel := db.WithOpTimeout(context.Background(), &#34;resolve &#34;+s.Name, db.ResolverTimeout)
+<span id="L369" class="ln">   369  </span>	defer cancel()
+<span id="L370" class="ln">   370  </span>
+<span id="L371" class="ln">   371  </span>	c, err = NewConn(ctx, s.ConnStr)
+<span id="L372" class="ln">   372  </span>	if err != nil {
+<span id="L373" class="ln">   373  </span>		return nil, cmp.Or(context.Cause(ctx), err)
+<span id="L374" class="ln">   374  </span>	}
+<span id="L375" class="ln">   375  </span>	defer c.Close()
+<span id="L376" class="ln">   376  </span>
+<span id="L377" class="ln">   377  </span>	sql := `select /* pgwatch_generated */
+<span id="L378" class="ln">   378  </span>	datname
+<span id="L379" class="ln">   379  </span>	from pg_database
+<span id="L380" class="ln">   380  </span>	where not datistemplate
+<span id="L381" class="ln">   381  </span>	and datallowconn
+<span id="L382" class="ln">   382  </span>	and has_database_privilege (datname, &#39;CONNECT&#39;)
+<span id="L383" class="ln">   383  </span>	and case when length(trim($1)) &gt; 0 then datname ~ $1 else true end
+<span id="L384" class="ln">   384  </span>	and case when length(trim($2)) &gt; 0 then not datname ~ $2 else true end`
+<span id="L385" class="ln">   385  </span>
+<span id="L386" class="ln">   386  </span>	if rows, err = c.Query(ctx, sql, s.IncludePattern, s.ExcludePattern); err != nil {
+<span id="L387" class="ln">   387  </span>		return nil, cmp.Or(context.Cause(ctx), err)
+<span id="L388" class="ln">   388  </span>	}
+<span id="L389" class="ln">   389  </span>	for rows.Next() {
+<span id="L390" class="ln">   390  </span>		if err = rows.Scan(&amp;dbname); err != nil {
+<span id="L391" class="ln">   391  </span>			return nil, err
+<span id="L392" class="ln">   392  </span>		}
+<span id="L393" class="ln">   393  </span>		rdb := NewDbConn(*s.Clone())
+<span id="L394" class="ln">   394  </span>		rdb.Name += &#34;_&#34; + dbname
+<span id="L395" class="ln">   395  </span>		rdb.SetDatabaseName(dbname)
+<span id="L396" class="ln">   396  </span>		resolvedDbs = append(resolvedDbs, rdb)
+<span id="L397" class="ln">   397  </span>	}
+<span id="L398" class="ln">   398  </span>
+<span id="L399" class="ln">   399  </span>	if err := rows.Err(); err != nil {
+<span id="L400" class="ln">   400  </span>		return nil, err
+<span id="L401" class="ln">   401  </span>	}
+<span id="L402" class="ln">   402  </span>	return
+<span id="L403" class="ln">   403  </span>}
+<span id="L404" class="ln">   404  </span>
 </pre><p></p>
 
 <div id="footer">

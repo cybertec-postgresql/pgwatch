@@ -167,9 +167,9 @@
 <span id="L110" class="ln">   110  </span>			srcL := r.logger.WithField(&#34;source&#34;, src.Name)
 <span id="L111" class="ln">   111  </span>			ctx = log.WithLogger(ctx, srcL)
 <span id="L112" class="ln">   112  </span>
-<span id="L113" class="ln">   113  </span>			if monitoredSource.Connect(ctx, r.Sources) != nil {
+<span id="L113" class="ln">   113  </span>			if err = monitoredSource.Connect(ctx, r.Sources); err != nil {
 <span id="L114" class="ln">   114  </span>				r.WriteInstanceDown(src.Name)
-<span id="L115" class="ln">   115  </span>				srcL.Warning(&#34;could not init connection, retrying on next iteration&#34;)
+<span id="L115" class="ln">   115  </span>				srcL.Warning(&#34;could not init connection, retrying on next iteration:&#34;, err)
 <span id="L116" class="ln">   116  </span>				continue
 <span id="L117" class="ln">   117  </span>			}
 <span id="L118" class="ln">   118  </span>

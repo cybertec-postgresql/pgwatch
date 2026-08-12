@@ -126,6 +126,9 @@ and will not be included in production binaries.
 				<dd><a href="#AuthInterceptor">func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error)</a></dd>
 			
 				
+				<dd><a href="#BlackholeListener">func BlackholeListener(t *testing.T) (string, func())</a></dd>
+			
+				
 				<dd><a href="#LoadServerTLSCredentials">func LoadServerTLSCredentials() (credentials.TransportCredentials, error)</a></dd>
 			
 				
@@ -146,6 +149,32 @@ and will not be included in production binaries.
 				
 				<dd><a href="#SetupRPCServers">func SetupRPCServers() (func(), error)</a></dd>
 			
+			
+				
+				<dd><a href="#BlockingPool">type BlockingPool</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.Acquire">func (BlockingPool) Acquire(ctx context.Context) (*pgxpool.Conn, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.Close">func (BlockingPool) Close()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.Exec">func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.CommandTag, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.Ping">func (BlockingPool) Ping(ctx context.Context) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.Query">func (BlockingPool) Query(ctx context.Context, _ string, _ ...any) (pgx.Rows, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.QueryRow">func (BlockingPool) QueryRow(ctx context.Context, _ string, _ ...any) pgx.Row</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingPool.SendBatch">func (BlockingPool) SendBatch(ctx context.Context, _ *pgx.Batch) pgx.BatchResults</a></dd>
+				
 			
 				
 				<dd><a href="#MockMetricsReaderWriter">type MockMetricsReaderWriter</a></dd>
@@ -224,6 +253,34 @@ and will not be included in production binaries.
 					<dd>&nbsp; &nbsp; <a href="#SafeBuffer.Write">func (b *SafeBuffer) Write(p []byte) (int, error)</a></dd>
 				
 			
+				
+				<dd><a href="#blockingBatchResults">type blockingBatchResults</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Close">func (b *blockingBatchResults) Close() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Err">func (b *blockingBatchResults) Err() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Exec">func (b *blockingBatchResults) Exec() (pgconn.CommandTag, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Query">func (b *blockingBatchResults) Query() (pgx.Rows, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.QueryRow">func (b *blockingBatchResults) QueryRow() pgx.Row</a></dd>
+				
+			
+				
+				<dd><a href="#blockingRow">type blockingRow</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#blockingRow.Scan">func (b blockingRow) Scan(_ ...any) error</a></dd>
+				
+			
 			
 			</dl>
 			</div><!-- #manual-nav -->
@@ -234,6 +291,8 @@ and will not be included in production binaries.
 			<h3>Package files</h3>
 			<p>
 			<span style="font-size:90%">
+			
+				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/blackhole.go.html">blackhole.go</a>
 			
 				<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/doc.go.html">doc.go</a>
 			
@@ -384,6 +443,34 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
+			<h2 id="BlackholeListener">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/blackhole.go.html#L28">BlackholeListener</a>
+				<a class="permalink" href="#BlackholeListener">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func BlackholeListener(t *<a href="https://pkg.go.dev/testing/">testing</a>.<a href="https://pkg.go.dev/testing/#T">T</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, func())</pre>
+			<p>BlackholeListener starts a TCP listener that accepts connections but
+never reads, writes, or closes them. Each accepted connection runs in
+its own goroutine that blocks until the listener is shut down.
+<p>This simulates a half-open TCP connection: the client sees an
+established TCP session, but no application-layer response ever arrives.
+The kernel keeps the connection open until the local read deadline (if
+any) fires or the peer gives up. Callers pair this with a context-bound
+round-trip to convert such stalls into bounded client-side failures.
+<p>The address is registered for cleanup via t.Cleanup, so a single
+BlackholeListener(t) call is leak-free under normal test runs. The
+returned close func is idempotent and may also be invoked explicitly by
+the test for early teardown.
+<p>Concurrency: the accept loop and any number of accepted connections run
+concurrently. Accepted goroutines block until ctx is cancelled; the close
+func waits for them via wg.Wait before returning.
+
+			
+			
+
+		
+			
+			
 			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/setup.go.html#L90">LoadServerTLSCredentials</a>
 				<a class="permalink" href="#LoadServerTLSCredentials">&#xb6;</a>
 				
@@ -482,7 +569,133 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="MockMetricsReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L49">MockMetricsReaderWriter</a>
+			<h2 id="BlockingPool">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L125">BlockingPool</a>
+				<a class="permalink" href="#BlockingPool">&#xb6;</a>
+				
+				
+			</h2>
+			<p>BlockingPool is a wedged PgxPoolIface used by fault-injection tests.
+<p>It embeds db.PgxPoolIface as a nil interface so the type satisfies
+db.PgxPoolIface; only the methods overridden below are usable. Any
+direct call to a non-overridden method panics (nil interface call).
+<p>Ping, Query, SendBatch, and Acquire all block until the supplied
+context is cancelled, then return ctx.Err(). This simulates a pool
+whose connections are stuck on the wire — the failure mode that
+client-side deadlines must convert into bounded failures.
+
+			<pre>type BlockingPool struct {
+    <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxPoolIface">PgxPoolIface</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="BlockingPool.Acquire">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L159">Acquire</a>
+					<a class="permalink" href="#BlockingPool.Acquire">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) Acquire(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (*<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/">pgxpool</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool/#Conn">Conn</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Acquire blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.Close">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L165">Close</a>
+					<a class="permalink" href="#BlockingPool.Close">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) Close()</pre>
+				<p>Close is a no-op so the pool can be embedded without panicking.
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.Exec">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L147">Exec</a>
+					<a class="permalink" href="#BlockingPool.Exec">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) Exec(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, _ <a href="https://pkg.go.dev/builtin/#string">string</a>, _ ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Exec blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.Ping">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L130">Ping</a>
+					<a class="permalink" href="#BlockingPool.Ping">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) Ping(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>Ping blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.Query">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L136">Query</a>
+					<a class="permalink" href="#BlockingPool.Query">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) Query(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, _ <a href="https://pkg.go.dev/builtin/#string">string</a>, _ ...<a href="https://pkg.go.dev/builtin/#any">any</a>) (pgx.<a href="#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Query blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.QueryRow">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L142">QueryRow</a>
+					<a class="permalink" href="#BlockingPool.QueryRow">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) QueryRow(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, _ <a href="https://pkg.go.dev/builtin/#string">string</a>, _ ...<a href="https://pkg.go.dev/builtin/#any">any</a>) pgx.<a href="#Row">Row</a></pre>
+				<p>QueryRow blocks until ctx.Done() and returns a row whose Scan returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingPool.SendBatch">func (BlockingPool) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L154">SendBatch</a>
+					<a class="permalink" href="#BlockingPool.SendBatch">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (<a href="#BlockingPool">BlockingPool</a>) SendBatch(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, _ *pgx.<a href="#Batch">Batch</a>) pgx.<a href="#BatchResults">BatchResults</a></pre>
+				<p>first Query call returns ctx.Err().
+SendBatch blocks until ctx.Done() and returns a BatchResults whose
+first Query call returns ctx.Err().
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="MockMetricsReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L53">MockMetricsReaderWriter</a>
 				<a class="permalink" href="#MockMetricsReaderWriter">&#xb6;</a>
 				
 				
@@ -513,7 +726,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 
 			
 				
-				<h3 id="MockMetricsReaderWriter.CreateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L66">CreateMetric</a>
+				<h3 id="MockMetricsReaderWriter.CreateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L70">CreateMetric</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.CreateMetric">&#xb6;</a>
 					
 					
@@ -525,7 +738,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.CreatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L78">CreatePreset</a>
+				<h3 id="MockMetricsReaderWriter.CreatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L82">CreatePreset</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.CreatePreset">&#xb6;</a>
 					
 					
@@ -537,7 +750,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.DeleteMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L69">DeleteMetric</a>
+				<h3 id="MockMetricsReaderWriter.DeleteMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L73">DeleteMetric</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.DeleteMetric">&#xb6;</a>
 					
 					
@@ -549,7 +762,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.DeletePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L72">DeletePreset</a>
+				<h3 id="MockMetricsReaderWriter.DeletePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L76">DeletePreset</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.DeletePreset">&#xb6;</a>
 					
 					
@@ -561,7 +774,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.GetMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L60">GetMetrics</a>
+				<h3 id="MockMetricsReaderWriter.GetMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L64">GetMetrics</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.GetMetrics">&#xb6;</a>
 					
 					
@@ -573,7 +786,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.UpdateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L63">UpdateMetric</a>
+				<h3 id="MockMetricsReaderWriter.UpdateMetric">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L67">UpdateMetric</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.UpdateMetric">&#xb6;</a>
 					
 					
@@ -585,7 +798,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.UpdatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L75">UpdatePreset</a>
+				<h3 id="MockMetricsReaderWriter.UpdatePreset">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L79">UpdatePreset</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.UpdatePreset">&#xb6;</a>
 					
 					
@@ -597,7 +810,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockMetricsReaderWriter.WriteMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L81">WriteMetrics</a>
+				<h3 id="MockMetricsReaderWriter.WriteMetrics">func (*MockMetricsReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L85">WriteMetrics</a>
 					<a class="permalink" href="#MockMetricsReaderWriter.WriteMetrics">&#xb6;</a>
 					
 					
@@ -611,7 +824,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="MockSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L86">MockSourcesReaderWriter</a>
+			<h2 id="MockSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L90">MockSourcesReaderWriter</a>
 				<a class="permalink" href="#MockSourcesReaderWriter">&#xb6;</a>
 				
 				
@@ -639,7 +852,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 
 			
 				
-				<h3 id="MockSourcesReaderWriter.CreateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L100">CreateSource</a>
+				<h3 id="MockSourcesReaderWriter.CreateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L104">CreateSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.CreateSource">&#xb6;</a>
 					
 					
@@ -651,7 +864,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.DeleteSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L103">DeleteSource</a>
+				<h3 id="MockSourcesReaderWriter.DeleteSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L107">DeleteSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.DeleteSource">&#xb6;</a>
 					
 					
@@ -663,7 +876,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.GetSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L94">GetSources</a>
+				<h3 id="MockSourcesReaderWriter.GetSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L98">GetSources</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.GetSources">&#xb6;</a>
 					
 					
@@ -675,7 +888,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.UpdateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L97">UpdateSource</a>
+				<h3 id="MockSourcesReaderWriter.UpdateSource">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L101">UpdateSource</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.UpdateSource">&#xb6;</a>
 					
 					
@@ -687,7 +900,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="MockSourcesReaderWriter.WriteSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L106">WriteSources</a>
+				<h3 id="MockSourcesReaderWriter.WriteSources">func (*MockSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L110">WriteSources</a>
 					<a class="permalink" href="#MockSourcesReaderWriter.WriteSources">&#xb6;</a>
 					
 					
@@ -701,7 +914,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="Receiver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L14">Receiver</a>
+			<h2 id="Receiver">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L18">Receiver</a>
 				<a class="permalink" href="#Receiver">&#xb6;</a>
 				
 				
@@ -725,7 +938,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 
 			
 				
-				<h3 id="Receiver.DefineMetrics">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L38">DefineMetrics</a>
+				<h3 id="Receiver.DefineMetrics">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L42">DefineMetrics</a>
 					<a class="permalink" href="#Receiver.DefineMetrics">&#xb6;</a>
 					
 					
@@ -737,7 +950,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="Receiver.SyncMetric">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L28">SyncMetric</a>
+				<h3 id="Receiver.SyncMetric">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L32">SyncMetric</a>
 					<a class="permalink" href="#Receiver.SyncMetric">&#xb6;</a>
 					
 					
@@ -749,7 +962,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 				
 			
 				
-				<h3 id="Receiver.UpdateMeasurements">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L18">UpdateMeasurements</a>
+				<h3 id="Receiver.UpdateMeasurements">func (*Receiver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L22">UpdateMeasurements</a>
 					<a class="permalink" href="#Receiver.UpdateMeasurements">&#xb6;</a>
 					
 					
@@ -827,6 +1040,135 @@ assert.Contains(t, out.String(), &quot;expected warning&quot;)
 				</h3>
 				<pre>func (b *<a href="#SafeBuffer">SafeBuffer</a>) Write(p []<a href="https://pkg.go.dev/builtin/#byte">byte</a>) (<a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="blockingBatchResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L179">blockingBatchResults</a>
+				<a class="permalink" href="#blockingBatchResults">&#xb6;</a>
+				
+				
+			</h2>
+			<p>blockingBatchResults makes the first Query call honor ctx cancellation.
+
+			<pre>type blockingBatchResults struct {
+<span id="blockingBatchResults.ctx"></span>    ctx    <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="blockingBatchResults.closed"></span>    closed <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="blockingBatchResults.Close">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L195">Close</a>
+					<a class="permalink" href="#blockingBatchResults.Close">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *blockingBatchResults) Close() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="blockingBatchResults.Err">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L206">Err</a>
+					<a class="permalink" href="#blockingBatchResults.Err">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *blockingBatchResults) Err() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="blockingBatchResults.Exec">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L191">Exec</a>
+					<a class="permalink" href="#blockingBatchResults.Exec">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *blockingBatchResults) Exec() (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Exec blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="blockingBatchResults.Query">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L185">Query</a>
+					<a class="permalink" href="#blockingBatchResults.Query">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *blockingBatchResults) Query() (pgx.<a href="#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Query blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="blockingBatchResults.QueryRow">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L203">QueryRow</a>
+					<a class="permalink" href="#blockingBatchResults.QueryRow">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *blockingBatchResults) QueryRow() pgx.<a href="#Row">Row</a></pre>
+				<p>QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="blockingRow">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L168">blockingRow</a>
+				<a class="permalink" href="#blockingRow">&#xb6;</a>
+				
+				
+			</h2>
+			<p>blockingRow makes pgx.Row.Scan honor ctx cancellation.
+
+			<pre>type blockingRow struct {
+<span id="blockingRow.ctx"></span>    ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="blockingRow.Scan">func (blockingRow) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L173">Scan</a>
+					<a class="permalink" href="#blockingRow.Scan">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b blockingRow) Scan(_ ...<a href="https://pkg.go.dev/builtin/#any">any</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>Scan blocks until ctx.Done() and returns ctx.Err().
+
 				
 				
 				
