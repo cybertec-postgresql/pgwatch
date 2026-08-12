@@ -70,7 +70,7 @@ func TestResolveDatabasesFromPostgres_ResolverTimeout(t *testing.T) {
 	md.ConnStr = connStr
 
 	start := time.Now()
-	_, err := sources.ResolveDatabasesFromPostgres(md)
+	_, err := sources.NewResolver().ResolveDatabasesFromPostgres(md)
 	elapsed := time.Since(start)
 
 	require.Error(t, err, "expected an error from a stalled resolver")
@@ -469,7 +469,7 @@ func stubNewConnWithError(t *testing.T, err error) {
 }
 
 func TestResolveDatabasesFromPostgres_LKGFallbackOnFailure(t *testing.T) {
-	sources.ResetResolverCachesForTesting()
+	resolver := sources.NewResolver()
 
 	md := sources.Source{
 		Name:    "lkg_failure",
@@ -479,7 +479,7 @@ func TestResolveDatabasesFromPostgres_LKGFallbackOnFailure(t *testing.T) {
 
 	// Wave 1: success populates the cache.
 	stubNewConnWithDatnames(t, func() []string { return []string{"db1", "db2", "db3"} })
-	dbs, err := sources.ResolveDatabasesFromPostgres(md)
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
 	require.NoError(t, err)
 	require.Len(t, dbs, 3)
 	firstNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
@@ -487,7 +487,7 @@ func TestResolveDatabasesFromPostgres_LKGFallbackOnFailure(t *testing.T) {
 	// Wave 2: discovery fails; cache MUST be served with nil error.
 	sentinel := errors.New("boom")
 	stubNewConnWithError(t, sentinel)
-	dbs, err = sources.ResolveDatabasesFromPostgres(md)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
 	require.NoError(t, err, "expected cached fallback to swallow the error")
 	require.Len(t, dbs, 3, "expected the previously cached list to be returned")
 	gotNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
@@ -495,7 +495,7 @@ func TestResolveDatabasesFromPostgres_LKGFallbackOnFailure(t *testing.T) {
 }
 
 func TestResolveDatabasesFromPostgres_LKGReplacementOnSuccess(t *testing.T) {
-	sources.ResetResolverCachesForTesting()
+	resolver := sources.NewResolver()
 
 	md := sources.Source{
 		Name:    "lkg_replace",
@@ -505,13 +505,13 @@ func TestResolveDatabasesFromPostgres_LKGReplacementOnSuccess(t *testing.T) {
 
 	// Seed cache with the first list.
 	stubNewConnWithDatnames(t, func() []string { return []string{"alpha", "beta"} })
-	dbs, err := sources.ResolveDatabasesFromPostgres(md)
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
 	require.NoError(t, err)
 	require.Len(t, dbs, 2)
 
 	// Replace with a new, different list via a successful resolution.
 	stubNewConnWithDatnames(t, func() []string { return []string{"gamma", "delta", "epsilon"} })
-	dbs, err = sources.ResolveDatabasesFromPostgres(md)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
 	require.NoError(t, err)
 	require.Len(t, dbs, 3)
 	newNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
@@ -521,7 +521,7 @@ func TestResolveDatabasesFromPostgres_LKGReplacementOnSuccess(t *testing.T) {
 
 	// Discovery fails now: the NEW list must be served, not the old one.
 	stubNewConnWithError(t, errors.New("still down"))
-	dbs, err = sources.ResolveDatabasesFromPostgres(md)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
 	require.NoError(t, err)
 	require.Len(t, dbs, 3)
 	for _, d := range dbs {
@@ -532,7 +532,7 @@ func TestResolveDatabasesFromPostgres_LKGReplacementOnSuccess(t *testing.T) {
 }
 
 func TestResolveDatabasesFromPostgres_EmptyCacheErrorPropagates(t *testing.T) {
-	sources.ResetResolverCachesForTesting()
+	resolver := sources.NewResolver()
 
 	sentinel := errors.New("no cache yet")
 	stubNewConnWithError(t, sentinel)
@@ -543,14 +543,14 @@ func TestResolveDatabasesFromPostgres_EmptyCacheErrorPropagates(t *testing.T) {
 		ConnStr: "postgres://user:pw@c:5432/postgres?sslmode=disable",
 	}
 
-	dbs, err := sources.ResolveDatabasesFromPostgres(md)
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, sentinel)
 	assert.Empty(t, dbs, "no cached entry should have been served")
 }
 
 func TestResolveDatabasesFromPostgres_CacheKeyIdentity(t *testing.T) {
-	sources.ResetResolverCachesForTesting()
+	resolver := sources.NewResolver()
 
 	base := sources.Source{
 		Name:    "lkg_key",
@@ -559,7 +559,7 @@ func TestResolveDatabasesFromPostgres_CacheKeyIdentity(t *testing.T) {
 	}
 
 	stubNewConnWithDatnames(t, func() []string { return []string{"one", "two"} })
-	dbs, err := sources.ResolveDatabasesFromPostgres(base)
+	dbs, err := resolver.ResolveDatabasesFromPostgres(base)
 	require.NoError(t, err)
 	require.Len(t, dbs, 2)
 
@@ -571,7 +571,7 @@ func TestResolveDatabasesFromPostgres_CacheKeyIdentity(t *testing.T) {
 		Kind:    sources.SourcePostgresDiscovery,
 		ConnStr: "postgres://user:pw@d-other:5432/postgres?sslmode=disable",
 	}
-	dbs, err = sources.ResolveDatabasesFromPostgres(other)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(other)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, sentinelA)
 	assert.Empty(t, dbs, "a reconfigured ConnStr must not serve the previous target's list")
@@ -585,14 +585,14 @@ func TestResolveDatabasesFromPostgres_CacheKeyIdentity(t *testing.T) {
 		ConnStr:        base.ConnStr,
 		IncludePattern: "^foo_",
 	}
-	dbs, err = sources.ResolveDatabasesFromPostgres(repattern)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(repattern)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, sentinelB)
 	assert.Empty(t, dbs, "a reconfigured include_pattern must not serve the previous result set")
 }
 
 func TestResolveDatabasesFromPostgres_ConcurrentFallback(t *testing.T) {
-	sources.ResetResolverCachesForTesting()
+	resolver := sources.NewResolver()
 
 	const n = 8
 	srcs := make(sources.Sources, n)
@@ -611,7 +611,7 @@ func TestResolveDatabasesFromPostgres_ConcurrentFallback(t *testing.T) {
 		// need at least one row so resolution does not error.
 		return []string{"only"}
 	})
-	dbs, err := srcs.ResolveDatabases(func(string) {})
+	dbs, err := resolver.ResolveDatabases(srcs, func(string) {})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(dbs), n, "each source should produce one resolved DB")
 
@@ -627,7 +627,7 @@ func TestResolveDatabasesFromPostgres_ConcurrentFallback(t *testing.T) {
 	srcs2 = append(srcs2, extra)
 
 	var onErrorNames sync.Map
-	dbs2, err := srcs2.ResolveDatabases(func(name string) {
+	dbs2, err := resolver.ResolveDatabases(srcs2, func(name string) {
 		onErrorNames.Store(name, struct{}{})
 	})
 	require.Error(t, err, "the never-cached extra source must propagate its error")
@@ -641,4 +641,3 @@ func TestResolveDatabasesFromPostgres_ConcurrentFallback(t *testing.T) {
 		t.Fatalf("expected onError to fire for never-cached source %q", extra.Name)
 	}
 }
-
