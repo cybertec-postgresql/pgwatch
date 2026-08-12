@@ -22,6 +22,11 @@ const (
 	specialMetricInstanceUp           = "instance_up"
 )
 
+// maxConcurrentSourceConnects bounds how many sources may be connected
+// concurrently during one refresh sweep. It is intentionally fixed: it is
+// not configurable and does not scale with the size of the monitored fleet.
+const maxConcurrentSourceConnects = 32
+
 var metricDefs = NewConcurrentMetricDefs()
 
 type Reaper interface {
