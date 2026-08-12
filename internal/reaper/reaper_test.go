@@ -3,11 +3,15 @@ package reaper
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
@@ -1020,4 +1024,365 @@ func TestRace_MainLoopRuntimeInfoSnapshot(*testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+// fakeSourceConn is a SourceConn with a programmable Connect. It is neither
+// *sources.DbConn nor *sources.PromConn, so after a successful Connect the
+// sweep does nothing further for it — Connect behavior is the only observable.
+type fakeSourceConn struct {
+	src     sources.Source
+	connect func(ctx context.Context) error
+}
+
+func (f *fakeSourceConn) Connect(ctx context.Context, _ sources.CmdOpts) error {
+	return f.connect(ctx)
+}
+func (f *fakeSourceConn) Ping(context.Context) error                      { return nil }
+func (f *fakeSourceConn) IsPostgresSource() bool                          { return false }
+func (f *fakeSourceConn) GetSource() sources.Source                       { return f.src }
+func (f *fakeSourceConn) GetMetricInterval(string) time.Duration          { return 0 }
+func (f *fakeSourceConn) SetMetricIntervals(_, _ metrics.MetricIntervals) {}
+func (f *fakeSourceConn) Close()                                          {}
+
+// captureWriter is a sinks.Writer that records every Write envelope.
+type captureWriter struct {
+	mu   sync.Mutex
+	envs []metrics.MeasurementEnvelope
+	ch   chan metrics.MeasurementEnvelope
+}
+
+func newCaptureWriter(size int) *captureWriter {
+	return &captureWriter{ch: make(chan metrics.MeasurementEnvelope, size)}
+}
+
+func (w *captureWriter) SyncMetric(string, string, sinks.SyncOp) error { return nil }
+
+func (w *captureWriter) Write(env metrics.MeasurementEnvelope) error {
+	w.mu.Lock()
+	w.envs = append(w.envs, env)
+	w.mu.Unlock()
+	w.ch <- env
+	return nil
+}
+
+// count returns how many envelopes were written for the named source.
+func (w *captureWriter) count(name string) int {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	n := 0
+	for _, e := range w.envs {
+		if e.DBName == name {
+			n++
+		}
+	}
+	return n
+}
+
+// waitEnvelope waits for an envelope for the named source or fails the test
+// after the timeout.
+func (w *captureWriter) waitEnvelope(t *testing.T, name string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.After(timeout)
+	for {
+		select {
+		case env := <-w.ch:
+			if env.DBName == name {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("timed out after %s waiting for an envelope for source %q", timeout, name)
+		}
+	}
+}
+
+// newSweepReaper builds a reaper whose source and metric readers fail, so the
+// main loop keeps the seeded monitoredSources untouched. The refresh interval
+// is huge, so exactly one sweep runs per Reap invocation.
+func newSweepReaper(ctx context.Context, sink sinks.Writer, srcs ...sources.SourceConn) *reaper {
+	r := newReaper(ctx, &cmdopts.Options{
+		Sources: sources.CmdOpts{Refresh: 3600},
+		SourcesReaderWriter: &testutil.MockSourcesReaderWriter{
+			GetSourcesFunc: func() (sources.Sources, error) { return nil, errors.New("no sources") },
+		},
+		MetricsReaderWriter: &testutil.MockMetricsReaderWriter{
+			GetMetricsFunc: func() (*metrics.Metrics, error) { return nil, errors.New("no metrics") },
+		},
+		SinksWriter: sink,
+	})
+	r.monitoredSources = sources.SourceConns(srcs)
+	return r
+}
+
+// TestReaper_SweepSourceIsolation verifies that one stalled source cannot
+// delay the processing of the sources behind it in the list.
+func TestReaper_SweepSourceIsolation(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	sink := newCaptureWriter(16)
+	fail := func(context.Context) error { return errors.New("connect failed") }
+	stall := func(ctx context.Context) error {
+		select {
+		case <-time.After(2 * time.Second):
+			return errors.New("connect failed")
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	r := newSweepReaper(ctx, sink,
+		&fakeSourceConn{src: sources.Source{Name: "s1"}, connect: fail},
+		&fakeSourceConn{src: sources.Source{Name: "s2"}, connect: stall},
+		&fakeSourceConn{src: sources.Source{Name: "s3"}, connect: fail},
+	)
+	reapCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	start := time.Now()
+	go r.Reap(reapCtx)
+
+	// s3 sits behind the stalled s2 in the source list. A sequential sweep
+	// cannot report s3 before s2's 2s stall elapses; allow 1/4 of the stall.
+	sink.waitEnvelope(t, "s3", 500*time.Millisecond)
+	assert.Less(t, time.Since(start), 500*time.Millisecond)
+	cancel()
+}
+
+// TestReaper_SweepBoundedParallelism verifies that sources are processed
+// concurrently but never more than maxConcurrentSourceConnects at a time.
+func TestReaper_SweepBoundedParallelism(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	const total = 64
+	const sleep = 50 * time.Millisecond
+	sink := newCaptureWriter(total)
+
+	var inFlight, maxSeen atomic.Int64
+	srcs := make([]sources.SourceConn, 0, total)
+	for i := range total {
+		srcs = append(srcs, &fakeSourceConn{
+			src: sources.Source{Name: fmt.Sprintf("db%02d", i)},
+			connect: func(context.Context) error {
+				cur := inFlight.Add(1)
+				defer inFlight.Add(-1)
+				for {
+					if m := maxSeen.Load(); cur <= m || maxSeen.CompareAndSwap(m, cur) {
+						break
+					}
+				}
+				time.Sleep(sleep)
+				return errors.New("connect failed")
+			},
+		})
+	}
+	r := newSweepReaper(ctx, sink, srcs...)
+	reapCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	start := time.Now()
+	go r.Reap(reapCtx)
+
+	// Every processed source reports exactly one instance_up=0 envelope.
+	seen := make(map[string]struct{}, total)
+	deadline := time.After(10 * time.Second)
+	var elapsed time.Duration
+	for len(seen) < total {
+		select {
+		case env := <-sink.ch:
+			seen[env.DBName] = struct{}{}
+			elapsed = time.Since(start)
+		case <-deadline:
+			t.Fatalf("only %d of %d sources processed", len(seen), total)
+		}
+	}
+	cancel()
+
+	assert.Len(t, seen, total, "every source must be processed")
+	assert.Greater(t, maxSeen.Load(), int64(1), "sources must be processed concurrently")
+	assert.LessOrEqual(t, maxSeen.Load(), int64(maxConcurrentSourceConnects), "concurrency must be bounded")
+	// A sequential sweep needs at least total*sleep (3.2s); allow half of that.
+	assert.Less(t, elapsed, total*sleep/2, "sweep must be faster than sequential")
+}
+
+// TestReaper_WorkerChurn exercises StartWorker/ShutdownWorker under
+// concurrency: exactly one worker per name, reusable names, no deadlocks.
+func TestReaper_WorkerChurn(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+
+	const contenders = 16
+	var started atomic.Int64
+	blocking := func() Reaper {
+		return reaperFunc(func(ctx context.Context) {
+			started.Add(1)
+			<-ctx.Done()
+		})
+	}
+
+	// Concurrent StartWorker calls for the same name start exactly one worker.
+	var wg sync.WaitGroup
+	for range contenders {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.StartWorker(ctx, "hot", blocking())
+		}()
+	}
+	wg.Wait()
+	require.Eventually(t, func() bool { return started.Load() == 1 }, 5*time.Second, time.Millisecond)
+	assert.Equal(t, int64(1), started.Load(), "exactly one worker must run for a name")
+
+	// After ShutdownWorker the name is free and a new worker starts.
+	r.ShutdownWorker(ctx, "hot")
+	r.StartWorker(ctx, "hot", blocking())
+	require.Eventually(t, func() bool { return started.Load() == 2 }, 5*time.Second, time.Millisecond)
+	r.ShutdownWorker(ctx, "hot")
+
+	// Churn: overlapping Start/Shutdown on several names must not deadlock.
+	names := []string{"a", "b", "c", "d"}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		var churn sync.WaitGroup
+		for i := range 64 {
+			churn.Add(1)
+			go func() {
+				defer churn.Done()
+				name := names[i%len(names)]
+				r.StartWorker(ctx, name, blocking())
+				r.ShutdownWorker(ctx, name)
+			}()
+		}
+		churn.Wait()
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("worker churn deadlocked")
+	}
+	for _, name := range names {
+		r.ShutdownWorker(ctx, name)
+	}
+	assert.Empty(t, r.cancelFuncs)
+}
+
+// TestReaper_InstanceUpWrittenOncePerSweep verifies that a failing source
+// produces exactly one instance_up=0 envelope per sweep.
+func TestReaper_InstanceUpWrittenOncePerSweep(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	sink := newCaptureWriter(16)
+	r := newSweepReaper(ctx, sink,
+		&fakeSourceConn{src: sources.Source{Name: "db1"},
+			connect: func(context.Context) error { return errors.New("down") }},
+	)
+	reapCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go r.Reap(reapCtx)
+
+	sink.waitEnvelope(t, "db1", 5*time.Second)
+	// Drain for a bounded window; no duplicate failure envelope may appear.
+	time.Sleep(200 * time.Millisecond)
+	cancel()
+	assert.Equal(t, 1, sink.count("db1"), "instance_up=0 must be written exactly once per sweep")
+}
+
+// TestReaper_StartWorkerDuplicateIsNoOp verifies that a second StartWorker
+// call for an existing name leaves the running worker untouched.
+func TestReaper_StartWorkerDuplicateIsNoOp(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	r := newReaper(ctx, &cmdopts.Options{SinksWriter: &sinks.MultiWriter{}})
+
+	firstStarted := make(chan struct{})
+	firstStopped := make(chan struct{})
+	first := reaperFunc(func(ctx context.Context) {
+		close(firstStarted)
+		<-ctx.Done()
+		close(firstStopped)
+	})
+	var secondRuns atomic.Int64
+	second := reaperFunc(func(context.Context) { secondRuns.Add(1) })
+
+	r.StartWorker(ctx, "db", first)
+	<-firstStarted
+	r.StartWorker(ctx, "db", second)
+
+	assert.Equal(t, int64(0), secondRuns.Load(), "second StartWorker must never start its worker")
+	select {
+	case <-firstStopped:
+		t.Fatal("first worker must keep running after a duplicate StartWorker")
+	default:
+	}
+
+	r.ShutdownWorker(ctx, "db")
+	<-firstStopped
+	_, exists := r.cancelFuncs["db"]
+	assert.False(t, exists, "worker must be deregistered after shutdown")
+}
+
+// TestReaper_SweepGoroutineHygiene simulates a brownout in which every source
+// wedges inside Connect, then verifies that cancelling the Reap context lets
+// the process return to its baseline goroutine count: the sweep fan-out is
+// joined via g.Wait() and WriteMeasurements exits on ctx.Done(), so no sweep
+// or writer goroutine may outlive Reap.
+func TestReaper_SweepGoroutineHygiene(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	sink := newCaptureWriter(16)
+
+	// 8 wedged sources stay well under maxConcurrentSourceConnects, so the
+	// whole fan-out is inside Connect at the same time.
+	const numSources = 8
+	var inside atomic.Int64
+	allInside := make(chan struct{})
+	wedge := func(ctx context.Context) error {
+		if inside.Add(1) == numSources {
+			close(allInside)
+		}
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	srcs := make([]sources.SourceConn, 0, numSources)
+	for i := range numSources {
+		srcs = append(srcs, &fakeSourceConn{
+			src:     sources.Source{Name: fmt.Sprintf("wedge%02d", i)},
+			connect: wedge,
+		})
+	}
+	r := newSweepReaper(ctx, sink, srcs...)
+
+	// Baseline is taken after every fixture exists but before Reap starts its
+	// writer and sweep goroutines.
+	baseline := runtime.NumGoroutine()
+
+	reapCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() {
+		r.Reap(reapCtx)
+		close(done)
+	}()
+
+	// Brownout: wait until every source is wedged inside Connect.
+	select {
+	case <-allInside:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for all sources to enter Connect")
+	}
+
+	// Brownout clears: the wedged Connect calls must observe the cancellation
+	// and Reap must unwind.
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Reap did not return after context cancellation")
+	}
+
+	// Goroutine exit is observed asynchronously by the runtime, so poll until
+	// the count settles. Tolerance of 2 absorbs runtime background goroutines
+	// (timers, GC workers) that may start independently of the reaper; a real
+	// leak of the sweep fan-out would be one goroutine per wedged source (8
+	// here) plus the writer, far above the tolerance.
+	const tolerance = 2
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if n := runtime.NumGoroutine(); n <= baseline+tolerance {
+			break
+		} else if time.Now().After(deadline) {
+			t.Fatalf("goroutine leak: baseline %d, still %d goroutines after Reap returned", baseline, n)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"sync/atomic"
@@ -14,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -21,6 +23,11 @@ const (
 	specialMetricServerLogEventCounts = "server_log_event_counts"
 	specialMetricInstanceUp           = "instance_up"
 )
+
+// maxConcurrentSourceConnects bounds how many sources may be connected
+// concurrently during one refresh sweep. It is intentionally fixed: it is
+// not configurable and does not scale with the size of the monitored fleet.
+const maxConcurrentSourceConnects = 32
 
 var metricDefs = NewConcurrentMetricDefs()
 
@@ -40,14 +47,20 @@ type ReadierReaper interface {
 // reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
 type reaper struct {
 	*cmdopts.Options
-	ready                atomic.Bool
-	measurementCh        chan metrics.MeasurementEnvelope
-	measurementCache     *InstanceMetricCache
-	logger               log.Logger
+	ready            atomic.Bool
+	measurementCh    chan metrics.MeasurementEnvelope
+	measurementCache *InstanceMetricCache
+	logger           log.Logger
+	// monitoredSources and prevLoopMonitoredDBs are only mutated in the
+	// sequential sections of the main loop (LoadSources before the sweep and
+	// CleanupRemovedWorkers after the sweep barrier); they are read-only
+	// while per-source workers run, so they need no lock.
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
-	srcRecoveryStatus    map[string]bool
-	cancelFuncs          map[string]context.CancelFunc // [sourceName]cancel() — one per source
+	// mu guards srcRecoveryStatus and cancelFuncs.
+	mu                sync.Mutex
+	srcRecoveryStatus map[string]bool
+	cancelFuncs       map[string]context.CancelFunc // [sourceName]cancel() — one per source
 }
 
 func NewReaper(ctx context.Context, opts *cmdopts.Options) ReadierReaper {
@@ -99,40 +112,51 @@ func (r *reaper) Reap(ctx context.Context) {
 			r.PrintMemStats()
 		}
 		if err = r.LoadSources(ctx); err != nil {
-			r.logger.Error("could not refresh active sources, using last valid cache: %w", err)
+			r.logger.Error("could not refresh active sources, using last valid cache:", err)
 		}
 		if err = r.LoadMetrics(); err != nil {
-			r.logger.Error("could not refresh metric definitions, using last valid cache: %w", err)
+			r.logger.Error("could not refresh metric definitions, using last valid cache:", err)
 		}
 
+		// Sources are processed with bounded concurrency so that a single
+		// hanging source cannot serialize the whole refresh. Per-source
+		// processing order is not guaranteed.
+		var g errgroup.Group
+		g.SetLimit(maxConcurrentSourceConnects)
 		for _, monitoredSource := range r.monitoredSources {
-			src := monitoredSource.GetSource()
-			srcL := r.logger.WithField("source", src.Name)
-			ctx = log.WithLogger(ctx, srcL)
+			g.Go(func() error {
+				src := monitoredSource.GetSource()
+				srcL := r.logger.WithField("source", src.Name)
+				srcCtx := log.WithLogger(ctx, srcL)
 
-			if err = monitoredSource.Connect(ctx, r.Sources); err != nil {
-				r.WriteInstanceDown(src.Name)
-				srcL.Warning("could not init connection, retrying on next iteration:", err)
-				continue
-			}
+				if err := monitoredSource.Connect(srcCtx, r.Sources); err != nil {
+					r.WriteInstanceDown(src.Name)
+					srcL.Warning("could not init connection, retrying on next iteration:", err)
+					return nil
+				}
 
-			switch md := monitoredSource.(type) {
-			case *sources.DbConn:
-				if err = md.FetchRuntimeInfo(ctx, true); err != nil {
-					srcL.Error("could not start metric gathering: %w", err)
-					continue
+				switch md := monitoredSource.(type) {
+				case *sources.DbConn:
+					if err := md.FetchRuntimeInfo(srcCtx, true); err != nil {
+						srcL.Error("could not start metric gathering:", err)
+						return nil
+					}
+					if r.FilterSource(srcCtx, md) {
+						return nil
+					}
+					r.CreateSourceHelpers(srcCtx, md)
+					r.TrackRecoveryStatus(srcCtx, md)
+					r.SyncMetricsToSinks(srcCtx, md)
+					r.StartWorker(srcCtx, src.Name, NewDbConnReaper(r, md))
+				case *sources.PromConn:
+					r.StartWorker(srcCtx, src.Name, NewPromSourceReaper(r, md))
 				}
-				if r.FilterSource(ctx, md) {
-					continue
-				}
-				r.CreateSourceHelpers(ctx, md)
-				r.TrackRecoveryStatus(ctx, md)
-				r.SyncMetricsToSinks(ctx, md)
-				r.StartWorker(ctx, src.Name, NewDbConnReaper(r, md))
-			case *sources.PromConn:
-				r.StartWorker(ctx, src.Name, NewPromSourceReaper(r, md))
-			}
+				return nil
+			})
 		}
+		// Barrier: cleanup stays sequential and runs only after every source
+		// of this sweep has been processed.
+		_ = g.Wait()
 		r.CleanupRemovedWorkers(ctx)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
@@ -146,12 +170,16 @@ func (r *reaper) Reap(ctx context.Context) {
 // StartWorker launches a source reaper goroutine for the given source if one
 // is not already running. It is a no-op when a worker for that name exists.
 func (r *reaper) StartWorker(ctx context.Context, sourceName string, sr Reaper) {
+	sourceCtx, cancelFunc := context.WithCancel(ctx)
+	r.mu.Lock()
 	if _, exists := r.cancelFuncs[sourceName]; exists {
+		r.mu.Unlock()
+		cancelFunc()
 		return
 	}
-	log.GetLogger(ctx).Info("starting source reaper")
-	sourceCtx, cancelFunc := context.WithCancel(ctx)
 	r.cancelFuncs[sourceName] = cancelFunc
+	r.mu.Unlock()
+	log.GetLogger(ctx).Info("starting source reaper")
 	go sr.Reap(sourceCtx)
 }
 
@@ -194,8 +222,13 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 	hasStandbyConfig := len(md.MetricsStandby) > 0
 	md.RUnlock()
 
-	l := log.GetLogger(ctx)
-	if r.srcRecoveryStatus[md.Name] != isInRecovery {
+	r.mu.Lock()
+	statusChanged := r.srcRecoveryStatus[md.Name] != isInRecovery
+	r.srcRecoveryStatus[md.Name] = isInRecovery
+	r.mu.Unlock()
+
+	if statusChanged {
+		l := log.GetLogger(ctx)
 		if isInRecovery && hasStandbyConfig {
 			l.Warning("Switching metrics collection to standby config...")
 		} else if !isInRecovery {
@@ -203,7 +236,6 @@ func (r *reaper) TrackRecoveryStatus(ctx context.Context, md *sources.DbConn) {
 		}
 		// else: standby without a dedicated standby config keeps primary config, no warn
 	}
-	r.srcRecoveryStatus[md.Name] = isInRecovery
 }
 
 // SyncMetricsToSinks syncs metric names with sinks for the active config
@@ -276,10 +308,15 @@ func (r *reaper) isSpecialMetric(name string) bool {
 // ShutdownWorker stops the source reaper for a single named source, closes its
 // connection pool, and deregisters it from the sinks.
 func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
-	if cancelFunc, exists := r.cancelFuncs[sourceName]; exists {
+	r.mu.Lock()
+	cancelFunc, exists := r.cancelFuncs[sourceName]
+	if exists {
+		delete(r.cancelFuncs, sourceName)
+	}
+	r.mu.Unlock()
+	if exists {
 		r.logger.WithField("source", sourceName).Info("stopping source reaper...")
 		cancelFunc()
-		delete(r.cancelFuncs, sourceName)
 	}
 	if db := r.monitoredSources.GetMonitoredDatabase(sourceName); db != nil {
 		db.Close()
@@ -294,7 +331,15 @@ func (r *reaper) ShutdownWorker(_ context.Context, sourceName string) {
 // for any sources that disappeared from the previous loop without a running worker.
 func (r *reaper) CleanupRemovedWorkers(ctx context.Context) {
 	r.logger.Debug("checking if any workers need to be shut down...")
+	// Snapshot the worker names under the lock; ShutdownWorker locks per call,
+	// so iterating the live map while deleting from it is not an option.
+	r.mu.Lock()
+	sourceNames := make([]string, 0, len(r.cancelFuncs))
 	for sourceName := range r.cancelFuncs {
+		sourceNames = append(sourceNames, sourceName)
+	}
+	r.mu.Unlock()
+	for _, sourceName := range sourceNames {
 		md := r.monitoredSources.GetMonitoredDatabase(sourceName)
 		if ctx.Err() == nil && md != nil {
 			continue // source still active
