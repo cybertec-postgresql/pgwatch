@@ -313,34 +313,33 @@ FROM
 			return err
 		}
 
-		platformCtx, platformCancel := db.WithOpTimeout(ctx, "runtime_info platform", db.RuntimeInfoTimeout)
-		md.ExecEnv = md.DiscoverPlatform(platformCtx)
-		platformCancel()
-
-		sizeCtx, sizeCancel := db.WithOpTimeout(ctx, "runtime_info size", db.RuntimeInfoTimeout)
-		md.ApproxDbSize = md.FetchApproxSize(sizeCtx)
-		sizeCancel()
-
-		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
-		extCtx, extCancel := db.WithOpTimeout(ctx, "runtime_info extensions", db.RuntimeInfoTimeout)
-		var res pgx.Rows
-		res, err = md.Conn.Query(extCtx, sqlExtensions)
-		if err == nil {
-			var ext string
-			var ver string
-			_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
-				extver := VersionToInt(ver)
-				if extver == 0 {
-					return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
-				}
-				md.Extensions[ext] = extver
-				return nil
-			})
-		}
-		extCancel()
+		md.ExecEnv = md.DiscoverPlatform(ctx)
+		md.ApproxDbSize = md.FetchApproxSize(ctx)
+		err = md.FetchExtensions(ctx)
 
 	}
 	md.lastCheckedNs.Store(time.Now().UnixNano())
+	return err
+}
+
+// FetchExtensions queries pg_extension and populates md.Extensions with the installed extension versions.
+func (md *DbConn) FetchExtensions(ctx context.Context) error {
+	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+	extCtx, extCancel := db.WithOpTimeout(ctx, "runtime_info extensions", db.RuntimeInfoTimeout)
+	defer extCancel()
+	res, err := md.Conn.Query(extCtx, sqlExtensions)
+	if err != nil {
+		return err
+	}
+	var ext, ver string
+	_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
+		extver := VersionToInt(ver)
+		if extver == 0 {
+			return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
+		}
+		md.Extensions[ext] = extver
+		return nil
+	})
 	return err
 }
 
@@ -355,6 +354,8 @@ func (md *DbConn) FetchVersion(ctx context.Context, sql string) (version string,
 // DiscoverPlatform tries to discover the platform based on the database version string and some special settings
 // that are only available on certain platforms. Returns the platform name or "UNKNOWN" if not sure.
 func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
+	platformCtx, platformCancel := db.WithOpTimeout(ctx, "runtime_info platform", db.RuntimeInfoTimeout)
+	defer platformCancel()
 	if md.ExecEnv != "" {
 		return md.ExecEnv // carry over as not likely to change ever
 	}
@@ -366,14 +367,16 @@ func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
 	else
 	  'UNKNOWN'
 	end as exec_env`
-	_ = md.Conn.QueryRow(ctx, sql).Scan(&platform)
+	_ = md.Conn.QueryRow(platformCtx, sql).Scan(&platform)
 	return
 }
 
 // FetchApproxSize returns the approximate size of the database in bytes
 func (md *DbConn) FetchApproxSize(ctx context.Context) (size int64) {
+	sizeCtx, sizeCancel := db.WithOpTimeout(ctx, "runtime_info size", db.RuntimeInfoTimeout)
+	defer sizeCancel()
 	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
-	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
+	_ = md.Conn.QueryRow(sizeCtx, sqlApproxDBSize).Scan(&size)
 	return
 }
 
