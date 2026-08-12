@@ -51,12 +51,13 @@ func (cmd *SourcePingCommand) Execute(args []string) error {
 		}
 	}
 	var e error
+	resolver := sources.NewResolver()
 	for _, s := range foundSources {
 		switch s.Kind {
 		case sources.SourcePatroniDiscovery:
-			_, e = sources.ResolveDatabasesFromPatroni(s)
+			_, e = resolver.ResolveDatabasesFromPatroni(s)
 		case sources.SourcePostgresDiscovery:
-			_, e = sources.ResolveDatabasesFromPostgres(s)
+			_, e = resolver.ResolveDatabasesFromPostgres(s)
 		default:
 			mdb := sources.NewSourceConn(s)
 			// we don't want to log connection errors here, so we use a noop logger in the context

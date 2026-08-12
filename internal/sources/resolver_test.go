@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	client "go.etcd.io/etcd/client/v3"
@@ -68,7 +70,7 @@ func TestResolveDatabasesFromPostgres_ResolverTimeout(t *testing.T) {
 	md.ConnStr = connStr
 
 	start := time.Now()
-	_, err := sources.ResolveDatabasesFromPostgres(md)
+	_, err := sources.NewResolver().ResolveDatabasesFromPostgres(md)
 	elapsed := time.Since(start)
 
 	require.Error(t, err, "expected an error from a stalled resolver")
@@ -429,5 +431,213 @@ func TestNewHostConfig_EdgeCases(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+// stubNewConnWithDatnames replaces sources.NewConn with a stub that builds a fresh
+// pgxmock pool per call so each invocation gets its own mocked discovery query.
+// The returned rows closure is invoked inside the stub to construct the row set
+// for the current call; this lets a single stub serve concurrent goroutines.
+func stubNewConnWithDatnames(t *testing.T, rowsFn func() []string) {
+	t.Helper()
+	orig := sources.NewConn
+	sources.NewConn = func(_ context.Context, _ string, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			return nil, err
+		}
+		rows := pgxmock.NewRows([]string{"datname"})
+		for _, n := range rowsFn() {
+			rows.AddRow(n)
+		}
+		mock.ExpectQuery("pg_database").
+			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+			WillReturnRows(rows)
+		return mock, nil
+	}
+	t.Cleanup(func() { sources.NewConn = orig })
+}
+
+// stubNewConnWithError makes sources.NewConn return the given error verbatim.
+func stubNewConnWithError(t *testing.T, err error) {
+	t.Helper()
+	orig := sources.NewConn
+	sources.NewConn = func(_ context.Context, _ string, _ ...db.ConnConfigCallback) (db.PgxPoolIface, error) {
+		return nil, err
+	}
+	t.Cleanup(func() { sources.NewConn = orig })
+}
+
+func TestResolveDatabasesFromPostgres_LKGFallbackOnFailure(t *testing.T) {
+	resolver := sources.NewResolver()
+
+	md := sources.Source{
+		Name:    "lkg_failure",
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@a:5432/postgres?sslmode=disable",
+	}
+
+	// Wave 1: success populates the cache.
+	stubNewConnWithDatnames(t, func() []string { return []string{"db1", "db2", "db3"} })
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
+	require.NoError(t, err)
+	require.Len(t, dbs, 3)
+	firstNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
+
+	// Wave 2: discovery fails; cache MUST be served with nil error.
+	sentinel := errors.New("boom")
+	stubNewConnWithError(t, sentinel)
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
+	require.NoError(t, err, "expected cached fallback to swallow the error")
+	require.Len(t, dbs, 3, "expected the previously cached list to be returned")
+	gotNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
+	assert.Equal(t, firstNames, gotNames)
+}
+
+func TestResolveDatabasesFromPostgres_LKGReplacementOnSuccess(t *testing.T) {
+	resolver := sources.NewResolver()
+
+	md := sources.Source{
+		Name:    "lkg_replace",
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@b:5432/postgres?sslmode=disable",
+	}
+
+	// Seed cache with the first list.
+	stubNewConnWithDatnames(t, func() []string { return []string{"alpha", "beta"} })
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
+	require.NoError(t, err)
+	require.Len(t, dbs, 2)
+
+	// Replace with a new, different list via a successful resolution.
+	stubNewConnWithDatnames(t, func() []string { return []string{"gamma", "delta", "epsilon"} })
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
+	require.NoError(t, err)
+	require.Len(t, dbs, 3)
+	newNames := []string{dbs[0].GetSource().Name, dbs[1].GetSource().Name, dbs[2].GetSource().Name}
+	assert.Contains(t, newNames, "lkg_replace_gamma")
+	assert.Contains(t, newNames, "lkg_replace_delta")
+	assert.Contains(t, newNames, "lkg_replace_epsilon")
+
+	// Discovery fails now: the NEW list must be served, not the old one.
+	stubNewConnWithError(t, errors.New("still down"))
+	dbs, err = resolver.ResolveDatabasesFromPostgres(md)
+	require.NoError(t, err)
+	require.Len(t, dbs, 3)
+	for _, d := range dbs {
+		n := d.GetSource().Name
+		assert.NotContains(t, []string{"lkg_replace_alpha", "lkg_replace_beta"}, n,
+			"stale entry %q was served from cache", n)
+	}
+}
+
+func TestResolveDatabasesFromPostgres_EmptyCacheErrorPropagates(t *testing.T) {
+	resolver := sources.NewResolver()
+
+	sentinel := errors.New("no cache yet")
+	stubNewConnWithError(t, sentinel)
+
+	md := sources.Source{
+		Name:    "lkg_empty",
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@c:5432/postgres?sslmode=disable",
+	}
+
+	dbs, err := resolver.ResolveDatabasesFromPostgres(md)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, sentinel)
+	assert.Empty(t, dbs, "no cached entry should have been served")
+}
+
+func TestResolveDatabasesFromPostgres_CacheKeyIdentity(t *testing.T) {
+	resolver := sources.NewResolver()
+
+	base := sources.Source{
+		Name:    "lkg_key",
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@d:5432/postgres?sslmode=disable",
+	}
+
+	stubNewConnWithDatnames(t, func() []string { return []string{"one", "two"} })
+	dbs, err := resolver.ResolveDatabasesFromPostgres(base)
+	require.NoError(t, err)
+	require.Len(t, dbs, 2)
+
+	// Same Name, DIFFERENT ConnStr: failing must not serve the cached entry.
+	sentinelA := errors.New("connstr-A down")
+	stubNewConnWithError(t, sentinelA)
+	other := sources.Source{
+		Name:    base.Name,
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@d-other:5432/postgres?sslmode=disable",
+	}
+	dbs, err = resolver.ResolveDatabasesFromPostgres(other)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, sentinelA)
+	assert.Empty(t, dbs, "a reconfigured ConnStr must not serve the previous target's list")
+
+	// Same ConnStr, changed IncludePattern: failing must not serve the cached entry either.
+	sentinelB := errors.New("include-pattern changed")
+	stubNewConnWithError(t, sentinelB)
+	repattern := sources.Source{
+		Name:           base.Name,
+		Kind:           sources.SourcePostgresDiscovery,
+		ConnStr:        base.ConnStr,
+		IncludePattern: "^foo_",
+	}
+	dbs, err = resolver.ResolveDatabasesFromPostgres(repattern)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, sentinelB)
+	assert.Empty(t, dbs, "a reconfigured include_pattern must not serve the previous result set")
+}
+
+func TestResolveDatabasesFromPostgres_ConcurrentFallback(t *testing.T) {
+	resolver := sources.NewResolver()
+
+	const n = 8
+	srcs := make(sources.Sources, n)
+	for i := range n {
+		srcs[i] = sources.Source{
+			Name:    fmt.Sprintf("concurrent_%d", i),
+			Kind:    sources.SourcePostgresDiscovery,
+			ConnStr: fmt.Sprintf("postgres://user:pw@h%d:5432/postgres?sslmode=disable", i),
+		}
+	}
+
+	// Wave 1: every source resolves successfully, each to a single distinct datname.
+	stubNewConnWithDatnames(t, func() []string {
+		// The stub doesn't know which source is calling; that's fine - the source
+		// name is taken from the Source struct, not from the mocked rows. We just
+		// need at least one row so resolution does not error.
+		return []string{"only"}
+	})
+	dbs, err := resolver.ResolveDatabases(srcs, func(string) {})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(dbs), n, "each source should produce one resolved DB")
+
+	// Wave 2: discovery fails for every source. Cached lists must be served.
+	stubNewConnWithError(t, errors.New("discovery down"))
+	// Add one brand-new source that has no cached entry.
+	extra := sources.Source{
+		Name:    "concurrent_extra",
+		Kind:    sources.SourcePostgresDiscovery,
+		ConnStr: "postgres://user:pw@extra:5432/postgres?sslmode=disable",
+	}
+	srcs2 := append(sources.Sources{}, srcs...)
+	srcs2 = append(srcs2, extra)
+
+	var onErrorNames sync.Map
+	dbs2, err := resolver.ResolveDatabases(srcs2, func(name string) {
+		onErrorNames.Store(name, struct{}{})
+	})
+	require.Error(t, err, "the never-cached extra source must propagate its error")
+	// Every original (cached) source still contributes its last-known DBs.
+	for i := range n {
+		require.NotNil(t, dbs2.GetMonitoredDatabase(fmt.Sprintf("concurrent_%d_only", i)),
+			"source %d should be served from cache", i)
+	}
+	// Extra source never cached: its name must appear in onError.
+	if _, ok := onErrorNames.Load(extra.Name); !ok {
+		t.Fatalf("expected onError to fire for never-cached source %q", extra.Name)
 	}
 }

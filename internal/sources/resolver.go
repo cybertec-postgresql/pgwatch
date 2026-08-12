@@ -26,9 +26,55 @@ import (
 	"go.uber.org/zap"
 )
 
+// Resolver discovers the monitored databases behind continuous-monitoring
+// sources (Patroni, Postgres discovery). It owns the last-known-good fallback
+// caches so that a transient DCS/DB outage does not tear down monitoring of
+// already-known databases.
+//
+// A Resolver is safe for concurrent use. Create independent Resolvers via
+// NewResolver when isolated cache state is desired (e.g. in tests or when
+// running several unrelated resolution pipelines in one process).
+type Resolver struct {
+	mu sync.Mutex // guards the fallback caches below
+	// lastFoundClusterMembers is needed for cases where DCS is temporarily down;
+	// we don't want to immediately remove monitoring of DBs. Keyed by source name.
+	lastFoundClusterMembers map[string][]PatroniClusterMember
+	// lastFoundDatabases is keyed by the source's identity (name + conn string +
+	// include/exclude patterns) so a reconfigured source never inherits the
+	// previous target's database list.
+	lastFoundDatabases map[postgresDiscoveryKey]SourceConns
+}
+
+// NewResolver returns a Resolver with freshly initialized, empty caches.
+func NewResolver() *Resolver {
+	return &Resolver{
+		lastFoundClusterMembers: make(map[string][]PatroniClusterMember),
+		lastFoundDatabases:      make(map[postgresDiscoveryKey]SourceConns),
+	}
+}
+
+// defaultResolver backs the convenience methods on Source and Sources so that
+// existing callers keep a single process-wide fallback cache without having to
+// thread a Resolver through.
+var defaultResolver = NewResolver()
+
 // ResolveDatabases() updates list of monitored objects from continuous monitoring sources, e.g. patroni.
 // Each source is resolved concurrently so that a slow or unreachable source does not block the others.
-func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err error) {
+// It delegates to the package-wide defaultResolver.
+func (srcs Sources) ResolveDatabases(onError func(string)) (SourceConns, error) {
+	return defaultResolver.ResolveDatabases(srcs, onError)
+}
+
+// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni.
+// It delegates to the package-wide defaultResolver.
+func (s Source) ResolveDatabases() (SourceConns, error) {
+	return defaultResolver.ResolveDatabase(s)
+}
+
+// ResolveDatabases updates the list of monitored objects from continuous monitoring
+// sources, e.g. patroni. Each source is resolved concurrently so that a slow or
+// unreachable source does not block the others.
+func (r *Resolver) ResolveDatabases(srcs Sources, onError func(string)) (_ SourceConns, err error) {
 	type result struct {
 		dbs SourceConns
 		err error
@@ -37,7 +83,7 @@ func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err e
 	var wg sync.WaitGroup
 	for i, s := range srcs {
 		wg.Go(func() {
-			dbs, e := s.ResolveDatabases()
+			dbs, e := r.ResolveDatabase(s)
 			results[i] = result{dbs, e}
 		})
 	}
@@ -56,13 +102,14 @@ func (srcs Sources) ResolveDatabases(onError func(string)) (_ SourceConns, err e
 	return resolvedDbs, err
 }
 
-// ResolveDatabases() return a slice of found databases for continuous monitoring sources, e.g. patroni
-func (s Source) ResolveDatabases() (SourceConns, error) {
+// ResolveDatabase returns a slice of found databases for a single continuous
+// monitoring source, e.g. patroni.
+func (r *Resolver) ResolveDatabase(s Source) (SourceConns, error) {
 	switch s.Kind {
 	case SourcePatroniDiscovery:
-		return ResolveDatabasesFromPatroni(s)
+		return r.ResolveDatabasesFromPatroni(s)
 	case SourcePostgresDiscovery:
-		return ResolveDatabasesFromPostgres(s)
+		return r.ResolveDatabasesFromPostgres(s)
 	case SourcePrometheus:
 		return SourceConns{NewPromConn(s)}, nil
 	}
@@ -82,8 +129,24 @@ func (pcm PatroniClusterMember) IsPrimary() bool {
 
 var logger log.Logger = log.FallbackLogger
 
-var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
-// don't want to immediately remove monitoring of DBs
+// postgresDiscoveryKey uniquely identifies a Postgres discovery source for caching purposes.
+// It MUST incorporate every field that would change the set of discovered databases; otherwise a
+// reconfigured source could be served the previous target's last-known-good list.
+type postgresDiscoveryKey struct {
+	name           string
+	connStr        string
+	includePattern string
+	excludePattern string
+}
+
+func postgresDiscoveryKeyOf(s Source) postgresDiscoveryKey {
+	return postgresDiscoveryKey{
+		name:           s.Name,
+		connStr:        s.ConnStr,
+		includePattern: s.IncludePattern,
+		excludePattern: s.ExcludePattern,
+	}
+}
 
 func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
@@ -146,7 +209,7 @@ func getTransport(conf HostConfig) (*tls.Config, error) {
 	return tlsClientConfig, nil
 }
 
-func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error) {
+func (r *Resolver) getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, error) {
 	var ret = make([]PatroniClusterMember, 0)
 	var cfg client.Config
 
@@ -204,7 +267,9 @@ func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, err
 		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
-	lastFoundClusterMembers[s.Name] = ret
+	r.mu.Lock()
+	r.lastFoundClusterMembers[s.Name] = ret
+	r.mu.Unlock()
 	return ret, nil
 }
 
@@ -300,7 +365,7 @@ func NewHostConfig(URI string) (hc HostConfig, err error) {
 	return hc, nil
 }
 
-func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
+func (r *Resolver) ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 	var mds SourceConns
 	var clusterMembers []PatroniClusterMember
 	var err error
@@ -313,7 +378,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 
 	switch hostConfig.DcsType {
 	case dcsTypeEtcd:
-		clusterMembers, err = getEtcdClusterMembers(source, hostConfig)
+		clusterMembers, err = r.getEtcdClusterMembers(source, hostConfig)
 	case dcsTypeZookeeper:
 		clusterMembers, err = getZookeeperClusterMembers(source, hostConfig)
 	case dcsTypeConsul:
@@ -327,11 +392,16 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 			return nil, err
 		}
 		logger.Debug("failed to get info from DCS, using previous member info if any")
-		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
+		r.mu.Lock()
+		clusterMembers, ok = r.lastFoundClusterMembers[source.Name] // mask error from main loop not to remove monitored DBs due to "jitter"
+		r.mu.Unlock()
+		if ok {
 			err = nil
 		}
 	} else {
-		lastFoundClusterMembers[source.Name] = clusterMembers
+		r.mu.Lock()
+		r.lastFoundClusterMembers[source.Name] = clusterMembers
+		r.mu.Unlock()
 	}
 	if len(clusterMembers) == 0 {
 		return mds, err
@@ -348,7 +418,7 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 			src.Name += "_" + patroniMember.Scope
 		}
 		src.Name += "_" + patroniMember.Name
-		if dbs, err := ResolveDatabasesFromPostgres(src); err == nil {
+		if dbs, err := r.ResolveDatabasesFromPostgres(src); err == nil {
 			mds = append(mds, dbs...)
 		} else {
 			logger.WithError(err).Error("failed to resolve databases for Patroni member: ", patroniMember.Name)
@@ -358,8 +428,35 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 }
 
 // ResolveDatabasesFromPostgres reads all the databases from the given cluster,
-// additionally matching/not matching specified regex patterns
-func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+// additionally matching/not matching specified regex patterns.
+//
+// On any helper error (pool create or discovery query) and the presence of a
+// previously-cached successful result for the same source identity, the cached
+// list is returned with a nil error: a transient discovery failure (DNS hiccup,
+// connect timeout, discovery-SQL permission error) must not tear down monitoring
+// of already-known databases. The accepted trade-off is that a database dropped
+// server-side while discovery keeps failing stays monitored from cache (surfaced
+// as per-cycle connect errors reported as down) until the next successful
+// resolution replaces the entry.
+func (r *Resolver) ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+	resolvedDbs, err = resolveDatabasesFromPostgres(s)
+	key := postgresDiscoveryKeyOf(s)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err == nil {
+		r.lastFoundDatabases[key] = resolvedDbs
+		return resolvedDbs, nil
+	}
+	cached, ok := r.lastFoundDatabases[key]
+	if ok && len(cached) > 0 {
+		logger.WithField("source", s.Name).WithError(err).Warning("postgres discovery failed; serving last-known-good database list from cache")
+		return cached, nil
+	}
+	return nil, err
+}
+
+// resolveDatabasesFromPostgres is the inner helper that actually runs the discovery query.
+func resolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
 	var (
 		c      db.PgxPoolIface
 		dbname string
