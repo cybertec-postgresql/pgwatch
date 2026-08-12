@@ -77,9 +77,9 @@ func TestResolveDatabasesFromPostgres_ResolverTimeout(t *testing.T) {
 	assert.Less(t, elapsed, db.ResolverTimeout+2*time.Second,
 		"ResolveDatabasesFromPostgres took too long: %v", elapsed)
 
-	// The error (or its cause) must name the resolver operation.
+	// The error must name the resolver operation (surfaced via WithOpTimeout cause).
 	assert.Contains(t, err.Error(), "resolve stall_test",
-		"error cause should name the resolver operation; got: %v", err)
+		"error should name the resolver operation; got: %v", err)
 }
 
 func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {

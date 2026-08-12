@@ -112,8 +112,8 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 
 ### Implementation for User Story 3
 
-- [ ] T302 [US3] Replace both `context.TODO()` uses in `ResolveDatabasesFromPostgres` (`internal/sources/resolver.go` — pool creation via `NewConn` and the discovery `c.Query`) with a single derived ctx: `db.WithOpTimeout(context.Background(), "resolve "+s.Name, db.ResolverTimeout)`, `defer cancel()` per REQ-106. Function signature unchanged.
-- [ ] T303 [US3] Run story gate: `go test -race ./internal/sources/` (covers concurrent `ResolveDatabases` via `wg.Go` against the shared path)
+- [x] T302 [US3] Replace both `context.TODO()` uses in `ResolveDatabasesFromPostgres` (`internal/sources/resolver.go` — pool creation via `NewConn` and the discovery `c.Query`) with a single derived ctx: `db.WithOpTimeout(context.Background(), "resolve "+s.Name, db.ResolverTimeout)`, `defer cancel()` per REQ-106. Function signature unchanged.
+- [x] T303 [US3] Run story gate: `go test -race ./internal/sources/` (covers concurrent `ResolveDatabases` via `wg.Go` against the shared path)
 
 **Checkpoint**: all three user stories independently functional (AC-103 covered)
 

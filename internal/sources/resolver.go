@@ -365,9 +365,12 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 		dbname string
 		rows   pgx.Rows
 	)
-	c, err = NewConn(context.TODO(), s.ConnStr)
+	ctx, cancel := db.WithOpTimeout(context.Background(), "resolve "+s.Name, db.ResolverTimeout)
+	defer cancel()
+
+	c, err = NewConn(ctx, s.ConnStr)
 	if err != nil {
-		return
+		return nil, cmp.Or(context.Cause(ctx), err)
 	}
 	defer c.Close()
 
@@ -380,8 +383,8 @@ func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error)
 	and case when length(trim($1)) > 0 then datname ~ $1 else true end
 	and case when length(trim($2)) > 0 then not datname ~ $2 else true end`
 
-	if rows, err = c.Query(context.TODO(), sql, s.IncludePattern, s.ExcludePattern); err != nil {
-		return nil, err
+	if rows, err = c.Query(ctx, sql, s.IncludePattern, s.ExcludePattern); err != nil {
+		return nil, cmp.Or(context.Cause(ctx), err)
 	}
 	for rows.Next() {
 		if err = rows.Scan(&dbname); err != nil {
