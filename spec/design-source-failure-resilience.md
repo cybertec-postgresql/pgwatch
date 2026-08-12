@@ -237,17 +237,17 @@ worst case arithmetic.
 
 ### 5.3 Acceptance Criteria
 
-- **AC-201**: Given 3 sources where the middle one hangs in `Ping` until its deadline, when a
+- **AC-201** ✅: Given 3 sources where the middle one hangs in `Ping` until its deadline, when a
   refresh runs, then the third source's `Connect OK` log appears no later than ~the middle
   source's Ping deadline after the first's (i.e., not serialized behind the full hang plus
   sequential position).
-- **AC-202**: Given 400 sources and a host-wide brownout, when a refresh runs, then the sweep
+- **AC-202** ✅: Given 400 sources and a host-wide brownout, when a refresh runs, then the sweep
   completes in approximately `ceil(400/32) × ping-deadline` rather than `400 × ping-deadline`.
-- **AC-203**: `go test -race ./internal/reaper/` passes, including a new test with concurrent
+- **AC-203** ✅: `go test -race ./internal/reaper/` passes, including a new test with concurrent
   Start/Shutdown worker churn.
-- **AC-204**: Given a source failing Connect, when the sweep runs, then `instance_up=0` is
+- **AC-204** ✅: Given a source failing Connect, when the sweep runs, then `instance_up=0` is
   written exactly once for that source per iteration (unchanged behavior).
-- **AC-205**: Worker lifecycle is unchanged: a source present in consecutive refreshes keeps
+- **AC-205** ✅: Worker lifecycle is unchanged: a source present in consecutive refreshes keeps
   its running worker (`StartWorker` remains a no-op for existing names).
 
 ### 5.4 Risks & Rollback

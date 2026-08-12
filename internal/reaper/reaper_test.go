@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -1310,4 +1311,78 @@ func TestReaper_StartWorkerDuplicateIsNoOp(t *testing.T) {
 	<-firstStopped
 	_, exists := r.cancelFuncs["db"]
 	assert.False(t, exists, "worker must be deregistered after shutdown")
+}
+
+// TestReaper_SweepGoroutineHygiene simulates a brownout in which every source
+// wedges inside Connect, then verifies that cancelling the Reap context lets
+// the process return to its baseline goroutine count: the sweep fan-out is
+// joined via g.Wait() and WriteMeasurements exits on ctx.Done(), so no sweep
+// or writer goroutine may outlive Reap.
+func TestReaper_SweepGoroutineHygiene(t *testing.T) {
+	ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+	sink := newCaptureWriter(16)
+
+	// 8 wedged sources stay well under maxConcurrentSourceConnects, so the
+	// whole fan-out is inside Connect at the same time.
+	const numSources = 8
+	var inside atomic.Int64
+	allInside := make(chan struct{})
+	wedge := func(ctx context.Context) error {
+		if inside.Add(1) == numSources {
+			close(allInside)
+		}
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	srcs := make([]sources.SourceConn, 0, numSources)
+	for i := range numSources {
+		srcs = append(srcs, &fakeSourceConn{
+			src:     sources.Source{Name: fmt.Sprintf("wedge%02d", i)},
+			connect: wedge,
+		})
+	}
+	r := newSweepReaper(ctx, sink, srcs...)
+
+	// Baseline is taken after every fixture exists but before Reap starts its
+	// writer and sweep goroutines.
+	baseline := runtime.NumGoroutine()
+
+	reapCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() {
+		r.Reap(reapCtx)
+		close(done)
+	}()
+
+	// Brownout: wait until every source is wedged inside Connect.
+	select {
+	case <-allInside:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for all sources to enter Connect")
+	}
+
+	// Brownout clears: the wedged Connect calls must observe the cancellation
+	// and Reap must unwind.
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Reap did not return after context cancellation")
+	}
+
+	// Goroutine exit is observed asynchronously by the runtime, so poll until
+	// the count settles. Tolerance of 2 absorbs runtime background goroutines
+	// (timers, GC workers) that may start independently of the reaper; a real
+	// leak of the sweep fan-out would be one goroutine per wedged source (8
+	// here) plus the writer, far above the tolerance.
+	const tolerance = 2
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if n := runtime.NumGoroutine(); n <= baseline+tolerance {
+			break
+		} else if time.Now().After(deadline) {
+			t.Fatalf("goroutine leak: baseline %d, still %d goroutines after Reap returned", baseline, n)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 }
