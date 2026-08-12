@@ -123,12 +123,12 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 
 **Purpose**: contract verification across stories
 
-- [ ] T901 [P] Verify REQ-108 / CON-101: `grep -rn "statement_timeout" internal/reaper internal/sources internal/db` returns no new enforcement use; no new CLI option/env var added (`internal/cmdopts` untouched).
-- [ ] T902 [P] Verify CON-102: no code path retries on the same connection after context expiry (review diff for post-deadline reuse; pgx discard semantics relied upon).
-- [ ] T903 Full suite: `go test -failfast -p 1 -timeout=300s -parallel=1 ./... -coverprofile=coverage.out` — no coverage regression vs T002 baseline.
-- [ ] T904 [P] Race gate: `go test -race ./internal/reaper/ ./internal/sources/` (AC-105).
-- [ ] T905 [P] Lint: `golangci-lint run` — no new findings.
-- [ ] T906 Update `spec/design-source-failure-resilience.md`: mark WS1 acceptance criteria AC-101…AC-105 satisfied; note merged PR reference.
+- [x] T901 [P] Verify REQ-108 / CON-101: `grep -rn "statement_timeout" internal/reaper internal/sources internal/db` returns no new enforcement use; no new CLI option/env var added (`internal/cmdopts` untouched).
+- [x] T902 [P] Verify CON-102: no code path retries on the same connection after context expiry (review diff for post-deadline reuse; pgx discard semantics relied upon).
+- [x] T903 Full suite: `go test -failfast -p 1 -timeout=300s -parallel=1 ./... -coverprofile=coverage.out` — no coverage regression vs T002 baseline.
+- [x] T904 [P] Race gate: `go test -race ./internal/reaper/ ./internal/sources/` (AC-105).
+- [x] T905 [P] Lint: `golangci-lint run` — no new findings.
+- [x] T906 Update `spec/design-source-failure-resilience.md`: mark WS1 acceptance criteria AC-101…AC-105 satisfied; note merged PR reference.
 
 ---
 

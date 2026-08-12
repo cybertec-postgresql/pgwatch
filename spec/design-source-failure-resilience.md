@@ -160,18 +160,18 @@ into a single missed collection interval.
 
 ### 4.3 Acceptance Criteria
 
-- **AC-101**: Given a source whose network silently drops packets mid-query, when a metric
+- **AC-101** ✅: Given a source whose network silently drops packets mid-query, when a metric
   fetch is in flight, then the fetch returns an error within its deadline and the worker logs
   and continues to its next tick.
-- **AC-102**: Given a source whose pool connections are all wedged, when the main loop calls
+- **AC-102** ✅: Given a source whose pool connections are all wedged, when the main loop calls
   `Connect`/`Ping` on it, then `Ping` returns an error within 10 s (default config) and the
   sweep proceeds to the next source.
-- **AC-103**: Given a discovery source that accepts TCP but never answers the discovery query,
+- **AC-103** ✅: Given a discovery source that accepts TCP but never answers the discovery query,
   when resolution runs, then it fails within 15 s and other sources resolve unaffected.
-- **AC-104**: Given a healthy fleet, when all deadlines are in place, then no metric fetch,
+- **AC-104** ✅: Given a healthy fleet, when all deadlines are in place, then no metric fetch,
   Ping, runtime-info fetch, or resolution fails due to the new deadlines (regression guard:
   defaults are generous relative to p99 fetch times).
-- **AC-105**: `go test -race ./internal/reaper/ ./internal/sources/` passes.
+- **AC-105** ✅: `go test -race ./internal/reaper/ ./internal/sources/` passes.
 
 ### 4.4 Risks & Rollback
 
