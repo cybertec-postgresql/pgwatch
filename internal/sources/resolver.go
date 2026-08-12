@@ -82,8 +82,11 @@ func (pcm PatroniClusterMember) IsPrimary() bool {
 
 var logger log.Logger = log.FallbackLogger
 
-var lastFoundClusterMembers = make(map[string][]PatroniClusterMember) // needed for cases where DCS is temporarily down
-// don't want to immediately remove monitoring of DBs
+var (
+	// needed for cases where DCS is temporarily down; don't want to immediately remove monitoring of DBs
+	lastFoundClusterMembers = make(map[string][]PatroniClusterMember)
+	resolverCacheMu         sync.Mutex // guards resolver fallback caches
+)
 
 func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
@@ -204,7 +207,9 @@ func getEtcdClusterMembers(s Source, hc HostConfig) ([]PatroniClusterMember, err
 		ret = append(ret, PatroniClusterMember{Scope: scope, ConnURL: connURL, Role: role, Name: name})
 	}
 
+	resolverCacheMu.Lock()
 	lastFoundClusterMembers[s.Name] = ret
+	resolverCacheMu.Unlock()
 	return ret, nil
 }
 
@@ -327,11 +332,16 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 			return nil, err
 		}
 		logger.Debug("failed to get info from DCS, using previous member info if any")
-		if clusterMembers, ok = lastFoundClusterMembers[source.Name]; ok { // mask error from main loop not to remove monitored DBs due to "jitter"
+		resolverCacheMu.Lock()
+		clusterMembers, ok = lastFoundClusterMembers[source.Name] // mask error from main loop not to remove monitored DBs due to "jitter"
+		resolverCacheMu.Unlock()
+		if ok {
 			err = nil
 		}
 	} else {
+		resolverCacheMu.Lock()
 		lastFoundClusterMembers[source.Name] = clusterMembers
+		resolverCacheMu.Unlock()
 	}
 	if len(clusterMembers) == 0 {
 		return mds, err
