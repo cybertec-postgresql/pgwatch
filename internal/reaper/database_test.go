@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -1037,4 +1039,185 @@ func TestSourceReaper_NonPostgresSequential(t *testing.T) {
 	err = sr.fetchMetric(ctx, batchEntry{metricName: "seq_metric", metric: metricDefs.MetricDefs["seq_metric"], sql: "SELECT seq_value"})
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSourceReaper_ExecuteBatch_BoundedByFetchDeadline(t *testing.T) {
+	// SendBatch blocks forever on a BlockingPool. Without bounded fetch
+	// wiring, executeBatch would only return when the parent ctx is
+	// cancelled; with wiring, it returns at max(interval, MinFetchTimeout).
+	origMinFetch := db.MinFetchTimeout
+	t.Cleanup(func() { db.MinFetchTimeout = origMinFetch })
+	db.MinFetchTimeout = 50 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+	defer cancel()
+	// Safety net so a regressed implementation does not hang the test
+	// indefinitely. With correct wiring the fetch deadline fires first.
+	time.AfterFunc(5*time.Second, cancel)
+
+	metricDefs.MetricDefs["bounded_batch_metric"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 1"},
+	}
+
+	md := &sources.DbConn{
+		Source: sources.Source{
+			Name:    "bounded_batch_src",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{"bounded_batch_metric": 1},
+		},
+		Conn: testutil.BlockingPool{},
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewDbConnReaper(r, md)
+
+	start := time.Now()
+	err := sr.executeBatch(ctx, []batchEntry{
+		{metricName: "bounded_batch_metric", metric: metricDefs.MetricDefs["bounded_batch_metric"], sql: "SELECT 1"},
+	})
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	// Deadline error must carry the operation name so callers (and log
+	// grep) can distinguish a fetch-bound timeout from ordinary query
+	// errors. Fails RED today (unwired: err is plain
+	// "context deadline exceeded"); goes GREEN once the call site derives
+	// a "batch"-tagged ctx and surfaces its cause.
+	require.ErrorContains(t, err, "batch")
+	// fetch deadline = max(1s interval, 50ms floor) = 1s. executeBatch may
+	// do a retry round-trip (fetchMetric) on top of the batch round-trip,
+	// so the total budget is 2 * deadline + a generous scheduling margin.
+	if elapsed > 2*time.Second+500*time.Millisecond {
+		t.Fatalf("executeBatch took %v, want ~2 * fetch deadline", elapsed)
+	}
+}
+
+func TestSourceReaper_FetchMetric_BoundedByFetchDeadline(t *testing.T) {
+	// Query blocks forever on a BlockingPool. The fetch deadline for an
+	// individual metric equals max(GetMetricInterval(name), MinFetchTimeout).
+	origMinFetch := db.MinFetchTimeout
+	t.Cleanup(func() { db.MinFetchTimeout = origMinFetch })
+	db.MinFetchTimeout = 50 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+	defer cancel()
+	time.AfterFunc(5*time.Second, cancel)
+
+	metricDefs.MetricDefs["bounded_fetch_metric"] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 1"},
+	}
+
+	md := &sources.DbConn{
+		Source: sources.Source{
+			Name:    "bounded_fetch_src",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{"bounded_fetch_metric": 1},
+		},
+		Conn: testutil.BlockingPool{},
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &reaper{
+		Options: &cmdopts.Options{
+			Metrics: metrics.CmdOpts{},
+			Sinks:   sinks.CmdOpts{},
+		},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewDbConnReaper(r, md)
+
+	start := time.Now()
+	err := sr.fetchMetric(ctx, batchEntry{
+		metricName: "bounded_fetch_metric",
+		metric:     metricDefs.MetricDefs["bounded_fetch_metric"],
+		sql:        "SELECT 1",
+	})
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	if elapsed > 1500*time.Millisecond {
+		t.Fatalf("fetchMetric took %v, want ~max(GetMetricInterval, MinFetchTimeout)", elapsed)
+	}
+}
+
+func TestSourceReaper_QueryMeasurements_BoundedByChangeDetectionTimeout(t *testing.T) {
+	// Query blocks forever on a BlockingPool. QueryMeasurements feeds the
+	// Detect*Changes family and must honor ChangeDetectionTimeout.
+	origChange := db.ChangeDetectionTimeout
+	t.Cleanup(func() { db.ChangeDetectionTimeout = origChange })
+	db.ChangeDetectionTimeout = 100 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+	defer cancel()
+	time.AfterFunc(5*time.Second, cancel)
+
+	md := &sources.DbConn{
+		Source: sources.Source{
+			Name: "bounded_change_src",
+			Kind: sources.SourcePostgres,
+		},
+		Conn: testutil.BlockingPool{},
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+
+	start := time.Now()
+	_, err := QueryMeasurements(ctx, md, "SELECT 1")
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	if elapsed > 1500*time.Millisecond {
+		t.Fatalf("QueryMeasurements took %v, want ~ChangeDetectionTimeout (100ms)", elapsed)
+	}
+}
+
+func TestSourceReaper_DetectSprocChanges_BoundedByChangeDetectionTimeout(t *testing.T) {
+	// Representative Detect*Changes function. QueryMeasurements under it
+	// must honor ChangeDetectionTimeout so the whole call is bounded.
+	origChange := db.ChangeDetectionTimeout
+	t.Cleanup(func() { db.ChangeDetectionTimeout = origChange })
+	db.ChangeDetectionTimeout = 100 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+	defer cancel()
+	time.AfterFunc(5*time.Second, cancel)
+
+	metricDefs.MetricDefs["sproc_hashes"] = metrics.Metric{
+		SQLs: map[int]string{120000: "SELECT"},
+	}
+
+	md := &sources.DbConn{
+		Source: sources.Source{Name: "bounded_detect_src"},
+		Conn:   testutil.BlockingPool{},
+		RuntimeInfo: sources.RuntimeInfo{
+			Version:     120000,
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+	r := &reaper{
+		measurementCh: make(chan metrics.MeasurementEnvelope, 10),
+	}
+
+	start := time.Now()
+	r.DetectSprocChanges(ctx, md)
+	elapsed := time.Since(start)
+
+	if elapsed > 1500*time.Millisecond {
+		t.Fatalf("DetectSprocChanges took %v, want ~ChangeDetectionTimeout (100ms)", elapsed)
+	}
 }

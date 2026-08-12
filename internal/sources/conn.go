@@ -142,12 +142,30 @@ func (md *DbConn) Close() {
 
 // Ping will try to ping the server to ensure the connection is still alive
 func (md *DbConn) Ping(ctx context.Context) (err error) {
+	// Bound the round-trip so a half-open peer or a wedged pool cannot stall
+	// the main-loop sweep. The bound is the configured ConnectTimeout plus a
+	// small margin. Ping is exported, so ConnConfig may not be populated at
+	// all — fall back to a 10 s default total in that case. When only the
+	// outer pgxpool.Config is set but the inner ConnConfig is nil (or
+	// ConnectTimeout is unconfigured), the effective bound collapses to just
+	// PingTimeoutMargin.
+	timeout := 10 * time.Second
+	if md.ConnConfig != nil {
+		ct := time.Duration(0)
+		if md.ConnConfig.ConnConfig != nil {
+			ct = md.ConnConfig.ConnConfig.ConnectTimeout
+		}
+		timeout = ct + db.PingTimeoutMargin
+	}
+	pingCtx, cancel := db.WithOpTimeout(ctx, "ping", timeout)
+	defer cancel()
+
 	if md.Kind == SourcePgBouncer {
 		// pgbouncer is very picky about the queries it accepts
-		_, err = md.Conn.Exec(ctx, "SHOW VERSION")
+		_, err = md.Conn.Exec(pingCtx, "SHOW VERSION")
 		return
 	}
-	return md.Conn.Ping(ctx)
+	return md.Conn.Ping(pingCtx)
 }
 
 // Connect will establish a connection to the database if it's not already connected.
@@ -252,82 +270,90 @@ func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err 
 	// Fast path: check the atomic timestamp without acquiring any lock.
 	// This avoids lock contention when the cached value is still fresh.
 	if !forceRefetch && time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) < 5*time.Minute {
-		return nil
+		return
 	}
-
-	md.Lock()
-	defer md.Unlock()
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
+	md.Lock()
+	defer md.Unlock()
+
 	switch md.Kind {
 	case SourcePgBouncer, SourcePgPool:
-		if md.VersionStr, md.Version, err = md.FetchVersion(ctx, func() string {
-			if md.Kind == SourcePgBouncer {
-				return "SHOW VERSION"
-			}
-			return "SHOW POOL_VERSION"
-		}()); err != nil {
-			return
-		}
+		err = md.FetchVersion(ctx, md.Kind)
 	default:
-		sql := `select /* pgwatch_generated */ 
-	div(current_setting('server_version_num')::int, 10000) as ver, 
-	version(), 
-	pg_is_in_recovery(), 
-	current_database()::TEXT,
-	system_identifier,
-	current_setting('is_superuser')::bool
+		err = errors.Join(
+			md.FetchControlInfo(ctx),
+			md.DiscoverPlatform(ctx),
+			md.FetchApproxSize(ctx),
+			md.FetchExtensions(ctx))
+	}
+	if err == nil {
+		md.lastCheckedNs.Store(time.Now().UnixNano())
+	}
+	return
+}
+
+// FetchControlInfo queries pg_control_system() and populates the core RuntimeInfo fields.
+func (md *DbConn) FetchControlInfo(ctx context.Context) error {
+	sql := `select /* pgwatch_generated */
+div(current_setting('server_version_num')::int, 10000) as ver,
+version(),
+pg_is_in_recovery(),
+current_database()::TEXT,
+system_identifier,
+current_setting('is_superuser')::bool
 FROM
 	pg_control_system()`
+	controlCtx, controlCancel := db.WithOpTimeout(ctx, "runtime_info control", db.RuntimeInfoTimeout)
+	defer controlCancel()
+	return md.Conn.QueryRow(controlCtx, sql).
+		Scan(&md.Version, &md.VersionStr,
+			&md.IsInRecovery, &md.RealDbname,
+			&md.SystemIdentifier, &md.IsSuperuser)
+}
 
-		err = md.Conn.QueryRow(ctx, sql).
-			Scan(&md.Version, &md.VersionStr,
-				&md.IsInRecovery, &md.RealDbname,
-				&md.SystemIdentifier, &md.IsSuperuser)
-		if err != nil {
-			return err
-		}
-
-		md.ExecEnv = md.DiscoverPlatform(ctx)
-		md.ApproxDbSize = md.FetchApproxSize(ctx)
-
-		sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
-		var res pgx.Rows
-		res, err = md.Conn.Query(ctx, sqlExtensions)
-		if err == nil {
-			var ext string
-			var ver string
-			_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
-				extver := VersionToInt(ver)
-				if extver == 0 {
-					return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
-				}
-				md.Extensions[ext] = extver
-				return nil
-			})
-		}
-
+// FetchExtensions queries pg_extension and populates md.Extensions with the installed extension versions.
+func (md *DbConn) FetchExtensions(ctx context.Context) error {
+	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+	extCtx, extCancel := db.WithOpTimeout(ctx, "runtime_info extensions", db.RuntimeInfoTimeout)
+	defer extCancel()
+	res, err := md.Conn.Query(extCtx, sqlExtensions)
+	if err != nil {
+		return err
 	}
-	md.lastCheckedNs.Store(time.Now().UnixNano())
+	var ext, ver string
+	_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
+		extver := VersionToInt(ver)
+		if extver == 0 {
+			return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
+		}
+		md.Extensions[ext] = extver
+		return nil
+	})
 	return err
 }
 
-func (md *DbConn) FetchVersion(ctx context.Context, sql string) (version string, ver int, err error) {
-	if err = md.Conn.QueryRow(ctx, sql, pgx.QueryExecModeSimpleProtocol).Scan(&version); err != nil {
+func (md *DbConn) FetchVersion(ctx context.Context, kind Kind) (err error) {
+	sqls := map[Kind]string{SourcePgBouncer: "SHOW VERSION", SourcePgPool: "SHOW POOL_VERSION"}
+	versionCtx, versionCancel := db.WithOpTimeout(ctx, "runtime_info version", db.RuntimeInfoTimeout)
+	defer versionCancel()
+	if err = md.Conn.QueryRow(versionCtx, sqls[kind], pgx.QueryExecModeSimpleProtocol).Scan(&md.VersionStr); err != nil {
 		return
 	}
-	ver = VersionToInt(version)
+	md.Version = VersionToInt(md.VersionStr)
 	return
 }
 
 // DiscoverPlatform tries to discover the platform based on the database version string and some special settings
-// that are only available on certain platforms. Returns the platform name or "UNKNOWN" if not sure.
-func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
+// that are only available on certain platforms. Populates md.ExecEnv.
+func (md *DbConn) DiscoverPlatform(ctx context.Context) error {
 	if md.ExecEnv != "" {
-		return md.ExecEnv // carry over as not likely to change ever
+		return nil // carry over as not likely to change ever
 	}
+	platformCtx, platformCancel := db.WithOpTimeout(ctx, "runtime_info platform", db.RuntimeInfoTimeout)
+	defer platformCancel()
 	sql := `select /* pgwatch_generated */
 	case
 	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
@@ -336,15 +362,15 @@ func (md *DbConn) DiscoverPlatform(ctx context.Context) (platform string) {
 	else
 	  'UNKNOWN'
 	end as exec_env`
-	_ = md.Conn.QueryRow(ctx, sql).Scan(&platform)
-	return
+	return md.Conn.QueryRow(platformCtx, sql).Scan(&md.ExecEnv)
 }
 
-// FetchApproxSize returns the approximate size of the database in bytes
-func (md *DbConn) FetchApproxSize(ctx context.Context) (size int64) {
+// FetchApproxSize fetches the approximate size of the database in bytes and populates md.ApproxDbSize.
+func (md *DbConn) FetchApproxSize(ctx context.Context) error {
+	sizeCtx, sizeCancel := db.WithOpTimeout(ctx, "runtime_info size", db.RuntimeInfoTimeout)
+	defer sizeCancel()
 	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
-	_ = md.Conn.QueryRow(ctx, sqlApproxDBSize).Scan(&size)
-	return
+	return md.Conn.QueryRow(sizeCtx, sqlApproxDBSize).Scan(&md.ApproxDbSize)
 }
 
 // FunctionExists checks if a function exists in the database
@@ -368,11 +394,14 @@ func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []s
 	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
 	createdExts := make([]string, 0)
 
-	data, err := md.Conn.Query(ctx, sqlAvailableExts)
+	availableCtx, availableCancel := db.WithOpTimeout(ctx, "available extensions", db.RuntimeInfoTimeout)
+	data, err := md.Conn.Query(availableCtx, sqlAvailableExts)
 	if err != nil {
+		availableCancel()
 		return "", err
 	}
 	availableExts, err := pgx.CollectRows(data, pgx.RowTo[string])
+	availableCancel()
 	if err != nil {
 		return "", err
 	}
