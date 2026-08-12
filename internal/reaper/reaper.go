@@ -47,10 +47,10 @@ type ReadierReaper interface {
 // reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
 type reaper struct {
 	*cmdopts.Options
-	ready                atomic.Bool
-	measurementCh        chan metrics.MeasurementEnvelope
-	measurementCache     *InstanceMetricCache
-	logger log.Logger
+	ready            atomic.Bool
+	measurementCh    chan metrics.MeasurementEnvelope
+	measurementCache *InstanceMetricCache
+	logger           log.Logger
 	// monitoredSources and prevLoopMonitoredDBs are only mutated in the
 	// sequential sections of the main loop (LoadSources before the sweep and
 	// CleanupRemovedWorkers after the sweep barrier); they are read-only
@@ -112,10 +112,10 @@ func (r *reaper) Reap(ctx context.Context) {
 			r.PrintMemStats()
 		}
 		if err = r.LoadSources(ctx); err != nil {
-			r.logger.Error("could not refresh active sources, using last valid cache: %w", err)
+			r.logger.Error("could not refresh active sources, using last valid cache:", err)
 		}
 		if err = r.LoadMetrics(); err != nil {
-			r.logger.Error("could not refresh metric definitions, using last valid cache: %w", err)
+			r.logger.Error("could not refresh metric definitions, using last valid cache:", err)
 		}
 
 		// Sources are processed with bounded concurrency so that a single
@@ -138,7 +138,7 @@ func (r *reaper) Reap(ctx context.Context) {
 				switch md := monitoredSource.(type) {
 				case *sources.DbConn:
 					if err := md.FetchRuntimeInfo(srcCtx, true); err != nil {
-						srcL.Error("could not start metric gathering: %w", err)
+						srcL.Error("could not start metric gathering:", err)
 						return nil
 					}
 					if r.FilterSource(srcCtx, md) {
