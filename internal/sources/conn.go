@@ -293,23 +293,7 @@ func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err 
 			return
 		}
 	default:
-		sql := `select /* pgwatch_generated */
-div(current_setting('server_version_num')::int, 10000) as ver,
-version(),
-pg_is_in_recovery(),
-current_database()::TEXT,
-system_identifier,
-current_setting('is_superuser')::bool
-FROM
-	pg_control_system()`
-
-		controlCtx, controlCancel := db.WithOpTimeout(ctx, "runtime_info control", db.RuntimeInfoTimeout)
-		err = md.Conn.QueryRow(controlCtx, sql).
-			Scan(&md.Version, &md.VersionStr,
-				&md.IsInRecovery, &md.RealDbname,
-				&md.SystemIdentifier, &md.IsSuperuser)
-		controlCancel()
-		if err != nil {
+		if err = md.FetchControlInfo(ctx); err != nil {
 			return err
 		}
 
@@ -320,6 +304,25 @@ FROM
 	}
 	md.lastCheckedNs.Store(time.Now().UnixNano())
 	return err
+}
+
+// FetchControlInfo queries pg_control_system() and populates the core RuntimeInfo fields.
+func (md *DbConn) FetchControlInfo(ctx context.Context) error {
+	sql := `select /* pgwatch_generated */
+div(current_setting('server_version_num')::int, 10000) as ver,
+version(),
+pg_is_in_recovery(),
+current_database()::TEXT,
+system_identifier,
+current_setting('is_superuser')::bool
+FROM
+	pg_control_system()`
+	controlCtx, controlCancel := db.WithOpTimeout(ctx, "runtime_info control", db.RuntimeInfoTimeout)
+	defer controlCancel()
+	return md.Conn.QueryRow(controlCtx, sql).
+		Scan(&md.Version, &md.VersionStr,
+			&md.IsInRecovery, &md.RealDbname,
+			&md.SystemIdentifier, &md.IsSuperuser)
 }
 
 // FetchExtensions queries pg_extension and populates md.Extensions with the installed extension versions.
