@@ -15,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -117,34 +118,45 @@ func (r *reaper) Reap(ctx context.Context) {
 			r.logger.Error("could not refresh metric definitions, using last valid cache: %w", err)
 		}
 
+		// Sources are processed with bounded concurrency so that a single
+		// hanging source cannot serialize the whole refresh. Per-source
+		// processing order is not guaranteed.
+		var g errgroup.Group
+		g.SetLimit(maxConcurrentSourceConnects)
 		for _, monitoredSource := range r.monitoredSources {
-			src := monitoredSource.GetSource()
-			srcL := r.logger.WithField("source", src.Name)
-			ctx = log.WithLogger(ctx, srcL)
+			g.Go(func() error {
+				src := monitoredSource.GetSource()
+				srcL := r.logger.WithField("source", src.Name)
+				srcCtx := log.WithLogger(ctx, srcL)
 
-			if err = monitoredSource.Connect(ctx, r.Sources); err != nil {
-				r.WriteInstanceDown(src.Name)
-				srcL.Warning("could not init connection, retrying on next iteration:", err)
-				continue
-			}
+				if err := monitoredSource.Connect(srcCtx, r.Sources); err != nil {
+					r.WriteInstanceDown(src.Name)
+					srcL.Warning("could not init connection, retrying on next iteration:", err)
+					return nil
+				}
 
-			switch md := monitoredSource.(type) {
-			case *sources.DbConn:
-				if err = md.FetchRuntimeInfo(ctx, true); err != nil {
-					srcL.Error("could not start metric gathering: %w", err)
-					continue
+				switch md := monitoredSource.(type) {
+				case *sources.DbConn:
+					if err := md.FetchRuntimeInfo(srcCtx, true); err != nil {
+						srcL.Error("could not start metric gathering: %w", err)
+						return nil
+					}
+					if r.FilterSource(srcCtx, md) {
+						return nil
+					}
+					r.CreateSourceHelpers(srcCtx, md)
+					r.TrackRecoveryStatus(srcCtx, md)
+					r.SyncMetricsToSinks(srcCtx, md)
+					r.StartWorker(srcCtx, src.Name, NewDbConnReaper(r, md))
+				case *sources.PromConn:
+					r.StartWorker(srcCtx, src.Name, NewPromSourceReaper(r, md))
 				}
-				if r.FilterSource(ctx, md) {
-					continue
-				}
-				r.CreateSourceHelpers(ctx, md)
-				r.TrackRecoveryStatus(ctx, md)
-				r.SyncMetricsToSinks(ctx, md)
-				r.StartWorker(ctx, src.Name, NewDbConnReaper(r, md))
-			case *sources.PromConn:
-				r.StartWorker(ctx, src.Name, NewPromSourceReaper(r, md))
-			}
+				return nil
+			})
 		}
+		// Barrier: cleanup stays sequential and runs only after every source
+		// of this sweep has been processed.
+		_ = g.Wait()
 		r.CleanupRemovedWorkers(ctx)
 		select {
 		case <-time.After(time.Second * time.Duration(r.Sources.Refresh)):
