@@ -108,7 +108,7 @@ description: "Task list for WS1 — Bounded Contexts for All Database Round-Trip
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T301 [P] [US3] Add failing test in `internal/sources/resolver_test.go`: resolution against a stalled target fails within `db.ResolverTimeout` (shrink the var) with an error whose cause names the resolver operation; extend the existing container-based `TestMonitoredDatabase_ResolveDatabasesFromPostgres` setup rather than duplicating container boot.
+- [x] T301 [P] [US3] Add failing test in `internal/sources/resolver_test.go`: resolution against a stalled target fails within `db.ResolverTimeout` (shrink the var) with an error whose cause names the resolver operation; extend the existing container-based `TestMonitoredDatabase_ResolveDatabasesFromPostgres` setup rather than duplicating container boot.
 
 ### Implementation for User Story 3
 

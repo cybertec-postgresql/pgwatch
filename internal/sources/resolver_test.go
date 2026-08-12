@@ -3,6 +3,7 @@ package sources_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	client "go.etcd.io/etcd/client/v3"
 
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
 )
@@ -42,6 +44,42 @@ func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {
 	//check unexpected database
 	db = dbs.GetMonitoredDatabase(md.Name + "_unexpected")
 	assert.Nil(t, db)
+}
+
+func TestResolveDatabasesFromPostgres_ResolverTimeout(t *testing.T) {
+	// Shrink the resolver timeout so the test completes quickly.
+	orig := db.ResolverTimeout
+	db.ResolverTimeout = 150 * time.Millisecond
+	t.Cleanup(func() { db.ResolverTimeout = orig })
+
+	// BlackholeListener accepts TCP but never completes the pgwire handshake,
+	// causing NewConn (or the subsequent Query) to stall indefinitely when
+	// called with context.Background() / context.TODO().
+	addr, closeFn := testutil.BlackholeListener(t)
+	defer closeFn()
+
+	// connect_timeout is set longer than ResolverTimeout so that only the
+	// ResolverTimeout deadline (once wired) terminates the call.
+	connStr := fmt.Sprintf("postgres://postgres@%s/postgres?connect_timeout=10&sslmode=disable", addr)
+
+	md := sources.Source{}
+	md.Name = "stall_test"
+	md.Kind = sources.SourcePostgresDiscovery
+	md.ConnStr = connStr
+
+	start := time.Now()
+	_, err := sources.ResolveDatabasesFromPostgres(md)
+	elapsed := time.Since(start)
+
+	require.Error(t, err, "expected an error from a stalled resolver")
+
+	// Must return within the deadline (with generous test-scheduling slack).
+	assert.Less(t, elapsed, db.ResolverTimeout+2*time.Second,
+		"ResolveDatabasesFromPostgres took too long: %v", elapsed)
+
+	// The error (or its cause) must name the resolver operation.
+	assert.Contains(t, err.Error(), "resolve stall_test",
+		"error cause should name the resolver operation; got: %v", err)
 }
 
 func TestMonitoredDatabase_ResolveDatabasesFromPatroni(t *testing.T) {
