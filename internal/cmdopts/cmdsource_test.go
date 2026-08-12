@@ -91,10 +91,22 @@ func TestSourceResolveCommand_Execute(t *testing.T) {
 	})
 
 	t.Run("ResolveError", func(t *testing.T) {
+		// a distinct conn_str has no cached resolution, so the error propagates
+		f2, err := os.CreateTemp(t.TempDir(), "sample.config.yaml")
+		require.NoError(t, err)
+		defer f2.Close()
+
+		_, err = f2.WriteString(`
+- name: test1
+  kind: postgres-continuous-discovery
+  is_enabled: true
+  conn_str: postgresql://foo@quux/baz`)
+		require.NoError(t, err)
+
 		mock.ExpectQuery("select.+datname").
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(assert.AnError)
-		os.Args = []string{0: "config_test", "--sources=" + f.Name(), "source", "resolve"}
+		os.Args = []string{0: "config_test", "--sources=" + f2.Name(), "source", "resolve"}
 		_, err = New(nil)
 		assert.ErrorIs(t, err, assert.AnError)
 		assert.NoError(t, mock.ExpectationsWereMet())

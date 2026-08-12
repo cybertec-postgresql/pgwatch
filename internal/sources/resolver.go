@@ -85,8 +85,30 @@ var logger log.Logger = log.FallbackLogger
 var (
 	// needed for cases where DCS is temporarily down; don't want to immediately remove monitoring of DBs
 	lastFoundClusterMembers = make(map[string][]PatroniClusterMember)
-	resolverCacheMu         sync.Mutex // guards resolver fallback caches
+	// lastFoundDatabases is keyed by the source's identity (name + conn string + include/exclude patterns) so a
+	// reconfigured source never inherits the previous target's database list. Guarded by resolverCacheMu.
+	lastFoundDatabases = make(map[postgresDiscoveryKey]SourceConns)
+	resolverCacheMu    sync.Mutex // guards resolver fallback caches
 )
+
+// postgresDiscoveryKey uniquely identifies a Postgres discovery source for caching purposes.
+// It MUST incorporate every field that would change the set of discovered databases; otherwise a
+// reconfigured source could be served the previous target's last-known-good list.
+type postgresDiscoveryKey struct {
+	name           string
+	connStr        string
+	includePattern string
+	excludePattern string
+}
+
+func postgresDiscoveryKeyOf(s Source) postgresDiscoveryKey {
+	return postgresDiscoveryKey{
+		name:           s.Name,
+		connStr:        s.ConnStr,
+		includePattern: s.IncludePattern,
+		excludePattern: s.ExcludePattern,
+	}
+}
 
 func getConsulClusterMembers(Source) ([]PatroniClusterMember, error) {
 	return nil, errors.ErrUnsupported
@@ -368,8 +390,35 @@ func ResolveDatabasesFromPatroni(source Source) (SourceConns, error) {
 }
 
 // ResolveDatabasesFromPostgres reads all the databases from the given cluster,
-// additionally matching/not matching specified regex patterns
+// additionally matching/not matching specified regex patterns.
+//
+// On any helper error (pool create or discovery query) and the presence of a
+// previously-cached successful result for the same source identity, the cached
+// list is returned with a nil error: a transient discovery failure (DNS hiccup,
+// connect timeout, discovery-SQL permission error) must not tear down monitoring
+// of already-known databases. The accepted trade-off is that a database dropped
+// server-side while discovery keeps failing stays monitored from cache (surfaced
+// as per-cycle connect errors reported as down) until the next successful
+// resolution replaces the entry.
 func ResolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
+	resolvedDbs, err = resolveDatabasesFromPostgres(s)
+	key := postgresDiscoveryKeyOf(s)
+	resolverCacheMu.Lock()
+	defer resolverCacheMu.Unlock()
+	if err == nil {
+		lastFoundDatabases[key] = resolvedDbs
+		return resolvedDbs, nil
+	}
+	cached, ok := lastFoundDatabases[key]
+	if ok && len(cached) > 0 {
+		logger.WithField("source", s.Name).WithError(err).Warning("postgres discovery failed; serving last-known-good database list from cache")
+		return cached, nil
+	}
+	return nil, err
+}
+
+// resolveDatabasesFromPostgres is the inner helper that actually runs the discovery query.
+func resolveDatabasesFromPostgres(s Source) (resolvedDbs SourceConns, err error) {
 	var (
 		c      db.PgxPoolIface
 		dbname string

@@ -9,9 +9,10 @@ func (md *DbConn) SetLastCheckedForTesting(t time.Time) {
 }
 
 // ResetResolverCachesForTesting clears all resolver fallback caches under the
-// shared mutex so tests start from a known state without hitting the DCS.
+// shared mutex so tests start from a known state without hitting the DCS or DB.
 func ResetResolverCachesForTesting() {
 	resolverCacheMu.Lock()
 	defer resolverCacheMu.Unlock()
 	lastFoundClusterMembers = make(map[string][]PatroniClusterMember)
+	lastFoundDatabases = make(map[postgresDiscoveryKey]SourceConns)
 }
