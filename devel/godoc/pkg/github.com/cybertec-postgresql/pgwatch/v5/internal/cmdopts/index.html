@@ -798,7 +798,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				
 			
 				
-				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdoptions.go.html#L197">ValidateConfig</a>
+				<h3 id="Options.ValidateConfig">func (*Options) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts/cmdoptions.go.html#L198">ValidateConfig</a>
 					<a class="permalink" href="#Options.ValidateConfig">&#xb6;</a>
 					
 					
@@ -807,6 +807,7 @@ values might be incorrect, e.g. wrong file name, lack of privileges, etc.
 				<p>ValidateConfig checks if the configuration is valid.
 Configuration database can be specified for one of the --sources or --metrics.
 If one is specified, the other one is set to the same value.
+If both --sources and --metrics are Postgres connection strings, they must be identical.
 
 				
 				

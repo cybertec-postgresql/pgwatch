@@ -125,7 +125,16 @@
 			
 			
 				
+				<dd><a href="#EnsureConfigSchema">func EnsureConfigSchema(ctx context.Context, conn db.PgxIface) error</a></dd>
+			
+				
 				<dd><a href="#GetDefaultBuiltInMetrics">func GetDefaultBuiltInMetrics() []string</a></dd>
+			
+				
+				<dd><a href="#MigrateConfigSchema">func MigrateConfigSchema(ctx context.Context, conn db.PgxIface) error</a></dd>
+			
+				
+				<dd><a href="#NeedsConfigSchemaMigration">func NeedsConfigSchemaMigration(ctx context.Context, conn db.PgxIface) (bool, error)</a></dd>
 			
 				
 				<dd><a href="#RowToMeasurement">func RowToMeasurement(row pgx.CollectableRow) (map[string]any, error)</a></dd>
@@ -444,11 +453,11 @@
 				<pre>var <span id="defaultMetricsYAML">defaultMetricsYAML</span> []<a href="https://pkg.go.dev/builtin/#byte">byte</a></pre>
 			
 				
-				<pre>var <span id="initMigrator">initMigrator</span> = func(dmrw *dbMetricReaderWriter) (*<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migrator">Migrator</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>) {
+				<pre>var <span id="initMigrator">initMigrator</span> = func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>) (*<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migrator">Migrator</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>) {
     return <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#New">New</a>(
         <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#TableName">TableName</a>(&#34;pgwatch.migration&#34;),
         <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#SetNotice">SetNotice</a>(func(s <a href="https://pkg.go.dev/builtin/#string">string</a>) {
-            <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#GetLogger">GetLogger</a>(dmrw.ctx).<a href="#Info">Info</a>(s)
+            <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/log/#GetLogger">GetLogger</a>(ctx).<a href="#Info">Info</a>(s)
         }),
         migrations(),
     )
@@ -585,6 +594,21 @@
 		
 			
 			
+			<h2 id="EnsureConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L51">EnsureConfigSchema</a>
+				<a class="permalink" href="#EnsureConfigSchema">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func EnsureConfigSchema(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxIface">PgxIface</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<p>EnsureConfigSchema creates the pgwatch configuration schema in the database if it
+does not exist yet, seeding it with the default metric and preset definitions.
+
+			
+			
+
+		
+			
+			
 			<h2 id="GetDefaultBuiltInMetrics">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/default.go.html#L8">GetDefaultBuiltInMetrics</a>
 				<a class="permalink" href="#GetDefaultBuiltInMetrics">&#xb6;</a>
 				
@@ -592,6 +616,34 @@
 			</h2>
 			<pre>func GetDefaultBuiltInMetrics() []<a href="https://pkg.go.dev/builtin/#string">string</a></pre>
 			
+			
+			
+
+		
+			
+			
+			<h2 id="MigrateConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L56">MigrateConfigSchema</a>
+				<a class="permalink" href="#MigrateConfigSchema">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func MigrateConfigSchema(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxIface">PgxIface</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+			<p>MigrateConfigSchema applies all pending configuration schema migrations to the database.
+
+			
+			
+
+		
+			
+			
+			<h2 id="NeedsConfigSchemaMigration">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L65">NeedsConfigSchemaMigration</a>
+				<a class="permalink" href="#NeedsConfigSchemaMigration">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func NeedsConfigSchemaMigration(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#PgxIface">PgxIface</a>) (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>NeedsConfigSchemaMigration reports if the configuration schema in the database is outdated.
+
 			
 			
 
@@ -1368,7 +1420,7 @@ Returns an error if any name is not found.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.Migrate">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L50">Migrate</a>
+				<h3 id="dbMetricReaderWriter.Migrate">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L74">Migrate</a>
 					<a class="permalink" href="#dbMetricReaderWriter.Migrate">&#xb6;</a>
 					
 					
@@ -1381,7 +1433,7 @@ Returns an error if any name is not found.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.NeedsMigration">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L59">NeedsMigration</a>
+				<h3 id="dbMetricReaderWriter.NeedsMigration">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/metrics/postgres_schema.go.html#L79">NeedsMigration</a>
 					<a class="permalink" href="#dbMetricReaderWriter.NeedsMigration">&#xb6;</a>
 					
 					

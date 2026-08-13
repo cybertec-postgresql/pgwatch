@@ -2008,9 +2008,10 @@ metric definitions and presets.</p>
 <p class="admonition-title">Info</p>
 <p>Even though configuration database can hold both sources and metrics definitions,
 you are free to use any combination of configurations. For example, you can use a database
-for metrics and YAML file for sources, or vice versa.</p>
+for metrics and YAML file for sources, or vice versa. The only combination that is
+rejected is two different Postgres connection strings for <code>--sources</code> and <code>--metrics</code>;
+when both are Postgres URIs they must be identical.</p>
 </div>
-<p>That's it! You have successfully bootstrapped the configuration database for pgwatch.</p>
 <p>If now you want to see the tables created by pgwatch in the configuration database, you can connect to the database
 using the <code>psql</code> command-line tool and list the tables.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$ psql postgresql://pgwatch:pgwatchadmin@localhost/pgwatch

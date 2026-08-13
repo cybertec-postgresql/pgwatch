@@ -397,6 +397,12 @@ At the moment, sources definitions support two storages:
 					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.GetSources">func (r *dbSourcesReaderWriter) GetSources() (Sources, error)</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.Migrate">func (r *dbSourcesReaderWriter) Migrate() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.NeedsMigration">func (r *dbSourcesReaderWriter) NeedsMigration() (bool, error)</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="#dbSourcesReaderWriter.UpdateSource">func (r *dbSourcesReaderWriter) UpdateSource(md Source) error</a></dd>
 				
 					
@@ -531,6 +537,10 @@ At the moment, sources definitions support two storages:
     <a href="#SourcePatroniDiscovery">SourcePatroniDiscovery</a>,
     <a href="#SourcePrometheus">SourcePrometheus</a>,
 }</pre>
+			
+				<p>make sure *dbSourcesReaderWriter implements the Migrator interface
+
+				<pre>var <span id="_">_</span> <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/internal/db/#Migrator">Migrator</a> = (*dbSourcesReaderWriter)(<a href="https://pkg.go.dev/builtin/#nil">nil</a>)</pre>
 			
 				<p>defaultResolver backs the convenience methods on Source and Sources so that
 existing callers keep a single process-wide fallback cache without having to
@@ -1344,7 +1354,7 @@ Connect must be called before Scrape.
 
 			
 				
-				<h3 id="NewPostgresSourcesReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L15">NewPostgresSourcesReaderWriter</a>
+				<h3 id="NewPostgresSourcesReaderWriter">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L16">NewPostgresSourcesReaderWriter</a>
 					<a class="permalink" href="#NewPostgresSourcesReaderWriter">&#xb6;</a>
 					
 					
@@ -1355,7 +1365,7 @@ Connect must be called before Scrape.
 				
 			
 				
-				<h3 id="NewPostgresSourcesReaderWriterConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L23">NewPostgresSourcesReaderWriterConn</a>
+				<h3 id="NewPostgresSourcesReaderWriterConn">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L24">NewPostgresSourcesReaderWriterConn</a>
 					<a class="permalink" href="#NewPostgresSourcesReaderWriterConn">&#xb6;</a>
 					
 					
@@ -1808,7 +1818,7 @@ It delegates to the package-wide defaultResolver.
 		
 			
 			
-			<h2 id="dbSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L31">dbSourcesReaderWriter</a>
+			<h2 id="dbSourcesReaderWriter">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L35">dbSourcesReaderWriter</a>
 				<a class="permalink" href="#dbSourcesReaderWriter">&#xb6;</a>
 				
 				
@@ -1832,7 +1842,7 @@ It delegates to the package-wide defaultResolver.
 
 			
 				
-				<h3 id="dbSourcesReaderWriter.CreateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L129">CreateSource</a>
+				<h3 id="dbSourcesReaderWriter.CreateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L144">CreateSource</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.CreateSource">&#xb6;</a>
 					
 					
@@ -1844,7 +1854,7 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.DeleteSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L133">DeleteSource</a>
+				<h3 id="dbSourcesReaderWriter.DeleteSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L148">DeleteSource</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.DeleteSource">&#xb6;</a>
 					
 					
@@ -1856,7 +1866,7 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.GetSources">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L138">GetSources</a>
+				<h3 id="dbSourcesReaderWriter.GetSources">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L153">GetSources</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.GetSources">&#xb6;</a>
 					
 					
@@ -1868,7 +1878,31 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.UpdateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L125">UpdateSource</a>
+				<h3 id="dbSourcesReaderWriter.Migrate">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L43">Migrate</a>
+					<a class="permalink" href="#dbSourcesReaderWriter.Migrate">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *dbSourcesReaderWriter) Migrate() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbSourcesReaderWriter.NeedsMigration">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L47">NeedsMigration</a>
+					<a class="permalink" href="#dbSourcesReaderWriter.NeedsMigration">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (r *dbSourcesReaderWriter) NeedsMigration() (<a href="https://pkg.go.dev/builtin/#bool">bool</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="dbSourcesReaderWriter.UpdateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L140">UpdateSource</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.UpdateSource">&#xb6;</a>
 					
 					
@@ -1880,7 +1914,7 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.WriteSources">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L36">WriteSources</a>
+				<h3 id="dbSourcesReaderWriter.WriteSources">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L51">WriteSources</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.WriteSources">&#xb6;</a>
 					
 					
@@ -1892,7 +1926,7 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.createSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L92">createSource</a>
+				<h3 id="dbSourcesReaderWriter.createSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L107">createSource</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.createSource">&#xb6;</a>
 					
 					
@@ -1904,7 +1938,7 @@ It delegates to the package-wide defaultResolver.
 				
 			
 				
-				<h3 id="dbSourcesReaderWriter.updateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L53">updateSource</a>
+				<h3 id="dbSourcesReaderWriter.updateSource">func (*dbSourcesReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sources/postgres.go.html#L68">updateSource</a>
 					<a class="permalink" href="#dbSourcesReaderWriter.updateSource">&#xb6;</a>
 					
 					
