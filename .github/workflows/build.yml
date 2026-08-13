@@ -10,7 +10,7 @@ on:
     branches:
       - master
   pull_request:
-    paths-ignore: ['docs/**', 'mkdocs.yml']
+    paths-ignore: ['grafana/**', 'docs/**', 'mkdocs.yml']
   workflow_dispatch:
 
 concurrency:

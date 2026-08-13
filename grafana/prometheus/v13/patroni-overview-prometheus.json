@@ -3470,7 +3470,8 @@
     "liveNow": false,
     "preload": false,
     "tags": [
-      "pgwatch"
+      "pgwatch",
+      "prometheus"
     ],
     "timeSettings": {
       "from": "now-1h",

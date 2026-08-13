@@ -2,7 +2,7 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "postgres-version-overview"
+    "name": "postgres-version-overview-prometheus"
   },
   "spec": {
     "annotations": [
@@ -48,59 +48,17 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
+                      "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "pgwatch-metrics"
+                        "name": "pgwatch-prometheus"
                       },
                       "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\",dbname=~\"$dbname\"}[3h])) <= $lower_than_server_version_num",
                         "format": "table",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "$__interval"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "null"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "sproc_stats",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "query": "SELECT top(\"spread\", \"function_full_name\", \"oid\", $top) FROM (SELECT spread(\"total_time\") FROM \"sproc_stats\" WHERE $timeFilter AND \"dbname\" = '$dbname' GROUP BY time(3650d), \"function_full_name\", \"oid\" fill(none) ) WHERE spread > 0",
-                        "rawQuery": true,
-                        "rawSql": "SELECT DISTINCT ON (sn.dbname)\n  sn.dbname,\n  (sn.data->>'value')::int8 AS server_version_num\nFROM settings_num sn\nWHERE sn.time > now() - interval '3 hours'\n  AND sn.dbname IN ($dbname)\n  AND sn.tag_data->>'name' = 'server_version_num'\n  AND (sn.data->>'value')::int8 <= $lower_than_server_version_num\nORDER BY sn.dbname, sn.time DESC",
-                        "resultFormat": "table",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "total_time"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            }
-                          ]
-                        ],
-                        "tags": [],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
+                        "instant": true,
+                        "legendFormat": "{{dbname}}"
                       }
                     },
                     "refId": "A",
@@ -115,6 +73,22 @@
                   "spec": {
                     "options": {
                       "reducers": []
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time": true
+                      },
+                      "includeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "Value": "server_version_num"
+                      }
                     }
                   }
                 }
@@ -343,7 +317,8 @@
     "liveNow": false,
     "preload": false,
     "tags": [
-      "pgwatch"
+      "pgwatch",
+      "prometheus"
     ],
     "timeSettings": {
       "from": "now-6h",
@@ -382,18 +357,19 @@
           "skipUrlSync": false,
           "query": {
             "kind": "DataQuery",
-            "group": "grafana-postgresql-datasource",
+            "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "pgwatch-metrics"
+              "name": "pgwatch-prometheus"
             },
             "spec": {
-              "__legacyStringValue": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings_num' ORDER BY 1;"
+              "query": "label_values(pgwatch_settings_num_value{name=\"server_version_num\"}, dbname)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
             }
           },
           "regex": "",
           "sort": "disabled",
-          "definition": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'settings_num' ORDER BY 1;",
+          "definition": "label_values(pgwatch_settings_num_value{name=\"server_version_num\"}, dbname)",
           "options": [],
           "multi": true,
           "includeAll": true,
@@ -415,18 +391,19 @@
           "skipUrlSync": false,
           "query": {
             "kind": "DataQuery",
-            "group": "grafana-postgresql-datasource",
+            "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "pgwatch-metrics"
+              "name": "pgwatch-prometheus"
             },
             "spec": {
-              "__legacyStringValue": "SELECT DISTINCT (data->>'value')::int\nFROM settings_num\nWHERE tag_data->>'name' = 'server_version_num'\n  AND time > now() - '24h'::interval\nORDER BY 1 DESC"
+              "query": "query_result(max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\"}[3h])))",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
             }
           },
-          "regex": "",
+          "regex": "/ ([0-9]+) [0-9]+$/",
           "sort": "disabled",
-          "definition": "SELECT DISTINCT (data->>'value')::int\nFROM settings_num\nWHERE tag_data->>'name' = 'server_version_num'\n  AND time > now() - '24h'::interval\nORDER BY 1 DESC",
+          "definition": "query_result(max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\"}[3h])))",
           "options": [],
           "multi": false,
           "includeAll": false,
