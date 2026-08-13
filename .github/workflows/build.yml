@@ -212,3 +212,18 @@ jobs:
 
     - name: Build mkdocs
       run: mike deploy ${{ env.push_opt }} devel
+
+  ci-passed:
+    name: Build and Lint
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+    steps:
+      - name: Check build result
+        run: |
+          if [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]; then
+            echo "Build passed or was skipped (docs-only change)"
+          else
+            echo "Build failed"
+            exit 1
+          fi
