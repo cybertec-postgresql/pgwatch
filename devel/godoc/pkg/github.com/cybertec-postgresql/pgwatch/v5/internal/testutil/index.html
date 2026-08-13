@@ -151,6 +151,26 @@ and will not be included in production binaries.
 			
 			
 				
+				<dd><a href="#BlockingBatchResults">type BlockingBatchResults</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.Close">func (b *BlockingBatchResults) Close() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.Err">func (b *BlockingBatchResults) Err() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.Exec">func (b *BlockingBatchResults) Exec() (pgconn.CommandTag, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.Query">func (b *BlockingBatchResults) Query() (pgx.Rows, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.QueryRow">func (b *BlockingBatchResults) QueryRow() pgx.Row</a></dd>
+				
+			
+				
 				<dd><a href="#BlockingPool">type BlockingPool</a></dd>
 				
 				
@@ -251,26 +271,6 @@ and will not be included in production binaries.
 				
 					
 					<dd>&nbsp; &nbsp; <a href="#SafeBuffer.Write">func (b *SafeBuffer) Write(p []byte) (int, error)</a></dd>
-				
-			
-				
-				<dd><a href="#blockingBatchResults">type blockingBatchResults</a></dd>
-				
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Close">func (b *blockingBatchResults) Close() error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Err">func (b *blockingBatchResults) Err() error</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Exec">func (b *blockingBatchResults) Exec() (pgconn.CommandTag, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.Query">func (b *blockingBatchResults) Query() (pgx.Rows, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#blockingBatchResults.QueryRow">func (b *blockingBatchResults) QueryRow() pgx.Row</a></dd>
 				
 			
 				
@@ -566,6 +566,96 @@ This is useful for testing log parsing functionality with server_log_event_count
 			
 
 		
+		
+			
+			
+			<h2 id="BlockingBatchResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L179">BlockingBatchResults</a>
+				<a class="permalink" href="#BlockingBatchResults">&#xb6;</a>
+				
+				
+			</h2>
+			<p>BlockingBatchResults makes the first Query call honor ctx cancellation.
+
+			<pre>type BlockingBatchResults struct {
+<span id="BlockingBatchResults.ctx"></span>    ctx    <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
+<span id="BlockingBatchResults.closed"></span>    closed <a href="https://pkg.go.dev/builtin/#bool">bool</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+				
+				<h3 id="BlockingBatchResults.Close">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L195">Close</a>
+					<a class="permalink" href="#BlockingBatchResults.Close">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) Close() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="BlockingBatchResults.Err">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L206">Err</a>
+					<a class="permalink" href="#BlockingBatchResults.Err">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) Err() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="BlockingBatchResults.Exec">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L191">Exec</a>
+					<a class="permalink" href="#BlockingBatchResults.Exec">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) Exec() (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Exec blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingBatchResults.Query">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L185">Query</a>
+					<a class="permalink" href="#BlockingBatchResults.Query">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) Query() (pgx.<a href="#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>Query blocks until ctx.Done() and returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingBatchResults.QueryRow">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L203">QueryRow</a>
+					<a class="permalink" href="#BlockingBatchResults.QueryRow">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) QueryRow() pgx.<a href="#Row">Row</a></pre>
+				<p>QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
+
+				
+				
+				
+			
 		
 			
 			
@@ -1040,96 +1130,6 @@ assert.Contains(t, out.String(), &quot;expected warning&quot;)
 				</h3>
 				<pre>func (b *<a href="#SafeBuffer">SafeBuffer</a>) Write(p []<a href="https://pkg.go.dev/builtin/#byte">byte</a>) (<a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				
-				
-				
-				
-			
-		
-			
-			
-			<h2 id="blockingBatchResults">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L179">blockingBatchResults</a>
-				<a class="permalink" href="#blockingBatchResults">&#xb6;</a>
-				
-				
-			</h2>
-			<p>blockingBatchResults makes the first Query call honor ctx cancellation.
-
-			<pre>type blockingBatchResults struct {
-<span id="blockingBatchResults.ctx"></span>    ctx    <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>
-<span id="blockingBatchResults.closed"></span>    closed <a href="https://pkg.go.dev/builtin/#bool">bool</a>
-}
-</pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-				
-				<h3 id="blockingBatchResults.Close">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L195">Close</a>
-					<a class="permalink" href="#blockingBatchResults.Close">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (b *blockingBatchResults) Close() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="blockingBatchResults.Err">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L206">Err</a>
-					<a class="permalink" href="#blockingBatchResults.Err">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (b *blockingBatchResults) Err() <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
-				
-				
-				
-				
-			
-				
-				<h3 id="blockingBatchResults.Exec">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L191">Exec</a>
-					<a class="permalink" href="#blockingBatchResults.Exec">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (b *blockingBatchResults) Exec() (<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/">pgconn</a>.<a href="https://pkg.go.dev/github.com/jackc/pgx/v5/pgconn/#CommandTag">CommandTag</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>Exec blocks until ctx.Done() and returns ctx.Err().
-
-				
-				
-				
-			
-				
-				<h3 id="blockingBatchResults.Query">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L185">Query</a>
-					<a class="permalink" href="#blockingBatchResults.Query">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (b *blockingBatchResults) Query() (pgx.<a href="#Rows">Rows</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-				<p>Query blocks until ctx.Done() and returns ctx.Err().
-
-				
-				
-				
-			
-				
-				<h3 id="blockingBatchResults.QueryRow">func (*blockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/testutil/mocks.go.html#L203">QueryRow</a>
-					<a class="permalink" href="#blockingBatchResults.QueryRow">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (b *blockingBatchResults) QueryRow() pgx.<a href="#Row">Row</a></pre>
-				<p>QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
-
 				
 				
 				

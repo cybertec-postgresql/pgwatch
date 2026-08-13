@@ -209,7 +209,7 @@
 <span id="L152" class="ln">   152  </span><span class="comment">// SendBatch blocks until ctx.Done() and returns a BatchResults whose</span>
 <span id="L153" class="ln">   153  </span><span class="comment">// first Query call returns ctx.Err().</span>
 <span id="L154" class="ln">   154  </span>func (BlockingPool) SendBatch(ctx context.Context, _ *pgx.Batch) pgx.BatchResults {
-<span id="L155" class="ln">   155  </span>	return &amp;blockingBatchResults{ctx: ctx}
+<span id="L155" class="ln">   155  </span>	return &amp;BlockingBatchResults{ctx: ctx}
 <span id="L156" class="ln">   156  </span>}
 <span id="L157" class="ln">   157  </span>
 <span id="L158" class="ln">   158  </span><span class="comment">// Acquire blocks until ctx.Done() and returns ctx.Err().</span>
@@ -232,24 +232,24 @@
 <span id="L175" class="ln">   175  </span>	return b.ctx.Err()
 <span id="L176" class="ln">   176  </span>}
 <span id="L177" class="ln">   177  </span>
-<span id="L178" class="ln">   178  </span><span class="comment">// blockingBatchResults makes the first Query call honor ctx cancellation.</span>
-<span id="L179" class="ln">   179  </span>type blockingBatchResults struct {
+<span id="L178" class="ln">   178  </span><span class="comment">// BlockingBatchResults makes the first Query call honor ctx cancellation.</span>
+<span id="L179" class="ln">   179  </span>type BlockingBatchResults struct {
 <span id="L180" class="ln">   180  </span>	ctx    context.Context
 <span id="L181" class="ln">   181  </span>	closed bool
 <span id="L182" class="ln">   182  </span>}
 <span id="L183" class="ln">   183  </span>
 <span id="L184" class="ln">   184  </span><span class="comment">// Query blocks until ctx.Done() and returns ctx.Err().</span>
-<span id="L185" class="ln">   185  </span>func (b *blockingBatchResults) Query() (pgx.Rows, error) {
+<span id="L185" class="ln">   185  </span>func (b *BlockingBatchResults) Query() (pgx.Rows, error) {
 <span id="L186" class="ln">   186  </span>	&lt;-b.ctx.Done()
 <span id="L187" class="ln">   187  </span>	return nil, b.ctx.Err()
 <span id="L188" class="ln">   188  </span>}
 <span id="L189" class="ln">   189  </span>
 <span id="L190" class="ln">   190  </span><span class="comment">// Exec blocks until ctx.Done() and returns ctx.Err().</span>
-<span id="L191" class="ln">   191  </span>func (b *blockingBatchResults) Exec() (pgconn.CommandTag, error) {
+<span id="L191" class="ln">   191  </span>func (b *BlockingBatchResults) Exec() (pgconn.CommandTag, error) {
 <span id="L192" class="ln">   192  </span>	&lt;-b.ctx.Done()
 <span id="L193" class="ln">   193  </span>	return pgconn.CommandTag{}, b.ctx.Err()
 <span id="L194" class="ln">   194  </span>}
-<span id="L195" class="ln">   195  </span>func (b *blockingBatchResults) Close() error {
+<span id="L195" class="ln">   195  </span>func (b *BlockingBatchResults) Close() error {
 <span id="L196" class="ln">   196  </span>	b.closed = true
 <span id="L197" class="ln">   197  </span>	return nil
 <span id="L198" class="ln">   198  </span>}
@@ -257,10 +257,10 @@
 <span id="L200" class="ln">   200  </span><span class="comment">// Err returns ctx.Err() if the batch was closed via Close.</span>
 <span id="L201" class="ln">   201  </span>
 <span id="L202" class="ln">   202  </span><span class="comment">// QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().</span>
-<span id="L203" class="ln">   203  </span>func (b *blockingBatchResults) QueryRow() pgx.Row {
+<span id="L203" class="ln">   203  </span>func (b *BlockingBatchResults) QueryRow() pgx.Row {
 <span id="L204" class="ln">   204  </span>	return blockingRow{ctx: b.ctx}
 <span id="L205" class="ln">   205  </span>}
-<span id="L206" class="ln">   206  </span>func (b *blockingBatchResults) Err() error {
+<span id="L206" class="ln">   206  </span>func (b *BlockingBatchResults) Err() error {
 <span id="L207" class="ln">   207  </span>	if b.closed {
 <span id="L208" class="ln">   208  </span>		return b.ctx.Err()
 <span id="L209" class="ln">   209  </span>	}
