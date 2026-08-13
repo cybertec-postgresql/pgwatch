@@ -76,7 +76,7 @@
                         "policy": "default",
                         "query": "SELECT top(\"spread\", \"function_full_name\", \"oid\", $top) FROM (SELECT spread(\"total_time\") FROM \"sproc_stats\" WHERE $timeFilter AND \"dbname\" = '$dbname' GROUP BY time(3650d), \"function_full_name\", \"oid\" fill(none) ) WHERE spread > 0",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  (data->>'value')::int8                    AS server_version_num,\n  string_agg(DISTINCT sn.dbname, ', ')      AS dbname\nFROM settings_num sn\nWHERE $__timeFilter(sn.time)\n  AND sn.dbname IN ($dbname)\n  AND sn.tag_data->>'name' = 'server_version_num'\n  AND (sn.data->>'value')::int8 <= $lower_than_server_version_num\nGROUP BY 1\nORDER BY 1",
+                        "rawSql": "SELECT DISTINCT ON (sn.dbname)\n  sn.dbname,\n  (sn.data->>'value')::int8 AS server_version_num\nFROM settings_num sn\nWHERE sn.time > now() - interval '3 hours'\n  AND sn.dbname IN ($dbname)\n  AND sn.tag_data->>'name' = 'server_version_num'\n  AND (sn.data->>'value')::int8 <= $lower_than_server_version_num\nORDER BY sn.dbname, sn.time DESC",
                         "resultFormat": "table",
                         "select": [
                           [
@@ -169,9 +169,33 @@
                   {
                     "matcher": {
                       "id": "byName",
+                      "options": "dbname"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Source Name"
+                      },
+                      {
+                        "id": "description",
+                        "value": "Name of the monitored database (source)."
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
                       "options": "server_version_num"
                     },
                     "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Server version"
+                      },
+                      {
+                        "id": "description",
+                        "value": "server_version_num as reported by the instance, e.g. 190000 = PostgreSQL 19.0."
+                      },
                       {
                         "id": "unit",
                         "value": "none"
@@ -352,6 +376,7 @@
               "$__all"
             ]
           },
+          "label": "Source Name",
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
           "skipUrlSync": false,
@@ -383,6 +408,8 @@
             "text": "",
             "value": ""
           },
+          "label": "Only versions up to",
+          "description": "Show only databases with server_version_num less than or equal to the selected value, e.g. 190000 = PostgreSQL 19.0. The newest detected version is preselected, so by default nothing is filtered out.",
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
           "skipUrlSync": false,

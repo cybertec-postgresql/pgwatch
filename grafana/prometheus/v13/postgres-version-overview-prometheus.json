@@ -55,7 +55,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "max by (dbname) (pgwatch_settings_num_value{name=\"server_version_num\",dbname=~\"$dbname\"})",
+                        "expr": "max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\",dbname=~\"$dbname\"}[3h])) <= $lower_than_server_version_num",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{dbname}}"
@@ -73,6 +73,22 @@
                   "spec": {
                     "options": {
                       "reducers": []
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time": true
+                      },
+                      "includeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "Value": "server_version_num"
+                      }
                     }
                   }
                 }
@@ -127,9 +143,33 @@
                   {
                     "matcher": {
                       "id": "byName",
+                      "options": "dbname"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Source Name"
+                      },
+                      {
+                        "id": "description",
+                        "value": "Name of the monitored database (source)."
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
                       "options": "server_version_num"
                     },
                     "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Server version"
+                      },
+                      {
+                        "id": "description",
+                        "value": "server_version_num as reported by the instance, e.g. 190000 = PostgreSQL 19.0."
+                      },
                       {
                         "id": "unit",
                         "value": "none"
@@ -277,7 +317,8 @@
     "liveNow": false,
     "preload": false,
     "tags": [
-      "pgwatch"
+      "pgwatch",
+      "prometheus"
     ],
     "timeSettings": {
       "from": "now-6h",
@@ -310,6 +351,7 @@
               "$__all"
             ]
           },
+          "label": "Source Name",
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
           "skipUrlSync": false,
@@ -342,6 +384,8 @@
             "text": "",
             "value": ""
           },
+          "label": "Only versions up to",
+          "description": "Show only databases with server_version_num less than or equal to the selected value, e.g. 190000 = PostgreSQL 19.0. The newest detected version is preselected, so by default nothing is filtered out.",
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
           "skipUrlSync": false,
@@ -353,13 +397,13 @@
               "name": "pgwatch-prometheus"
             },
             "spec": {
-              "query": "label_values(pgwatch_settings_num_value{name=\"server_version_num\"}, name)",
+              "query": "query_result(max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\"}[3h])))",
               "refId": "PrometheusVariableQueryEditor-VariableQuery"
             }
           },
-          "regex": "",
+          "regex": "/ ([0-9]+) [0-9]+$/",
           "sort": "disabled",
-          "definition": "label_values(pgwatch_settings_num_value{name=\"server_version_num\"}, name)",
+          "definition": "query_result(max by (dbname) (last_over_time(pgwatch_settings_num_value{name=\"server_version_num\"}[3h])))",
           "options": [],
           "multi": false,
           "includeAll": false,
