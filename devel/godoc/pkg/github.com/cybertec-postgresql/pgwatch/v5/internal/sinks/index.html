@@ -408,7 +408,7 @@
 			
 				<p>MigrationsCount is the total number of migrations in admin.migration table
 
-				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 3</pre>
+				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 4</pre>
 			
 				<p>timestamps older than that will be ignored on the Prom scraper side anyway, so better don&apos;t emit at all and just log a notice
 
@@ -599,6 +599,14 @@
                 }
 
                 return <a href="https://pkg.go.dev/builtin/#nil">nil</a>
+            },
+        },
+
+        &amp;<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration">Migration</a>{
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Name">Name</a>: &#34;01474 Change drop_all_metric_tables to procedure&#34;,
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Func">Func</a>: func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, tx pgx.<a href="#Tx">Tx</a>) <a href="https://pkg.go.dev/builtin/#error">error</a> {
+                _, err := tx.<a href="#Exec">Exec</a>(ctx, sqlMetricAdminFunctions)
+                return err
             },
         },
     )

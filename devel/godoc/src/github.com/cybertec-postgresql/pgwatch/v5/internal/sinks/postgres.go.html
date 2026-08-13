@@ -630,7 +630,7 @@
 <span id="L573" class="ln">   573  </span>}
 <span id="L574" class="ln">   574  </span>
 <span id="L575" class="ln">   575  </span><span class="comment">// MigrationsCount is the total number of migrations in admin.migration table</span>
-<span id="L576" class="ln">   576  </span>const MigrationsCount = 3
+<span id="L576" class="ln">   576  </span>const MigrationsCount = 4
 <span id="L577" class="ln">   577  </span>
 <span id="L578" class="ln">   578  </span><span class="comment">// migrations holds function returning all upgrade migrations needed</span>
 <span id="L579" class="ln">   579  </span>var migrations func() migrator.Option = func() migrator.Option {
@@ -775,17 +775,25 @@
 <span id="L718" class="ln">   718  </span>			},
 <span id="L719" class="ln">   719  </span>		},
 <span id="L720" class="ln">   720  </span>
-<span id="L721" class="ln">   721  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
-<span id="L722" class="ln">   722  </span>
-<span id="L723" class="ln">   723  </span>		<span class="comment">// &amp;migrator.Migration{</span>
-<span id="L724" class="ln">   724  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
-<span id="L725" class="ln">   725  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
-<span id="L726" class="ln">   726  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
-<span id="L727" class="ln">   727  </span>		<span class="comment">// 	},</span>
-<span id="L728" class="ln">   728  </span>		<span class="comment">// },</span>
-<span id="L729" class="ln">   729  </span>	)
-<span id="L730" class="ln">   730  </span>}
-<span id="L731" class="ln">   731  </span>
+<span id="L721" class="ln">   721  </span>		&amp;migrator.Migration{
+<span id="L722" class="ln">   722  </span>			Name: &#34;01474 Change drop_all_metric_tables to procedure&#34;,
+<span id="L723" class="ln">   723  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L724" class="ln">   724  </span>				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
+<span id="L725" class="ln">   725  </span>				return err
+<span id="L726" class="ln">   726  </span>			},
+<span id="L727" class="ln">   727  </span>		},
+<span id="L728" class="ln">   728  </span>
+<span id="L729" class="ln">   729  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
+<span id="L730" class="ln">   730  </span>
+<span id="L731" class="ln">   731  </span>		<span class="comment">// &amp;migrator.Migration{</span>
+<span id="L732" class="ln">   732  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
+<span id="L733" class="ln">   733  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
+<span id="L734" class="ln">   734  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
+<span id="L735" class="ln">   735  </span>		<span class="comment">// 	},</span>
+<span id="L736" class="ln">   736  </span>		<span class="comment">// },</span>
+<span id="L737" class="ln">   737  </span>	)
+<span id="L738" class="ln">   738  </span>}
+<span id="L739" class="ln">   739  </span>
 </pre><p></p>
 
 <div id="footer">
