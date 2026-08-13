@@ -573,7 +573,7 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 }
 
 // MigrationsCount is the total number of migrations in admin.migration table
-const MigrationsCount = 3
+const MigrationsCount = 4
 
 // migrations holds function returning all upgrade migrations needed
 var migrations func() migrator.Option = func() migrator.Option {
@@ -715,6 +715,14 @@ var migrations func() migrator.Option = func() migrator.Option {
 				}
 
 				return nil
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01474 Change drop_all_metric_tables to procedure",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
+				return err
 			},
 		},
 
