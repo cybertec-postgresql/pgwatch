@@ -8,6 +8,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -277,5 +278,67 @@ func TestMockSourcesReaderWriter(t *testing.T) {
 		err := mock.CreateSource(testData[0])
 		assert.NoError(t, err)
 		assert.Equal(t, true, called)
+	})
+}
+
+// TestBlockingPool covers the wedged-pool fault injector in mocks.go.
+// Every BlockingPool method blocks until ctx.Done(); pre-cancelling the
+// context makes each call return immediately with ctx.Err() so the
+// assertions are deterministic and finish in microseconds.
+func TestBlockingPool(t *testing.T) {
+	pool := testutil.BlockingPool{}
+
+	cancelledCtx := func() context.Context {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		return ctx
+	}
+
+	t.Run("Ping", func(t *testing.T) {
+		assert.ErrorIs(t, pool.Ping(cancelledCtx()), context.Canceled)
+	})
+
+	t.Run("Query", func(t *testing.T) {
+		rows, err := pool.Query(cancelledCtx(), "select 1")
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Nil(t, rows)
+	})
+
+	t.Run("QueryRow", func(t *testing.T) {
+		var dst any
+		assert.ErrorIs(t, pool.QueryRow(cancelledCtx(), "select 1").Scan(&dst), context.Canceled)
+	})
+
+	t.Run("Exec", func(t *testing.T) {
+		tag, err := pool.Exec(cancelledCtx(), "x")
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Empty(t, tag)
+	})
+
+	t.Run("Acquire", func(t *testing.T) {
+		conn, err := pool.Acquire(cancelledCtx())
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Nil(t, conn)
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		assert.NotPanics(t, func() { pool.Close() })
+	})
+
+	t.Run("SendBatch", func(t *testing.T) {
+		br := pool.SendBatch(cancelledCtx(), &pgx.Batch{}).(*testutil.BlockingBatchResults)
+
+		_, err := br.Query()
+		assert.ErrorIs(t, err, context.Canceled)
+
+		_, err = br.Exec()
+		assert.ErrorIs(t, err, context.Canceled)
+
+		var dst any
+		assert.ErrorIs(t, br.QueryRow().Scan(&dst), context.Canceled)
+
+		assert.NoError(t, br.Err())                       // before Close
+		assert.NoError(t, br.Close())
+		assert.ErrorIs(t, br.Err(), context.Canceled)     // after Close
 	})
 }
