@@ -7,7 +7,8 @@
   "spec": {
     "title": "Systems stats time lag comparison",
     "tags": [
-      "pgwatch"
+      "pgwatch",
+      "prometheus"
     ],
     "annotations": [
       {
@@ -207,6 +208,7 @@
             "text": "",
             "value": ""
           },
+          "label": "Source Name",
           "hide": "dontHide",
           "refresh": "onDashboardLoad",
           "skipUrlSync": false,
@@ -218,7 +220,8 @@
               "name": "pgwatch-prometheus"
             },
             "spec": {
-              "expr": "label_values(pgwatch_psutil_cpu_cpu_utilization, dbname)"
+              "query": "label_values(pgwatch_psutil_cpu_cpu_utilization, dbname)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
             }
           },
           "regex": "",
@@ -234,6 +237,7 @@
         "kind": "IntervalVariable",
         "spec": {
           "name": "agg_interval",
+          "label": "Aggregation interval",
           "query": "1m,5m,10m,15m,30m,1h,6h,12h,1d",
           "current": {
             "text": "30m",
@@ -298,6 +302,7 @@
         "kind": "IntervalVariable",
         "spec": {
           "name": "lag_interval",
+          "label": "Compare with interval ago",
           "query": "1h,6h,12h,1d,7d,14d,30d",
           "current": {
             "text": "1d",
@@ -372,7 +377,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_cpu_cpu_utilization{dbname=\"$dbname\"}[$agg_interval])",
+                        "expr": "avg_over_time(pgwatch_psutil_cpu_cpu_utilization{dbname=~\"$dbname\"}[$agg_interval])",
                         "legendFormat": "CPU utilization"
                       }
                     },
@@ -391,7 +396,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_cpu_cpu_utilization{dbname=\"$dbname\"}[$agg_interval]) offset $lag_interval",
+                        "expr": "avg_over_time(pgwatch_psutil_cpu_cpu_utilization{dbname=~\"$dbname\"}[$agg_interval] offset $lag_interval)",
                         "legendFormat": "CPU utilization-$lag_interval"
                       }
                     },
@@ -507,7 +512,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_cpu_iowait{dbname=\"$dbname\"}[$agg_interval])",
+                        "expr": "avg_over_time(pgwatch_psutil_cpu_iowait{dbname=~\"$dbname\"}[$agg_interval])",
                         "legendFormat": "IOWait"
                       }
                     },
@@ -526,7 +531,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_cpu_iowait{dbname=\"$dbname\"}[$agg_interval]) offset $lag_interval",
+                        "expr": "avg_over_time(pgwatch_psutil_cpu_iowait{dbname=~\"$dbname\"}[$agg_interval] offset $lag_interval)",
                         "legendFormat": "IOWait-$lag_interval"
                       }
                     },
@@ -642,7 +647,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_percent{dbname=\"$dbname\"}[$agg_interval])",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_percent{dbname=~\"$dbname\"}[$agg_interval])",
                         "legendFormat": "Mem. used"
                       }
                     },
@@ -661,7 +666,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_percent{dbname=\"$dbname\"}[$agg_interval]) offset $lag_interval",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_percent{dbname=~\"$dbname\"}[$agg_interval] offset $lag_interval)",
                         "legendFormat": "Mem. used-$lag_interval"
                       }
                     },
@@ -778,7 +783,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_swap_percent{dbname=\"$dbname\"}[$agg_interval])",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_swap_percent{dbname=~\"$dbname\"}[$agg_interval])",
                         "legendFormat": "Swap used"
                       }
                     },
@@ -797,7 +802,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_swap_percent{dbname=\"$dbname\"}[$agg_interval]) offset $lag_interval",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_swap_percent{dbname=~\"$dbname\"}[$agg_interval] offset $lag_interval)",
                         "legendFormat": "Swap used-$lag_interval"
                       }
                     },
@@ -848,7 +853,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_available{dbname=\"$dbname\"}[$agg_interval])",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_available{dbname=~\"$dbname\"}[$agg_interval])",
                         "legendFormat": "Mem. available"
                       }
                     },
@@ -867,7 +872,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "avg_over_time(pgwatch_psutil_mem_available{dbname=\"$dbname\"}[$agg_interval]) offset $lag_interval",
+                        "expr": "avg_over_time(pgwatch_psutil_mem_available{dbname=~\"$dbname\"}[$agg_interval] offset $lag_interval)",
                         "legendFormat": "Mem. available-$lag_interval"
                       }
                     },
@@ -983,7 +988,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "rate(pgwatch_psutil_disk_io_total_read_bytes{dbname=\"$dbname\"}[$__rate_interval])",
+                        "expr": "rate(pgwatch_psutil_disk_io_total_read_bytes{dbname=~\"$dbname\"}[$__rate_interval])",
                         "legendFormat": "read_bytes_s"
                       }
                     },
@@ -1002,7 +1007,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "rate(pgwatch_psutil_disk_io_total_read_bytes{dbname=\"$dbname\"}[$__rate_interval]) offset $lag_interval",
+                        "expr": "rate(pgwatch_psutil_disk_io_total_read_bytes{dbname=~\"$dbname\"}[$__rate_interval] offset $lag_interval)",
                         "legendFormat": "read_bytes_s-$lag_interval"
                       }
                     },
@@ -1053,7 +1058,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "rate(pgwatch_psutil_disk_io_total_write_bytes{dbname=\"$dbname\"}[$__rate_interval])",
+                        "expr": "rate(pgwatch_psutil_disk_io_total_write_bytes{dbname=~\"$dbname\"}[$__rate_interval])",
                         "legendFormat": "write_bytes_s"
                       }
                     },
@@ -1072,7 +1077,7 @@
                         "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "expr": "rate(pgwatch_psutil_disk_io_total_write_bytes{dbname=\"$dbname\"}[$__rate_interval]) offset $lag_interval",
+                        "expr": "rate(pgwatch_psutil_disk_io_total_write_bytes{dbname=~\"$dbname\"}[$__rate_interval] offset $lag_interval)",
                         "legendFormat": "write_bytes_s-$lag_interval"
                       }
                     },
