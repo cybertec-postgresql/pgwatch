@@ -152,7 +152,7 @@ func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.Comman
 // SendBatch blocks until ctx.Done() and returns a BatchResults whose
 // first Query call returns ctx.Err().
 func (BlockingPool) SendBatch(ctx context.Context, _ *pgx.Batch) pgx.BatchResults {
-	return &blockingBatchResults{ctx: ctx}
+	return &BlockingBatchResults{ctx: ctx}
 }
 
 // Acquire blocks until ctx.Done() and returns ctx.Err().
@@ -175,24 +175,24 @@ func (b blockingRow) Scan(_ ...any) error {
 	return b.ctx.Err()
 }
 
-// blockingBatchResults makes the first Query call honor ctx cancellation.
-type blockingBatchResults struct {
+// BlockingBatchResults makes the first Query call honor ctx cancellation.
+type BlockingBatchResults struct {
 	ctx    context.Context
 	closed bool
 }
 
 // Query blocks until ctx.Done() and returns ctx.Err().
-func (b *blockingBatchResults) Query() (pgx.Rows, error) {
+func (b *BlockingBatchResults) Query() (pgx.Rows, error) {
 	<-b.ctx.Done()
 	return nil, b.ctx.Err()
 }
 
 // Exec blocks until ctx.Done() and returns ctx.Err().
-func (b *blockingBatchResults) Exec() (pgconn.CommandTag, error) {
+func (b *BlockingBatchResults) Exec() (pgconn.CommandTag, error) {
 	<-b.ctx.Done()
 	return pgconn.CommandTag{}, b.ctx.Err()
 }
-func (b *blockingBatchResults) Close() error {
+func (b *BlockingBatchResults) Close() error {
 	b.closed = true
 	return nil
 }
@@ -200,10 +200,10 @@ func (b *blockingBatchResults) Close() error {
 // Err returns ctx.Err() if the batch was closed via Close.
 
 // QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
-func (b *blockingBatchResults) QueryRow() pgx.Row {
+func (b *BlockingBatchResults) QueryRow() pgx.Row {
 	return blockingRow{ctx: b.ctx}
 }
-func (b *blockingBatchResults) Err() error {
+func (b *BlockingBatchResults) Err() error {
 	if b.closed {
 		return b.ctx.Err()
 	}
