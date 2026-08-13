@@ -148,7 +148,7 @@
 <span id="L91" class="ln">    91  </span>	conn.ExpectQuery(`SELECT to_regclass`).
 <span id="L92" class="ln">    92  </span>		WithArgs(&#34;admin.migration&#34;).
 <span id="L93" class="ln">    93  </span>		WillReturnRows(pgxmock.NewRows([]string{&#34;to_regclass&#34;}).AddRow(true))
-<span id="L94" class="ln">    94  </span>	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{&#34;count&#34;}).AddRow(MigrationsCount))
+<span id="L94" class="ln">    94  </span>	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{&#34;count&#34;}).AddRow(registeredMigrationsCount()))
 <span id="L95" class="ln">    95  </span>
 <span id="L96" class="ln">    96  </span>	pgw := &amp;PostgresWriter{ctx: ctx, sinkDb: conn}
 <span id="L97" class="ln">    97  </span>	needs, err := pgw.NeedsMigration()

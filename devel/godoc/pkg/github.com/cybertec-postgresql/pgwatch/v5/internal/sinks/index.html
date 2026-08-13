@@ -129,6 +129,9 @@
 				
 				<dd><a href="#convertSyncOp">func convertSyncOp(op SyncOp) pb.SyncOp</a></dd>
 			
+				
+				<dd><a href="#registeredMigrationsCount">func registeredMigrationsCount() int</a></dd>
+			
 			
 				
 				<dd><a href="#CmdOpts">type CmdOpts</a></dd>
@@ -406,10 +409,6 @@
 		
 			<h2 id="pkg-constants">Constants</h2>
 			
-				<p>MigrationsCount is the total number of migrations in admin.migration table
-
-				<pre>const <span id="MigrationsCount">MigrationsCount</span> = 4</pre>
-			
 				<p>timestamps older than that will be ignored on the Prom scraper side anyway, so better don&apos;t emit at all and just log a notice
 
 				<pre>const <span id="promCacheTTL">promCacheTTL</span> = <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Minute">Minute</a> * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Duration">Duration</a>(10)</pre>
@@ -458,8 +457,7 @@
     }
 )</pre>
 			
-				<p>migrations holds function returning all upgrade migrations needed
-
+				
 				<pre>var <span id="migrations">migrations</span> func() <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Option">Option</a> = func() <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Option">Option</a> {
     return <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migrations">Migrations</a>(
         &amp;<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration">Migration</a>{
@@ -676,6 +674,23 @@
 			</h2>
 			<pre>func convertSyncOp(op <a href="#SyncOp">SyncOp</a>) <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/">pb</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v5/api/pb/#SyncOp">SyncOp</a></pre>
 			<p>convertSyncOp converts sinks.SyncOp to pb.SyncOp
+
+			
+			
+
+		
+			
+			
+			<h2 id="registeredMigrationsCount">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v5/internal/sinks/postgres.go.html#L742">registeredMigrationsCount</a>
+				<a class="permalink" href="#registeredMigrationsCount">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func registeredMigrationsCount() <a href="https://pkg.go.dev/builtin/#int">int</a></pre>
+			<p>registeredMigrationsCount returns the number of migrations actually registered in
+migrations(). This is the single source of truth for &quot;how many migration rows
+admin.migration must contain after a full migrate&quot;; no separate MigrationsCount
+constant exists.
 
 			
 			
