@@ -8,7 +8,7 @@ var (
 	version      = "unknown"
 	date         = "unknown"
 	configSchema = "00824"
-	sinkSchema   = "01409"
+	sinkSchema   = "01474"
 )
 
 func printVersion() {

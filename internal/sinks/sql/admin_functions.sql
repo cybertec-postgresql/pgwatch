@@ -42,25 +42,65 @@ $SQL$
 $SQL$ LANGUAGE sql;
 
 /*
-  drop_all_metric_tables() drops all top-level metric tables (and all their partitions/chunks)
+  drop_all_metric_tables() drops all top level metric tables partition by partition
+  (chunk by chunk for TimescaleDB), committing between drops to avoid exceeding
+  max_locks_per_transaction. Must be called outside a transaction block:
+    CALL admin.drop_all_metric_tables();
 */
-CREATE OR REPLACE FUNCTION admin.drop_all_metric_tables()
-RETURNS int AS
+DROP ROUTINE IF EXISTS admin.drop_all_metric_tables();
+
+CREATE OR REPLACE PROCEDURE admin.drop_all_metric_tables()
+AS
 $SQL$
 DECLARE
-  r record;
-  i int := 0;
+  l_schema_type text;
+  l_table text;
+  l_part text;
+  l_tables text[];
+  l_parts text[];
+  l_dropped int := 0;
 BEGIN
-  FOR r IN SELECT table_name FROM admin.get_top_level_metric_tables()
+  SELECT st.schema_type INTO l_schema_type FROM admin.storage_schema_type st;
+
+  SELECT COALESCE(array_agg(table_name), ARRAY[]::text[])
+  INTO l_tables
+  FROM admin.get_top_level_metric_tables();
+
+  FOREACH l_table IN ARRAY l_tables
   LOOP
-    RAISE NOTICE 'dropping %', r.table_name;
-    EXECUTE 'DROP TABLE ' || r.table_name;
-    i := i + 1;
+    IF l_schema_type = 'timescale' THEN
+      SELECT COALESCE(array_agg(chunk::text), ARRAY[]::text[])
+      INTO l_parts
+      FROM show_chunks(l_table::regclass) AS chunk;
+    ELSE
+      SELECT COALESCE(array_agg(relid::text ORDER BY level DESC, relid::text), ARRAY[]::text[])
+      INTO l_parts
+      FROM pg_partition_tree(l_table::regclass)
+      WHERE level > 0;
+    END IF;
+
+    FOREACH l_part IN ARRAY l_parts
+    LOOP
+      IF l_schema_type = 'timescale' THEN
+        RAISE NOTICE 'dropping chunk %', l_part;
+        PERFORM drop_chunks(l_part::regclass);
+      ELSE
+        RAISE NOTICE 'dropping partition %', l_part;
+        EXECUTE 'DROP TABLE IF EXISTS ' || l_part;
+      END IF;
+      COMMIT;
+    END LOOP;
+
+    RAISE NOTICE 'dropping table %', l_table;
+    EXECUTE 'DROP TABLE ' || l_table;
+    l_dropped := l_dropped + 1;
+    COMMIT;
   END LOOP;
-  
+
   EXECUTE 'TRUNCATE admin.all_distinct_dbname_metrics';
-  
-  RETURN i;
+  COMMIT;
+
+  RAISE NOTICE 'dropped % top-level metric tables', l_dropped;
 END;
 $SQL$ LANGUAGE plpgsql;
 

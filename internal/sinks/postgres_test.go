@@ -79,8 +79,6 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		a.NoError(conn.ExpectationsWereMet())
 	})
 
-
-
 	t.Run("ReadMetricSchemaTypeFail", func(*testing.T) {
 		conn, err := pgxmock.NewPool()
 		a.NoError(err)
@@ -1096,4 +1094,85 @@ func TestFlush_SinkDBIsDown(t *testing.T) {
 
 	// It should return, Issue:#1426 will keep it spinning forever
 	pgw.flush(msgs)
+}
+
+// TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
+// drops every top-level metric table partition by partition and cleans up the listing table.
+// The partition-by-partition drop with COMMIT between drops is the contract that lets large
+// installs avoid blowing past max_locks_per_transaction. See issue #1474.
+func TestDropAllMetricTables(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+	defer conn.Close(ctx)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 hour",
+		RetentionInterval:   "1 hour",
+		MaintenanceInterval: "0 days",
+		BatchingDelay:       time.Hour,
+	}
+
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
+
+	// Create two dummy metric tables and seed a listing row for each.
+	r.NoError(pgw.SyncMetric("test", "test_metric_a", AddOp))
+	r.NoError(pgw.SyncMetric("test", "test_metric_b", AddOp))
+
+	// Attach a single weekly partition to each so the partition-by-partition drop branch
+	// is exercised.
+	_, err = conn.Exec(ctx, `
+		CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
+		COMMENT ON TABLE subpartitions.test_metric_a_2024w01 IS 'pgwatch-generated-metric-time-lvl';
+		CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
+		COMMENT ON TABLE subpartitions.test_metric_b_2024w01 IS 'pgwatch-generated-metric-time-lvl';
+	`)
+	r.NoError(err)
+
+	// Sanity: the two test top-level metric tables exist before the call.
+	var regA0, regB0 *string
+	r.NoError(conn.QueryRow(ctx, "SELECT to_regclass('public.test_metric_a')::text, to_regclass('public.test_metric_b')::text").Scan(&regA0, &regB0))
+	r.NotNil(regA0, "public.test_metric_a must exist after SyncMetric")
+	r.NotNil(regB0, "public.test_metric_b must exist after SyncMetric")
+
+	var topLevelCount int
+	r.NoError(conn.QueryRow(ctx, "SELECT count(*) FROM admin.get_top_level_metric_tables() WHERE table_name IN ('test_metric_a', 'test_metric_b')").Scan(&topLevelCount))
+	a.Equal(2, topLevelCount)
+
+	// Invoke the procedure on a bare connection (CALL is rejected inside an explicit transaction).
+	_, err = conn.Exec(ctx, "CALL admin.drop_all_metric_tables();")
+	r.NoError(err)
+
+	// Both top-level tables must be gone.
+	var regA, regB *string
+	r.NoError(conn.QueryRow(ctx, "SELECT to_regclass('public.test_metric_a')::text, to_regclass('public.test_metric_b')::text").Scan(&regA, &regB))
+	a.Nil(regA, "public.test_metric_a should be dropped")
+	a.Nil(regB, "public.test_metric_b should be dropped")
+
+	// The leaf partitions must be gone too (not left behind as detached tables).
+	var subpartCount int
+	r.NoError(conn.QueryRow(ctx, "SELECT count(*) FROM pg_class WHERE relnamespace = 'subpartitions'::regnamespace").Scan(&subpartCount))
+	a.Equal(0, subpartCount, "no tables should remain in the subpartitions schema")
+
+	// The listing table must be truncated.
+	var listingCount int
+	r.NoError(conn.QueryRow(ctx, "SELECT count(*) FROM admin.all_distinct_dbname_metrics").Scan(&listingCount))
+	a.Equal(0, listingCount)
+
+	// The routine must exist as a procedure (prokind = 'p'), not a function.
+	var prokind string
+	r.NoError(conn.QueryRow(ctx, `
+		SELECT p.prokind FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+		WHERE n.nspname = 'admin' AND p.proname = 'drop_all_metric_tables'
+	`).Scan(&prokind))
+	a.Equal("p", prokind, "admin.drop_all_metric_tables must be a procedure")
 }
