@@ -2,6 +2,8 @@ package reaper
 
 import (
 	"context"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -1220,4 +1222,67 @@ func TestSourceReaper_DetectSprocChanges_BoundedByChangeDetectionTimeout(t *test
 	if elapsed > 1500*time.Millisecond {
 		t.Fatalf("DetectSprocChanges took %v, want ~ChangeDetectionTimeout (100ms)", elapsed)
 	}
+}
+// logSettingsCountingConn counts Query calls whose SQL contains "logging_collector"
+// (the substring identifying the server_log_event_counts settings probe) so a test
+// can assert the streaming log parser was started exactly once across multiple
+// tick iterations.
+type logSettingsCountingConn struct {
+	pgxmock.PgxPoolIface
+	count atomic.Int32
+}
+
+func (c *logSettingsCountingConn) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {
+	if strings.Contains(query, "logging_collector") {
+		c.count.Add(1)
+	}
+	return c.PgxPoolIface.Query(ctx, query, args...)
+}
+
+// TestSourceReaper_RunStartsLogParserOnlyOnce proves the reaper spawns the
+// server_log_event_counts streaming parser exactly once per worker lifetime.
+// Pre-fix, the switch guard used sr.lastFetch[name] which was never assigned
+// for this metric, so every tick (1s here) spawned a fresh goroutine that
+// re-issued the log-settings SQL — the settings-query count would exceed 1.
+// Post-fix, the dedicated logParserStarted flag ensures a single spawn.
+func TestSourceReaper_RunStartsLogParserOnlyOnce(t *testing.T) {
+	metricDefs.MetricDefs[specialMetricServerLogEventCounts] = metrics.Metric{
+		SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
+	}
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+	mock.MatchExpectationsInOrder(false)
+
+	// FetchRuntimeInfo attempt each tick; failing it keeps the loop ticking quietly.
+	mock.ExpectQuery("select /\\* pgwatch_generated \\*/").WillReturnError(assert.AnError)
+	// The log-settings query must be attempted exactly once; failing it makes the
+	// spawned parser goroutine exit immediately, keeping the test fast.
+	mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
+
+	cc := &logSettingsCountingConn{PgxPoolIface: mock}
+	md := &sources.DbConn{
+		Source: sources.Source{
+			Name:    "log_parser_once_source",
+			Kind:    sources.SourcePostgres,
+			Metrics: metrics.MetricIntervals{specialMetricServerLogEventCounts: 1}, // 1s interval → 1s ticks
+		},
+		Conn: cc,
+	}
+	r := &reaper{
+		Options:          &cmdopts.Options{Metrics: metrics.CmdOpts{}, Sinks: sinks.CmdOpts{}},
+		measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+		measurementCache: NewInstanceMetricCache(),
+	}
+	sr := NewDbConnReaper(r, md)
+
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+	defer cancel()
+	go sr.Reap(ctx)
+
+	require.Eventually(t, func() bool { return cc.count.Load() == 1 },
+		2*time.Second, 10*time.Millisecond, "log parser should have been started")
+	time.Sleep(2500 * time.Millisecond) // ≥2 more ticks at 1s tick interval
+	assert.Equal(t, int32(1), cc.count.Load(), "log parser must be started exactly once")
 }

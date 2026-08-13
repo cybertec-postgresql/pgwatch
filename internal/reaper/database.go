@@ -30,6 +30,8 @@ type DbConnReaper struct {
 	lastFetch   map[string]time.Time
 	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
 
+	logParserStarted bool // server_log_event_counts streaming parser was started; runs until ctx cancel
+
 	degradedMu      sync.RWMutex
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
 }
@@ -175,10 +177,10 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 			if !ok || sr.isRoleExcluded(metric) {
 				continue
 			}
-
 			switch {
 			case name == specialMetricServerLogEventCounts:
-				if sr.lastFetch[name].IsZero() {
+				if !sr.logParserStarted {
+					sr.logParserStarted = true // streaming parser starts once per worker lifetime and runs until ctx cancel
 					go func() {
 						if e := sr.runLogParser(ctx); e != nil {
 							l.WithError(e).Error("log parser error")

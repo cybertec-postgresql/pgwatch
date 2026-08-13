@@ -28,7 +28,7 @@ func (lp *LogParser) parseLogsRemote() error {
 			return nil
 		case <-time.After(currInterval):
 			if currInterval == 0 {
-				currInterval = time.Second * time.Duration(lp.Interval)
+				currInterval = lp.Interval
 			}
 		}
 
