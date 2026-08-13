@@ -2,7 +2,7 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "sproc-details"
+    "name": "sproc-details-prometheus"
   },
   "spec": {
     "annotations": [
@@ -48,77 +48,16 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
+                      "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "pgwatch-metrics"
+                        "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "alias": "calls",
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "$__interval"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "sproc_stats",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  time,\n  sum(calls - calls_lag) as calls\nFROM (\nSELECT\n  $__timeGroup(time, $agg_interval),\n  (data->>'sp_calls')::int8 as calls,\n  lag((data->>'sp_calls')::int8) OVER(order by time) as calls_lag\nFROM\n  sproc_stats\nWHERE\n  $__timeFilter(time)\n  AND dbname = '$dbname'\n  AND tag_data @> '{\"function_full_name\": \"$sproc_name\"}'\n) x\nWHERE calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "sp_calls"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            },
-                            {
-                              "params": [
-                                "1h"
-                              ],
-                              "type": "non_negative_derivative"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          },
-                          {
-                            "condition": "AND",
-                            "key": "function_full_name",
-                            "operator": "=~",
-                            "value": "/^$sproc_name$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
+                        "exemplar": true,
+                        "expr": "increase(pgwatch_sproc_stats_sp_calls{dbname=\"$dbname\", function_full_name=\"$sproc_name\"}[$agg_interval])",
+                        "interval": "",
+                        "legendFormat": "calls"
                       }
                     },
                     "refId": "A",
@@ -128,7 +67,7 @@
               ],
               "transformations": [],
               "queryOptions": {
-                "interval": "2m"
+                "interval": "$agg_interval"
               }
             }
           },
@@ -228,87 +167,47 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "grafana-postgresql-datasource",
+                      "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "pgwatch-metrics"
+                        "name": "pgwatch-prometheus"
                       },
                       "spec": {
-                        "alias": "total_time",
-                        "format": "time_series",
-                        "group": [],
-                        "groupBy": [
-                          {
-                            "params": [
-                              "auto"
-                            ],
-                            "type": "time"
-                          },
-                          {
-                            "params": [
-                              "none"
-                            ],
-                            "type": "fill"
-                          }
-                        ],
-                        "measurement": "sproc_stats",
-                        "metricColumn": "none",
-                        "orderByTime": "ASC",
-                        "policy": "default",
-                        "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg( case when calls = calls_lag then null else (total_time - total_time_lag) / (calls - calls_lag) end) as total_time,\n  avg( case when calls = calls_lag then null else (self_time - self_time_lag) / (calls - calls_lag) end) as self_time\nFROM (\n  SELECT\n    (data->>'sp_calls')::int8 as calls, lag((data->>'sp_calls')::int8) over w as calls_lag,\n    (data->>'self_time')::float as self_time, lag((data->>'self_time')::float) over w as self_time_lag,\n    (data->>'total_time')::float as total_time, lag((data->>'total_time')::float) over w as total_time_lag,\n    time, lag(time) over w as time_lag\n  FROM\n    sproc_stats\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n    AND tag_data @> jsonb_build_object('function_full_name', '$sproc_name')\n    WINDOW w AS (order by time)\n) x\nWHERE time > time_lag AND calls >= calls_lag\nGROUP BY 1\nORDER BY 1",
-                        "resultFormat": "time_series",
-                        "select": [
-                          [
-                            {
-                              "params": [
-                                "total_time"
-                              ],
-                              "type": "field"
-                            },
-                            {
-                              "params": [],
-                              "type": "mean"
-                            },
-                            {
-                              "params": [
-                                "1h"
-                              ],
-                              "type": "non_negative_derivative"
-                            }
-                          ]
-                        ],
-                        "tags": [
-                          {
-                            "key": "dbname",
-                            "operator": "=~",
-                            "value": "/^$dbname$/"
-                          },
-                          {
-                            "condition": "AND",
-                            "key": "function_full_name",
-                            "operator": "=~",
-                            "value": "/^$sproc_name$/"
-                          }
-                        ],
-                        "timeColumn": "time",
-                        "where": [
-                          {
-                            "name": "$__timeFilter",
-                            "params": [],
-                            "type": "macro"
-                          }
-                        ]
+                        "exemplar": true,
+                        "expr": "rate(pgwatch_sproc_stats_total_time{dbname=\"$dbname\", function_full_name=\"$sproc_name\"}[$__rate_interval]) / clamp_min(rate(pgwatch_sproc_stats_sp_calls{dbname=\"$dbname\", function_full_name=\"$sproc_name\"}[$__rate_interval]), 1)",
+                        "interval": "",
+                        "legendFormat": "total_time"
                       }
                     },
                     "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-prometheus"
+                      },
+                      "spec": {
+                        "exemplar": true,
+                        "expr": "rate(pgwatch_sproc_stats_self_time{dbname=\"$dbname\", function_full_name=\"$sproc_name\"}[$__rate_interval]) / clamp_min(rate(pgwatch_sproc_stats_sp_calls{dbname=\"$dbname\", function_full_name=\"$sproc_name\"}[$__rate_interval]), 1)",
+                        "interval": "",
+                        "legendFormat": "self_time"
+                      }
+                    },
+                    "refId": "B",
                     "hidden": false
                   }
                 }
               ],
               "transformations": [],
               "queryOptions": {
-                "interval": "2m"
+                "interval": "$agg_interval"
               }
             }
           },
@@ -419,7 +318,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec – The PostgreSQL Database Company\" width=\"300\" /></a>\n",
+                "content": "### Brought to you by\n\n<a href=\"https://www.cybertec-postgresql.com/en/\"><img src=\"https://cdn.jsdelivr.net/gh/cybertec-postgresql/pgwatch@master/docs/gallery/cybertec-logo-white-blue.svg\" alt=\"Cybertec \u2013 The PostgreSQL Database Company\" width=\"300\" /></a>\n",
                 "mode": "markdown"
               },
               "fieldConfig": {
@@ -512,7 +411,8 @@
     "liveNow": false,
     "preload": false,
     "tags": [
-      "pgwatch"
+      "pgwatch",
+      "prometheus"
     ],
     "timeSettings": {
       "timezone": "browser",
@@ -550,18 +450,16 @@
           "skipUrlSync": false,
           "query": {
             "kind": "DataQuery",
-            "group": "grafana-postgresql-datasource",
+            "group": "prometheus",
             "version": "v0",
-            "datasource": {
-              "name": "pgwatch-metrics"
-            },
             "spec": {
-              "__legacyStringValue": "SELECT DISTINCT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'sproc_stats' ORDER BY 1;"
+              "query": "label_values(pgwatch_sproc_stats_sp_calls, dbname)",
+              "refId": "StandardVariableQuery"
             }
           },
           "regex": "",
           "sort": "disabled",
-          "definition": "",
+          "definition": "label_values(pgwatch_sproc_stats_sp_calls, dbname)",
           "options": [],
           "multi": false,
           "includeAll": false,
@@ -582,18 +480,16 @@
           "skipUrlSync": false,
           "query": {
             "kind": "DataQuery",
-            "group": "grafana-postgresql-datasource",
+            "group": "prometheus",
             "version": "v0",
-            "datasource": {
-              "name": "pgwatch-metrics"
-            },
             "spec": {
-              "__legacyStringValue": "select distinct tag_data->>'function_full_name' from sproc_stats where time > current_date-7 and dbname = '$dbname' and tag_data ? 'function_full_name' order by 1;"
+              "query": "label_values(pgwatch_sproc_stats_sp_calls{dbname=\"$dbname\"}, function_full_name)",
+              "refId": "StandardVariableQuery"
             }
           },
           "regex": "",
           "sort": "disabled",
-          "definition": "select distinct tag_data->>'function_full_name' from sproc_stats where time > current_date-7 and dbname = '$dbname' and tag_data ? 'function_full_name' order by 1;",
+          "definition": "label_values(pgwatch_sproc_stats_sp_calls{dbname=\"$dbname\"}, function_full_name)",
           "options": [],
           "multi": false,
           "includeAll": false,
