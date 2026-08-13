@@ -71,9 +71,9 @@ $ pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=p
 !!! info
     Even though configuration database can hold both sources and metrics definitions,
     you are free to use any combination of configurations. For example, you can use a database
-    for metrics and YAML file for sources, or vice versa.
-
-That's it! You have successfully bootstrapped the configuration database for pgwatch.
+    for metrics and YAML file for sources, or vice versa. The only combination that is
+    rejected is two different Postgres connection strings for `--sources` and `--metrics`;
+    when both are Postgres URIs they must be identical.
 
 If now you want to see the tables created by pgwatch in the configuration database, you can connect to the database
 using the `psql` command-line tool and list the tables.

@@ -36,32 +36,48 @@ var initSchema = func(ctx context.Context, conn db.PgxIface) (err error) {
 	return nil
 }
 
-var initMigrator = func(dmrw *dbMetricReaderWriter) (*migrator.Migrator, error) {
+var initMigrator = func(ctx context.Context) (*migrator.Migrator, error) {
 	return migrator.New(
 		migrator.TableName("pgwatch.migration"),
 		migrator.SetNotice(func(s string) {
-			log.GetLogger(dmrw.ctx).Info(s)
+			log.GetLogger(ctx).Info(s)
 		}),
 		migrations(),
 	)
 }
 
-// MigrateDb upgrades database with all migrations
-func (dmrw *dbMetricReaderWriter) Migrate() error {
-	m, err := initMigrator(dmrw)
+// EnsureConfigSchema creates the pgwatch configuration schema in the database if it
+// does not exist yet, seeding it with the default metric and preset definitions.
+func EnsureConfigSchema(ctx context.Context, conn db.PgxIface) error {
+	return initSchema(ctx, conn)
+}
+
+// MigrateConfigSchema applies all pending configuration schema migrations to the database.
+func MigrateConfigSchema(ctx context.Context, conn db.PgxIface) error {
+	m, err := initMigrator(ctx)
 	if err != nil {
 		return fmt.Errorf("cannot initialize migration: %w", err)
 	}
-	return m.Migrate(dmrw.ctx, dmrw.configDb)
+	return m.Migrate(ctx, conn)
+}
+
+// NeedsConfigSchemaMigration reports if the configuration schema in the database is outdated.
+func NeedsConfigSchemaMigration(ctx context.Context, conn db.PgxIface) (bool, error) {
+	m, err := initMigrator(ctx)
+	if err != nil {
+		return false, err
+	}
+	return m.NeedUpgrade(ctx, conn)
+}
+
+// MigrateDb upgrades database with all migrations
+func (dmrw *dbMetricReaderWriter) Migrate() error {
+	return MigrateConfigSchema(dmrw.ctx, dmrw.configDb)
 }
 
 // NeedsMigration checks if database needs migration
 func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
-	m, err := initMigrator(dmrw)
-	if err != nil {
-		return false, err
-	}
-	return m.NeedUpgrade(dmrw.ctx, dmrw.configDb)
+	return NeedsConfigSchemaMigration(dmrw.ctx, dmrw.configDb)
 }
 
 // MigrationsCount is the total number of migrations in pgwatch.migration table

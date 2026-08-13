@@ -194,6 +194,7 @@ func (c *Options) NeedsSchemaUpgrade() (upgrade bool, err error) {
 // ValidateConfig checks if the configuration is valid.
 // Configuration database can be specified for one of the --sources or --metrics.
 // If one is specified, the other one is set to the same value.
+// If both --sources and --metrics are Postgres connection strings, they must be identical.
 func (c *Options) ValidateConfig() error {
 	if len(c.Sources.Sources)+len(c.Metrics.Metrics) == 0 {
 		return errors.New("both --sources and --metrics are empty")
@@ -203,6 +204,9 @@ func (c *Options) ValidateConfig() error {
 		c.Sources.Sources = c.Metrics.Metrics
 	case c.Metrics.Metrics == "" && c.IsPgConnStr(c.Sources.Sources):
 		c.Metrics.Metrics = c.Sources.Sources
+	}
+	if c.IsPgConnStr(c.Sources.Sources) && c.IsPgConnStr(c.Metrics.Metrics) && c.Sources.Sources != c.Metrics.Metrics {
+		return errors.New("--sources and --metrics must use the same configuration database")
 	}
 	if c.Sources.Refresh <= 1 {
 		return errors.New("--refresh must be greater than 1")
