@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"testing"
 
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
@@ -52,7 +53,7 @@ func TestMigrateFail(t *testing.T) {
 	})
 	a := assert.New(t)
 	dmrw := &dbMetricReaderWriter{}
-	initMigrator = func(*dbMetricReaderWriter) (*migrator.Migrator, error) {
+	initMigrator = func(context.Context) (*migrator.Migrator, error) {
 		return nil, assert.AnError
 	}
 	err := dmrw.Migrate()
@@ -66,7 +67,7 @@ func TestNeedsMigrationFail(t *testing.T) {
 	})
 	a := assert.New(t)
 	dmrw := &dbMetricReaderWriter{}
-	initMigrator = func(*dbMetricReaderWriter) (*migrator.Migrator, error) {
+	initMigrator = func(context.Context) (*migrator.Migrator, error) {
 		return nil, assert.AnError
 	}
 	_, err := dmrw.NeedsMigration()

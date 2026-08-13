@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -21,16 +22,30 @@ func NewPostgresSourcesReaderWriter(ctx context.Context, connstr string) (Reader
 }
 
 func NewPostgresSourcesReaderWriterConn(ctx context.Context, conn db.PgxPoolIface) (ReaderWriter, error) {
-	return &dbSourcesReaderWriter{
+	if err := metrics.EnsureConfigSchema(ctx, conn); err != nil {
+		return nil, err
+	}
+	r := &dbSourcesReaderWriter{
 		ctx:      ctx,
 		configDb: conn,
-	}, conn.Ping(ctx)
-
+	}
+	return r, conn.Ping(ctx)
 }
 
 type dbSourcesReaderWriter struct {
 	ctx      context.Context
 	configDb db.PgxIface
+}
+
+// make sure *dbSourcesReaderWriter implements the Migrator interface
+var _ db.Migrator = (*dbSourcesReaderWriter)(nil)
+
+func (r *dbSourcesReaderWriter) Migrate() error {
+	return metrics.MigrateConfigSchema(r.ctx, r.configDb)
+}
+
+func (r *dbSourcesReaderWriter) NeedsMigration() (bool, error) {
+	return metrics.NeedsConfigSchemaMigration(r.ctx, r.configDb)
 }
 
 func (r *dbSourcesReaderWriter) WriteSources(dbs Sources) error {

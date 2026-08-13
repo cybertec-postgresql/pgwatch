@@ -29,6 +29,8 @@ func TestNewPostgresSourcesReaderWriterConn(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -41,6 +43,8 @@ func TestGetMonitoredDatabases(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 	conn.ExpectQuery(`select \/\* pgwatch_generated \*\/`).WillReturnRows(pgxmock.NewRows([]string{
 		"name", "group", "dbtype", "connstr", "config", "config_standby", "preset_config",
@@ -71,6 +75,8 @@ func TestDeleteDatabase(t *testing.T) {
 	a := assert.New(t)
 	conn, err := pgxmock.NewPool()
 	a.NoError(err)
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 	conn.ExpectExec(`delete from pgwatch\.source where name = \$1`).WithArgs("db1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	pgrw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
@@ -97,6 +103,8 @@ func TestUpdateDatabase(t *testing.T) {
 		ExcludePattern: `\_.+`,
 		CustomTags:     map[string]string{"tag": "value"},
 	}
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	conn.ExpectPing()
 	conn.ExpectExec(`insert into pgwatch\.source`).WithArgs(
 		md.Name, md.Group, md.Kind,
@@ -135,6 +143,8 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 	mds := sources.Sources{md}
 
 	t.Run("happy path", func(*testing.T) {
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 		conn.ExpectPing()
 		conn.ExpectBegin()
 		conn.ExpectExec(`truncate pgwatch\.source`).WillReturnResult(pgxmock.NewResult("TRUNCATE", 1))
@@ -186,4 +196,78 @@ func TestWriteMonitoredDatabases(t *testing.T) {
 		a.Error(err)
 		a.NoError(conn.ExpectationsWereMet())
 	})
+}
+
+// anyArgs returns a slice of pgxmock.AnyArg() of length n for matching INSERT/UPDATE calls.
+func anyArgs(n int) []any {
+	args := make([]any, n)
+	for i := range args {
+		args[i] = pgxmock.AnyArg()
+	}
+	return args
+}
+
+func TestNewPostgresSourcesReaderWriterConn_Bootstrap(t *testing.T) {
+	a := assert.New(t)
+
+	t.Run("FullBootstrap", func(*testing.T) {
+		df := metrics.GetDefaultMetrics()
+		metricsCount := len(df.MetricDefs)
+		presetsCount := len(df.PresetDefs)
+
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+		conn.ExpectBegin()
+		conn.ExpectExec("CREATE SCHEMA IF NOT EXISTS pgwatch").
+			WillReturnResult(pgxmock.NewResult("CREATE", 1))
+		conn.ExpectBegin()
+		conn.ExpectExec(`INSERT.+metric`).WithArgs(anyArgs(8)...).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(metricsCount))
+		conn.ExpectExec(`INSERT.+preset`).WithArgs(anyArgs(3)...).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1)).Times(uint(presetsCount))
+		conn.ExpectCommit()
+		conn.ExpectCommit()
+		conn.ExpectPing()
+
+		rw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
+		a.NoError(err)
+		a.NotNil(rw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	t.Run("SchemaQueryFail", func(*testing.T) {
+		conn, err := pgxmock.NewPool()
+		a.NoError(err)
+		conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+			WillReturnError(assert.AnError)
+		rw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
+		a.Error(err)
+		a.Nil(rw)
+		a.NoError(conn.ExpectationsWereMet())
+	})
+}
+
+func TestSourcesNeedsMigration(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+	conn.ExpectQuery(`SELECT EXISTS`).WithArgs("pgwatch").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+	conn.ExpectPing()
+	conn.ExpectQuery(`SELECT to_regclass`).
+		WithArgs("pgwatch.migration").
+		WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
+	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+
+	rw, err := sources.NewPostgresSourcesReaderWriterConn(ctx, conn)
+	a.NoError(err)
+
+	needs, err := rw.(interface {
+		NeedsMigration() (bool, error)
+	}).NeedsMigration()
+	a.NoError(err)
+	a.True(needs)
+	a.NoError(conn.ExpectationsWereMet())
 }
