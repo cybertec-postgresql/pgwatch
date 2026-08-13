@@ -6,39 +6,32 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
-	migrator "github.com/cybertec-postgresql/pgx-migrator"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestMigrationsCountInvariant is a fast, dependency-free unit test that guards against the
-// "stale MigrationsCount" class of bug. It asserts that MigrationsCount matches:
-//   - the number of migrations actually registered in migrations(), and
-//   - the number of rows seeded into admin.migration in admin_schema.sql.
-//
-// Whenever a migration is added, all three must be bumped together, so this test fails loudly
-// if any of them drifts out of sync.
+// TestMigrationsCountInvariant is a fast, dependency-free unit test that guards against
+// the "seed drift" class of bug. The source of truth for "how many migrations exist" is
+// migrations() itself, exposed via registeredMigrationsCount(). This test verifies that
+// the rows seeded into admin.migration in admin_schema.sql stay in lock-step with the
+// registered migrations: both must be updated together whenever a migration is added or
+// removed.
 func TestMigrationsCountInvariant(t *testing.T) {
 	a := assert.New(t)
 
-	// 1. Count migrations actually registered in migrations().
-	m, err := migrator.New(migrations())
-	require.NoError(t, err)
-	registered := m.Count()
-	a.Equal(MigrationsCount, registered,
-		"MigrationsCount (%d) must equal the number of migrations registered in migrations() (%d)",
-		MigrationsCount, registered)
+	registered := registeredMigrationsCount()
 
-	// 2. Count rows seeded into admin.migration in admin_schema.sql. The seed looks like:
+	// Count rows seeded into admin.migration in admin_schema.sql. The seed looks like:
 	//     INSERT INTO admin.migration (id, version) VALUES
 	//         (0, '...'),
 	//         (1, '...'),
 	//         (2, '...');
 	seeded := len(regexp.MustCompile(`(?m)^\s*\(\d+,\s*'`).FindAllString(sqlMetricAdminSchema, -1))
-	a.Equal(MigrationsCount, seeded,
-		"MigrationsCount (%d) must equal the number of rows seeded into admin.migration in admin_schema.sql (%d)",
-		MigrationsCount, seeded)
+	a.Equal(registered, seeded,
+		"registeredMigrationsCount (%d) must equal the number of rows seeded into admin.migration in admin_schema.sql (%d)",
+		registered, seeded)
 }
 
 // simulatePreV6Migration wipes every row from admin.migration so that the next
@@ -306,8 +299,8 @@ func TestMigration01474_DropAllMetricTablesProcedure(t *testing.T) {
 // actually executed and recorded itself in admin.migration — including the new
 // 01474 routine. The migrator's "did it run" signal is purely the row count in
 // admin.migration, so this test guards against two failure modes at once:
-//   - a registered migration that fails silently (count stays below MigrationsCount)
-//   - MigrationsCount drifting above the actual number of registered migrations
+//   - a registered migration that fails silently (count stays below registeredMigrationsCount())
+//   - registeredMigrationsCount() drifting above the actual number of registered migrations
 func TestMigration_AllMigrationsRunFromEmpty(t *testing.T) {
 	if os.Getenv("PGWATCH_TEST_SKIP_MIGRATION") != "" {
 		t.Skip("migration integration test skipped via PGWATCH_TEST_SKIP_MIGRATION")
@@ -341,7 +334,7 @@ func TestMigration_AllMigrationsRunFromEmpty(t *testing.T) {
 	// After migrate: every registered migration row must be present.
 	var after int
 	r.NoError(conn.QueryRow(ctx, "SELECT count(*) FROM admin.migration").Scan(&after))
-	a.Equal(MigrationsCount, after,
+	a.Equal(registeredMigrationsCount(), after,
 		"every registered migration (incl. 01474) must record itself in admin.migration after a wipe + migrate")
 
 	// The new routine from 01474 must have been created as a procedure.

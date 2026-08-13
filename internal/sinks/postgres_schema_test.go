@@ -91,7 +91,7 @@ func TestPostgresWriterNeedsMigrationNoMigrationNeeded(t *testing.T) {
 	conn.ExpectQuery(`SELECT to_regclass`).
 		WithArgs("admin.migration").
 		WillReturnRows(pgxmock.NewRows([]string{"to_regclass"}).AddRow(true))
-	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(MigrationsCount))
+	conn.ExpectQuery(`SELECT count`).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(registeredMigrationsCount()))
 
 	pgw := &PostgresWriter{ctx: ctx, sinkDb: conn}
 	needs, err := pgw.NeedsMigration()

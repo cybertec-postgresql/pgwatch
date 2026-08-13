@@ -572,10 +572,8 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
 }
 
-// MigrationsCount is the total number of migrations in admin.migration table
-const MigrationsCount = 4
-
 // migrations holds function returning all upgrade migrations needed
+
 var migrations func() migrator.Option = func() migrator.Option {
 	return migrator.Migrations(
 		&migrator.Migration{
@@ -735,4 +733,16 @@ var migrations func() migrator.Option = func() migrator.Option {
 		// 	},
 		// },
 	)
+}
+
+// registeredMigrationsCount returns the number of migrations actually registered in
+// migrations(). This is the single source of truth for "how many migration rows
+// admin.migration must contain after a full migrate"; no separate MigrationsCount
+// constant exists.
+func registeredMigrationsCount() int {
+	m, err := migrator.New(migrations())
+	if err != nil {
+		panic(fmt.Errorf("registeredMigrationsCount: %w", err))
+	}
+	return m.Count()
 }
