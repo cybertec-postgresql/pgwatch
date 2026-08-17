@@ -164,7 +164,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg( case when (xc = xc_lag and xr = xr_lag) then null else ( ((xr - xr_lag)::numeric*100) / ((xc - xc_lag) + (xr - xr_lag)) ) end ) as \"Rollback ratio\"\nfrom (\n  select\n    (data->>'xact_rollback')::float8 as xr, lag((data->>'xact_rollback')::float8) over w as xr_lag,\n    (data->>'xact_commit')::float8 as xc, lag((data->>'xact_rollback')::float8) over w as xc_lag,\n    time\n  from db_stats\n    where dbname = '$dbname'\n    and $__timeFilter(time)\n  window w as (order by time)\n) x\nwhere xc >= xc_lag\ngroup by 1\norder by 1\n\n\n\n\n\n",
+                        "rawSql": "select\n  $__timeGroup(time, $__interval),\n  avg( case when (xc = xc_lag and xr = xr_lag) then null else ( ((CASE WHEN xr >= xr_lag THEN xr - xr_lag ELSE xr END)::numeric*100) / nullif((CASE WHEN xc >= xc_lag THEN xc - xc_lag ELSE xc END) + (CASE WHEN xr >= xr_lag THEN xr - xr_lag ELSE xr END), 0) ) end ) as \"Rollback ratio\"\nfrom (\n  select\n    (data->>'xact_rollback')::float8 as xr, lag((data->>'xact_rollback')::float8) over w as xr_lag,\n    (data->>'xact_commit')::float8 as xc, lag((data->>'xact_commit')::float8) over w as xc_lag,\n    time\n  from db_stats\n    where dbname = '$dbname'\n    and $__timeFilter(time)\n  window w as (order by time)\n) x\ngroup by 1\norder by 1\n\n\n\n\n\n",
                         "resultFormat": "time_series",
                         "select": [
                           [

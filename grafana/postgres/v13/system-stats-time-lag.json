@@ -879,7 +879,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((CASE WHEN read_bytes >= read_bytes_lag THEN (read_bytes_lag - read_bytes) ELSE -read_bytes END) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE time > time_lag\nGROUP BY 1\nORDER BY 1",
                         "select": [
                           [
                             {
@@ -919,7 +919,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((read_bytes_lag - read_bytes) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE read_bytes >= read_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
+                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((CASE WHEN read_bytes >= read_bytes_lag THEN (read_bytes_lag - read_bytes) ELSE -read_bytes END) / extract(epoch from time_lag - time))::int8 as \"read_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'read_bytes')::int8 as read_bytes,\n    lag((data->>'read_bytes')::int8) over w as read_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE time > time_lag\nGROUP BY 1\nORDER BY 1\n",
                         "select": [
                           [
                             {
@@ -991,7 +991,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1",
+                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((CASE WHEN write_bytes >= write_bytes_lag THEN (write_bytes_lag - write_bytes) ELSE -write_bytes END) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s\"\nFROM (\n  SELECT\n    time,\n    lag(time) over w as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    $__timeFilter(time)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE time > time_lag\nGROUP BY 1\nORDER BY 1",
                         "select": [
                           [
                             {
@@ -1031,7 +1031,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((write_bytes_lag - write_bytes) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE write_bytes >= write_bytes_lag and time > time_lag\nGROUP BY 1\nORDER BY 1\n",
+                        "rawSql": "SELECT\n  $__timeGroup(time, $agg_interval),\n  avg((CASE WHEN write_bytes >= write_bytes_lag THEN (write_bytes_lag - write_bytes) ELSE -write_bytes END) / extract(epoch from time_lag - time))::int8 as \"write_bytes_s-$lag_interval\"\nFROM (\n  SELECT\n    time + '$lag_interval'::interval as time,\n    lag(time) over w + '$lag_interval'::interval as time_lag,\n    (data->>'write_bytes')::int8 as write_bytes,\n    lag((data->>'write_bytes')::int8) over w as write_bytes_lag\n  FROM\n    psutil_disk_io_total\n  WHERE\n    time between ($__timeFrom()::timestamptz - '$lag_interval'::interval) and ($__timeTo()::timestamptz - '$lag_interval'::interval)\n    AND dbname = '$dbname'\n  WINDOW w AS (ORDER BY time)\n) x\nWHERE time > time_lag\nGROUP BY 1\nORDER BY 1\n",
                         "select": [
                           [
                             {
