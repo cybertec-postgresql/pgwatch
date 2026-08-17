@@ -206,7 +206,7 @@
 <span id="L149" class="ln">   149  </span>}
 <span id="L150" class="ln">   150  </span>
 <span id="L151" class="ln">   151  </span>func (f *Formatter) writeCaller(b *bytes.Buffer, entry *logrus.Entry) {
-<span id="L152" class="ln">   152  </span>	if entry.HasCaller() {
+<span id="L152" class="ln">   152  </span>	if entry.Caller != nil {
 <span id="L153" class="ln">   153  </span>		if f.CustomCallerFormatter != nil {
 <span id="L154" class="ln">   154  </span>			fmt.Fprint(b, f.CustomCallerFormatter(entry.Caller))
 <span id="L155" class="ln">   155  </span>		} else {
