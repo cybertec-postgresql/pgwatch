@@ -16,13 +16,12 @@ export const MetricsGrid = () => {
 
   const { classes } = usePageStyles();
 
-  const columns = useMetricsGridColumns();
+  const gridColumns = useMetricsGridColumns();
   const { 
     columnVisibility, 
-    columnsWithSizing, 
+    columns,
     onColumnVisibilityChange, 
-    onColumnWidthChange
-  } = useGridState('METRICS_GRID', columns);
+  } = useGridState('METRICS_GRID', gridColumns);
 
   const rows: MetricGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -55,7 +54,7 @@ export const MetricsGrid = () => {
       <MetricFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
-          columns={columnsWithSizing}
+          columns={columns}
           rows={rows}
           pageSizeOptions={[]}
           showToolbar
@@ -64,7 +63,6 @@ export const MetricsGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnWidthChange={onColumnWidthChange}
           initialState={{
             sorting: {
               sortModel: [{ field: 'Key', sort: 'asc' }],
