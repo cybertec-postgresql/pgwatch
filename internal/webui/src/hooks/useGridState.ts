@@ -1,85 +1,72 @@
 import { useCallback, useMemo, useState } from 'react';
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
-export interface GridColumnSizingModel {
-  [field: string]: number;
+interface GridState {
+  columnVisibility?: GridColumnVisibilityModel;
 }
 
-interface GridState {
-  columnVisibility: GridColumnVisibilityModel;
-  columnSizing: GridColumnSizingModel;
-}
+const readSavedState = (storageKey: string): GridState => {
+  const saved = localStorage.getItem(storageKey);
+  return saved ? JSON.parse(saved) : {};
+};
+
+const persistState = (storageKey: string, state: GridState) => {
+  const current = readSavedState(storageKey);
+  localStorage.setItem(storageKey, JSON.stringify({ ...current, ...state }));
+};
 
 export const useGridState = (
   storageKey: string,
   columns: GridColDef[],
   defaultHidden: GridColumnVisibilityModel = {}
 ) => {
-  const [gridState, setGridState] = useState<GridState>(() => {
-    // Initialize default column visibility
+  // Column widths are intentionally left as uncontrolled defaults (from the
+  // column definitions) and are NOT persisted. This lets the DataGrid fully
+  // own the resize interaction, which avoids the glitchy/jumpy resizing caused
+  // by controlling widths, and resets column widths on each session.
+  const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityModel>(() => {
+    const saved = readSavedState(storageKey);
     const defaultVisibility = columns?.reduce((acc, col) => ({
       ...acc,
       [col.field]: defaultHidden[col.field] === false ? false : true
-    }), {});
-
-    // Initialize default column sizing from column definitions
-    const defaultSizing = columns?.reduce((acc, col) => ({
-      ...acc,
-      [col.field]: col.width || 150 // Use column width or default to 150
-    }), {});
-
-    // Load saved state from localStorage
-    const saved = localStorage.getItem(storageKey);
-    const savedState = saved ? JSON.parse(saved) : {};
+    }), {} as GridColumnVisibilityModel);
 
     return {
-      columnVisibility: {
-        ...defaultVisibility,
-        ...(savedState.columnVisibility || {})
-      },
-      columnSizing: {
-        ...defaultSizing,
-        ...(savedState.columnSizing || {})
-      }
+      ...defaultVisibility,
+      ...(saved.columnVisibility || {})
     };
   });
 
-  const saveToStorage = useCallback((newState: GridState) => {
-    localStorage.setItem(storageKey, JSON.stringify(newState));
+  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
+    setColumnVisibility(newModel);
+    persistState(storageKey, { columnVisibility: newModel });
   }, [storageKey]);
 
-  const handleColumnVisibilityChange = useCallback((newModel: GridColumnVisibilityModel) => {
-    setGridState(prev => {
-      const newState = { ...prev, columnVisibility: newModel };
-      saveToStorage(newState);
-      return newState;
-    });
-  }, [saveToStorage]);
+  // Make the last visible column stretch to fill the remaining horizontal
+  // space, so the grid always spans the full width of the screen. The "last"
+  // column is determined dynamically from the current visibility, so it stays
+  // correct when columns are hidden/shown via the filters.
+  const columnsWithFill = useMemo(() => {
+    const fillField = [...columns]
+      .reverse()
+      .find((col) => columnVisibility[col.field] !== false)
+      ?.field;
 
-  const handleColumnWidthChange = useCallback((params: any) => {
-    setGridState(prev => {
-      const newState = {
-        ...prev,
-        columnSizing: {
-          ...prev.columnSizing,
-          [params.field || params.colDef?.field]: params.width
-        }
+    return columns.map((col) => {
+      if (col.field !== fillField) {
+        return col;
+      }
+      return {
+        ...col,
+        flex: col.flex ?? 1,
+        minWidth: col.minWidth ?? col.width ?? 150,
       };
-      saveToStorage(newState);
-      return newState;
     });
-  }, [saveToStorage]);
-
-  const columnsWithSizing = useMemo(() => columns?.map(col => ({
-    ...col,
-    width: gridState.columnSizing[col.field] || col.width || 150
-  })), [columns, gridState.columnSizing]);
+  }, [columns, columnVisibility]);
 
   return {
-    columnVisibility: gridState.columnVisibility,
-    columnSizing: gridState.columnSizing,
-    columnsWithSizing,
+    columnVisibility,
+    columns: columnsWithFill,
     onColumnVisibilityChange: handleColumnVisibilityChange,
-    onColumnWidthChange: handleColumnWidthChange,
   };
 };

@@ -16,13 +16,12 @@ export const PresetsGrid = () => {
 
   const { data, isLoading, isError, error } = usePresets();
 
-  const columns = usePresetsGridColumns();
+  const gridColumns = usePresetsGridColumns();
   const { 
     columnVisibility, 
-    columnsWithSizing, 
+    columns,
     onColumnVisibilityChange, 
-    onColumnWidthChange
-  } = useGridState('PRESETS_GRID', columns);
+  } = useGridState('PRESETS_GRID', gridColumns);
 
   const rows: PresetGridRow[] | [] = useMemo(() => {
     if (data) {
@@ -55,7 +54,7 @@ export const PresetsGrid = () => {
       <PresetFormProvider>
         <DataGrid
           getRowId={(row) => row.Key}
-          columns={columnsWithSizing}
+          columns={columns}
           rows={rows}
           pageSizeOptions={[]}
           showToolbar
@@ -64,7 +63,6 @@ export const PresetsGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnWidthChange={onColumnWidthChange}
         />
         <PresetFormDialog />
       </PresetFormProvider>

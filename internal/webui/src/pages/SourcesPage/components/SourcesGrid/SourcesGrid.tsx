@@ -14,13 +14,12 @@ export const SourcesGrid = () => {
 
   const { data, isLoading, isError, error } = useSources();
 
-  const columns = useSourcesGridColumns();
+  const gridColumns = useSourcesGridColumns();
   const { 
     columnVisibility, 
-    columnsWithSizing, 
+    columns,
     onColumnVisibilityChange, 
-    onColumnWidthChange
-  } = useGridState('SOURCES_GRID', columns, {
+  } = useGridState('SOURCES_GRID', gridColumns, {
     Kind: false,
     IncludePattern: false,
     ExcludePattern: false,
@@ -48,7 +47,7 @@ export const SourcesGrid = () => {
       <SourceFormProvider>
         <DataGrid
           getRowId={(row) => row.Name}
-          columns={columnsWithSizing}
+          columns={columns}
           rows={data ?? []}
           pageSizeOptions={[]}
           showToolbar
@@ -57,7 +56,6 @@ export const SourcesGrid = () => {
           }}
           columnVisibilityModel={columnVisibility}
           onColumnVisibilityModelChange={onColumnVisibilityChange}
-          onColumnWidthChange={onColumnWidthChange}
         />
         <SourceFormDialog />
       </SourceFormProvider>
