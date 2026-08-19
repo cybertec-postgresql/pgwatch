@@ -20,7 +20,7 @@ For background, see [Concept: Components](../concept/components.md).
 ## Requirements
 
 - PostgreSQL 14 or newer (latest major recommended)
-- Grafana 10 or newer (for visualisation)
+- Grafana 13 or newer (for visualisation; `docker compose.grafana.yml` ships 13.1)
 - A user account on every database you want to monitor
 
 ## Step 1 — Install the pgwatch binary
@@ -121,7 +121,7 @@ Follow the [official Grafana installation guide](https://grafana.com/docs/grafan
 Then add the `pgwatch-metrics` (Postgres) or `pgwatch-prometheus` (Prometheus) data source — these UIDs are what the built-in dashboards expect — and import the dashboards from the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder of the pgwatch repository.
 
 !!! note
-    Starting from Grafana 12.4, set `newPanelPadding = false` under `[feature_toggles]` in `grafana.ini` to keep dashboard font sizes sensible.
+    Starting from Grafana 13.0, set `newPanelPadding = false` under `[feature_toggles]` in `grafana.ini` to keep dashboard font sizes sensible.
 
 ## Next steps
 

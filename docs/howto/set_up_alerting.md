@@ -9,7 +9,7 @@ For background on why pgwatch pairs with Grafana and the trade-offs of using Gra
 ## Prerequisites
 
 - A running pgwatch deployment (any sink)
-- A running Grafana 10+ instance
+- A running Grafana 13+ instance
 - The pgwatch dashboards imported (see [Tutorial: Docker installation](docker_installation.md))
 - A `pgwatch-metrics` (Postgres) or `pgwatch-prometheus` (Prometheus) data source with the expected UID
 
