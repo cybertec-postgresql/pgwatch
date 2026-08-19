@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/gorilla/websocket"
 )
 

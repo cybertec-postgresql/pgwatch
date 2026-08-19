@@ -8,13 +8,13 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -1223,6 +1223,7 @@ func TestSourceReaper_DetectSprocChanges_BoundedByChangeDetectionTimeout(t *test
 		t.Fatalf("DetectSprocChanges took %v, want ~ChangeDetectionTimeout (100ms)", elapsed)
 	}
 }
+
 // logSettingsCountingConn counts Query calls whose SQL contains "logging_collector"
 // (the substring identifying the server_log_event_counts settings probe) so a test
 // can assert the streaming log parser was started exactly once across multiple

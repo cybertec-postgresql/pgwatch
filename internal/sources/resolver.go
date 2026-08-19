@@ -19,8 +19,8 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	pgx "github.com/jackc/pgx/v5"
 	client "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"

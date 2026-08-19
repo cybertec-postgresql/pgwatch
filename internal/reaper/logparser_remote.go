@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 )
 
 func (lp *LogParser) parseLogsRemote() error {
@@ -119,7 +119,7 @@ func (lp *LogParser) parseLogsRemote() error {
 					}
 
 					databaseName := result["database_name"]
-				if lp.realDbname == databaseName {
+					if lp.realDbname == databaseName {
 						lp.eventCounts[errorSeverity]++
 					}
 					lp.eventCountsTotal[errorSeverity]++

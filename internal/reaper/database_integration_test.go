@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -226,12 +226,12 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		for _, state := range states {
 			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
-		md.Lock()
-		md.IsInRecovery = true
-		if state == "standby" {
-			md.IsInRecovery = false
-		}
-		md.Unlock()
+			md.Lock()
+			md.IsInRecovery = true
+			if state == "standby" {
+				md.IsInRecovery = false
+			}
+			md.Unlock()
 
 			helperSetNodeStatus(state)
 
@@ -255,12 +255,12 @@ func TestIntegration_SourceReaper_RunExcludesMetricsByNodeStatus(t *testing.T) {
 		for _, state := range states {
 			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
 
-		md.Lock()
-		md.IsInRecovery = false
-		if state == "standby" {
-			md.IsInRecovery = true
-		}
-		md.Unlock()
+			md.Lock()
+			md.IsInRecovery = false
+			if state == "standby" {
+				md.IsInRecovery = true
+			}
+			md.Unlock()
 
 			helperSetNodeStatus(state)
 

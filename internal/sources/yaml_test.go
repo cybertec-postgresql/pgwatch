@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
 	"github.com/stretchr/testify/assert"
 )
 
