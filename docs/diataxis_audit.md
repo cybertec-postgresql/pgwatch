@@ -1,3 +1,7 @@
+---
+title: Diátaxis Documentation Audit
+---
+
 # pgwatch Documentation Audit — Diátaxis Framework
 
 **Date:** 2026-08-19
