@@ -2,61 +2,26 @@
 title: Dashboarding and alerting
 ---
 
-## Grafana intro
+This page is a quick orientation to the dashboarding and alerting tooling that pairs with pgwatch. For background and trade-offs see [Concept: Observability stack](../concept/observability_stack.md). For the concrete alert-setup recipe see [How-to: Set up alerting](set_up_alerting.md).
 
-To display the gathered and stored metrics the pgwatch project has
-decided to rely heavily on the popular Grafana dashboarding solution.
-This means only though that it's installed in the default Docker images
-and there's a set of predefined dashboards available to cover most of
-the metrics gathered via the *Preset Configs*.
+## Where the dashboards live
 
-This does not mean though that Grafana is in any way tightly coupled
-with project's other components - quite the opposite actually, one can
-use any other means / tools to use the metrics data gathered by the
-pgwatch daemon.
+pgwatch ships a set of pre-defined Grafana dashboards covering most of the metrics the built-in presets collect. Browse them in the [Gallery → Dashboards](../gallery/dashboards.md) page or in the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder of the repository. The dashboards assume one of these data sources is configured:
 
-Currently, there are around 30 preset dashboards available for PostgreSQL
-data sources. Due to that nowadays, if metric gathering volumes are not
-a problem, we recommend using Postgres storage for most users.
+- `pgwatch-metrics` — for Postgres / TimescaleDB sinks
+- `pgwatch-prometheus` — for the Prometheus sink
 
-Note though that most users will probably want to always adjust the
-built-in dashboards slightly (colors, roundings, etc.), so that they
-should be taken only as examples to quickly get started. Also note that
-in case of changes it's not recommended to change the built-in ones,
-but use the *Save as* features - this will allow later to easily update
-all the dashboards *en masse* per script, without losing any custom user
-changes.
+The default Docker image wires both for you.
 
-**Links:**
+## Customising dashboards
 
-- [Built-in dashboards for PostgreSQL (TimescaleDB)
-storage](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana/postgres/)
+Almost every deployment ends up tweaking the built-in dashboards (colours, units, panel layout). Two practices keep that work portable across upgrades:
 
-- [Screenshots of pgwatch default
-dashboards](../gallery/dashboards.md)
+- Use **Save as** to put customised dashboards in a separate folder rather than overwriting the originals.
+- Treat the built-in dashboards as code you can pull and re-import after pgwatch upgrades.
 
-- [The online Demo site](https://demo.pgwatch.com/)
+See [Concept: Long-term installations → Dashboard maintenance](../concept/long_term_installations.md#dashboard-maintenance) for the long-term playbook.
 
 ## Alerting
 
-Alerting is very conveniently also supported by Grafana in a simple
-point-and-click style - see
-[here](https://grafana.com/docs/grafana/latest/alerting/#overview)
-for the official documentation. In general all more popular notification
-services are supported, and it's pretty much the easiest way to quickly
-start with PostgreSQL alerting on a smaller scale. For enterprise usage
-with hundreds of instances it's might get too "clicky" though and
-there are also some limitations - currently you can set alerts only on
-Graph panels and there must be no variables used in the query so you
-cannot use most of the pre-created pgwatch graphs, but need to create
-your own.
-
-Nevertheless, alerting via Grafana is s a good option for lighter use
-cases and there's also a preset dashboard template named "Alert
-Template" from the pgwatch project to give you some ideas on what to
-alert on.
-
-Note though that alerting is always a bit of a complex topic - it
-requires good understanding of PostgreSQL operational metrics and also
-business criticality background infos, so we don't want to be too
-opinionated here, and it's up to the users to implement.
+Grafana's built-in alerting is the path of least resistance and is fully compatible with pgwatch's stored metrics. The recipe lives at [How-to: Set up alerting](set_up_alerting.md).
