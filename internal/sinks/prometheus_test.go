@@ -7,9 +7,9 @@ import (
 
 	dto "github.com/prometheus/client_model/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

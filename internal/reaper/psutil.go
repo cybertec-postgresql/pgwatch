@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/load"

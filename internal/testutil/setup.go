@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/etcd"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"

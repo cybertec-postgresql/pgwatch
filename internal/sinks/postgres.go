@@ -13,9 +13,9 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

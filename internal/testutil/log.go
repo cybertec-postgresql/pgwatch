@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v5/internal/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/sirupsen/logrus"
 )
 
