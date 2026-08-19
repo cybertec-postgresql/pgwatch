@@ -57,6 +57,7 @@ nav:
     - Metrics and Presets: concept/metrics_and_presets.md
     - Advanced Features: concept/advanced_features.md
     - OS Metrics via PL/Python Helpers: concept/os_helpers.md
+    - Observability Stack: concept/observability_stack.md
   - Tutorials:
     - Docker Installation: tutorial/docker_installation.md
     - Custom Installation: tutorial/custom_installation.md
@@ -64,6 +65,7 @@ nav:
     - Upgrading: tutorial/upgrading.md
   - How-To Guides:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
+    - Set Up Alerting: howto/set_up_alerting.md
     - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
     - Bootstrapping the Measurements Database (Sink): howto/metrics_db_bootstrap.md
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
