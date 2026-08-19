@@ -18,7 +18,7 @@ Pick a sink based on what already exists in your environment.
 
 | Sink | When to use it |
 |---|---|
-| **Postgres** (with or without TimescaleDB) | Default. The shipped dashboards and SQL metric queries target this substrate; TimescaleDB adds automatic retention and continuous aggregates. |
+| **Postgres** (with or without TimescaleDB) | Default. The shipped dashboards and SQL metric queries target this substrate. TimescaleDB adds native compression and chunk-based storage; pgwatch's own `admin.drop_old_time_partitions()` handles retention either way. Continuous aggregates are out of scope for pgwatch — if you want them, configure TimescaleDB yourself and adapt the Grafana panels. |
 | **Prometheus** | When an external Prometheus server is already the system of record for monitoring data. pgwatch can [expose metrics in the Prometheus text exposition format](../howto/enable_prometheus_scrape.md) instead of writing to a database. |
 | **gRPC** | When you want to stream metrics into a system pgwatch does not natively support — an external time-series store, alerting system, or analytics pipeline. You implement the receiving server using the protobuf contract under `api/pb/`. |
 | **JSON file** | Testing, CI, and local development. Writes one file per measurement batch; not intended for production retention. |
@@ -29,7 +29,6 @@ Multiple sinks can run side-by-side (see [Reference: Sinks options](../reference
 
 pgwatch does not have strong opinions about where alerts should fire. What the project provides:
 
-- A pre-built *Alert Template* dashboard in the [dashboards gallery](../gallery/dashboards.md) that suggests which metrics are worth alerting on.
-- The same Grafana alerting workflow that works with any other PostgreSQL data source.
+- The same Grafana alerting workflow that works with any other PostgreSQL data source. The shipped dashboards already include the panels most teams start alerting on (high connection count, replication lag, long-running transactions, disk-space growth) — pick one and turn it into a rule.
 
 For the concrete recipe to add alert rules in Grafana, see [How-to: Set up alerting](../howto/set_up_alerting.md). For larger setups, point the gRPC or Prometheus sink at a dedicated alerting system (Alertmanager, Grafana Mimir + Grafana, SaaS, etc.) instead of running Grafana alert rules.

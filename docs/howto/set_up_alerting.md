@@ -17,7 +17,7 @@ For background on why pgwatch pairs with Grafana and the trade-offs of using Gra
 
 1. Open Grafana and confirm the pgwatch data source is reachable: **Connections → Data sources → pgwatch-metrics** → **Test**. The button should turn green.
 
-2. Pick the panel you want to alert on. The shipped **Alert Template** dashboard in the [Gallery → Dashboards](../gallery/dashboards.md) shows the panels most teams start with — high connection count, replication lag, long-running transactions, disk-space growth.
+2. Pick the panel you want to alert on. The shipped dashboards already include the panels most teams start with — high connection count, replication lag, long-running transactions, disk-space growth (see [Gallery → Dashboards](../gallery/dashboards.md)).
 
 3. From the panel's menu choose **More → Alert rule → Create alert rule from panel**.
 
