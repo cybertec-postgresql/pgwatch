@@ -44,8 +44,8 @@ plugins:
   #     minify_html: true
 
 nav:
-  - Intro:
-    - Hello World!: index.md
+  - Hello World!: index.md
+  - Concepts:
 
 
   - Concepts:
