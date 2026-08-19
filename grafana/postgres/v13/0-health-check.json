@@ -442,7 +442,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "SELECT max((roll - roll_lag) / ((roll - roll_lag) + (comm - comm_lag))::numeric) * 100 AS tx_rollback_rate\n  FROM (\n        SELECT(data->>'xact_rollback')::int8 AS roll, \n              lag((data->>'xact_rollback')::int8) OVER w AS roll_lag,\n              (data->>'xact_commit')::int8 AS comm, \n              lag((data->>'xact_commit')::int8) OVER w AS comm_lag\n          FROM db_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n        WINDOW w AS (ORDER BY time)\n     ) x\n WHERE comm > comm_lag OR roll > roll_lag",
+                        "rawSql": "SELECT max((CASE WHEN roll >= roll_lag THEN roll - roll_lag ELSE roll END) / nullif(((CASE WHEN roll >= roll_lag THEN roll - roll_lag ELSE roll END) + (CASE WHEN comm >= comm_lag THEN comm - comm_lag ELSE comm END))::numeric, 0)) * 100 AS tx_rollback_rate\n  FROM (\n        SELECT(data->>'xact_rollback')::int8 AS roll, \n              lag((data->>'xact_rollback')::int8) OVER w AS roll_lag,\n              (data->>'xact_commit')::int8 AS comm, \n              lag((data->>'xact_commit')::int8) OVER w AS comm_lag\n          FROM db_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n        WINDOW w AS (ORDER BY time)\n     ) x",
                         "sql": {
                           "columns": [
                             {
@@ -924,7 +924,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg( (c - c_lag) / extract(epoch FROM time - time_lag) ) AS qps\n  FROM (\n        SELECT (data->>'calls')::int8 AS c, \n               lag((data->>'calls')::int8) OVER w AS c_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM stat_statements_calls\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (order by time)        \n       ) x\n WHERE c >= c_lag AND time > time_lag",
+                        "rawSql": "SELECT avg( (CASE WHEN c >= c_lag THEN c - c_lag ELSE c END) / extract(epoch FROM time - time_lag) ) AS qps\n  FROM (\n        SELECT (data->>'calls')::int8 AS c, \n               lag((data->>'calls')::int8) OVER w AS c_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM stat_statements_calls\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (order by time)        \n       ) x\n WHERE time > time_lag",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -1090,7 +1090,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(CASE WHEN c = c_lag THEN 0 ELSE (tt - tt_lag)::numeric / (c - c_lag) END) AS avg_query_runtime\n  FROM (\n        SELECT (data->>'total_time')::float8 AS tt, \n               lag((data->>'total_time')::float8) OVER w AS tt_lag,\n               (data->>'calls')::int8 AS c, \n               lag((data->>'calls')::int8) OVER w AS c_lag\n          FROM stat_statements_calls\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW W AS (ORDER BY time)\n       ) x\n WHERE c >= c_lag AND tt >= tt_lag\n ORDER by 1 desc\n LIMIT 1",
+                        "rawSql": "SELECT avg(CASE WHEN c = c_lag THEN 0 ELSE (CASE WHEN tt >= tt_lag THEN tt - tt_lag ELSE tt END)::numeric / (CASE WHEN c >= c_lag THEN c - c_lag ELSE c END) END) AS avg_query_runtime\n  FROM (\n        SELECT (data->>'total_time')::float8 AS tt, \n               lag((data->>'total_time')::float8) OVER w AS tt_lag,\n               (data->>'calls')::int8 AS c, \n               lag((data->>'calls')::int8) OVER w AS c_lag\n          FROM stat_statements_calls\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW W AS (ORDER BY time)\n       ) x\n ORDER by 1 desc\n LIMIT 1",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -1753,7 +1753,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "SELECT ((hit - hit_lag) / ((hit - hit_lag) + (read - read_lag))::numeric) * 100 AS cache_hit_ratio\n  FROM (\n        SELECT (data->>'blks_hit')::int8 AS hit, \n               lag((data->>'blks_hit')::int8) OVER w AS hit_lag,\n               (data->>'blks_read')::int8 AS read, \n               lag((data->>'blks_read')::int8) OVER w AS read_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\n WHERE hit > hit_lag OR read > read_lag\n ORDER by 1",
+                        "rawSql": "SELECT ((CASE WHEN hit >= hit_lag THEN hit - hit_lag ELSE hit END) / nullif(((CASE WHEN hit >= hit_lag THEN hit - hit_lag ELSE hit END) + (CASE WHEN read >= read_lag THEN read - read_lag ELSE read END))::numeric, 0)) * 100 AS cache_hit_ratio\n  FROM (\n        SELECT (data->>'blks_hit')::int8 AS hit, \n               lag((data->>'blks_hit')::int8) OVER w AS hit_lag,\n               (data->>'blks_read')::int8 AS read, \n               lag((data->>'blks_read')::int8) OVER w AS read_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\n ORDER by 1",
                         "sql": {
                           "columns": [
                             {
@@ -2406,7 +2406,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT coalesce(sum(req - req_lag), 0) AS requested_cnt\n  FROM (\n        SELECT (data->>'checkpoints_req')::int as req,\n               lag((data->>'checkpoints_req')::int) OVER(ORDER BY time) AS req_lag\n          FROM bgwriter\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n       ) x\n WHERE req > req_lag",
+                        "rawSql": "SELECT coalesce(sum(CASE WHEN req >= req_lag THEN req - req_lag ELSE req END), 0) AS requested_cnt\n  FROM (\n        SELECT (data->>'checkpoints_req')::int as req,\n               lag((data->>'checkpoints_req')::int) OVER(ORDER BY time) AS req_lag\n          FROM bgwriter\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n       ) x",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -3738,7 +3738,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg((wal - wal_lag) / (etime - lag_etime)) AS wal_rate\n  FROM (\n        SELECT (data->>'xlog_location_b')::int8 AS wal, \n               lag((data->>'xlog_location_b')::int8) OVER w AS wal_lag,\n               extract(epoch from time) AS etime,\n               lag(extract(epoch from time)) OVER w AS lag_etime,\n               time\n          FROM wal\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\nWHERE wal >= wal_lag AND etime > lag_etime",
+                        "rawSql": "SELECT avg((CASE WHEN wal >= wal_lag THEN wal - wal_lag ELSE wal END) / (etime - lag_etime)) AS wal_rate\n  FROM (\n        SELECT (data->>'xlog_location_b')::int8 AS wal, \n               lag((data->>'xlog_location_b')::int8) OVER w AS wal_lag,\n               extract(epoch from time) AS etime,\n               lag(extract(epoch from time)) OVER w AS lag_etime,\n               time\n          FROM wal\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\nWHERE etime > lag_etime",
                         "sql": {
                           "columns": [
                             {
@@ -3862,7 +3862,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(CASE WHEN tb - tb_lag > 0 THEN (tb - tb_lag) / (etime - lag_etime) ELSE 0 END) AS temp_bytes_per_hour\n  FROM (\n        SELECT (data->>'temp_bytes')::int8 AS tb, lag((data->>'temp_bytes')::int8) OVER w AS tb_lag,\n               (extract(epoch from time))::int8 AS etime,\n               (lag(extract(epoch from time)) OVER w)::int8 AS lag_etime\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\n WHERE tb >= tb_lag AND etime > lag_etime",
+                        "rawSql": "SELECT avg(CASE WHEN tb >= tb_lag THEN (tb - tb_lag) / (etime - lag_etime) ELSE tb / (etime - lag_etime) END) AS temp_bytes_per_hour\n  FROM (\n        SELECT (data->>'temp_bytes')::int8 AS tb, lag((data->>'temp_bytes')::int8) OVER w AS tb_lag,\n               (extract(epoch from time))::int8 AS etime,\n               (lag(extract(epoch from time)) OVER w)::int8 AS lag_etime\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) x\n WHERE etime > lag_etime",
                         "sql": {
                           "columns": [
                             {
@@ -4004,7 +4004,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT sum((scan - scan_lag) * 60 / extract(epoch FROM (time - time_lag))) AS scan_count\n  FROM (\n        SELECT time, \n               lag(time) OVER w AS time_lag,\n               (data->>'seq_scan')::int8 AS scan, \n               lag((data->>'seq_scan')::int8) OVER w AS scan_lag\n          FROM table_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n           AND (data->>'table_size_b')::int8 > 100000000\n        WINDOW w AS (PARTITION BY tag_data->>'table_full_name' ORDER BY time)\n       ) x\nWHERE scan > scan_lag AND time > time_lag",
+                        "rawSql": "SELECT sum((CASE WHEN scan >= scan_lag THEN scan - scan_lag ELSE scan END) * 60 / extract(epoch FROM (time - time_lag))) AS scan_count\n  FROM (\n        SELECT time, \n               lag(time) OVER w AS time_lag,\n               (data->>'seq_scan')::int8 AS scan, \n               lag((data->>'seq_scan')::int8) OVER w AS scan_lag\n          FROM table_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n           AND (data->>'table_size_b')::int8 > 100000000\n        WINDOW w AS (PARTITION BY tag_data->>'table_full_name' ORDER BY time)\n       ) x\nWHERE time > time_lag",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -5561,7 +5561,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(((roll - roll_lag) + (comm - comm_lag)) / extract(epoch FROM (time - time_lag))) AS tps\n  FROM (\n        SELECT time, \n               lag(time) OVER w AS time_lag,\n               (data->>'xact_rollback')::int8 AS roll, \n               lag((data->>'xact_rollback')::int8) OVER w AS roll_lag,\n               (data->>'xact_commit')::int8 AS comm, \n               lag((data->>'xact_commit')::int8) OVER w AS comm_lag\n          FROM db_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n        WINDOW w AS (ORDER BY time)\n      ) x\nWHERE (comm > comm_lag OR roll > roll_lag) AND time > time_lag",
+                        "rawSql": "SELECT avg(((CASE WHEN roll >= roll_lag THEN roll - roll_lag ELSE roll END) + (CASE WHEN comm >= comm_lag THEN comm - comm_lag ELSE comm END)) / extract(epoch FROM (time - time_lag))) AS tps\n  FROM (\n        SELECT time, \n               lag(time) OVER w AS time_lag,\n               (data->>'xact_rollback')::int8 AS roll, \n               lag((data->>'xact_rollback')::int8) OVER w AS roll_lag,\n               (data->>'xact_commit')::int8 AS comm, \n               lag((data->>'xact_commit')::int8) OVER w AS comm_lag\n          FROM db_stats\n         WHERE $__timeFilter(time)\n           AND dbname = '$dbname'\n        WINDOW w AS (ORDER BY time)\n      ) x\nWHERE time > time_lag",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -6067,7 +6067,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(((ins - ins_lag) * 60) / extract(epoch FROM time - time_lag)) AS ins_per_min\n  FROM (\n        SELECT (data->>'tup_inserted')::int8 AS ins, \n               lag((data->>'tup_inserted')::int8) OVER w AS ins_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE ins >= ins_lag AND time > time_lag",
+                        "rawSql": "SELECT avg(((CASE WHEN ins >= ins_lag THEN ins - ins_lag ELSE ins END) * 60) / extract(epoch FROM time - time_lag)) AS ins_per_min\n  FROM (\n        SELECT (data->>'tup_inserted')::int8 AS ins, \n               lag((data->>'tup_inserted')::int8) OVER w AS ins_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE time > time_lag",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -6223,7 +6223,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(((upd - upd_lag) * 60) / extract(epoch FROM time - time_lag)) AS upd_per_min\n  FROM (\n        SELECT (data->>'tup_updated')::int8 AS upd, \n               lag((data->>'tup_updated')::int8) OVER w AS upd_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE upd >= upd_lag AND time > time_lag\n",
+                        "rawSql": "SELECT avg(((CASE WHEN upd >= upd_lag THEN upd - upd_lag ELSE upd END) * 60) / extract(epoch FROM time - time_lag)) AS upd_per_min\n  FROM (\n        SELECT (data->>'tup_updated')::int8 AS upd, \n               lag((data->>'tup_updated')::int8) OVER w AS upd_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE time > time_lag\n",
                         "resultFormat": "time_series",
                         "select": [
                           [
@@ -6379,7 +6379,7 @@
                         "orderByTime": "ASC",
                         "policy": "default",
                         "rawQuery": true,
-                        "rawSql": "SELECT avg(((del - del_lag) * 60) / extract(epoch FROM time - time_lag)) AS del_per_min\n  FROM (\n        SELECT (data->>'tup_deleted')::int8 AS del, \n               lag((data->>'tup_deleted')::int8) OVER w AS del_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE del >= del_lag AND time > time_lag\n",
+                        "rawSql": "SELECT avg(((CASE WHEN del >= del_lag THEN del - del_lag ELSE del END) * 60) / extract(epoch FROM time - time_lag)) AS del_per_min\n  FROM (\n        SELECT (data->>'tup_deleted')::int8 AS del, \n               lag((data->>'tup_deleted')::int8) OVER w AS del_lag,\n               time, \n               lag(time) OVER w AS time_lag\n          FROM db_stats\n         WHERE dbname = '$dbname' AND $__timeFilter(time)\n        WINDOW w AS (ORDER BY time)\n       ) AS x\n WHERE time > time_lag\n",
                         "resultFormat": "time_series",
                         "select": [
                           [

@@ -2064,7 +2064,7 @@
                         "format": "time_series",
                         "group": [],
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((l - l_lag) / extract(epoch from time - time_lag))\nfrom (\n  select\n    (data->>'xlog_location_b')::numeric as l,\n    lag((data->>'xlog_location_b')::numeric) over w as l_lag,\n    time,\n    lag(time) over w as time_lag,\n    dbname\n  from wal\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere time > time_lag and l > l_lag\ngroup by 1, 2\norder by 1\n",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  dbname,\n  avg((CASE WHEN l >= l_lag THEN l - l_lag ELSE l END) / extract(epoch from time - time_lag))\nfrom (\n  select\n    (data->>'xlog_location_b')::numeric as l,\n    lag((data->>'xlog_location_b')::numeric) over w as l_lag,\n    time,\n    lag(time) over w as time_lag,\n    dbname\n  from wal\n  where dbname in ($dbname) and $__timeFilter(time)\n  window w as (partition by dbname order by time)\n) x\nwhere time > time_lag\ngroup by 1, 2\norder by 1\n",
                         "resultFormat": "time_series"
                       }
                     },

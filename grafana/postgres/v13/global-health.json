@@ -939,7 +939,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select \n    dbname, pct\nfrom (\n    select \n        dbname,\n        (sum(total_jit - total_jit_lag) / sum(total_time - total_time_lag)) * 100 as pct\n    from\n    (\n        select\n            dbname,\n            (data->>'jit_generation_time')::float8 as total_jit, lag((data->>'jit_generation_time')::float8) over w as total_jit_lag,\n            (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n        from stat_statements\n        where $__timeFilter(time)\n        window w as (order by time)\n    )\n    where total_time > total_time_lag\n    group by 1\n)\nwhere pct > 0\norder by 2 desc\nlimit $top_limit",
+                        "rawSql": "select \n    dbname, pct\nfrom (\n    select \n        dbname,\n        (sum(CASE WHEN total_jit >= total_jit_lag THEN total_jit - total_jit_lag ELSE total_jit END) / nullif(sum(CASE WHEN total_time >= total_time_lag THEN total_time - total_time_lag ELSE total_time END), 0)) * 100 as pct\n    from\n    (\n        select\n            dbname,\n            (data->>'jit_generation_time')::float8 as total_jit, lag((data->>'jit_generation_time')::float8) over w as total_jit_lag,\n            (data->>'total_time')::float8 as total_time, lag((data->>'total_time')::float8) over w as total_time_lag\n        from stat_statements\n        where $__timeFilter(time)\n        window w as (order by time)\n    )\n    group by 1\n)\nwhere pct > 0\norder by 2 desc\nlimit $top_limit",
                         "select": [
                           [
                             {
@@ -1783,7 +1783,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select * from (\nselect\n  dbname,\n  avg((roll-roll_lag)::numeric / ((roll-roll_lag) + (comm-comm_lag)))*100 as \"rollback_ratio\"\nfrom (\n  select\n      dbname,\n      time,\n      (data->>'xact_rollback')::int8 as roll, lag((data->>'xact_rollback')::int8) over w as roll_lag,\n      (data->>'xact_commit')::int8 as comm, lag((data->>'xact_commit')::int8) over w as comm_lag\n  FROM\n      db_stats\n  WHERE\n    $__timeFilter(\"time\")\n    window w as (partition by dbname order by time)\n) x\nWHERE comm > comm_lag or roll > roll_lag\nGROUP BY 1\n) y\nWHERE rollback_ratio > 0\nORDER BY 2 DESC\nLIMIT $top_limit\n",
+                        "rawSql": "select * from (\nselect\n  dbname,\n  avg((CASE WHEN roll >= roll_lag THEN roll-roll_lag ELSE roll END)::numeric / nullif((CASE WHEN roll >= roll_lag THEN roll-roll_lag ELSE roll END) + (CASE WHEN comm >= comm_lag THEN comm-comm_lag ELSE comm END), 0))*100 as \"rollback_ratio\"\nfrom (\n  select\n      dbname,\n      time,\n      (data->>'xact_rollback')::int8 as roll, lag((data->>'xact_rollback')::int8) over w as roll_lag,\n      (data->>'xact_commit')::int8 as comm, lag((data->>'xact_commit')::int8) over w as comm_lag\n  FROM\n      db_stats\n  WHERE\n    $__timeFilter(\"time\")\n    window w as (partition by dbname order by time)\n) x\nGROUP BY 1\n) y\nWHERE rollback_ratio > 0\nORDER BY 2 DESC\nLIMIT $top_limit\n",
                         "select": [
                           [
                             {
@@ -2145,7 +2145,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select * from (\nselect\n  dbname,\n  avg((tb-tb_lag) / (etime - lag_etime))*60 as \"temp_bytes_per_minute\"\nfrom (\n        select\n          dbname,\n          (data->>'temp_bytes')::int8 as tb, lag((data->>'temp_bytes')::int8) over w as tb_lag,\n          (extract(epoch from time))::int8 as etime,\n          (lag(extract(epoch from time)) over w)::int8 as lag_etime\n        from db_stats\n        where $__timeFilter(time)\n        window w as (partition by dbname order by time)\n) x\nwhere\n  tb >= tb_lag and etime > lag_etime\ngroup by\n  dbname\n) y\nwhere temp_bytes_per_minute > 0\norder by 2 desc\nlimit $top_limit",
+                        "rawSql": "select * from (\nselect\n  dbname,\n  avg((CASE WHEN tb >= tb_lag THEN tb-tb_lag ELSE tb END) / (etime - lag_etime))*60 as \"temp_bytes_per_minute\"\nfrom (\n        select\n          dbname,\n          (data->>'temp_bytes')::int8 as tb, lag((data->>'temp_bytes')::int8) over w as tb_lag,\n          (extract(epoch from time))::int8 as etime,\n          (lag(extract(epoch from time)) over w)::int8 as lag_etime\n        from db_stats\n        where $__timeFilter(time)\n        window w as (partition by dbname order by time)\n) x\nwhere\n  etime > lag_etime\ngroup by\n  dbname\n) y\nwhere temp_bytes_per_minute > 0\norder by 2 desc\nlimit $top_limit",
                         "select": [
                           [
                             {
