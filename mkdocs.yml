@@ -96,7 +96,7 @@ nav:
     - Web UI: gallery/webui.md
   - Developer:
     - Contributing: developer/contributing.md
-    - Developer Docs: developer/README.md
+    - Developer Docs: ../devel/godoc/index.html
     - Code of Conduct: developer/CODE_OF_CONDUCT.md
     - License: developer/LICENSE.md
 
