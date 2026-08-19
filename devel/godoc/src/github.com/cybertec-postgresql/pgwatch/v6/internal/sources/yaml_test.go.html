@@ -1,0 +1,574 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#375EAB"/>
+
+  <title>src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/yaml_test.go - GoPages</title>
+
+<link type="text/css" rel="stylesheet" href="/devel/godoc/lib/godoc/style.css"/>
+
+<script>window.initFuncs = [];</script>
+<script src="/devel/godoc/lib/godoc/jquery.js" defer=""></script>
+
+
+
+
+<script>var goVersion = "go1.26.5";</script>
+<script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
+
+</head>
+<body>
+
+<div id="lowframe" style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/">GoPages | Auto-generated docs</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/">GoPages</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">▽</span></a>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Source file
+    <a href="/devel/godoc/src">src</a>/<a href="/devel/godoc/src/github.com">github.com</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql">cybertec-postgresql</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch">pgwatch</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6">v6</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal">internal</a>/<a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources">sources</a>/<span class="text-muted">yaml_test.go</span>
+  </h1>
+
+
+
+
+
+  <h2>
+    Documentation: <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/sources">github.com/cybertec-postgresql/pgwatch/v6/internal/sources</a>
+  </h2>
+
+
+
+<div id="nav"></div>
+
+
+<script type="text/javascript">document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1  </span>package sources_test
+<span id="L2" class="ln">     2  </span>
+<span id="L3" class="ln">     3  </span>import (
+<span id="L4" class="ln">     4  </span>	&#34;fmt&#34;
+<span id="L5" class="ln">     5  </span>	&#34;os&#34;
+<span id="L6" class="ln">     6  </span>	&#34;path/filepath&#34;
+<span id="L7" class="ln">     7  </span>	&#34;sync&#34;
+<span id="L8" class="ln">     8  </span>	&#34;testing&#34;
+<span id="L9" class="ln">     9  </span>	&#34;time&#34;
+<span id="L10" class="ln">    10  </span>
+<span id="L11" class="ln">    11  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v6/internal/sources&#34;
+<span id="L12" class="ln">    12  </span>	&#34;github.com/stretchr/testify/assert&#34;
+<span id="L13" class="ln">    13  </span>)
+<span id="L14" class="ln">    14  </span>
+<span id="L15" class="ln">    15  </span><span class="comment">// the number of entries in the sample.sources.yaml file</span>
+<span id="L16" class="ln">    16  </span>const sampleEntriesNumber = 5
+<span id="L17" class="ln">    17  </span>
+<span id="L18" class="ln">    18  </span>const (
+<span id="L19" class="ln">    19  </span>	contribDir = &#34;../../contrib/&#34;
+<span id="L20" class="ln">    20  </span>	sampleFile = &#34;../../contrib/sample.sources.yaml&#34;
+<span id="L21" class="ln">    21  </span>)
+<span id="L22" class="ln">    22  </span>
+<span id="L23" class="ln">    23  </span>func TestNewYAMLSourcesReaderWriter(t *testing.T) {
+<span id="L24" class="ln">    24  </span>	a := assert.New(t)
+<span id="L25" class="ln">    25  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, sampleFile)
+<span id="L26" class="ln">    26  </span>	a.NoError(err)
+<span id="L27" class="ln">    27  </span>	a.NotNil(t, yamlrw)
+<span id="L28" class="ln">    28  </span>}
+<span id="L29" class="ln">    29  </span>
+<span id="L30" class="ln">    30  </span>func TestYAMLGetMonitoredDatabases(t *testing.T) {
+<span id="L31" class="ln">    31  </span>	a := assert.New(t)
+<span id="L32" class="ln">    32  </span>
+<span id="L33" class="ln">    33  </span>	t.Run(&#34;single file&#34;, func(*testing.T) {
+<span id="L34" class="ln">    34  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, sampleFile)
+<span id="L35" class="ln">    35  </span>		a.NoError(err)
+<span id="L36" class="ln">    36  </span>
+<span id="L37" class="ln">    37  </span>		dbs, err := yamlrw.GetSources()
+<span id="L38" class="ln">    38  </span>		a.NoError(err)
+<span id="L39" class="ln">    39  </span>		a.Len(dbs, sampleEntriesNumber)
+<span id="L40" class="ln">    40  </span>	})
+<span id="L41" class="ln">    41  </span>
+<span id="L42" class="ln">    42  </span>	t.Run(&#34;nonexistent file&#34;, func(*testing.T) {
+<span id="L43" class="ln">    43  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, &#34;nonexistent.yaml&#34;)
+<span id="L44" class="ln">    44  </span>		a.NoError(err)
+<span id="L45" class="ln">    45  </span>		dbs, err := yamlrw.GetSources()
+<span id="L46" class="ln">    46  </span>		a.Error(err)
+<span id="L47" class="ln">    47  </span>		a.Nil(dbs)
+<span id="L48" class="ln">    48  </span>	})
+<span id="L49" class="ln">    49  </span>
+<span id="L50" class="ln">    50  </span>	t.Run(&#34;garbage file&#34;, func(*testing.T) {
+<span id="L51" class="ln">    51  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, filepath.Join(contribDir, &#34;yaml.go&#34;))
+<span id="L52" class="ln">    52  </span>		a.NoError(err)
+<span id="L53" class="ln">    53  </span>		dbs, err := yamlrw.GetSources()
+<span id="L54" class="ln">    54  </span>		a.Error(err)
+<span id="L55" class="ln">    55  </span>		a.Nil(dbs)
+<span id="L56" class="ln">    56  </span>	})
+<span id="L57" class="ln">    57  </span>
+<span id="L58" class="ln">    58  </span>	t.Run(&#34;duplicate in single file&#34;, func(t *testing.T) {
+<span id="L59" class="ln">    59  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;duplicate.yaml&#34;)
+<span id="L60" class="ln">    60  </span>		yamlContent := `
+<span id="L61" class="ln">    61  </span>- name: test1
+<span id="L62" class="ln">    62  </span>  conn_str: postgresql://localhost/test1
+<span id="L63" class="ln">    63  </span>- name: test2
+<span id="L64" class="ln">    64  </span>  conn_str: postgresql://localhost/test2
+<span id="L65" class="ln">    65  </span>- name: test1
+<span id="L66" class="ln">    66  </span>  conn_str: postgresql://localhost/test1_duplicate
+<span id="L67" class="ln">    67  </span>`
+<span id="L68" class="ln">    68  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L69" class="ln">    69  </span>		a.NoError(err)
+<span id="L70" class="ln">    70  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L71" class="ln">    71  </span>		a.NoError(err)
+<span id="L72" class="ln">    72  </span>
+<span id="L73" class="ln">    73  </span>		dbs, err := yamlrw.GetSources()
+<span id="L74" class="ln">    74  </span>		a.Error(err)
+<span id="L75" class="ln">    75  </span>		a.Nil(dbs)
+<span id="L76" class="ln">    76  </span>	})
+<span id="L77" class="ln">    77  </span>
+<span id="L78" class="ln">    78  </span>	t.Run(&#34;duplicates across files&#34;, func(t *testing.T) {
+<span id="L79" class="ln">    79  </span>		tmpDir := t.TempDir()
+<span id="L80" class="ln">    80  </span>		yamlContent1 := `
+<span id="L81" class="ln">    81  </span>- name: test1
+<span id="L82" class="ln">    82  </span>  conn_str: postgresql://localhost/test1
+<span id="L83" class="ln">    83  </span>- name: test2
+<span id="L84" class="ln">    84  </span>  conn_str: postgresql://localhost/test2
+<span id="L85" class="ln">    85  </span>`
+<span id="L86" class="ln">    86  </span>		err := os.WriteFile(filepath.Join(tmpDir, &#34;sources1.yaml&#34;), []byte(yamlContent1), 0644)
+<span id="L87" class="ln">    87  </span>		a.NoError(err)
+<span id="L88" class="ln">    88  </span>
+<span id="L89" class="ln">    89  </span>		yamlContent2 := `
+<span id="L90" class="ln">    90  </span>- name: test1
+<span id="L91" class="ln">    91  </span>  conn_str: postgresql://localhost/test1_duplicate
+<span id="L92" class="ln">    92  </span>`
+<span id="L93" class="ln">    93  </span>		err = os.WriteFile(filepath.Join(tmpDir, &#34;sources2.yaml&#34;), []byte(yamlContent2), 0644)
+<span id="L94" class="ln">    94  </span>		a.NoError(err)
+<span id="L95" class="ln">    95  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpDir)
+<span id="L96" class="ln">    96  </span>		a.NoError(err)
+<span id="L97" class="ln">    97  </span>
+<span id="L98" class="ln">    98  </span>		dbs, err := yamlrw.GetSources()
+<span id="L99" class="ln">    99  </span>		a.Error(err)
+<span id="L100" class="ln">   100  </span>		a.Nil(dbs)
+<span id="L101" class="ln">   101  </span>	})
+<span id="L102" class="ln">   102  </span>
+<span id="L103" class="ln">   103  </span>	t.Run(&#34;directory with yaml and yml files&#34;, func(t *testing.T) {
+<span id="L104" class="ln">   104  </span>		tmpDir := t.TempDir()
+<span id="L105" class="ln">   105  </span>		yamlContent1 := `
+<span id="L106" class="ln">   106  </span>- name: dir_test1
+<span id="L107" class="ln">   107  </span>  conn_str: postgresql://localhost/test1
+<span id="L108" class="ln">   108  </span>`
+<span id="L109" class="ln">   109  </span>		yamlContent2 := `
+<span id="L110" class="ln">   110  </span>- name: dir_test2
+<span id="L111" class="ln">   111  </span>  conn_str: postgresql://localhost/test2
+<span id="L112" class="ln">   112  </span>`
+<span id="L113" class="ln">   113  </span>		err := os.WriteFile(filepath.Join(tmpDir, &#34;sources.yaml&#34;), []byte(yamlContent1), 0644)
+<span id="L114" class="ln">   114  </span>		a.NoError(err)
+<span id="L115" class="ln">   115  </span>		err = os.WriteFile(filepath.Join(tmpDir, &#34;sources.yml&#34;), []byte(yamlContent2), 0644)
+<span id="L116" class="ln">   116  </span>		a.NoError(err)
+<span id="L117" class="ln">   117  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpDir)
+<span id="L118" class="ln">   118  </span>		a.NoError(err)
+<span id="L119" class="ln">   119  </span>		dbs, err := yamlrw.GetSources()
+<span id="L120" class="ln">   120  </span>		a.NoError(err)
+<span id="L121" class="ln">   121  </span>		a.Len(dbs, 2)
+<span id="L122" class="ln">   122  </span>	})
+<span id="L123" class="ln">   123  </span>}
+<span id="L124" class="ln">   124  </span>
+<span id="L125" class="ln">   125  </span>func TestYAMLDeleteDatabase(t *testing.T) {
+<span id="L126" class="ln">   126  </span>	a := assert.New(t)
+<span id="L127" class="ln">   127  </span>
+<span id="L128" class="ln">   128  </span>	t.Run(&#34;happy path&#34;, func(*testing.T) {
+<span id="L129" class="ln">   129  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L130" class="ln">   130  </span>		a.NoError(err)
+<span id="L131" class="ln">   131  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L132" class="ln">   132  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L133" class="ln">   133  </span>		a.NoError(err)
+<span id="L134" class="ln">   134  </span>		defer os.Remove(tmpSampleFile)
+<span id="L135" class="ln">   135  </span>
+<span id="L136" class="ln">   136  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L137" class="ln">   137  </span>		a.NoError(err)
+<span id="L138" class="ln">   138  </span>
+<span id="L139" class="ln">   139  </span>		err = yamlrw.DeleteSource(&#34;test1&#34;)
+<span id="L140" class="ln">   140  </span>		a.NoError(err)
+<span id="L141" class="ln">   141  </span>
+<span id="L142" class="ln">   142  </span>		dbs, err := yamlrw.GetSources()
+<span id="L143" class="ln">   143  </span>		a.NoError(err)
+<span id="L144" class="ln">   144  </span>		a.Len(dbs, sampleEntriesNumber-1)
+<span id="L145" class="ln">   145  </span>	})
+<span id="L146" class="ln">   146  </span>
+<span id="L147" class="ln">   147  </span>	t.Run(&#34;nonexistent file&#34;, func(*testing.T) {
+<span id="L148" class="ln">   148  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, &#34;nonexistent.yaml&#34;)
+<span id="L149" class="ln">   149  </span>		a.NoError(err)
+<span id="L150" class="ln">   150  </span>		err = yamlrw.DeleteSource(&#34;test1&#34;)
+<span id="L151" class="ln">   151  </span>		a.Error(err)
+<span id="L152" class="ln">   152  </span>	})
+<span id="L153" class="ln">   153  </span>}
+<span id="L154" class="ln">   154  </span>
+<span id="L155" class="ln">   155  </span>func TestYAMLUpdateDatabase(t *testing.T) {
+<span id="L156" class="ln">   156  </span>	a := assert.New(t)
+<span id="L157" class="ln">   157  </span>
+<span id="L158" class="ln">   158  </span>	t.Run(&#34;happy path&#34;, func(*testing.T) {
+<span id="L159" class="ln">   159  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L160" class="ln">   160  </span>		a.NoError(err)
+<span id="L161" class="ln">   161  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L162" class="ln">   162  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L163" class="ln">   163  </span>		a.NoError(err)
+<span id="L164" class="ln">   164  </span>		defer os.Remove(tmpSampleFile)
+<span id="L165" class="ln">   165  </span>
+<span id="L166" class="ln">   166  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L167" class="ln">   167  </span>		a.NoError(err)
+<span id="L168" class="ln">   168  </span>
+<span id="L169" class="ln">   169  </span>		<span class="comment">// change the connection string of the first database</span>
+<span id="L170" class="ln">   170  </span>		md := sources.Source{}
+<span id="L171" class="ln">   171  </span>		md.Name = &#34;test1&#34;
+<span id="L172" class="ln">   172  </span>		md.ConnStr = &#34;postgresql://localhost/test1&#34;
+<span id="L173" class="ln">   173  </span>		err = yamlrw.UpdateSource(md)
+<span id="L174" class="ln">   174  </span>		a.NoError(err)
+<span id="L175" class="ln">   175  </span>
+<span id="L176" class="ln">   176  </span>		<span class="comment">// add a new database</span>
+<span id="L177" class="ln">   177  </span>		md = sources.Source{}
+<span id="L178" class="ln">   178  </span>		md.Name = &#34;test5&#34;
+<span id="L179" class="ln">   179  </span>		md.ConnStr = &#34;postgresql://localhost/test5&#34;
+<span id="L180" class="ln">   180  </span>		err = yamlrw.UpdateSource(md)
+<span id="L181" class="ln">   181  </span>		a.NoError(err)
+<span id="L182" class="ln">   182  </span>
+<span id="L183" class="ln">   183  </span>		dbs, err := yamlrw.GetSources()
+<span id="L184" class="ln">   184  </span>		a.NoError(err)
+<span id="L185" class="ln">   185  </span>		a.Len(dbs, sampleEntriesNumber+1)
+<span id="L186" class="ln">   186  </span>		dbs[0].ConnStr = &#34;postgresql://localhost/test1&#34;
+<span id="L187" class="ln">   187  </span>		dbs[sampleEntriesNumber].ConnStr = &#34;postgresql://localhost/test5&#34;
+<span id="L188" class="ln">   188  </span>	})
+<span id="L189" class="ln">   189  </span>
+<span id="L190" class="ln">   190  </span>	t.Run(&#34;nonexistent file&#34;, func(*testing.T) {
+<span id="L191" class="ln">   191  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, &#34;&#34;)
+<span id="L192" class="ln">   192  </span>		a.NoError(err)
+<span id="L193" class="ln">   193  </span>		err = yamlrw.UpdateSource(sources.Source{})
+<span id="L194" class="ln">   194  </span>		a.Error(err)
+<span id="L195" class="ln">   195  </span>	})
+<span id="L196" class="ln">   196  </span>}
+<span id="L197" class="ln">   197  </span>
+<span id="L198" class="ln">   198  </span>func TestYAMLCreateSource(t *testing.T) {
+<span id="L199" class="ln">   199  </span>	a := assert.New(t)
+<span id="L200" class="ln">   200  </span>
+<span id="L201" class="ln">   201  </span>	t.Run(&#34;happy_path&#34;, func(*testing.T) {
+<span id="L202" class="ln">   202  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L203" class="ln">   203  </span>		a.NoError(err)
+<span id="L204" class="ln">   204  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L205" class="ln">   205  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L206" class="ln">   206  </span>		a.NoError(err)
+<span id="L207" class="ln">   207  </span>		defer os.Remove(tmpSampleFile)
+<span id="L208" class="ln">   208  </span>
+<span id="L209" class="ln">   209  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L210" class="ln">   210  </span>		a.NoError(err)
+<span id="L211" class="ln">   211  </span>
+<span id="L212" class="ln">   212  </span>		<span class="comment">// Create a new source</span>
+<span id="L213" class="ln">   213  </span>		md := sources.Source{
+<span id="L214" class="ln">   214  </span>			Name:    &#34;new_source&#34;,
+<span id="L215" class="ln">   215  </span>			ConnStr: &#34;postgresql://localhost/new_db&#34;,
+<span id="L216" class="ln">   216  </span>			Kind:    sources.SourcePostgres,
+<span id="L217" class="ln">   217  </span>		}
+<span id="L218" class="ln">   218  </span>		err = yamlrw.CreateSource(md)
+<span id="L219" class="ln">   219  </span>		a.NoError(err)
+<span id="L220" class="ln">   220  </span>
+<span id="L221" class="ln">   221  </span>		<span class="comment">// Verify it was created</span>
+<span id="L222" class="ln">   222  </span>		dbs, err := yamlrw.GetSources()
+<span id="L223" class="ln">   223  </span>		a.NoError(err)
+<span id="L224" class="ln">   224  </span>		a.Len(dbs, sampleEntriesNumber+1)
+<span id="L225" class="ln">   225  </span>
+<span id="L226" class="ln">   226  </span>		<span class="comment">// Try to create the same source again - should fail</span>
+<span id="L227" class="ln">   227  </span>		err = yamlrw.CreateSource(md)
+<span id="L228" class="ln">   228  </span>		a.Error(err)
+<span id="L229" class="ln">   229  </span>		a.ErrorIs(sources.ErrSourceExists, err)
+<span id="L230" class="ln">   230  </span>	})
+<span id="L231" class="ln">   231  </span>
+<span id="L232" class="ln">   232  </span>	t.Run(&#34;duplicate_source&#34;, func(*testing.T) {
+<span id="L233" class="ln">   233  </span>		data, err := os.ReadFile(sampleFile)
+<span id="L234" class="ln">   234  </span>		a.NoError(err)
+<span id="L235" class="ln">   235  </span>		tmpSampleFile := filepath.Join(t.TempDir(), &#34;sample.sources.yaml&#34;)
+<span id="L236" class="ln">   236  </span>		err = os.WriteFile(tmpSampleFile, data, 0644)
+<span id="L237" class="ln">   237  </span>		a.NoError(err)
+<span id="L238" class="ln">   238  </span>		defer os.Remove(tmpSampleFile)
+<span id="L239" class="ln">   239  </span>
+<span id="L240" class="ln">   240  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpSampleFile)
+<span id="L241" class="ln">   241  </span>		a.NoError(err)
+<span id="L242" class="ln">   242  </span>
+<span id="L243" class="ln">   243  </span>		<span class="comment">// Try to create a source that already exists</span>
+<span id="L244" class="ln">   244  </span>		md := sources.Source{
+<span id="L245" class="ln">   245  </span>			Name:    &#34;test1&#34;, <span class="comment">// This name already exists in sample file</span>
+<span id="L246" class="ln">   246  </span>			ConnStr: &#34;postgresql://localhost/test1&#34;,
+<span id="L247" class="ln">   247  </span>			Kind:    sources.SourcePostgres,
+<span id="L248" class="ln">   248  </span>		}
+<span id="L249" class="ln">   249  </span>		err = yamlrw.CreateSource(md)
+<span id="L250" class="ln">   250  </span>		a.Error(err)
+<span id="L251" class="ln">   251  </span>		a.ErrorIs(sources.ErrSourceExists, err)
+<span id="L252" class="ln">   252  </span>	})
+<span id="L253" class="ln">   253  </span>}
+<span id="L254" class="ln">   254  </span>
+<span id="L255" class="ln">   255  </span>func TestExpandEnvVars(t *testing.T) {
+<span id="L256" class="ln">   256  </span>	a := assert.New(t)
+<span id="L257" class="ln">   257  </span>
+<span id="L258" class="ln">   258  </span>	<span class="comment">// Set environment variables for testing</span>
+<span id="L259" class="ln">   259  </span>	t.Setenv(&#34;PGW_TEST_NAME&#34;, &#34;expanded_name&#34;)
+<span id="L260" class="ln">   260  </span>	t.Setenv(&#34;PGW_TEST_GROUP&#34;, &#34;expanded_group&#34;)
+<span id="L261" class="ln">   261  </span>	t.Setenv(&#34;PGW_TEST_CONNSTR&#34;, &#34;postgresql://localhost/expanded&#34;)
+<span id="L262" class="ln">   262  </span>	t.Setenv(&#34;PGW_TEST_KIND&#34;, &#34;postgres&#34;)
+<span id="L263" class="ln">   263  </span>	t.Setenv(&#34;PGW_TEST_INCLUDE&#34;, &#34;include_pattern&#34;)
+<span id="L264" class="ln">   264  </span>	t.Setenv(&#34;PGW_TEST_EXCLUDE&#34;, &#34;exclude_pattern&#34;)
+<span id="L265" class="ln">   265  </span>	t.Setenv(&#34;PGW_TEST_PRESET&#34;, &#34;exhaustive&#34;)
+<span id="L266" class="ln">   266  </span>	t.Setenv(&#34;PGW_TEST_PRESET_STANDBY&#34;, &#34;standby_preset&#34;)
+<span id="L267" class="ln">   267  </span>
+<span id="L268" class="ln">   268  </span>	t.Run(&#34;all fields expanded&#34;, func(*testing.T) {
+<span id="L269" class="ln">   269  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;env_sources.yaml&#34;)
+<span id="L270" class="ln">   270  </span>		yamlContent := `
+<span id="L271" class="ln">   271  </span>- name: $PGW_TEST_NAME
+<span id="L272" class="ln">   272  </span>  group: $PGW_TEST_GROUP
+<span id="L273" class="ln">   273  </span>  conn_str: $PGW_TEST_CONNSTR
+<span id="L274" class="ln">   274  </span>  kind: $PGW_TEST_KIND
+<span id="L275" class="ln">   275  </span>  include_pattern: $PGW_TEST_INCLUDE
+<span id="L276" class="ln">   276  </span>  exclude_pattern: $PGW_TEST_EXCLUDE
+<span id="L277" class="ln">   277  </span>  preset_metrics: $PGW_TEST_PRESET
+<span id="L278" class="ln">   278  </span>  preset_metrics_standby: $PGW_TEST_PRESET_STANDBY
+<span id="L279" class="ln">   279  </span>`
+<span id="L280" class="ln">   280  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L281" class="ln">   281  </span>		a.NoError(err)
+<span id="L282" class="ln">   282  </span>
+<span id="L283" class="ln">   283  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L284" class="ln">   284  </span>		a.NoError(err)
+<span id="L285" class="ln">   285  </span>
+<span id="L286" class="ln">   286  </span>		dbs, err := yamlrw.GetSources()
+<span id="L287" class="ln">   287  </span>		a.NoError(err)
+<span id="L288" class="ln">   288  </span>		a.Len(dbs, 1)
+<span id="L289" class="ln">   289  </span>
+<span id="L290" class="ln">   290  </span>		src := dbs[0]
+<span id="L291" class="ln">   291  </span>		a.Equal(&#34;expanded_name&#34;, src.Name)
+<span id="L292" class="ln">   292  </span>		a.Equal(&#34;expanded_group&#34;, src.Group)
+<span id="L293" class="ln">   293  </span>		a.Equal(&#34;postgresql://localhost/expanded&#34;, src.ConnStr)
+<span id="L294" class="ln">   294  </span>		a.Equal(sources.SourcePostgres, src.Kind)
+<span id="L295" class="ln">   295  </span>		a.Equal(&#34;include_pattern&#34;, src.IncludePattern)
+<span id="L296" class="ln">   296  </span>		a.Equal(&#34;exclude_pattern&#34;, src.ExcludePattern)
+<span id="L297" class="ln">   297  </span>		a.Equal(&#34;exhaustive&#34;, src.PresetMetrics)
+<span id="L298" class="ln">   298  </span>		a.Equal(&#34;standby_preset&#34;, src.PresetMetricsStandby)
+<span id="L299" class="ln">   299  </span>	})
+<span id="L300" class="ln">   300  </span>
+<span id="L301" class="ln">   301  </span>	t.Run(&#34;no expansion without dollar prefix&#34;, func(*testing.T) {
+<span id="L302" class="ln">   302  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;no_env_sources.yaml&#34;)
+<span id="L303" class="ln">   303  </span>		yamlContent := `
+<span id="L304" class="ln">   304  </span>- name: literal_name
+<span id="L305" class="ln">   305  </span>  group: literal_group
+<span id="L306" class="ln">   306  </span>  conn_str: postgresql://localhost/literal
+<span id="L307" class="ln">   307  </span>  kind: postgres
+<span id="L308" class="ln">   308  </span>  include_pattern: literal_include
+<span id="L309" class="ln">   309  </span>  exclude_pattern: literal_exclude
+<span id="L310" class="ln">   310  </span>  preset_metrics: basic
+<span id="L311" class="ln">   311  </span>  preset_metrics_standby: basic_standby
+<span id="L312" class="ln">   312  </span>`
+<span id="L313" class="ln">   313  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L314" class="ln">   314  </span>		a.NoError(err)
+<span id="L315" class="ln">   315  </span>
+<span id="L316" class="ln">   316  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L317" class="ln">   317  </span>		a.NoError(err)
+<span id="L318" class="ln">   318  </span>
+<span id="L319" class="ln">   319  </span>		dbs, err := yamlrw.GetSources()
+<span id="L320" class="ln">   320  </span>		a.NoError(err)
+<span id="L321" class="ln">   321  </span>		a.Len(dbs, 1)
+<span id="L322" class="ln">   322  </span>
+<span id="L323" class="ln">   323  </span>		src := dbs[0]
+<span id="L324" class="ln">   324  </span>		a.Equal(&#34;literal_name&#34;, src.Name)
+<span id="L325" class="ln">   325  </span>		a.Equal(&#34;literal_group&#34;, src.Group)
+<span id="L326" class="ln">   326  </span>		a.Equal(&#34;postgresql://localhost/literal&#34;, src.ConnStr)
+<span id="L327" class="ln">   327  </span>		a.Equal(sources.SourcePostgres, src.Kind)
+<span id="L328" class="ln">   328  </span>		a.Equal(&#34;literal_include&#34;, src.IncludePattern)
+<span id="L329" class="ln">   329  </span>		a.Equal(&#34;literal_exclude&#34;, src.ExcludePattern)
+<span id="L330" class="ln">   330  </span>		a.Equal(&#34;basic&#34;, src.PresetMetrics)
+<span id="L331" class="ln">   331  </span>		a.Equal(&#34;basic_standby&#34;, src.PresetMetricsStandby)
+<span id="L332" class="ln">   332  </span>	})
+<span id="L333" class="ln">   333  </span>
+<span id="L334" class="ln">   334  </span>	t.Run(&#34;unset env var expands to empty&#34;, func(*testing.T) {
+<span id="L335" class="ln">   335  </span>		tmpFile := filepath.Join(t.TempDir(), &#34;unset_env_sources.yaml&#34;)
+<span id="L336" class="ln">   336  </span>		yamlContent := `
+<span id="L337" class="ln">   337  </span>- name: $PGW_UNSET_VAR
+<span id="L338" class="ln">   338  </span>  conn_str: postgresql://localhost/test
+<span id="L339" class="ln">   339  </span>`
+<span id="L340" class="ln">   340  </span>		err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L341" class="ln">   341  </span>		a.NoError(err)
+<span id="L342" class="ln">   342  </span>
+<span id="L343" class="ln">   343  </span>		yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L344" class="ln">   344  </span>		a.NoError(err)
+<span id="L345" class="ln">   345  </span>
+<span id="L346" class="ln">   346  </span>		dbs, err := yamlrw.GetSources()
+<span id="L347" class="ln">   347  </span>		a.NoError(err)
+<span id="L348" class="ln">   348  </span>		a.Len(dbs, 1)
+<span id="L349" class="ln">   349  </span>		a.Equal(&#34;&#34;, dbs[0].Name)
+<span id="L350" class="ln">   350  </span>	})
+<span id="L351" class="ln">   351  </span>}
+<span id="L352" class="ln">   352  </span>
+<span id="L353" class="ln">   353  </span>func TestConcurrentSourceUpdates(t *testing.T) {
+<span id="L354" class="ln">   354  </span>	a := assert.New(t)
+<span id="L355" class="ln">   355  </span>	tempDir := t.TempDir()
+<span id="L356" class="ln">   356  </span>	tempFile := filepath.Join(tempDir, &#34;sources.yaml&#34;)
+<span id="L357" class="ln">   357  </span>
+<span id="L358" class="ln">   358  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tempFile)
+<span id="L359" class="ln">   359  </span>	a.NoError(err)
+<span id="L360" class="ln">   360  </span>
+<span id="L361" class="ln">   361  </span>	err = yamlrw.WriteSources(sources.Sources{})
+<span id="L362" class="ln">   362  </span>	a.NoError(err)
+<span id="L363" class="ln">   363  </span>
+<span id="L364" class="ln">   364  </span>	numGoroutines := 10
+<span id="L365" class="ln">   365  </span>	var wg sync.WaitGroup
+<span id="L366" class="ln">   366  </span>
+<span id="L367" class="ln">   367  </span>	<span class="comment">// Each goroutine will add a unique source</span>
+<span id="L368" class="ln">   368  </span>	for id := range numGoroutines {
+<span id="L369" class="ln">   369  </span>		wg.Go(func() {
+<span id="L370" class="ln">   370  </span>			testSource := sources.Source{
+<span id="L371" class="ln">   371  </span>				Name:          fmt.Sprintf(&#34;source_%d&#34;, id),
+<span id="L372" class="ln">   372  </span>				ConnStr:       fmt.Sprintf(&#34;postgresql://localhost/test_%d&#34;, id),
+<span id="L373" class="ln">   373  </span>				Kind:          sources.SourcePostgres,
+<span id="L374" class="ln">   374  </span>				PresetMetrics: &#34;basic&#34;,
+<span id="L375" class="ln">   375  </span>			}
+<span id="L376" class="ln">   376  </span>			time.Sleep(time.Millisecond * time.Duration(id%3))
+<span id="L377" class="ln">   377  </span>			err := yamlrw.UpdateSource(testSource)
+<span id="L378" class="ln">   378  </span>			a.NoError(err, &#34;Error during concurrent update&#34;)
+<span id="L379" class="ln">   379  </span>		})
+<span id="L380" class="ln">   380  </span>	}
+<span id="L381" class="ln">   381  </span>
+<span id="L382" class="ln">   382  </span>	wg.Wait()
+<span id="L383" class="ln">   383  </span>
+<span id="L384" class="ln">   384  </span>	finalSources, err := yamlrw.GetSources()
+<span id="L385" class="ln">   385  </span>	a.NoError(err)
+<span id="L386" class="ln">   386  </span>	a.Equal(numGoroutines, len(finalSources), &#34;Some updates were lost due to race condition!&#34;)
+<span id="L387" class="ln">   387  </span>}
+<span id="L388" class="ln">   388  </span>
+<span id="L389" class="ln">   389  </span>func TestGetSourcesDirWithInvalidYAML(t *testing.T) {
+<span id="L390" class="ln">   390  </span>	dir := t.TempDir()
+<span id="L391" class="ln">   391  </span>	err := os.WriteFile(filepath.Join(dir, &#34;bad.yaml&#34;), []byte(&#34;invalid: yaml: {unclosed&#34;), 0644)
+<span id="L392" class="ln">   392  </span>	assert.NoError(t, err)
+<span id="L393" class="ln">   393  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, dir)
+<span id="L394" class="ln">   394  </span>	assert.NoError(t, err)
+<span id="L395" class="ln">   395  </span>	_, err = yamlrw.GetSources()
+<span id="L396" class="ln">   396  </span>	assert.Error(t, err)
+<span id="L397" class="ln">   397  </span>}
+<span id="L398" class="ln">   398  </span>
+<span id="L399" class="ln">   399  </span>func TestCreateSourceGetSourcesError(t *testing.T) {
+<span id="L400" class="ln">   400  </span>	nonExistent := filepath.Join(t.TempDir(), &#34;does_not_exist&#34;, &#34;sources.yaml&#34;)
+<span id="L401" class="ln">   401  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, nonExistent)
+<span id="L402" class="ln">   402  </span>	assert.NoError(t, err)
+<span id="L403" class="ln">   403  </span>	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: &#34;x&#34;}))
+<span id="L404" class="ln">   404  </span>}
+<span id="L405" class="ln">   405  </span>
+<span id="L406" class="ln">   406  </span><span class="comment">// TestMutationsWriteError verifies that UpdateSource, DeleteSource, and CreateSource</span>
+<span id="L407" class="ln">   407  </span><span class="comment">// propagate write errors when the path is a directory (cannot be overwritten as a file).</span>
+<span id="L408" class="ln">   408  </span>func TestMutationsWriteError(t *testing.T) {
+<span id="L409" class="ln">   409  </span>	<span class="comment">// Using a dir as the file path: getSources succeeds (reads empty dir),</span>
+<span id="L410" class="ln">   410  </span>	<span class="comment">// but writeSources fails because os.WriteFile cannot write to a directory.</span>
+<span id="L411" class="ln">   411  </span>	dir := t.TempDir()
+<span id="L412" class="ln">   412  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, dir)
+<span id="L413" class="ln">   413  </span>	assert.NoError(t, err)
+<span id="L414" class="ln">   414  </span>
+<span id="L415" class="ln">   415  </span>	assert.Error(t, yamlrw.UpdateSource(sources.Source{Name: &#34;x&#34;}))
+<span id="L416" class="ln">   416  </span>	assert.Error(t, yamlrw.DeleteSource(&#34;x&#34;))
+<span id="L417" class="ln">   417  </span>	assert.Error(t, yamlrw.CreateSource(sources.Source{Name: &#34;x&#34;}))
+<span id="L418" class="ln">   418  </span>}
+<span id="L419" class="ln">   419  </span>
+<span id="L420" class="ln">   420  </span><span class="comment">// T048: full REQ-033 YAML example (two prometheus sources, one with TLS URL + custom_tags,</span>
+<span id="L421" class="ln">   421  </span><span class="comment">// one in scrape-all mode) must unmarshal and pass Validate() without error.</span>
+<span id="L422" class="ln">   422  </span>func TestYAML_PrometheusREQ033Example(t *testing.T) {
+<span id="L423" class="ln">   423  </span>	a := assert.New(t)
+<span id="L424" class="ln">   424  </span>	tmpFile := filepath.Join(t.TempDir(), &#34;req033.sources.yaml&#34;)
+<span id="L425" class="ln">   425  </span>	yamlContent := `
+<span id="L426" class="ln">   426  </span>- name: postgres-exporter-prod
+<span id="L427" class="ln">   427  </span>  kind: prometheus
+<span id="L428" class="ln">   428  </span>  conn_str: &#34;https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem&#34;
+<span id="L429" class="ln">   429  </span>  is_enabled: true
+<span id="L430" class="ln">   430  </span>  custom_metrics:
+<span id="L431" class="ln">   431  </span>    pg_stat_activity_count: 30
+<span id="L432" class="ln">   432  </span>    pg_stat_bgwriter_checkpoints_timed: 60
+<span id="L433" class="ln">   433  </span>  custom_tags:
+<span id="L434" class="ln">   434  </span>    env: production
+<span id="L435" class="ln">   435  </span>
+<span id="L436" class="ln">   436  </span>- name: node-exporter-prod
+<span id="L437" class="ln">   437  </span>  kind: prometheus
+<span id="L438" class="ln">   438  </span>  conn_str: &#34;http://localhost:9100/metrics&#34;
+<span id="L439" class="ln">   439  </span>  is_enabled: true
+<span id="L440" class="ln">   440  </span>`
+<span id="L441" class="ln">   441  </span>	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L442" class="ln">   442  </span>	a.NoError(err)
+<span id="L443" class="ln">   443  </span>
+<span id="L444" class="ln">   444  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L445" class="ln">   445  </span>	a.NoError(err)
+<span id="L446" class="ln">   446  </span>
+<span id="L447" class="ln">   447  </span>	srcs, err := yamlrw.GetSources()
+<span id="L448" class="ln">   448  </span>	a.NoError(err)
+<span id="L449" class="ln">   449  </span>
+<span id="L450" class="ln">   450  </span>	srcs, err = srcs.Validate()
+<span id="L451" class="ln">   451  </span>	a.NoError(err)
+<span id="L452" class="ln">   452  </span>	if !a.Len(srcs, 2) {
+<span id="L453" class="ln">   453  </span>		return
+<span id="L454" class="ln">   454  </span>	}
+<span id="L455" class="ln">   455  </span>
+<span id="L456" class="ln">   456  </span>	prod := srcs[0]
+<span id="L457" class="ln">   457  </span>	a.Equal(sources.SourcePrometheus, prod.Kind)
+<span id="L458" class="ln">   458  </span>	a.Equal(&#34;postgres-exporter-prod&#34;, prod.Name)
+<span id="L459" class="ln">   459  </span>	a.Equal(&#34;https://user:secret@localhost:9187/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem&#34;, prod.ConnStr)
+<span id="L460" class="ln">   460  </span>	a.Equal(&#34;production&#34;, prod.CustomTags[&#34;env&#34;])
+<span id="L461" class="ln">   461  </span>	a.Equal(30, prod.Metrics[&#34;pg_stat_activity_count&#34;])
+<span id="L462" class="ln">   462  </span>	a.Equal(60, prod.Metrics[&#34;pg_stat_bgwriter_checkpoints_timed&#34;])
+<span id="L463" class="ln">   463  </span>
+<span id="L464" class="ln">   464  </span>	scrapeAll := srcs[1]
+<span id="L465" class="ln">   465  </span>	a.Equal(sources.SourcePrometheus, scrapeAll.Kind)
+<span id="L466" class="ln">   466  </span>	a.Equal(&#34;node-exporter-prod&#34;, scrapeAll.Name)
+<span id="L467" class="ln">   467  </span>	a.Empty(scrapeAll.Metrics)
+<span id="L468" class="ln">   468  </span>}
+<span id="L469" class="ln">   469  </span>
+<span id="L470" class="ln">   470  </span>func TestYAML_PrometheusSourceRoundTrip(t *testing.T) {
+<span id="L471" class="ln">   471  </span>	a := assert.New(t)
+<span id="L472" class="ln">   472  </span>	tmpFile := filepath.Join(t.TempDir(), &#34;prometheus.sources.yaml&#34;)
+<span id="L473" class="ln">   473  </span>	yamlContent := `
+<span id="L474" class="ln">   474  </span>- name: my-postgres-exporter
+<span id="L475" class="ln">   475  </span>  kind: prometheus
+<span id="L476" class="ln">   476  </span>  conn_str: &#34;http://localhost:9187/metrics&#34;
+<span id="L477" class="ln">   477  </span>  custom_metrics:
+<span id="L478" class="ln">   478  </span>    pg_stat_activity_count: 30
+<span id="L479" class="ln">   479  </span>  custom_tags:
+<span id="L480" class="ln">   480  </span>    env: production
+<span id="L481" class="ln">   481  </span>  is_enabled: true
+<span id="L482" class="ln">   482  </span>`
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+<span id="L485" class="ln">   485  </span>	a.NoError(err)
+<span id="L486" class="ln">   486  </span>
+<span id="L487" class="ln">   487  </span>	yamlrw, err := sources.NewYAMLSourcesReaderWriter(ctx, tmpFile)
+<span id="L488" class="ln">   488  </span>	a.NoError(err)
+<span id="L489" class="ln">   489  </span>
+<span id="L490" class="ln">   490  </span>	srcs, err := yamlrw.GetSources()
+<span id="L491" class="ln">   491  </span>	a.NoError(err)
+<span id="L492" class="ln">   492  </span>
+<span id="L493" class="ln">   493  </span>	srcs, err = srcs.Validate()
+<span id="L494" class="ln">   494  </span>	a.NoError(err)
+<span id="L495" class="ln">   495  </span>	if !a.Len(srcs, 1) {
+<span id="L496" class="ln">   496  </span>		return
+<span id="L497" class="ln">   497  </span>	}
+<span id="L498" class="ln">   498  </span>
+<span id="L499" class="ln">   499  </span>	src := srcs[0]
+<span id="L500" class="ln">   500  </span>	a.Equal(sources.SourcePrometheus, src.Kind)
+<span id="L501" class="ln">   501  </span>	a.Equal(&#34;http://localhost:9187/metrics&#34;, src.ConnStr)
+<span id="L502" class="ln">   502  </span>	a.Contains(src.Metrics, &#34;pg_stat_activity_count&#34;)
+<span id="L503" class="ln">   503  </span>	a.Equal(30, src.Metrics[&#34;pg_stat_activity_count&#34;])
+<span id="L504" class="ln">   504  </span>	a.Equal(&#34;production&#34;, src.CustomTags[&#34;env&#34;])
+<span id="L505" class="ln">   505  </span>}
+<span id="L506" class="ln">   506  </span>
+</pre><p></p>
+
+<div id="footer">
+Build version go1.26.5.<br/>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+
+</body></html>
