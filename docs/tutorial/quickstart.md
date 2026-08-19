@@ -12,6 +12,7 @@ If anything here feels too brief, see [Tutorial: Installing using Docker](docker
 docker pull cybertecpostgresql/pgwatch-demo:latest
 docker run -d --restart=unless-stopped \
   -p 3000:3000 -p 8080:8080 \
+  -e PW_TESTDB=true \
   --name pgwatch-demo cybertecpostgresql/pgwatch-demo:latest
 ```
 
@@ -19,16 +20,16 @@ Two ports are exposed: **3000** for Grafana, **8080** for the admin Web UI.
 
 ## Step 2 — Open Grafana
 
-Browse to `http://localhost:3000` and log in with `admin` / `pgwatchadmin`. The *Health-check* dashboard is already populated with metrics from the bundled Config DB.
+Browse to `http://localhost:3000` and log in with `admin` / `pgwatchadmin`. The *Health check* dashboard is already populated with metrics from the bundled test database.
 
 ## Step 3 — Add a source
 
-Browse to `http://localhost:8080`. Default credentials are `admin` / `pgwatchadmin` unless you've set `PW_WEBUSER` / `PW_WEBPASSWORD`. Go to **SOURCES**, click **+ NEW**, fill in:
+Browse to `http://localhost:8080`. Go to **SOURCES**, click **+ NEW**, fill in:
 
 - **Name**: any unique label
 - **Kind**: `postgres` (or whichever matches your target — see [Reference: Source types](../reference/source_types.md))
 - **Connection string**: e.g. `postgresql://user:pass@db-host:5432/dbname`
-- **Preset metrics**: `exhaustive` is a good starting point for superuser monitoring
+- **Preset metrics**: `exhaustive` is a good starting point for monitoring
 
 Save the source.
 
