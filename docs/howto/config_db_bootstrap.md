@@ -2,6 +2,8 @@
 title: Bootstrapping the Configuration Database
 ---
 
+For background on the two configuration store formats (Postgres database vs YAML files) and their trade-offs, see [Concept: Installation options](../concept/installation_options.md). For the full CLI flag and environment-variable reference, see [Reference: CLI & environment variables](../reference/cli_env.md).
+
 ## Choosing a Database
 
 pgwatch supports any database that supports the PostgreSQL wire protocol. This includes:
@@ -86,10 +88,10 @@ pgwatch=# \dt pgwatch.*
            List of relations
  Schema  |   Name    | Type  |  Owner
 ---------+-----------+-------+---------
- pgwatch | metric    | table | pgwatch
- pgwatch | migration | table | pgwatch
- pgwatch | preset    | table | pgwatch
- pgwatch | source    | table | pgwatch
+ pgwatch | metric    | table |  owner
+ pgwatch | migration | table |  owner
+ pgwatch | preset    | table |  owner
+ pgwatch | source    | table |  owner
 (4 rows)
 ```
 
