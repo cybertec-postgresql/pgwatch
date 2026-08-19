@@ -77,7 +77,7 @@ nav:
     - REST API: reference/rest.md
     - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
-    - Docker Variables: reference/env_variables.md
+    - Docker Variables: reference/docker_variables.md
     - Sinks Options: reference/sinks_options.md
     - Sizing Recommendations: reference/sizing_recommendations.md
   - Gallery: 
