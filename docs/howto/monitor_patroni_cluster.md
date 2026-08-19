@@ -32,7 +32,7 @@ For background on what pgwatch's Patroni support does and why it exists, see [Ad
     etcd://username:password@etcd1:2379/service/batman?ca_file=/etc/ssl/etcd-ca.pem&cert_file=/etc/ssl/client.crt&key_file=/etc/ssl/client.key
     ```
 
-3. Pick the `patroni` preset on the source. It emits the Patroni metric families listed in [How-to: Monitor a Prometheus exporter → Presets](monitor_prometheus_exporter.md#presets) at 30–60 second intervals.
+3. Pick the `patroni` preset on the source. It emits the Patroni metric families listed in [Reference: Prometheus source → Presets](../reference/prometheus_source.md#presets) at 30–60 second intervals.
 
 4. If your cluster has standby nodes that you do not want to monitor, enable **Primary mode only** on the source to skip them. This reduces load on the cluster and keeps the dashboards focused on the writer.
 

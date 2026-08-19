@@ -4,7 +4,7 @@ title: Harden a Docker deployment
 
 This how-to turns on a set of security toggles that are built into the official pgwatch Docker images but disabled by default. It assumes you want a one-shot `docker run` that exposes Grafana and the Web UI on their default ports with HTTPS and credential protection enabled.
 
-For the rationale behind each toggle, see [Security aspects](../concept/security.md). For every variable used here, see the canonical [CLI & environment variables](../reference/cli_env.md) and [Docker variables](../reference/env_variables.md) references.
+For the rationale behind each toggle, see [Security aspects](../concept/security.md). For every variable used here, see the canonical [CLI & environment variables](../reference/cli_env.md) and [Docker variables](../reference/docker_variables.md) references.
 
 ## Prerequisites
 

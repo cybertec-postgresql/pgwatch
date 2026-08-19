@@ -7,7 +7,7 @@ title: Diátaxis Documentation Audit
 **Date:** 2026-08-19
 **Scope:** `docs/` tree (40 files across `intro/`, `concept/`, `tutorial/`, `howto/`, `reference/`, `gallery/`, `developer/`, plus `index.md` and `_overrides/`).
 **Operating mode:** `audit` (classify every file, flag violations, propose structural improvements).
-**Reference:** [Diátaxis skill](../.agents/skills/diataxis/references/quadrants.md), mkdocs nav at `mkdocs.yml`.
+**Reference:** Diátaxis skill (see `.agents/skills/diataxis/references/quadrants.md` in the repository root), mkdocs nav at `mkdocs.yml`.
 
 ---
 

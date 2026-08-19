@@ -44,7 +44,7 @@ Postgres versions, so would make sense to refresh them 1-2x per year.
 If using built-in metrics, just installing newer pre-built RPM / DEB
 packages will do the trick automatically but for configuration database based
 setups you'd need to follow a simple process described
-[here](../tutorial/upgrading.md#updating-metric-definitions).
+[here](../tutorial/upgrading.md#update-metric-definitions).
 
 ## Dashboard maintenance
 

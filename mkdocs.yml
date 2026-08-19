@@ -99,7 +99,6 @@ nav:
   - Developer:
     - Contributing: developer/contributing.md
     - Developer Docs: developer/README.md
-    - Documentation: ../devel/godoc/index.html
     - Code of Conduct: developer/CODE_OF_CONDUCT.md
     - License: developer/LICENSE.md
 
