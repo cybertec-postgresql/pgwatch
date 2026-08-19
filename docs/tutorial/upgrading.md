@@ -68,16 +68,18 @@ The command automatically detects which databases (sources, metrics, sinks) need
 Built-in metric SQL ships with each release.
 
 - **YAML mode** — refresh the metrics file the daemon was started with (`--metrics`); the new SQL comes in with the package upgrade.
-- **Config-DB mode** — back up, then replace the rows in `pgwatch.metric`:
+- **Config-DB mode** — back up any custom metrics, then re-run `config init` against the metrics database. The new binary's built-in definitions overwrite `pgwatch.metric`.
 
     ```bash
-    pg_dump -t pgwatch.metric pgwatch > old_metric.sql
-    psql -c "truncate pgwatch.metric" pgwatch
-    psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
+    # 1. Back up custom metrics (YAML export of everything currently in the DB)
+    pgwatch --metrics=postgresql://pgwatch:secret@localhost:5432/pgwatch metric list > my_metrics.yaml
+
+    # 2. Re-initialise the metrics database with the built-in definitions
+    pgwatch --metrics=postgresql://pgwatch:secret@localhost:5432/pgwatch config init
     ```
 
     !!! warning
-        This truncates the `pgwatch.metric` table — **only do it when you have no custom metrics in there**, otherwise you'll lose them. Use the [REST API](../reference/rest.md) to back up custom definitions first.
+        `config init --metrics=...` rewrites the `pgwatch.metric` table. **Save your custom metrics first** (step 1, or via the [REST API](../reference/rest.md)); otherwise they will be overwritten. Re-apply them after the init.
 
 ## Update Grafana dashboards
 
@@ -88,4 +90,4 @@ There is no automatic migration for the built-in dashboards — pgwatch leaves u
 3. Import the latest JSON from [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) in the repository.
 4. Re-apply your customisations.
 
-For longer-term dashboard management strategy, see [Concept: Long-term installations](../concept/long_term_installations.md#dashboard-maintenance).
+For longer-term dashboard management strategy, see [Concept: Long-term installations → Dashboard maintenance](../concept/long_term_installations.md#dashboard-maintenance).
