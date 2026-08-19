@@ -8,7 +8,9 @@ Visit [demo.pgwatch.com](https://demo.pgwatch.com) for a Grafana demo.
 
 ---
 
-The pgwatch project started in 2016 by Kaarel Moppel, first released in 2017, and was rewritten by Pavlo Golub as the current v3 / v6 (2023+) codebase. For a chronological list of every release with changelogs, see the [GitHub releases page](https://github.com/cybertec-postgresql/pgwatch/releases). Cybertec provides commercial 9-to-5 and 24/7 support for pgwatch.
+The project started in 2016 by Kaarel Moppel, first released in 2017 as [pgwatch2](https://github.com/cybertec-postgresql/pgwatch2/), and was rewritten by Pavlo Golub as the current v3 / v6 (2023+) codebase. For a chronological list of every release with changelogs, see the [GitHub releases page](https://github.com/cybertec-postgresql/pgwatch/releases).
+
+Cybertec provides commercial 9-to-5 and 24/7 support for pgwatch.
 
 ---
 
