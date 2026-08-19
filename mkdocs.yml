@@ -70,6 +70,7 @@ nav:
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
     - Implement Custom gRPC Sink: howto/implement_grpc_server.md
     - Reverse Proxy Setup: howto/reverse_proxy.md
+    - Monitoring a Prometheus Exporter: howto/monitor_prometheus_exporter.md
     - Harden a Docker Deployment: howto/harden_docker_deployment.md
     - Add a Custom Metric: howto/add_custom_metric.md
     - Deploy to Kubernetes: howto/deploy_to_kubernetes.md
