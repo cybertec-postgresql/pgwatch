@@ -56,6 +56,7 @@ nav:
     - Web UI: concept/web_ui.md
     - Metrics and Presets: concept/metrics_and_presets.md
     - Advanced Features: concept/advanced_features.md
+    - OS Metrics via PL/Python Helpers: concept/os_helpers.md
   - Tutorials:
     - Docker Installation: tutorial/docker_installation.md
     - Custom Installation: tutorial/custom_installation.md
@@ -87,6 +88,7 @@ nav:
     - Sizing Recommendations: reference/sizing_recommendations.md
     - Docker Images: reference/docker_images.md
     - Ports: reference/ports.md
+    - Source Types: reference/source_types.md
   - Gallery:
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
