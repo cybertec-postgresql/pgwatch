@@ -45,8 +45,6 @@ plugins:
 
 nav:
   - Hello World!: index.md
-  - Concepts:
-
 
   - Concepts:
     - Components: concept/components.md
