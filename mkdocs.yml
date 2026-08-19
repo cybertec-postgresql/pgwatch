@@ -59,6 +59,7 @@ nav:
     - OS Metrics via PL/Python Helpers: concept/os_helpers.md
     - Observability Stack: concept/observability_stack.md
   - Tutorials:
+    - Quickstart: tutorial/quickstart.md
     - Docker Installation: tutorial/docker_installation.md
     - Custom Installation: tutorial/custom_installation.md
     - Preparing Databases: tutorial/preparing_databases.md
