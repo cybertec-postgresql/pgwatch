@@ -9,7 +9,7 @@ For the rationale behind each toggle, see [Security aspects](../concept/security
 ## Prerequisites
 
 - A working Docker host
-- The pgwatch image pulled locally (`docker pull cybertec/pgwatch`)
+- The pgwatch demo image pulled locally (`docker pull cybertec/pgwatch-demo`). The same flags apply to the slim `cybertec/pgwatch` image, but only the demo image ships Grafana and the internal Config DB.
 - A passphrase to use for AES-GCM encryption of stored connect strings
 
 ## Steps
@@ -33,7 +33,7 @@ For the rationale behind each toggle, see [Security aspects](../concept/security
       -e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 \
       -e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass \
       -e PW_AES_GCM_KEYPHRASE=qwerty \
-      cybertec/pgwatch
+      cybertec/pgwatch-demo
     ```
 
 3. Verify that HTTPS works:
