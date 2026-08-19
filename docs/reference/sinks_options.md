@@ -1,3 +1,7 @@
+---
+title: Sinks Options & Parameters
+---
+
 # Sinks Options & Parameters
 
 - Sinks URIs should be provided to pgwatch via the `--sink` flag, which can be used more than once, see [CLI & Envs](./cli_env.md#sinks).

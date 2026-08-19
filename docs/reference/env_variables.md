@@ -1,3 +1,7 @@
+---
+title: Available env. variables by components
+---
+
 # Available env. variables by components
 
 Some variables influence multiple components. Command line parameters override env. variables (when doing custom deployments).

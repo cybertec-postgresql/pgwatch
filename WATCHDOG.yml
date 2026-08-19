@@ -1,0 +1,3 @@
+advisors:
+  - name: default
+    model: openrouter/anthropic/claude-sonnet-5:medium

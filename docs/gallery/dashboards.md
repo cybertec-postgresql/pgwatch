@@ -1,3 +1,7 @@
+---
+title: Dashboards
+---
+
 # Dashboards
 
 Dashboards are a collection of visualizations that are displayed in a single page. They are useful for monitoring and analyzing data.
