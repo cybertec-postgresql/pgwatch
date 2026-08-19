@@ -47,7 +47,7 @@ nav:
   - Intro:
     - Hello World!: index.md
     - Project Background: intro/project_background.md
-    - Features: intro/features.md
+
   - Concepts:
     - Components: concept/components.md
     - Installation Options: concept/installation_options.md
