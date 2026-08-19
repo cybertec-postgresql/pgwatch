@@ -8,6 +8,10 @@ Visit [demo.pgwatch.com](https://demo.pgwatch.com) for a Grafana demo.
 
 ---
 
+The pgwatch project started in 2016 by Kaarel Moppel, first released in 2017, and was rewritten by Pavlo Golub as the current v3 / v6 (2023+) codebase. For a chronological list of every release with changelogs, see the [GitHub releases page](https://github.com/cybertec-postgresql/pgwatch/releases). Cybertec provides commercial 9-to-5 and 24/7 support for pgwatch.
+
+---
+
 In the world of database management, **monitoring** plays a crucial role in ensuring stability, performance, and security. With a constant need to keep databases healthy and responsive, **pgwatch** answers three fundamental questions:
 
 [![pgwatch: A comprehensive monitoring solution](gallery/what-how-where.svg)](gallery/what-how-where.svg)

@@ -46,7 +46,7 @@ plugins:
 nav:
   - Intro:
     - Hello World!: index.md
-    - Project Background: intro/project_background.md
+
 
   - Concepts:
     - Components: concept/components.md
