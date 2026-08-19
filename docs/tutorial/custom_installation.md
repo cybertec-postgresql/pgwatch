@@ -127,4 +127,4 @@ Then add the `pgwatch-metrics` (Postgres) or `pgwatch-prometheus` (Prometheus) d
 
 - [Tutorial: Preparing databases for monitoring](preparing_databases.md) — install helper functions for OS-level metrics
 - [Tutorial: Upgrading](upgrading.md) — keep pgwatch up to date
-- [Concept: Long-term installations](../concept/long_term_installations.md) — operating pgwatch in production over months and years
+- [Concept: Operating in production](../concept/operating_in_production.md) — running pgwatch in production over months and years

@@ -20,7 +20,7 @@ Almost every deployment ends up tweaking the built-in dashboards (colours, units
 - Use **Save as** to put customised dashboards in a separate folder rather than overwriting the originals.
 - Treat the built-in dashboards as code you can pull and re-import after pgwatch upgrades.
 
-See [Concept: Long-term installations → Dashboard maintenance](../concept/long_term_installations.md#dashboard-maintenance) for the long-term playbook.
+See [Concept: Operating in production → Dashboard maintenance](../concept/operating_in_production.md#dashboard-maintenance) for the long-term playbook.
 
 ## Alerting
 

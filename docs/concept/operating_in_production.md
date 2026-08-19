@@ -1,10 +1,8 @@
 ---
-title: Long term installations
+title: Operating in production
 ---
 
-For long term pgwatch setups the main challenge is to keep the software
-up-to-date to guarantee stable operation and also to make sure that all
-DBs are under monitoring.
+Operating pgwatch in production for months and years boils down to keeping the software up to date, keeping the inventory of monitored databases in sync with reality, and keeping an eye on the metrics-storage layer. Each topic below has its own section.
 
 ## Keeping inventory in sync
 

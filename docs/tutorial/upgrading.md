@@ -90,4 +90,4 @@ There is no automatic migration for the built-in dashboards — pgwatch leaves u
 3. Import the latest JSON from [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) in the repository.
 4. Re-apply your customisations.
 
-For longer-term dashboard management strategy, see [Concept: Long-term installations → Dashboard maintenance](../concept/long_term_installations.md#dashboard-maintenance).
+For longer-term dashboard management strategy, see [Concept: Operating in production → Dashboard maintenance](../concept/operating_in_production.md#dashboard-maintenance).

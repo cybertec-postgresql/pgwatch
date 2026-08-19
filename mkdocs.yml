@@ -51,7 +51,7 @@ nav:
   - Concepts:
     - Components: concept/components.md
     - Installation Options: concept/installation_options.md
-    - Long Term Installations: concept/long_term_installations.md
+    - Operating in Production: concept/operating_in_production.md
     - Security: concept/security.md
     - Web UI: concept/web_ui.md
     - Metrics and Presets: concept/metrics_and_presets.md
