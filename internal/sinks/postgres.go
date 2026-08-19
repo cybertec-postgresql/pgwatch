@@ -471,7 +471,16 @@ func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[strin
 			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
 		}
 		partInfo, ok := pgw.partitionMapMetric[metric]
-		if !ok || pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+		if !ok || pb.StartTime.Before(partInfo.StartTime) || pgw.forceRecreatePartitions {
+			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
+				return err
+			}
+			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+				return err
+			}
+			pgw.partitionMapMetric[metric] = partInfo
+		}
+		if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
 			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
 				return err
 			}
@@ -720,6 +729,14 @@ var migrations func() migrator.Option = func() migrator.Option {
 			Name: "01474 Change drop_all_metric_tables to procedure",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
+				return err
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01529 Fix ensure_partition_metric_time partitioning strategy",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
 				return err
 			},
 		},

@@ -97,6 +97,7 @@ VALUES
     (0,  '01110 Apply postgres sink schema migrations'),
     (1,  '01180 Apply admin functions migrations for v5'),
     (2,  '01409 Switch to time-only partitioning'),
-    (3,  '01474 Change drop_all_metric_tables to procedure');
+    (3,  '01474 Change drop_all_metric_tables to procedure'),
+    (4,  '01529 Fix ensure_partition_metric_time partitioning strategy');
     -- apply new migration value to `sinkSchema` in `cmd/pgwatch/version.go` file as well
 
