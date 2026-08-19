@@ -16,8 +16,8 @@
 | Reference | 6 | Mostly strong; two are mixed-mode | `cli_env.md`, `rest.md`, `sinks_options.md` are excellent |
 | Tutorial | 3 | All three are mixed with reference content | Heavy "explainer" digressions break the learning flow |
 | Mixed-mode violations | 8 | — | Listed below; require restructuring |
-| Orphaned from nav | 1 | — | `developer/reaper-batch-consolidation.md` |
-| Misfiled in nav | 1 | — | `howto/sizing_recommendations.md` listed under "Concepts" |
+| Misfiled in nav | 1 | — | `howto/sizing_recommendations.md` listed under "Concepts" (fixed in S2) |
+| Dropped temp doc | 1 | — | `developer/reaper-batch-consolidation.md` confirmed temp and removed |
 
 **Top three findings:**
 
@@ -268,13 +268,12 @@ Pick one and document it.
 
 ---
 
-## 8. Appendix — Files Not Currently in `mkdocs.yml` Nav
+## 8. Appendix — Files Originally Outside `mkdocs.yml` Nav (since dropped)
 
-- `docs/developer/reaper-batch-consolidation.md`
+- `docs/developer/reaper-batch-consolidation.md` — confirmed as a temporary working doc and removed from the tree (see commit removing it).
 
 ## 9. Appendix — Files with Missing YAML Frontmatter
 
-- `docs/gallery/dashboards.md`
 - `docs/gallery/webui.md`
 - `docs/developer/CODE_OF_CONDUCT.md`
 - `docs/developer/LICENSE.md`
