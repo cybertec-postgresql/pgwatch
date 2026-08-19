@@ -19,7 +19,7 @@ Internally, monitoring always happens **per database, not per cluster** — even
 
 For `postgres-continuous-discovery` and `patroni`, the gatherer periodically rescans the target and adds or removes databases automatically based on what it finds. (`pgpool` is not a discovery kind — it represents a single Pgpool-II instance and does not enumerate databases.)
 
-All continuous modes require access to `template1` or `postgres` on the cluster to enumerate database names.
+All continuous modes need a connection that can `SELECT FROM pg_database`; the per-row visibility is gated by `datallowconn`, `not datistemplate`, and `has_database_privilege(datname, 'CONNECT')`, so the user does not need any elevated role on databases it lacks CONNECT on.
 
 ## Patroni connection string
 
