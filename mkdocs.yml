@@ -70,9 +70,9 @@ nav:
     - Reverse Proxy Setup: howto/reverse_proxy.md
     - Monitoring a Prometheus Exporter: howto/monitor_prometheus_exporter.md
     - Harden a Docker Deployment: howto/harden_docker_deployment.md
+    - Add a Custom Metric: howto/add_custom_metric.md
     - Deploy to Kubernetes: howto/deploy_to_kubernetes.md
     - Configure with YAML Files: howto/yaml_configuration.md
-
     - Monitor a Patroni Cluster: howto/monitor_patroni_cluster.md
     - Enable Log Parsing: howto/enable_log_parsing.md
     - Monitor PgBouncer: howto/monitor_pgbouncer.md
@@ -81,12 +81,12 @@ nav:
     - CLI & Environment Variables: reference/cli_env.md
     - REST API: reference/rest.md
     - Metric Definitions: reference/metric_definitions.md
-    - Sizing Recommendations: reference/sizing_recommendations.md
+    - Docker Variables: reference/docker_variables.md
     - Sinks Options: reference/sinks_options.md
     - Managed PostgreSQL Providers: reference/managed_postgres_support.md
+    - Sizing Recommendations: reference/sizing_recommendations.md
     - Docker Images: reference/docker_images.md
     - Ports: reference/ports.md
-
   - Gallery:
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
