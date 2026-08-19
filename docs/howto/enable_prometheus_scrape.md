@@ -20,7 +20,7 @@ For background, see [Advanced features → Prometheus scraping](../concept/advan
     ```bash
     pgwatch \
       --sources=postgresql://pgwatch@localhost/pgwatch \
-      --sink=prometheus://:9187/pgwatch
+      --sink=prometheus://:9090/pgwatch
     ```
 
     Format: `--sink=prometheus://<host>:<port>/<namespace>`. If `<host>` is omitted the server listens on every interface; if `<namespace>` is omitted, it defaults to `pgwatch`.
@@ -31,13 +31,13 @@ For background, see [Advanced features → Prometheus scraping](../concept/advan
     scrape_configs:
       - job_name: pgwatch
         static_configs:
-          - targets: ['pgwatch-host:9187']
+          - targets: ['pgwatch-host:9090']
     ```
 
 4. Verify Prometheus is pulling samples:
 
     ```bash
-    curl http://pgwatch-host:9187/metrics | head -20
+    curl http://pgwatch-host:9090/metrics | head -20
     ```
 
     You should see Prometheus exposition lines for each enabled metric, tagged with the source name and any custom tags.

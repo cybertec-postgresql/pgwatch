@@ -25,7 +25,7 @@ The Prometheus sink URI format is
 --sink=prometheus://host:port/namespace
 ```
 
-If you omit host, e.g. `--sink=prometheus://:9187`, server listens on all interfaces and supplied port.
+If you omit host, e.g. `--sink=prometheus://:9090`, server listens on all interfaces and supplied port.
 If you omit namespace, default is `pgwatch`.
 
 ## JSON file

@@ -9,5 +9,4 @@ Ports exposed by the bundled Grafana / Postgres / Prometheus containers live in 
 | Port | Component | Default from | Default endpoint(s) |
 |---|---|---|---|
 | `8080` | Web UI and REST API | `--web-addr=:8080` (`PW_WEBADDR`), default in `internal/webserver/cmdopts.go` | `/` (UI), `/login`, `/source`, `/source/{name}`, `/metric`, `/metric/{name}`, `/preset`, `/preset/{name}`, `/test-connect`, `/liveness`, `/readiness`. Disable the UI entirely with `--web-disable=all`. |
-| `9090` | Prometheus scrape endpoint | chosen by the operator via `--sink=prometheus://:9090/<namespace>` (no binary default; the URI is the source of truth) | `/metrics` (Prometheus text exposition format). |
-| `9187` | Prometheus scrape endpoint (Compose default) | `--sink=prometheus://:9187/pgwatch` as set in `docker/compose.pgwatch.yml` | Same `/metrics` endpoint; published at `localhost:9187/metrics`. |
+| `9090` | Prometheus scrape endpoint | chosen by the operator via `--sink=prometheus://:9090/<namespace>` (the URI is the source of truth) | `/metrics` (Prometheus text exposition format). The `docker/compose.pgwatch.yml` stack uses this default. |
