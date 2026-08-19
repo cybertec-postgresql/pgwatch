@@ -88,7 +88,7 @@ nav:
     - Managed PostgreSQL Providers: reference/managed_postgres_support.md
     - Sizing Recommendations: reference/sizing_recommendations.md
     - Docker Images: reference/docker_images.md
-    - Ports and Endpoints: reference/ports.md
+    - Listening Ports and Endpoints: reference/ports.md
     - Source Types: reference/source_types.md
     - Prometheus Source: reference/prometheus_source.md
   - Gallery:

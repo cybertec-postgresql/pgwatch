@@ -60,5 +60,5 @@ For an example that wires pgwatch through Docker Compose with a YAML sources fil
 ## See also
 
 - [Reference: Docker images](../reference/docker_images.md) — image catalogue
-- [Reference: Ports and endpoints](../reference/ports.md) — what every port is for
+- [Reference: Listening ports and endpoints](../reference/ports.md) — every port pgwatch itself listens on
 - [How-to: Configure pgwatch with YAML files](../howto/yaml_configuration.md) — when you outgrow the Config-DB image
