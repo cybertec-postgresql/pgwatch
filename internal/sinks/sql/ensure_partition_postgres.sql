@@ -24,7 +24,6 @@ DECLARE
   l_part_name text;
   l_part_start timestamptz;
   l_part_end timestamptz;
-  ideal_length int;
   l_template_table text := 'admin.metrics_template';
   l_partition_format text;
   l_time_suffix text;
