@@ -528,8 +528,8 @@
 <span id="L471" class="ln">   471  </span>			return fmt.Errorf(&#34;zero StartTime/EndTime in partitioning request: [%s:%v]&#34;, metric, pb)
 <span id="L472" class="ln">   472  </span>		}
 <span id="L473" class="ln">   473  </span>		partInfo, ok := pgw.partitionMapMetric[metric]
-<span id="L474" class="ln">   474  </span>		if !ok || pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
-<span id="L475" class="ln">   475  </span>			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
+<span id="L474" class="ln">   474  </span>		if !ok || pb.StartTime.Before(partInfo.StartTime) || pgw.forceRecreatePartitions {
+<span id="L475" class="ln">   475  </span>			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
 <span id="L476" class="ln">   476  </span>				return err
 <span id="L477" class="ln">   477  </span>			}
 <span id="L478" class="ln">   478  </span>			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
@@ -537,273 +537,290 @@
 <span id="L480" class="ln">   480  </span>			}
 <span id="L481" class="ln">   481  </span>			pgw.partitionMapMetric[metric] = partInfo
 <span id="L482" class="ln">   482  </span>		}
-<span id="L483" class="ln">   483  </span>	}
-<span id="L484" class="ln">   484  </span>	return nil
-<span id="L485" class="ln">   485  </span>}
-<span id="L486" class="ln">   486  </span>
-<span id="L487" class="ln">   487  </span><span class="comment">// DeleteOldPartitions is a background task that deletes old partitions from the measurements DB</span>
-<span id="L488" class="ln">   488  </span>func (pgw *PostgresWriter) DeleteOldPartitions() {
-<span id="L489" class="ln">   489  </span>	l := log.GetLogger(pgw.ctx)
-<span id="L490" class="ln">   490  </span>	var partsDropped int
-<span id="L491" class="ln">   491  </span>	err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than =&gt; $1::interval)`,
-<span id="L492" class="ln">   492  </span>		pgw.opts.RetentionInterval).Scan(&amp;partsDropped)
-<span id="L493" class="ln">   493  </span>	if err != nil {
-<span id="L494" class="ln">   494  </span>		l.Error(&#34;Could not drop old time partitions:&#34;, err)
-<span id="L495" class="ln">   495  </span>	} else if partsDropped &gt; 0 {
-<span id="L496" class="ln">   496  </span>		l.Infof(&#34;Dropped %d old time partitions&#34;, partsDropped)
-<span id="L497" class="ln">   497  </span>	}
-<span id="L498" class="ln">   498  </span>}
-<span id="L499" class="ln">   499  </span>
-<span id="L500" class="ln">   500  </span><span class="comment">// MaintainUniqueSources is a background task that maintains a mapping of unique sources</span>
-<span id="L501" class="ln">   501  </span><span class="comment">// in each metric table in admin.all_distinct_dbname_metrics.</span>
-<span id="L502" class="ln">   502  </span><span class="comment">// This is used to avoid listing the same source multiple times in Grafana dropdowns.</span>
-<span id="L503" class="ln">   503  </span>func (pgw *PostgresWriter) MaintainUniqueSources() {
-<span id="L504" class="ln">   504  </span>	logger := log.GetLogger(pgw.ctx)
-<span id="L505" class="ln">   505  </span>	var rowsAffected int
-<span id="L506" class="ln">   506  </span>	if err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.maintain_unique_sources()`).Scan(&amp;rowsAffected); err != nil {
-<span id="L507" class="ln">   507  </span>		logger.Error(&#34;Failed to run admin.all_distinct_dbname_metrics maintenance:&#34;, err)
-<span id="L508" class="ln">   508  </span>		return
-<span id="L509" class="ln">   509  </span>	}
-<span id="L510" class="ln">   510  </span>	logger.WithField(&#34;rows&#34;, rowsAffected).Info(&#34;Successfully processed admin.all_distinct_dbname_metrics&#34;)
-<span id="L511" class="ln">   511  </span>}
-<span id="L512" class="ln">   512  </span>
-<span id="L513" class="ln">   513  </span>func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
-<span id="L514" class="ln">   514  </span>	sql := `INSERT INTO admin.all_distinct_dbname_metrics
-<span id="L515" class="ln">   515  </span>			SELECT $1, $2
-<span id="L516" class="ln">   516  </span>			WHERE NOT EXISTS (
-<span id="L517" class="ln">   517  </span>				SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = $1 AND metric = $2
-<span id="L518" class="ln">   518  </span>			)`
-<span id="L519" class="ln">   519  </span>	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
-<span id="L520" class="ln">   520  </span>	return err
-<span id="L521" class="ln">   521  </span>}
-<span id="L522" class="ln">   522  </span>
-<span id="L523" class="ln">   523  </span>func NewPostgresSinkMigrator(ctx context.Context, connStr string) (db.Migrator, error) {
-<span id="L524" class="ln">   524  </span>	conn, err := pgxpool.New(ctx, connStr)
-<span id="L525" class="ln">   525  </span>	if err != nil {
-<span id="L526" class="ln">   526  </span>		return nil, err
-<span id="L527" class="ln">   527  </span>	}
-<span id="L528" class="ln">   528  </span>	pgw := &amp;PostgresWriter{
-<span id="L529" class="ln">   529  </span>		ctx:    ctx,
-<span id="L530" class="ln">   530  </span>		sinkDb: conn,
-<span id="L531" class="ln">   531  </span>	}
-<span id="L532" class="ln">   532  </span>	exists, err := db.DoesSchemaExist(ctx, conn, &#34;admin&#34;)
-<span id="L533" class="ln">   533  </span>	if err != nil {
-<span id="L534" class="ln">   534  </span>		return nil, err
-<span id="L535" class="ln">   535  </span>	}
-<span id="L536" class="ln">   536  </span>	if exists {
-<span id="L537" class="ln">   537  </span>		return pgw, nil
-<span id="L538" class="ln">   538  </span>	}
-<span id="L539" class="ln">   539  </span>	for _, sql := range metricSchemaSQLs {
-<span id="L540" class="ln">   540  </span>		if _, err = conn.Exec(ctx, sql); err != nil {
-<span id="L541" class="ln">   541  </span>			return nil, err
-<span id="L542" class="ln">   542  </span>		}
-<span id="L543" class="ln">   543  </span>	}
-<span id="L544" class="ln">   544  </span>	return pgw, nil
-<span id="L545" class="ln">   545  </span>}
-<span id="L546" class="ln">   546  </span>
-<span id="L547" class="ln">   547  </span>var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
-<span id="L548" class="ln">   548  </span>	return migrator.New(
-<span id="L549" class="ln">   549  </span>		migrator.TableName(&#34;admin.migration&#34;),
-<span id="L550" class="ln">   550  </span>		migrator.SetNotice(func(s string) {
-<span id="L551" class="ln">   551  </span>			log.GetLogger(pgw.ctx).Info(s)
-<span id="L552" class="ln">   552  </span>		}),
-<span id="L553" class="ln">   553  </span>		migrations(),
-<span id="L554" class="ln">   554  </span>	)
-<span id="L555" class="ln">   555  </span>}
-<span id="L556" class="ln">   556  </span>
-<span id="L557" class="ln">   557  </span><span class="comment">// Migrate upgrades database with all migrations</span>
-<span id="L558" class="ln">   558  </span>func (pgw *PostgresWriter) Migrate() error {
-<span id="L559" class="ln">   559  </span>	m, err := initMigrator(pgw)
-<span id="L560" class="ln">   560  </span>	if err != nil {
-<span id="L561" class="ln">   561  </span>		return fmt.Errorf(&#34;cannot initialize migration: %w&#34;, err)
-<span id="L562" class="ln">   562  </span>	}
-<span id="L563" class="ln">   563  </span>	return m.Migrate(pgw.ctx, pgw.sinkDb)
+<span id="L483" class="ln">   483  </span>		if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+<span id="L484" class="ln">   484  </span>			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
+<span id="L485" class="ln">   485  </span>				return err
+<span id="L486" class="ln">   486  </span>			}
+<span id="L487" class="ln">   487  </span>			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+<span id="L488" class="ln">   488  </span>				return err
+<span id="L489" class="ln">   489  </span>			}
+<span id="L490" class="ln">   490  </span>			pgw.partitionMapMetric[metric] = partInfo
+<span id="L491" class="ln">   491  </span>		}
+<span id="L492" class="ln">   492  </span>	}
+<span id="L493" class="ln">   493  </span>	return nil
+<span id="L494" class="ln">   494  </span>}
+<span id="L495" class="ln">   495  </span>
+<span id="L496" class="ln">   496  </span><span class="comment">// DeleteOldPartitions is a background task that deletes old partitions from the measurements DB</span>
+<span id="L497" class="ln">   497  </span>func (pgw *PostgresWriter) DeleteOldPartitions() {
+<span id="L498" class="ln">   498  </span>	l := log.GetLogger(pgw.ctx)
+<span id="L499" class="ln">   499  </span>	var partsDropped int
+<span id="L500" class="ln">   500  </span>	err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than =&gt; $1::interval)`,
+<span id="L501" class="ln">   501  </span>		pgw.opts.RetentionInterval).Scan(&amp;partsDropped)
+<span id="L502" class="ln">   502  </span>	if err != nil {
+<span id="L503" class="ln">   503  </span>		l.Error(&#34;Could not drop old time partitions:&#34;, err)
+<span id="L504" class="ln">   504  </span>	} else if partsDropped &gt; 0 {
+<span id="L505" class="ln">   505  </span>		l.Infof(&#34;Dropped %d old time partitions&#34;, partsDropped)
+<span id="L506" class="ln">   506  </span>	}
+<span id="L507" class="ln">   507  </span>}
+<span id="L508" class="ln">   508  </span>
+<span id="L509" class="ln">   509  </span><span class="comment">// MaintainUniqueSources is a background task that maintains a mapping of unique sources</span>
+<span id="L510" class="ln">   510  </span><span class="comment">// in each metric table in admin.all_distinct_dbname_metrics.</span>
+<span id="L511" class="ln">   511  </span><span class="comment">// This is used to avoid listing the same source multiple times in Grafana dropdowns.</span>
+<span id="L512" class="ln">   512  </span>func (pgw *PostgresWriter) MaintainUniqueSources() {
+<span id="L513" class="ln">   513  </span>	logger := log.GetLogger(pgw.ctx)
+<span id="L514" class="ln">   514  </span>	var rowsAffected int
+<span id="L515" class="ln">   515  </span>	if err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.maintain_unique_sources()`).Scan(&amp;rowsAffected); err != nil {
+<span id="L516" class="ln">   516  </span>		logger.Error(&#34;Failed to run admin.all_distinct_dbname_metrics maintenance:&#34;, err)
+<span id="L517" class="ln">   517  </span>		return
+<span id="L518" class="ln">   518  </span>	}
+<span id="L519" class="ln">   519  </span>	logger.WithField(&#34;rows&#34;, rowsAffected).Info(&#34;Successfully processed admin.all_distinct_dbname_metrics&#34;)
+<span id="L520" class="ln">   520  </span>}
+<span id="L521" class="ln">   521  </span>
+<span id="L522" class="ln">   522  </span>func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
+<span id="L523" class="ln">   523  </span>	sql := `INSERT INTO admin.all_distinct_dbname_metrics
+<span id="L524" class="ln">   524  </span>			SELECT $1, $2
+<span id="L525" class="ln">   525  </span>			WHERE NOT EXISTS (
+<span id="L526" class="ln">   526  </span>				SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = $1 AND metric = $2
+<span id="L527" class="ln">   527  </span>			)`
+<span id="L528" class="ln">   528  </span>	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
+<span id="L529" class="ln">   529  </span>	return err
+<span id="L530" class="ln">   530  </span>}
+<span id="L531" class="ln">   531  </span>
+<span id="L532" class="ln">   532  </span>func NewPostgresSinkMigrator(ctx context.Context, connStr string) (db.Migrator, error) {
+<span id="L533" class="ln">   533  </span>	conn, err := pgxpool.New(ctx, connStr)
+<span id="L534" class="ln">   534  </span>	if err != nil {
+<span id="L535" class="ln">   535  </span>		return nil, err
+<span id="L536" class="ln">   536  </span>	}
+<span id="L537" class="ln">   537  </span>	pgw := &amp;PostgresWriter{
+<span id="L538" class="ln">   538  </span>		ctx:    ctx,
+<span id="L539" class="ln">   539  </span>		sinkDb: conn,
+<span id="L540" class="ln">   540  </span>	}
+<span id="L541" class="ln">   541  </span>	exists, err := db.DoesSchemaExist(ctx, conn, &#34;admin&#34;)
+<span id="L542" class="ln">   542  </span>	if err != nil {
+<span id="L543" class="ln">   543  </span>		return nil, err
+<span id="L544" class="ln">   544  </span>	}
+<span id="L545" class="ln">   545  </span>	if exists {
+<span id="L546" class="ln">   546  </span>		return pgw, nil
+<span id="L547" class="ln">   547  </span>	}
+<span id="L548" class="ln">   548  </span>	for _, sql := range metricSchemaSQLs {
+<span id="L549" class="ln">   549  </span>		if _, err = conn.Exec(ctx, sql); err != nil {
+<span id="L550" class="ln">   550  </span>			return nil, err
+<span id="L551" class="ln">   551  </span>		}
+<span id="L552" class="ln">   552  </span>	}
+<span id="L553" class="ln">   553  </span>	return pgw, nil
+<span id="L554" class="ln">   554  </span>}
+<span id="L555" class="ln">   555  </span>
+<span id="L556" class="ln">   556  </span>var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
+<span id="L557" class="ln">   557  </span>	return migrator.New(
+<span id="L558" class="ln">   558  </span>		migrator.TableName(&#34;admin.migration&#34;),
+<span id="L559" class="ln">   559  </span>		migrator.SetNotice(func(s string) {
+<span id="L560" class="ln">   560  </span>			log.GetLogger(pgw.ctx).Info(s)
+<span id="L561" class="ln">   561  </span>		}),
+<span id="L562" class="ln">   562  </span>		migrations(),
+<span id="L563" class="ln">   563  </span>	)
 <span id="L564" class="ln">   564  </span>}
 <span id="L565" class="ln">   565  </span>
-<span id="L566" class="ln">   566  </span><span class="comment">// NeedsMigration checks if database needs migration</span>
-<span id="L567" class="ln">   567  </span>func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
+<span id="L566" class="ln">   566  </span><span class="comment">// Migrate upgrades database with all migrations</span>
+<span id="L567" class="ln">   567  </span>func (pgw *PostgresWriter) Migrate() error {
 <span id="L568" class="ln">   568  </span>	m, err := initMigrator(pgw)
 <span id="L569" class="ln">   569  </span>	if err != nil {
-<span id="L570" class="ln">   570  </span>		return false, err
+<span id="L570" class="ln">   570  </span>		return fmt.Errorf(&#34;cannot initialize migration: %w&#34;, err)
 <span id="L571" class="ln">   571  </span>	}
-<span id="L572" class="ln">   572  </span>	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
+<span id="L572" class="ln">   572  </span>	return m.Migrate(pgw.ctx, pgw.sinkDb)
 <span id="L573" class="ln">   573  </span>}
 <span id="L574" class="ln">   574  </span>
-<span id="L575" class="ln">   575  </span><span class="comment">// migrations holds function returning all upgrade migrations needed</span>
-<span id="L576" class="ln">   576  </span>
-<span id="L577" class="ln">   577  </span>var migrations func() migrator.Option = func() migrator.Option {
-<span id="L578" class="ln">   578  </span>	return migrator.Migrations(
-<span id="L579" class="ln">   579  </span>		&amp;migrator.Migration{
-<span id="L580" class="ln">   580  </span>			Name: &#34;01110 Apply postgres sink schema migrations&#34;,
-<span id="L581" class="ln">   581  </span>			Func: func(context.Context, pgx.Tx) error {
-<span id="L582" class="ln">   582  </span>				<span class="comment">// &#34;migration&#34; table will be created automatically</span>
-<span id="L583" class="ln">   583  </span>				return nil
-<span id="L584" class="ln">   584  </span>			},
-<span id="L585" class="ln">   585  </span>		},
-<span id="L586" class="ln">   586  </span>
-<span id="L587" class="ln">   587  </span>		&amp;migrator.Migration{
-<span id="L588" class="ln">   588  </span>			Name: &#34;01180 Apply admin functions migrations for v5&#34;,
-<span id="L589" class="ln">   589  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
-<span id="L590" class="ln">   590  </span>				_, err := tx.Exec(ctx, `
-<span id="L591" class="ln">   591  </span>					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
-<span id="L592" class="ln">   592  </span>					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_time;
-<span id="L593" class="ln">   593  </span>					DROP FUNCTION IF EXISTS admin.get_old_time_partitions(integer, text);
-<span id="L594" class="ln">   594  </span>					DROP FUNCTION IF EXISTS admin.drop_old_time_partitions(integer, boolean, text);
-<span id="L595" class="ln">   595  </span>				`)
-<span id="L596" class="ln">   596  </span>				if err != nil {
-<span id="L597" class="ln">   597  </span>					return err
-<span id="L598" class="ln">   598  </span>				}
-<span id="L599" class="ln">   599  </span>
-<span id="L600" class="ln">   600  </span>				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
-<span id="L601" class="ln">   601  </span>				if err != nil {
-<span id="L602" class="ln">   602  </span>					return err
-<span id="L603" class="ln">   603  </span>				}
-<span id="L604" class="ln">   604  </span>				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
-<span id="L605" class="ln">   605  </span>				return err
-<span id="L606" class="ln">   606  </span>			},
-<span id="L607" class="ln">   607  </span>		},
+<span id="L575" class="ln">   575  </span><span class="comment">// NeedsMigration checks if database needs migration</span>
+<span id="L576" class="ln">   576  </span>func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
+<span id="L577" class="ln">   577  </span>	m, err := initMigrator(pgw)
+<span id="L578" class="ln">   578  </span>	if err != nil {
+<span id="L579" class="ln">   579  </span>		return false, err
+<span id="L580" class="ln">   580  </span>	}
+<span id="L581" class="ln">   581  </span>	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
+<span id="L582" class="ln">   582  </span>}
+<span id="L583" class="ln">   583  </span>
+<span id="L584" class="ln">   584  </span><span class="comment">// migrations holds function returning all upgrade migrations needed</span>
+<span id="L585" class="ln">   585  </span>
+<span id="L586" class="ln">   586  </span>var migrations func() migrator.Option = func() migrator.Option {
+<span id="L587" class="ln">   587  </span>	return migrator.Migrations(
+<span id="L588" class="ln">   588  </span>		&amp;migrator.Migration{
+<span id="L589" class="ln">   589  </span>			Name: &#34;01110 Apply postgres sink schema migrations&#34;,
+<span id="L590" class="ln">   590  </span>			Func: func(context.Context, pgx.Tx) error {
+<span id="L591" class="ln">   591  </span>				<span class="comment">// &#34;migration&#34; table will be created automatically</span>
+<span id="L592" class="ln">   592  </span>				return nil
+<span id="L593" class="ln">   593  </span>			},
+<span id="L594" class="ln">   594  </span>		},
+<span id="L595" class="ln">   595  </span>
+<span id="L596" class="ln">   596  </span>		&amp;migrator.Migration{
+<span id="L597" class="ln">   597  </span>			Name: &#34;01180 Apply admin functions migrations for v5&#34;,
+<span id="L598" class="ln">   598  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L599" class="ln">   599  </span>				_, err := tx.Exec(ctx, `
+<span id="L600" class="ln">   600  </span>					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
+<span id="L601" class="ln">   601  </span>					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_time;
+<span id="L602" class="ln">   602  </span>					DROP FUNCTION IF EXISTS admin.get_old_time_partitions(integer, text);
+<span id="L603" class="ln">   603  </span>					DROP FUNCTION IF EXISTS admin.drop_old_time_partitions(integer, boolean, text);
+<span id="L604" class="ln">   604  </span>				`)
+<span id="L605" class="ln">   605  </span>				if err != nil {
+<span id="L606" class="ln">   606  </span>					return err
+<span id="L607" class="ln">   607  </span>				}
 <span id="L608" class="ln">   608  </span>
-<span id="L609" class="ln">   609  </span>		&amp;migrator.MigrationNoTx{
-<span id="L610" class="ln">   610  </span>			Name: &#34;01409 Switch to time-only partitioning&#34;,
-<span id="L611" class="ln">   611  </span>			Func: func(ctx context.Context, conn migrator.PgxIface) error {
-<span id="L612" class="ln">   612  </span>				const (
-<span id="L613" class="ln">   613  </span>					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
-<span id="L614" class="ln">   614  </span>
-<span id="L615" class="ln">   615  </span>					sqlListMetricTables = `SELECT c.relname
-<span id="L616" class="ln">   616  </span>						FROM pg_description d
-<span id="L617" class="ln">   617  </span>						JOIN pg_class c ON c.oid = d.objoid
-<span id="L618" class="ln">   618  </span>						WHERE d.description = &#39;pgwatch-generated-metric-lvl&#39;`
-<span id="L619" class="ln">   619  </span>
-<span id="L620" class="ln">   620  </span>					sqlIsTableMigrated = `SELECT EXISTS (
-<span id="L621" class="ln">   621  </span>						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = &#39;r&#39;)`
-<span id="L622" class="ln">   622  </span>
-<span id="L623" class="ln">   623  </span>					sqlRenameMetricTable = `ALTER TABLE %s RENAME TO %s`
-<span id="L624" class="ln">   624  </span>
-<span id="L625" class="ln">   625  </span>					sqlMetricTableBounds = `SELECT COALESCE(MIN(time), NOW()),
-<span id="L626" class="ln">   626  </span>						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
-<span id="L627" class="ln">   627  </span>						FROM %s`
+<span id="L609" class="ln">   609  </span>				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+<span id="L610" class="ln">   610  </span>				if err != nil {
+<span id="L611" class="ln">   611  </span>					return err
+<span id="L612" class="ln">   612  </span>				}
+<span id="L613" class="ln">   613  </span>				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
+<span id="L614" class="ln">   614  </span>				return err
+<span id="L615" class="ln">   615  </span>			},
+<span id="L616" class="ln">   616  </span>		},
+<span id="L617" class="ln">   617  </span>
+<span id="L618" class="ln">   618  </span>		&amp;migrator.MigrationNoTx{
+<span id="L619" class="ln">   619  </span>			Name: &#34;01409 Switch to time-only partitioning&#34;,
+<span id="L620" class="ln">   620  </span>			Func: func(ctx context.Context, conn migrator.PgxIface) error {
+<span id="L621" class="ln">   621  </span>				const (
+<span id="L622" class="ln">   622  </span>					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
+<span id="L623" class="ln">   623  </span>
+<span id="L624" class="ln">   624  </span>					sqlListMetricTables = `SELECT c.relname
+<span id="L625" class="ln">   625  </span>						FROM pg_description d
+<span id="L626" class="ln">   626  </span>						JOIN pg_class c ON c.oid = d.objoid
+<span id="L627" class="ln">   627  </span>						WHERE d.description = &#39;pgwatch-generated-metric-lvl&#39;`
 <span id="L628" class="ln">   628  </span>
-<span id="L629" class="ln">   629  </span>					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, &#39;1 day&#39;::interval, $3)`
-<span id="L630" class="ln">   630  </span>
-<span id="L631" class="ln">   631  </span>					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
-<span id="L632" class="ln">   632  </span>						FROM pg_partition_tree(to_regclass($1)) WHERE relid::text LIKE &#39;subpartitions%&#39; 
-<span id="L633" class="ln">   633  </span>						ORDER BY isleaf DESC, relid::text`
-<span id="L634" class="ln">   634  </span>
-<span id="L635" class="ln">   635  </span>					<span class="comment">// moves rows into the new partitioned parent, detaches and drops the old subpartition;</span>
-<span id="L636" class="ln">   636  </span>					<span class="comment">// multiple statements in a single Exec run in an implicit transaction</span>
-<span id="L637" class="ln">   637  </span>					sqlMoveSubpartition = `INSERT INTO %[1]s (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM %[2]s;
-<span id="L638" class="ln">   638  </span>						ALTER TABLE %[3]s DETACH PARTITION %[2]s;
-<span id="L639" class="ln">   639  </span>						DROP TABLE %[2]s;`
-<span id="L640" class="ln">   640  </span>
-<span id="L641" class="ln">   641  </span>					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
-<span id="L642" class="ln">   642  </span>				)
-<span id="L643" class="ln">   643  </span>				if _, err := conn.Exec(ctx, sqlDropOldEnsurePartitionDbnameTime+
-<span id="L644" class="ln">   644  </span>					sqlMetricAdminFunctions+
-<span id="L645" class="ln">   645  </span>					sqlMetricEnsurePartitionPostgres); err != nil {
-<span id="L646" class="ln">   646  </span>					return err
-<span id="L647" class="ln">   647  </span>				}
-<span id="L648" class="ln">   648  </span>
-<span id="L649" class="ln">   649  </span>				rows, _ := conn.Query(ctx, sqlListMetricTables)
-<span id="L650" class="ln">   650  </span>				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
-<span id="L651" class="ln">   651  </span>				if err != nil {
-<span id="L652" class="ln">   652  </span>					return err
-<span id="L653" class="ln">   653  </span>				}
-<span id="L654" class="ln">   654  </span>
-<span id="L655" class="ln">   655  </span>				<span class="comment">// skip *_before_v6_migration tables to avoid double migration</span>
-<span id="L656" class="ln">   656  </span>				<span class="comment">// this could happen if the migration is re-run after a failed attempt</span>
-<span id="L657" class="ln">   657  </span>				const suffix = &#34;_before_v6_migration&#34;
-<span id="L658" class="ln">   658  </span>				for _, metricTableRawName := range metricTables {
-<span id="L659" class="ln">   659  </span>					if strings.HasSuffix(metricTableRawName, suffix) {
-<span id="L660" class="ln">   660  </span>						continue
-<span id="L661" class="ln">   661  </span>					}
-<span id="L662" class="ln">   662  </span>
-<span id="L663" class="ln">   663  </span>					metricTableRawRename := metricTableRawName + suffix
-<span id="L664" class="ln">   664  </span>					metricTableRenamed := pgx.Identifier{metricTableRawRename}.Sanitize()
-<span id="L665" class="ln">   665  </span>					metricTable := pgx.Identifier{metricTableRawName}.Sanitize()
-<span id="L666" class="ln">   666  </span>
-<span id="L667" class="ln">   667  </span>					<span class="comment">// check if the table is already migrated to avoid errors on re-run after a failed migration attempt</span>
-<span id="L668" class="ln">   668  </span>					var isTableMigrated bool
-<span id="L669" class="ln">   669  </span>					if err = conn.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&amp;isTableMigrated); err != nil {
-<span id="L670" class="ln">   670  </span>						return err
-<span id="L671" class="ln">   671  </span>					} else if isTableMigrated {
-<span id="L672" class="ln">   672  </span>						continue
-<span id="L673" class="ln">   673  </span>					}
-<span id="L674" class="ln">   674  </span>
-<span id="L675" class="ln">   675  </span>					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
-<span id="L676" class="ln">   676  </span>						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
-<span id="L677" class="ln">   677  </span>							return
-<span id="L678" class="ln">   678  </span>						}
-<span id="L679" class="ln">   679  </span>
-<span id="L680" class="ln">   680  </span>						<span class="comment">// for an empty table MIN(time) is NULL, so COALESCE falls back to server-side</span>
-<span id="L681" class="ln">   681  </span>						<span class="comment">// NOW() and daysToPrecreate becomes 0, creating a single empty partition</span>
-<span id="L682" class="ln">   682  </span>						var minTime time.Time
-<span id="L683" class="ln">   683  </span>						var daysToPrecreate int32
-<span id="L684" class="ln">   684  </span>						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&amp;minTime, &amp;daysToPrecreate); ferr == nil {
-<span id="L685" class="ln">   685  </span>							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTableRawName, minTime, daysToPrecreate)
-<span id="L686" class="ln">   686  </span>						}
-<span id="L687" class="ln">   687  </span>						return
-<span id="L688" class="ln">   688  </span>					})
-<span id="L689" class="ln">   689  </span>
-<span id="L690" class="ln">   690  </span>					if err != nil {
-<span id="L691" class="ln">   691  </span>						return err
-<span id="L692" class="ln">   692  </span>					}
-<span id="L693" class="ln">   693  </span>
-<span id="L694" class="ln">   694  </span>					type partitionInfo struct {
-<span id="L695" class="ln">   695  </span>						Rel       string
-<span id="L696" class="ln">   696  </span>						ParentRel string
-<span id="L697" class="ln">   697  </span>					}
-<span id="L698" class="ln">   698  </span>					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRawRename)
-<span id="L699" class="ln">   699  </span>					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
-<span id="L700" class="ln">   700  </span>					if err != nil {
-<span id="L701" class="ln">   701  </span>						return err
-<span id="L702" class="ln">   702  </span>					}
-<span id="L703" class="ln">   703  </span>
-<span id="L704" class="ln">   704  </span>					for _, partInfo := range partitionsInfo {
-<span id="L705" class="ln">   705  </span>						if _, err := conn.Exec(ctx, fmt.Sprintf(sqlMoveSubpartition, metricTable, partInfo.Rel, partInfo.ParentRel)); err != nil {
-<span id="L706" class="ln">   706  </span>							return err
-<span id="L707" class="ln">   707  </span>						}
-<span id="L708" class="ln">   708  </span>					}
-<span id="L709" class="ln">   709  </span>
-<span id="L710" class="ln">   710  </span>					if _, err := conn.Exec(ctx, fmt.Sprintf(sqlDropTableIfExists, metricTableRenamed)); err != nil {
-<span id="L711" class="ln">   711  </span>						return err
-<span id="L712" class="ln">   712  </span>					}
-<span id="L713" class="ln">   713  </span>				}
-<span id="L714" class="ln">   714  </span>
-<span id="L715" class="ln">   715  </span>				return nil
-<span id="L716" class="ln">   716  </span>			},
-<span id="L717" class="ln">   717  </span>		},
+<span id="L629" class="ln">   629  </span>					sqlIsTableMigrated = `SELECT EXISTS (
+<span id="L630" class="ln">   630  </span>						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = &#39;r&#39;)`
+<span id="L631" class="ln">   631  </span>
+<span id="L632" class="ln">   632  </span>					sqlRenameMetricTable = `ALTER TABLE %s RENAME TO %s`
+<span id="L633" class="ln">   633  </span>
+<span id="L634" class="ln">   634  </span>					sqlMetricTableBounds = `SELECT COALESCE(MIN(time), NOW()),
+<span id="L635" class="ln">   635  </span>						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
+<span id="L636" class="ln">   636  </span>						FROM %s`
+<span id="L637" class="ln">   637  </span>
+<span id="L638" class="ln">   638  </span>					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, &#39;1 day&#39;::interval, $3)`
+<span id="L639" class="ln">   639  </span>
+<span id="L640" class="ln">   640  </span>					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
+<span id="L641" class="ln">   641  </span>						FROM pg_partition_tree(to_regclass($1)) WHERE relid::text LIKE &#39;subpartitions%&#39; 
+<span id="L642" class="ln">   642  </span>						ORDER BY isleaf DESC, relid::text`
+<span id="L643" class="ln">   643  </span>
+<span id="L644" class="ln">   644  </span>					<span class="comment">// moves rows into the new partitioned parent, detaches and drops the old subpartition;</span>
+<span id="L645" class="ln">   645  </span>					<span class="comment">// multiple statements in a single Exec run in an implicit transaction</span>
+<span id="L646" class="ln">   646  </span>					sqlMoveSubpartition = `INSERT INTO %[1]s (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM %[2]s;
+<span id="L647" class="ln">   647  </span>						ALTER TABLE %[3]s DETACH PARTITION %[2]s;
+<span id="L648" class="ln">   648  </span>						DROP TABLE %[2]s;`
+<span id="L649" class="ln">   649  </span>
+<span id="L650" class="ln">   650  </span>					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
+<span id="L651" class="ln">   651  </span>				)
+<span id="L652" class="ln">   652  </span>				if _, err := conn.Exec(ctx, sqlDropOldEnsurePartitionDbnameTime+
+<span id="L653" class="ln">   653  </span>					sqlMetricAdminFunctions+
+<span id="L654" class="ln">   654  </span>					sqlMetricEnsurePartitionPostgres); err != nil {
+<span id="L655" class="ln">   655  </span>					return err
+<span id="L656" class="ln">   656  </span>				}
+<span id="L657" class="ln">   657  </span>
+<span id="L658" class="ln">   658  </span>				rows, _ := conn.Query(ctx, sqlListMetricTables)
+<span id="L659" class="ln">   659  </span>				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+<span id="L660" class="ln">   660  </span>				if err != nil {
+<span id="L661" class="ln">   661  </span>					return err
+<span id="L662" class="ln">   662  </span>				}
+<span id="L663" class="ln">   663  </span>
+<span id="L664" class="ln">   664  </span>				<span class="comment">// skip *_before_v6_migration tables to avoid double migration</span>
+<span id="L665" class="ln">   665  </span>				<span class="comment">// this could happen if the migration is re-run after a failed attempt</span>
+<span id="L666" class="ln">   666  </span>				const suffix = &#34;_before_v6_migration&#34;
+<span id="L667" class="ln">   667  </span>				for _, metricTableRawName := range metricTables {
+<span id="L668" class="ln">   668  </span>					if strings.HasSuffix(metricTableRawName, suffix) {
+<span id="L669" class="ln">   669  </span>						continue
+<span id="L670" class="ln">   670  </span>					}
+<span id="L671" class="ln">   671  </span>
+<span id="L672" class="ln">   672  </span>					metricTableRawRename := metricTableRawName + suffix
+<span id="L673" class="ln">   673  </span>					metricTableRenamed := pgx.Identifier{metricTableRawRename}.Sanitize()
+<span id="L674" class="ln">   674  </span>					metricTable := pgx.Identifier{metricTableRawName}.Sanitize()
+<span id="L675" class="ln">   675  </span>
+<span id="L676" class="ln">   676  </span>					<span class="comment">// check if the table is already migrated to avoid errors on re-run after a failed migration attempt</span>
+<span id="L677" class="ln">   677  </span>					var isTableMigrated bool
+<span id="L678" class="ln">   678  </span>					if err = conn.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&amp;isTableMigrated); err != nil {
+<span id="L679" class="ln">   679  </span>						return err
+<span id="L680" class="ln">   680  </span>					} else if isTableMigrated {
+<span id="L681" class="ln">   681  </span>						continue
+<span id="L682" class="ln">   682  </span>					}
+<span id="L683" class="ln">   683  </span>
+<span id="L684" class="ln">   684  </span>					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
+<span id="L685" class="ln">   685  </span>						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
+<span id="L686" class="ln">   686  </span>							return
+<span id="L687" class="ln">   687  </span>						}
+<span id="L688" class="ln">   688  </span>
+<span id="L689" class="ln">   689  </span>						<span class="comment">// for an empty table MIN(time) is NULL, so COALESCE falls back to server-side</span>
+<span id="L690" class="ln">   690  </span>						<span class="comment">// NOW() and daysToPrecreate becomes 0, creating a single empty partition</span>
+<span id="L691" class="ln">   691  </span>						var minTime time.Time
+<span id="L692" class="ln">   692  </span>						var daysToPrecreate int32
+<span id="L693" class="ln">   693  </span>						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&amp;minTime, &amp;daysToPrecreate); ferr == nil {
+<span id="L694" class="ln">   694  </span>							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTableRawName, minTime, daysToPrecreate)
+<span id="L695" class="ln">   695  </span>						}
+<span id="L696" class="ln">   696  </span>						return
+<span id="L697" class="ln">   697  </span>					})
+<span id="L698" class="ln">   698  </span>
+<span id="L699" class="ln">   699  </span>					if err != nil {
+<span id="L700" class="ln">   700  </span>						return err
+<span id="L701" class="ln">   701  </span>					}
+<span id="L702" class="ln">   702  </span>
+<span id="L703" class="ln">   703  </span>					type partitionInfo struct {
+<span id="L704" class="ln">   704  </span>						Rel       string
+<span id="L705" class="ln">   705  </span>						ParentRel string
+<span id="L706" class="ln">   706  </span>					}
+<span id="L707" class="ln">   707  </span>					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRawRename)
+<span id="L708" class="ln">   708  </span>					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
+<span id="L709" class="ln">   709  </span>					if err != nil {
+<span id="L710" class="ln">   710  </span>						return err
+<span id="L711" class="ln">   711  </span>					}
+<span id="L712" class="ln">   712  </span>
+<span id="L713" class="ln">   713  </span>					for _, partInfo := range partitionsInfo {
+<span id="L714" class="ln">   714  </span>						if _, err := conn.Exec(ctx, fmt.Sprintf(sqlMoveSubpartition, metricTable, partInfo.Rel, partInfo.ParentRel)); err != nil {
+<span id="L715" class="ln">   715  </span>							return err
+<span id="L716" class="ln">   716  </span>						}
+<span id="L717" class="ln">   717  </span>					}
 <span id="L718" class="ln">   718  </span>
-<span id="L719" class="ln">   719  </span>		&amp;migrator.Migration{
-<span id="L720" class="ln">   720  </span>			Name: &#34;01474 Change drop_all_metric_tables to procedure&#34;,
-<span id="L721" class="ln">   721  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
-<span id="L722" class="ln">   722  </span>				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
-<span id="L723" class="ln">   723  </span>				return err
-<span id="L724" class="ln">   724  </span>			},
-<span id="L725" class="ln">   725  </span>		},
-<span id="L726" class="ln">   726  </span>
-<span id="L727" class="ln">   727  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
-<span id="L728" class="ln">   728  </span>
-<span id="L729" class="ln">   729  </span>		<span class="comment">// &amp;migrator.Migration{</span>
-<span id="L730" class="ln">   730  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
-<span id="L731" class="ln">   731  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
-<span id="L732" class="ln">   732  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
-<span id="L733" class="ln">   733  </span>		<span class="comment">// 	},</span>
-<span id="L734" class="ln">   734  </span>		<span class="comment">// },</span>
-<span id="L735" class="ln">   735  </span>	)
-<span id="L736" class="ln">   736  </span>}
-<span id="L737" class="ln">   737  </span>
-<span id="L738" class="ln">   738  </span><span class="comment">// registeredMigrationsCount returns the number of migrations actually registered in</span>
-<span id="L739" class="ln">   739  </span><span class="comment">// migrations(). This is the single source of truth for &#34;how many migration rows</span>
-<span id="L740" class="ln">   740  </span><span class="comment">// admin.migration must contain after a full migrate&#34;; no separate MigrationsCount</span>
-<span id="L741" class="ln">   741  </span><span class="comment">// constant exists.</span>
-<span id="L742" class="ln">   742  </span>func registeredMigrationsCount() int {
-<span id="L743" class="ln">   743  </span>	m, err := migrator.New(migrations())
-<span id="L744" class="ln">   744  </span>	if err != nil {
-<span id="L745" class="ln">   745  </span>		panic(fmt.Errorf(&#34;registeredMigrationsCount: %w&#34;, err))
-<span id="L746" class="ln">   746  </span>	}
-<span id="L747" class="ln">   747  </span>	return m.Count()
-<span id="L748" class="ln">   748  </span>}
-<span id="L749" class="ln">   749  </span>
+<span id="L719" class="ln">   719  </span>					if _, err := conn.Exec(ctx, fmt.Sprintf(sqlDropTableIfExists, metricTableRenamed)); err != nil {
+<span id="L720" class="ln">   720  </span>						return err
+<span id="L721" class="ln">   721  </span>					}
+<span id="L722" class="ln">   722  </span>				}
+<span id="L723" class="ln">   723  </span>
+<span id="L724" class="ln">   724  </span>				return nil
+<span id="L725" class="ln">   725  </span>			},
+<span id="L726" class="ln">   726  </span>		},
+<span id="L727" class="ln">   727  </span>
+<span id="L728" class="ln">   728  </span>		&amp;migrator.Migration{
+<span id="L729" class="ln">   729  </span>			Name: &#34;01474 Change drop_all_metric_tables to procedure&#34;,
+<span id="L730" class="ln">   730  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L731" class="ln">   731  </span>				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
+<span id="L732" class="ln">   732  </span>				return err
+<span id="L733" class="ln">   733  </span>			},
+<span id="L734" class="ln">   734  </span>		},
+<span id="L735" class="ln">   735  </span>
+<span id="L736" class="ln">   736  </span>		&amp;migrator.Migration{
+<span id="L737" class="ln">   737  </span>			Name: &#34;01529 Fix ensure_partition_metric_time partitioning strategy&#34;,
+<span id="L738" class="ln">   738  </span>			Func: func(ctx context.Context, tx pgx.Tx) error {
+<span id="L739" class="ln">   739  </span>				_, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+<span id="L740" class="ln">   740  </span>				return err
+<span id="L741" class="ln">   741  </span>			},
+<span id="L742" class="ln">   742  </span>		},
+<span id="L743" class="ln">   743  </span>
+<span id="L744" class="ln">   744  </span>		<span class="comment">// adding new migration here, update &#34;admin&#34;.&#34;migration&#34; in &#34;admin_schema.sql&#34;!</span>
+<span id="L745" class="ln">   745  </span>
+<span id="L746" class="ln">   746  </span>		<span class="comment">// &amp;migrator.Migration{</span>
+<span id="L747" class="ln">   747  </span>		<span class="comment">// 	Name: &#34;000XX Short description of a migration&#34;,</span>
+<span id="L748" class="ln">   748  </span>		<span class="comment">// 	Func: func(ctx context.Context, tx pgx.Tx) error {</span>
+<span id="L749" class="ln">   749  </span>		<span class="comment">// 		return executeMigrationScript(ctx, tx, &#34;000XX.sql&#34;)</span>
+<span id="L750" class="ln">   750  </span>		<span class="comment">// 	},</span>
+<span id="L751" class="ln">   751  </span>		<span class="comment">// },</span>
+<span id="L752" class="ln">   752  </span>	)
+<span id="L753" class="ln">   753  </span>}
+<span id="L754" class="ln">   754  </span>
+<span id="L755" class="ln">   755  </span><span class="comment">// registeredMigrationsCount returns the number of migrations actually registered in</span>
+<span id="L756" class="ln">   756  </span><span class="comment">// migrations(). This is the single source of truth for &#34;how many migration rows</span>
+<span id="L757" class="ln">   757  </span><span class="comment">// admin.migration must contain after a full migrate&#34;; no separate MigrationsCount</span>
+<span id="L758" class="ln">   758  </span><span class="comment">// constant exists.</span>
+<span id="L759" class="ln">   759  </span>func registeredMigrationsCount() int {
+<span id="L760" class="ln">   760  </span>	m, err := migrator.New(migrations())
+<span id="L761" class="ln">   761  </span>	if err != nil {
+<span id="L762" class="ln">   762  </span>		panic(fmt.Errorf(&#34;registeredMigrationsCount: %w&#34;, err))
+<span id="L763" class="ln">   763  </span>	}
+<span id="L764" class="ln">   764  </span>	return m.Count()
+<span id="L765" class="ln">   765  </span>}
+<span id="L766" class="ln">   766  </span>
 </pre><p></p>
 
 <div id="footer">

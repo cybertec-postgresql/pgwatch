@@ -297,7 +297,7 @@
 <span id="L240" class="ln">   240  </span>	_, err = conn.Exec(ctx, `
 <span id="L241" class="ln">   241  </span>		DROP PROCEDURE IF EXISTS admin.drop_all_metric_tables();
 <span id="L242" class="ln">   242  </span>		CREATE FUNCTION admin.drop_all_metric_tables() RETURNS int AS $$ BEGIN RETURN 0; END $$ LANGUAGE plpgsql;
-<span id="L243" class="ln">   243  </span>		DELETE FROM admin.migration WHERE id = (SELECT max(id) FROM admin.migration);
+<span id="L243" class="ln">   243  </span>		DELETE FROM admin.migration WHERE id &gt;= 3;
 <span id="L244" class="ln">   244  </span>	`)
 <span id="L245" class="ln">   245  </span>	r.NoError(err)
 <span id="L246" class="ln">   246  </span>

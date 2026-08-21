@@ -719,521 +719,590 @@
 <span id="L662" class="ln">   662  </span>	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 <span id="L663" class="ln">   663  </span>}
 <span id="L664" class="ln">   664  </span>
-<span id="L665" class="ln">   665  </span>func Test_Maintain(t *testing.T) {
-<span id="L666" class="ln">   666  </span>	a := assert.New(t)
-<span id="L667" class="ln">   667  </span>	r := require.New(t)
-<span id="L668" class="ln">   668  </span>
-<span id="L669" class="ln">   669  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
-<span id="L670" class="ln">   670  </span>	r.NoError(err)
-<span id="L671" class="ln">   671  </span>	defer pgTearDown()
-<span id="L672" class="ln">   672  </span>
-<span id="L673" class="ln">   673  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
-<span id="L674" class="ln">   674  </span>	r.NoError(err)
-<span id="L675" class="ln">   675  </span>	conn, err := pgx.Connect(ctx, connStr)
-<span id="L676" class="ln">   676  </span>	r.NoError(err)
-<span id="L677" class="ln">   677  </span>
-<span id="L678" class="ln">   678  </span>	opts := &amp;CmdOpts{
-<span id="L679" class="ln">   679  </span>		PartitionInterval:   &#34;1 hour&#34;,
-<span id="L680" class="ln">   680  </span>		RetentionInterval:   &#34;1 hour&#34;,
-<span id="L681" class="ln">   681  </span>		MaintenanceInterval: &#34;0 days&#34;,
-<span id="L682" class="ln">   682  </span>		BatchingDelay:       time.Hour,
-<span id="L683" class="ln">   683  </span>	}
-<span id="L684" class="ln">   684  </span>
-<span id="L685" class="ln">   685  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L686" class="ln">   686  </span>	r.NoError(err)
-<span id="L687" class="ln">   687  </span>
-<span id="L688" class="ln">   688  </span>	t.Run(&#34;MaintainUniqueSources&#34;, func(_ *testing.T) {
-<span id="L689" class="ln">   689  </span>		<span class="comment">// adds an entry to `admin.all_distinct_dbname_metrics`</span>
-<span id="L690" class="ln">   690  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_1&#34;, AddOp)
-<span id="L691" class="ln">   691  </span>		r.NoError(err)
-<span id="L692" class="ln">   692  </span>
-<span id="L693" class="ln">   693  </span>		var numOfEntries int
-<span id="L694" class="ln">   694  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
-<span id="L695" class="ln">   695  </span>		a.NoError(err)
-<span id="L696" class="ln">   696  </span>		a.Equal(1, numOfEntries)
-<span id="L697" class="ln">   697  </span>
-<span id="L698" class="ln">   698  </span>		<span class="comment">// manually call the maintenance routine</span>
-<span id="L699" class="ln">   699  </span>		pgw.MaintainUniqueSources()
+<span id="L665" class="ln">   665  </span><span class="comment">// TestPartitionForwardTimeJump checks #1529</span>
+<span id="L666" class="ln">   666  </span>func TestPartitionForwardTimeJump(t *testing.T) {
+<span id="L667" class="ln">   667  </span>	a := assert.New(t)
+<span id="L668" class="ln">   668  </span>	r := require.New(t)
+<span id="L669" class="ln">   669  </span>
+<span id="L670" class="ln">   670  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L671" class="ln">   671  </span>	r.NoError(err)
+<span id="L672" class="ln">   672  </span>	defer pgTearDown()
+<span id="L673" class="ln">   673  </span>
+<span id="L674" class="ln">   674  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L675" class="ln">   675  </span>	r.NoError(err)
+<span id="L676" class="ln">   676  </span>
+<span id="L677" class="ln">   677  </span>	opts := &amp;CmdOpts{
+<span id="L678" class="ln">   678  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L679" class="ln">   679  </span>		RetentionInterval:   &#34;14 days&#34;,
+<span id="L680" class="ln">   680  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L681" class="ln">   681  </span>		BatchingDelay:       time.Second,
+<span id="L682" class="ln">   682  </span>	}
+<span id="L683" class="ln">   683  </span>
+<span id="L684" class="ln">   684  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L685" class="ln">   685  </span>	r.NoError(err)
+<span id="L686" class="ln">   686  </span>
+<span id="L687" class="ln">   687  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L688" class="ln">   688  </span>	r.NoError(err)
+<span id="L689" class="ln">   689  </span>	defer conn.Close(ctx)
+<span id="L690" class="ln">   690  </span>
+<span id="L691" class="ln">   691  </span>	<span class="comment">// 1. Create partitions for an early period.</span>
+<span id="L692" class="ln">   692  </span>	early := time.Date(2026, 2, 5, 10, 0, 0, 0, time.UTC)
+<span id="L693" class="ln">   693  </span>	r.NoError(pgw.EnsureMetricTimePartsExist(map[string]ExistingPartitionInfo{
+<span id="L694" class="ln">   694  </span>		&#34;jump_metric&#34;: {StartTime: early, EndTime: early},
+<span id="L695" class="ln">   695  </span>	}))
+<span id="L696" class="ln">   696  </span>
+<span id="L697" class="ln">   697  </span>	<span class="comment">// 2. Simulate a restart: the in-memory partition cache is lost, while the</span>
+<span id="L698" class="ln">   698  </span>	<span class="comment">//    existing partitions remain in the database.</span>
+<span id="L699" class="ln">   699  </span>	pgw.partitionMapMetric = make(map[string]ExistingPartitionInfo)
 <span id="L700" class="ln">   700  </span>
-<span id="L701" class="ln">   701  </span>		<span class="comment">// entry should have been deleted, because it has no corresponding entries in `test_metric_1` table.</span>
-<span id="L702" class="ln">   702  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
-<span id="L703" class="ln">   703  </span>		a.NoError(err)
-<span id="L704" class="ln">   704  </span>		a.Equal(0, numOfEntries)
-<span id="L705" class="ln">   705  </span>
-<span id="L706" class="ln">   706  </span>		message := []metrics.MeasurementEnvelope{
-<span id="L707" class="ln">   707  </span>			{
-<span id="L708" class="ln">   708  </span>				MetricName: &#34;test_metric_1&#34;,
-<span id="L709" class="ln">   709  </span>				Data: metrics.Measurements{
-<span id="L710" class="ln">   710  </span>					{&#34;number&#34;: 1, &#34;string&#34;: &#34;test_data&#34;},
-<span id="L711" class="ln">   711  </span>				},
-<span id="L712" class="ln">   712  </span>				DBName: &#34;test_db&#34;,
-<span id="L713" class="ln">   713  </span>			},
-<span id="L714" class="ln">   714  </span>		}
-<span id="L715" class="ln">   715  </span>		pgw.flush(message)
+<span id="L701" class="ln">   701  </span>	<span class="comment">// 3. New data arrives weeks later, well beyond the pre-created partitions&#39;</span>
+<span id="L702" class="ln">   702  </span>	<span class="comment">//    upper bound (the &#34;forward time jump&#34; / gap scenario).</span>
+<span id="L703" class="ln">   703  </span>	late := time.Date(2026, 8, 19, 0, 49, 18, 0, time.UTC)
+<span id="L704" class="ln">   704  </span>	err = pgw.EnsureMetricTimePartsExist(map[string]ExistingPartitionInfo{
+<span id="L705" class="ln">   705  </span>		&#34;jump_metric&#34;: {StartTime: late, EndTime: late},
+<span id="L706" class="ln">   706  </span>	})
+<span id="L707" class="ln">   707  </span>	<span class="comment">// Must not error (previously failed with &#34;cannot scan NULL into *time.Time&#34;).</span>
+<span id="L708" class="ln">   708  </span>	r.NoError(err)
+<span id="L709" class="ln">   709  </span>
+<span id="L710" class="ln">   710  </span>	<span class="comment">// The returned/cached range must be non-zero and must contain the new timestamp.</span>
+<span id="L711" class="ln">   711  </span>	part := pgw.partitionMapMetric[&#34;jump_metric&#34;]
+<span id="L712" class="ln">   712  </span>	a.False(part.StartTime.IsZero(), &#34;part_available_from must not be NULL&#34;)
+<span id="L713" class="ln">   713  </span>	a.False(part.EndTime.IsZero(), &#34;part_available_to must not be NULL&#34;)
+<span id="L714" class="ln">   714  </span>	a.False(late.Before(part.StartTime), &#34;new timestamp must be &gt;= partition start&#34;)
+<span id="L715" class="ln">   715  </span>	a.True(late.Before(part.EndTime), &#34;new timestamp must be &lt; partition end&#34;)
 <span id="L716" class="ln">   716  </span>
-<span id="L717" class="ln">   717  </span>		<span class="comment">// manually call the maintenance routine</span>
-<span id="L718" class="ln">   718  </span>		pgw.MaintainUniqueSources()
-<span id="L719" class="ln">   719  </span>
-<span id="L720" class="ln">   720  </span>		<span class="comment">// entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.</span>
-<span id="L721" class="ln">   721  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
-<span id="L722" class="ln">   722  </span>		a.NoError(err)
-<span id="L723" class="ln">   723  </span>		a.Equal(1, numOfEntries)
-<span id="L724" class="ln">   724  </span>
-<span id="L725" class="ln">   725  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_1;&#34;)
-<span id="L726" class="ln">   726  </span>		r.NoError(err)
-<span id="L727" class="ln">   727  </span>
-<span id="L728" class="ln">   728  </span>		<span class="comment">// the corresponding entry should be deleted</span>
-<span id="L729" class="ln">   729  </span>		pgw.MaintainUniqueSources()
-<span id="L730" class="ln">   730  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
-<span id="L731" class="ln">   731  </span>		a.NoError(err)
-<span id="L732" class="ln">   732  </span>		a.Equal(0, numOfEntries)
-<span id="L733" class="ln">   733  </span>	})
-<span id="L734" class="ln">   734  </span>
-<span id="L735" class="ln">   735  </span>	t.Run(&#34;MaintainUniqueSources_MultipleMetricsAndSources&#34;, func(_ *testing.T) {
-<span id="L736" class="ln">   736  </span>		<span class="comment">// Create metric tables with partitions</span>
-<span id="L737" class="ln">   737  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_a&#34;)
-<span id="L738" class="ln">   738  </span>		r.NoError(err)
-<span id="L739" class="ln">   739  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_b&#34;)
-<span id="L740" class="ln">   740  </span>		r.NoError(err)
+<span id="L717" class="ln">   717  </span>	<span class="comment">// A subpartition physically covering the new timestamp must exist, otherwise</span>
+<span id="L718" class="ln">   718  </span>	<span class="comment">// the CopyFrom insert would fail with SQLSTATE 23514 (no partition for row).</span>
+<span id="L719" class="ln">   719  </span>	var covering int
+<span id="L720" class="ln">   720  </span>	r.NoError(conn.QueryRow(ctx, `
+<span id="L721" class="ln">   721  </span>		SELECT count(*)
+<span id="L722" class="ln">   722  </span>		FROM pg_catalog.pg_class c
+<span id="L723" class="ln">   723  </span>		JOIN pg_catalog.pg_inherits i ON i.inhrelid = c.oid
+<span id="L724" class="ln">   724  </span>		JOIN pg_catalog.pg_class parent ON parent.oid = i.inhparent
+<span id="L725" class="ln">   725  </span>		WHERE c.relispartition
+<span id="L726" class="ln">   726  </span>		  AND c.relnamespace = &#39;subpartitions&#39;::regnamespace
+<span id="L727" class="ln">   727  </span>		  AND parent.relname = &#39;jump_metric&#39;
+<span id="L728" class="ln">   728  </span>		  AND $1::timestamptz &gt;= substring(pg_catalog.pg_get_expr(c.relpartbound, c.oid, true) from &#39;FOR VALUES FROM \(&#39;&#39;([^&#39;&#39;]+)&#39;&#39;&#39;)::timestamptz
+<span id="L729" class="ln">   729  </span>		  AND $1::timestamptz &lt;  substring(pg_catalog.pg_get_expr(c.relpartbound, c.oid, true) from &#39;TO \(&#39;&#39;([^&#39;&#39;]+)&#39;&#39;&#39;)::timestamptz
+<span id="L730" class="ln">   730  </span>	`, late).Scan(&amp;covering))
+<span id="L731" class="ln">   731  </span>	a.Equal(1, covering, &#34;exactly one subpartition must cover the new timestamp&#34;)
+<span id="L732" class="ln">   732  </span>}
+<span id="L733" class="ln">   733  </span>
+<span id="L734" class="ln">   734  </span>func Test_Maintain(t *testing.T) {
+<span id="L735" class="ln">   735  </span>	a := assert.New(t)
+<span id="L736" class="ln">   736  </span>	r := require.New(t)
+<span id="L737" class="ln">   737  </span>
+<span id="L738" class="ln">   738  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L739" class="ln">   739  </span>	r.NoError(err)
+<span id="L740" class="ln">   740  </span>	defer pgTearDown()
 <span id="L741" class="ln">   741  </span>
-<span id="L742" class="ln">   742  </span>		<span class="comment">// Create time-based partitions for each metric</span>
-<span id="L743" class="ln">   743  </span>		_, err = conn.Exec(ctx, `
-<span id="L744" class="ln">   744  </span>			CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L745" class="ln">   745  </span>			CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L746" class="ln">   746  </span>		`)
-<span id="L747" class="ln">   747  </span>		r.NoError(err)
-<span id="L748" class="ln">   748  </span>
-<span id="L749" class="ln">   749  </span>		<span class="comment">// Directly insert test data with different dbnames</span>
-<span id="L750" class="ln">   750  </span>		_, err = conn.Exec(ctx, `
-<span id="L751" class="ln">   751  </span>			INSERT INTO test_metric_a (time, dbname, data) VALUES
-<span id="L752" class="ln">   752  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb),
-<span id="L753" class="ln">   753  </span>				(&#39;2024-01-03&#39;, &#39;db2&#39;, &#39;{}&#39;::jsonb),
-<span id="L754" class="ln">   754  </span>				(&#39;2024-01-03&#39;, &#39;db3&#39;, &#39;{}&#39;::jsonb)
-<span id="L755" class="ln">   755  </span>		`)
-<span id="L756" class="ln">   756  </span>		r.NoError(err)
-<span id="L757" class="ln">   757  </span>
-<span id="L758" class="ln">   758  </span>		_, err = conn.Exec(ctx, `
-<span id="L759" class="ln">   759  </span>			INSERT INTO test_metric_b (time, dbname, data) VALUES
-<span id="L760" class="ln">   760  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb),
-<span id="L761" class="ln">   761  </span>				(&#39;2024-01-03&#39;, &#39;db2&#39;, &#39;{}&#39;::jsonb)
-<span id="L762" class="ln">   762  </span>		`)
-<span id="L763" class="ln">   763  </span>		r.NoError(err)
-<span id="L764" class="ln">   764  </span>
-<span id="L765" class="ln">   765  </span>		<span class="comment">// Run maintenance</span>
-<span id="L766" class="ln">   766  </span>		pgw.MaintainUniqueSources()
-<span id="L767" class="ln">   767  </span>
-<span id="L768" class="ln">   768  </span>		<span class="comment">// Should have 3 entries for test_metric_a and 2 for test_metric_b</span>
-<span id="L769" class="ln">   769  </span>		var count int
-<span id="L770" class="ln">   770  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_a&#39;;&#34;).Scan(&amp;count)
-<span id="L771" class="ln">   771  </span>		a.NoError(err)
-<span id="L772" class="ln">   772  </span>		a.Equal(3, count)
-<span id="L773" class="ln">   773  </span>
-<span id="L774" class="ln">   774  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_b&#39;;&#34;).Scan(&amp;count)
-<span id="L775" class="ln">   775  </span>		a.NoError(err)
-<span id="L776" class="ln">   776  </span>		a.Equal(2, count)
-<span id="L777" class="ln">   777  </span>
-<span id="L778" class="ln">   778  </span>		<span class="comment">// Cleanup</span>
-<span id="L779" class="ln">   779  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_a, test_metric_b;&#34;)
-<span id="L780" class="ln">   780  </span>		r.NoError(err)
-<span id="L781" class="ln">   781  </span>		pgw.MaintainUniqueSources()
-<span id="L782" class="ln">   782  </span>	})
-<span id="L783" class="ln">   783  </span>
-<span id="L784" class="ln">   784  </span>	t.Run(&#34;MaintainUniqueSources_StaleEntriesCleanup&#34;, func(_ *testing.T) {
-<span id="L785" class="ln">   785  </span>		<span class="comment">// Create metric table</span>
-<span id="L786" class="ln">   786  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_c&#34;)
-<span id="L787" class="ln">   787  </span>		r.NoError(err)
+<span id="L742" class="ln">   742  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L743" class="ln">   743  </span>	r.NoError(err)
+<span id="L744" class="ln">   744  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L745" class="ln">   745  </span>	r.NoError(err)
+<span id="L746" class="ln">   746  </span>
+<span id="L747" class="ln">   747  </span>	opts := &amp;CmdOpts{
+<span id="L748" class="ln">   748  </span>		PartitionInterval:   &#34;1 hour&#34;,
+<span id="L749" class="ln">   749  </span>		RetentionInterval:   &#34;1 hour&#34;,
+<span id="L750" class="ln">   750  </span>		MaintenanceInterval: &#34;0 days&#34;,
+<span id="L751" class="ln">   751  </span>		BatchingDelay:       time.Hour,
+<span id="L752" class="ln">   752  </span>	}
+<span id="L753" class="ln">   753  </span>
+<span id="L754" class="ln">   754  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L755" class="ln">   755  </span>	r.NoError(err)
+<span id="L756" class="ln">   756  </span>
+<span id="L757" class="ln">   757  </span>	t.Run(&#34;MaintainUniqueSources&#34;, func(_ *testing.T) {
+<span id="L758" class="ln">   758  </span>		<span class="comment">// adds an entry to `admin.all_distinct_dbname_metrics`</span>
+<span id="L759" class="ln">   759  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_1&#34;, AddOp)
+<span id="L760" class="ln">   760  </span>		r.NoError(err)
+<span id="L761" class="ln">   761  </span>
+<span id="L762" class="ln">   762  </span>		var numOfEntries int
+<span id="L763" class="ln">   763  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
+<span id="L764" class="ln">   764  </span>		a.NoError(err)
+<span id="L765" class="ln">   765  </span>		a.Equal(1, numOfEntries)
+<span id="L766" class="ln">   766  </span>
+<span id="L767" class="ln">   767  </span>		<span class="comment">// manually call the maintenance routine</span>
+<span id="L768" class="ln">   768  </span>		pgw.MaintainUniqueSources()
+<span id="L769" class="ln">   769  </span>
+<span id="L770" class="ln">   770  </span>		<span class="comment">// entry should have been deleted, because it has no corresponding entries in `test_metric_1` table.</span>
+<span id="L771" class="ln">   771  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
+<span id="L772" class="ln">   772  </span>		a.NoError(err)
+<span id="L773" class="ln">   773  </span>		a.Equal(0, numOfEntries)
+<span id="L774" class="ln">   774  </span>
+<span id="L775" class="ln">   775  </span>		message := []metrics.MeasurementEnvelope{
+<span id="L776" class="ln">   776  </span>			{
+<span id="L777" class="ln">   777  </span>				MetricName: &#34;test_metric_1&#34;,
+<span id="L778" class="ln">   778  </span>				Data: metrics.Measurements{
+<span id="L779" class="ln">   779  </span>					{&#34;number&#34;: 1, &#34;string&#34;: &#34;test_data&#34;},
+<span id="L780" class="ln">   780  </span>				},
+<span id="L781" class="ln">   781  </span>				DBName: &#34;test_db&#34;,
+<span id="L782" class="ln">   782  </span>			},
+<span id="L783" class="ln">   783  </span>		}
+<span id="L784" class="ln">   784  </span>		pgw.flush(message)
+<span id="L785" class="ln">   785  </span>
+<span id="L786" class="ln">   786  </span>		<span class="comment">// manually call the maintenance routine</span>
+<span id="L787" class="ln">   787  </span>		pgw.MaintainUniqueSources()
 <span id="L788" class="ln">   788  </span>
-<span id="L789" class="ln">   789  </span>		<span class="comment">// Create time partition for the metric</span>
-<span id="L790" class="ln">   790  </span>		_, err = conn.Exec(ctx, `
-<span id="L791" class="ln">   791  </span>			CREATE TABLE subpartitions.test_metric_c_2024w01 PARTITION OF public.test_metric_c FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L792" class="ln">   792  </span>		`)
-<span id="L793" class="ln">   793  </span>		r.NoError(err)
-<span id="L794" class="ln">   794  </span>
-<span id="L795" class="ln">   795  </span>		<span class="comment">// Directly insert test data with one active dbname</span>
-<span id="L796" class="ln">   796  </span>		_, err = conn.Exec(ctx, `
-<span id="L797" class="ln">   797  </span>			INSERT INTO test_metric_c (time, dbname, data) VALUES
-<span id="L798" class="ln">   798  </span>				(&#39;2024-01-03&#39;, &#39;db_active&#39;, &#39;{}&#39;::jsonb)
-<span id="L799" class="ln">   799  </span>		`)
-<span id="L800" class="ln">   800  </span>		r.NoError(err)
-<span id="L801" class="ln">   801  </span>
-<span id="L802" class="ln">   802  </span>		<span class="comment">// Manually add the active entry and stale entries to the listing table</span>
-<span id="L803" class="ln">   803  </span>		_, err = conn.Exec(ctx, &#34;INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES (&#39;db_active&#39;, &#39;test_metric_c&#39;), (&#39;db_stale1&#39;, &#39;test_metric_c&#39;), (&#39;db_stale2&#39;, &#39;test_metric_c&#39;);&#34;)
-<span id="L804" class="ln">   804  </span>		r.NoError(err)
-<span id="L805" class="ln">   805  </span>
-<span id="L806" class="ln">   806  </span>		var count int
-<span id="L807" class="ln">   807  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;count)
-<span id="L808" class="ln">   808  </span>		a.NoError(err)
-<span id="L809" class="ln">   809  </span>		a.Equal(3, count) <span class="comment">// 1 active + 2 stale</span>
+<span id="L789" class="ln">   789  </span>		<span class="comment">// entry should have been added, because there is a corresponding entry in `test_metric_1` table just written.</span>
+<span id="L790" class="ln">   790  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
+<span id="L791" class="ln">   791  </span>		a.NoError(err)
+<span id="L792" class="ln">   792  </span>		a.Equal(1, numOfEntries)
+<span id="L793" class="ln">   793  </span>
+<span id="L794" class="ln">   794  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_1;&#34;)
+<span id="L795" class="ln">   795  </span>		r.NoError(err)
+<span id="L796" class="ln">   796  </span>
+<span id="L797" class="ln">   797  </span>		<span class="comment">// the corresponding entry should be deleted</span>
+<span id="L798" class="ln">   798  </span>		pgw.MaintainUniqueSources()
+<span id="L799" class="ln">   799  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics;&#34;).Scan(&amp;numOfEntries)
+<span id="L800" class="ln">   800  </span>		a.NoError(err)
+<span id="L801" class="ln">   801  </span>		a.Equal(0, numOfEntries)
+<span id="L802" class="ln">   802  </span>	})
+<span id="L803" class="ln">   803  </span>
+<span id="L804" class="ln">   804  </span>	t.Run(&#34;MaintainUniqueSources_MultipleMetricsAndSources&#34;, func(_ *testing.T) {
+<span id="L805" class="ln">   805  </span>		<span class="comment">// Create metric tables with partitions</span>
+<span id="L806" class="ln">   806  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_a&#34;)
+<span id="L807" class="ln">   807  </span>		r.NoError(err)
+<span id="L808" class="ln">   808  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_b&#34;)
+<span id="L809" class="ln">   809  </span>		r.NoError(err)
 <span id="L810" class="ln">   810  </span>
-<span id="L811" class="ln">   811  </span>		<span class="comment">// Run maintenance - should remove stale entries</span>
-<span id="L812" class="ln">   812  </span>		pgw.MaintainUniqueSources()
-<span id="L813" class="ln">   813  </span>
-<span id="L814" class="ln">   814  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;count)
-<span id="L815" class="ln">   815  </span>		a.NoError(err)
-<span id="L816" class="ln">   816  </span>		a.Equal(1, count) <span class="comment">// only active one remains</span>
+<span id="L811" class="ln">   811  </span>		<span class="comment">// Create time-based partitions for each metric</span>
+<span id="L812" class="ln">   812  </span>		_, err = conn.Exec(ctx, `
+<span id="L813" class="ln">   813  </span>			CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L814" class="ln">   814  </span>			CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L815" class="ln">   815  </span>		`)
+<span id="L816" class="ln">   816  </span>		r.NoError(err)
 <span id="L817" class="ln">   817  </span>
-<span id="L818" class="ln">   818  </span>		var dbname string
-<span id="L819" class="ln">   819  </span>		err = conn.QueryRow(ctx, &#34;SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;dbname)
-<span id="L820" class="ln">   820  </span>		a.NoError(err)
-<span id="L821" class="ln">   821  </span>		a.Equal(&#34;db_active&#34;, dbname)
-<span id="L822" class="ln">   822  </span>
-<span id="L823" class="ln">   823  </span>		<span class="comment">// Cleanup</span>
-<span id="L824" class="ln">   824  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_c;&#34;)
+<span id="L818" class="ln">   818  </span>		<span class="comment">// Directly insert test data with different dbnames</span>
+<span id="L819" class="ln">   819  </span>		_, err = conn.Exec(ctx, `
+<span id="L820" class="ln">   820  </span>			INSERT INTO test_metric_a (time, dbname, data) VALUES
+<span id="L821" class="ln">   821  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb),
+<span id="L822" class="ln">   822  </span>				(&#39;2024-01-03&#39;, &#39;db2&#39;, &#39;{}&#39;::jsonb),
+<span id="L823" class="ln">   823  </span>				(&#39;2024-01-03&#39;, &#39;db3&#39;, &#39;{}&#39;::jsonb)
+<span id="L824" class="ln">   824  </span>		`)
 <span id="L825" class="ln">   825  </span>		r.NoError(err)
-<span id="L826" class="ln">   826  </span>		pgw.MaintainUniqueSources()
-<span id="L827" class="ln">   827  </span>	})
-<span id="L828" class="ln">   828  </span>
-<span id="L829" class="ln">   829  </span>	t.Run(&#34;MaintainUniqueSources_AdvisoryLock&#34;, func(_ *testing.T) {
-<span id="L830" class="ln">   830  </span>		<span class="comment">// Create a second connection to simulate concurrent maintenance</span>
-<span id="L831" class="ln">   831  </span>		conn2, err := pgx.Connect(ctx, connStr)
+<span id="L826" class="ln">   826  </span>
+<span id="L827" class="ln">   827  </span>		_, err = conn.Exec(ctx, `
+<span id="L828" class="ln">   828  </span>			INSERT INTO test_metric_b (time, dbname, data) VALUES
+<span id="L829" class="ln">   829  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb),
+<span id="L830" class="ln">   830  </span>				(&#39;2024-01-03&#39;, &#39;db2&#39;, &#39;{}&#39;::jsonb)
+<span id="L831" class="ln">   831  </span>		`)
 <span id="L832" class="ln">   832  </span>		r.NoError(err)
-<span id="L833" class="ln">   833  </span>		defer conn2.Close(ctx)
-<span id="L834" class="ln">   834  </span>
-<span id="L835" class="ln">   835  </span>		<span class="comment">// Create metric table and partition</span>
-<span id="L836" class="ln">   836  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_d&#34;)
-<span id="L837" class="ln">   837  </span>		r.NoError(err)
-<span id="L838" class="ln">   838  </span>
-<span id="L839" class="ln">   839  </span>		_, err = conn.Exec(ctx, `
-<span id="L840" class="ln">   840  </span>			CREATE TABLE subpartitions.test_metric_d_2024w01 PARTITION OF public.test_metric_d FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L841" class="ln">   841  </span>		`)
-<span id="L842" class="ln">   842  </span>		r.NoError(err)
-<span id="L843" class="ln">   843  </span>
-<span id="L844" class="ln">   844  </span>		<span class="comment">// Directly insert test data for only db1</span>
-<span id="L845" class="ln">   845  </span>		_, err = conn.Exec(ctx, `
-<span id="L846" class="ln">   846  </span>			INSERT INTO test_metric_d (time, dbname, data) VALUES
-<span id="L847" class="ln">   847  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb)
-<span id="L848" class="ln">   848  </span>		`)
+<span id="L833" class="ln">   833  </span>
+<span id="L834" class="ln">   834  </span>		<span class="comment">// Run maintenance</span>
+<span id="L835" class="ln">   835  </span>		pgw.MaintainUniqueSources()
+<span id="L836" class="ln">   836  </span>
+<span id="L837" class="ln">   837  </span>		<span class="comment">// Should have 3 entries for test_metric_a and 2 for test_metric_b</span>
+<span id="L838" class="ln">   838  </span>		var count int
+<span id="L839" class="ln">   839  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_a&#39;;&#34;).Scan(&amp;count)
+<span id="L840" class="ln">   840  </span>		a.NoError(err)
+<span id="L841" class="ln">   841  </span>		a.Equal(3, count)
+<span id="L842" class="ln">   842  </span>
+<span id="L843" class="ln">   843  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_b&#39;;&#34;).Scan(&amp;count)
+<span id="L844" class="ln">   844  </span>		a.NoError(err)
+<span id="L845" class="ln">   845  </span>		a.Equal(2, count)
+<span id="L846" class="ln">   846  </span>
+<span id="L847" class="ln">   847  </span>		<span class="comment">// Cleanup</span>
+<span id="L848" class="ln">   848  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_a, test_metric_b;&#34;)
 <span id="L849" class="ln">   849  </span>		r.NoError(err)
-<span id="L850" class="ln">   850  </span>
-<span id="L851" class="ln">   851  </span>		<span class="comment">// Add both active and stale entries to the listing table</span>
-<span id="L852" class="ln">   852  </span>		_, err = conn.Exec(ctx, &#34;INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES (&#39;db1&#39;, &#39;test_metric_d&#39;), (&#39;db_stale&#39;, &#39;test_metric_d&#39;);&#34;)
-<span id="L853" class="ln">   853  </span>		r.NoError(err)
-<span id="L854" class="ln">   854  </span>
-<span id="L855" class="ln">   855  </span>		var count int
-<span id="L856" class="ln">   856  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
-<span id="L857" class="ln">   857  </span>		a.NoError(err)
-<span id="L858" class="ln">   858  </span>		a.Equal(2, count, &#34;Should have 2 entries initially (1 active + 1 stale)&#34;)
-<span id="L859" class="ln">   859  </span>
-<span id="L860" class="ln">   860  </span>		<span class="comment">// Acquire the advisory lock using session-level lock in conn2</span>
-<span id="L861" class="ln">   861  </span>		<span class="comment">// This will block transaction-level locks from the same lock ID</span>
-<span id="L862" class="ln">   862  </span>		var lockAcquired bool
-<span id="L863" class="ln">   863  </span>		err = conn2.QueryRow(ctx, &#34;SELECT pg_try_advisory_lock(1571543679778230000);&#34;).Scan(&amp;lockAcquired)
-<span id="L864" class="ln">   864  </span>		r.NoError(err)
-<span id="L865" class="ln">   865  </span>		a.True(lockAcquired, &#34;Should acquire advisory lock&#34;)
-<span id="L866" class="ln">   866  </span>
-<span id="L867" class="ln">   867  </span>		<span class="comment">// Try to run maintenance - should skip because lock is held by conn2</span>
-<span id="L868" class="ln">   868  </span>		pgw.MaintainUniqueSources()
-<span id="L869" class="ln">   869  </span>
-<span id="L870" class="ln">   870  </span>		<span class="comment">// Stale entry should still exist because maintenance was skipped</span>
-<span id="L871" class="ln">   871  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
-<span id="L872" class="ln">   872  </span>		a.NoError(err)
-<span id="L873" class="ln">   873  </span>		a.Equal(2, count, &#34;Stale entry should remain because maintenance was skipped due to lock&#34;)
+<span id="L850" class="ln">   850  </span>		pgw.MaintainUniqueSources()
+<span id="L851" class="ln">   851  </span>	})
+<span id="L852" class="ln">   852  </span>
+<span id="L853" class="ln">   853  </span>	t.Run(&#34;MaintainUniqueSources_StaleEntriesCleanup&#34;, func(_ *testing.T) {
+<span id="L854" class="ln">   854  </span>		<span class="comment">// Create metric table</span>
+<span id="L855" class="ln">   855  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_c&#34;)
+<span id="L856" class="ln">   856  </span>		r.NoError(err)
+<span id="L857" class="ln">   857  </span>
+<span id="L858" class="ln">   858  </span>		<span class="comment">// Create time partition for the metric</span>
+<span id="L859" class="ln">   859  </span>		_, err = conn.Exec(ctx, `
+<span id="L860" class="ln">   860  </span>			CREATE TABLE subpartitions.test_metric_c_2024w01 PARTITION OF public.test_metric_c FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L861" class="ln">   861  </span>		`)
+<span id="L862" class="ln">   862  </span>		r.NoError(err)
+<span id="L863" class="ln">   863  </span>
+<span id="L864" class="ln">   864  </span>		<span class="comment">// Directly insert test data with one active dbname</span>
+<span id="L865" class="ln">   865  </span>		_, err = conn.Exec(ctx, `
+<span id="L866" class="ln">   866  </span>			INSERT INTO test_metric_c (time, dbname, data) VALUES
+<span id="L867" class="ln">   867  </span>				(&#39;2024-01-03&#39;, &#39;db_active&#39;, &#39;{}&#39;::jsonb)
+<span id="L868" class="ln">   868  </span>		`)
+<span id="L869" class="ln">   869  </span>		r.NoError(err)
+<span id="L870" class="ln">   870  </span>
+<span id="L871" class="ln">   871  </span>		<span class="comment">// Manually add the active entry and stale entries to the listing table</span>
+<span id="L872" class="ln">   872  </span>		_, err = conn.Exec(ctx, &#34;INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES (&#39;db_active&#39;, &#39;test_metric_c&#39;), (&#39;db_stale1&#39;, &#39;test_metric_c&#39;), (&#39;db_stale2&#39;, &#39;test_metric_c&#39;);&#34;)
+<span id="L873" class="ln">   873  </span>		r.NoError(err)
 <span id="L874" class="ln">   874  </span>
-<span id="L875" class="ln">   875  </span>		<span class="comment">// Release lock from conn2</span>
-<span id="L876" class="ln">   876  </span>		_, err = conn2.Exec(ctx, &#34;SELECT pg_advisory_unlock(1571543679778230000);&#34;)
-<span id="L877" class="ln">   877  </span>		r.NoError(err)
-<span id="L878" class="ln">   878  </span>
-<span id="L879" class="ln">   879  </span>		<span class="comment">// Now maintenance should work and clean up stale entry</span>
-<span id="L880" class="ln">   880  </span>		pgw.MaintainUniqueSources()
-<span id="L881" class="ln">   881  </span>
-<span id="L882" class="ln">   882  </span>		<span class="comment">// Should only have the active entry, stale one removed</span>
-<span id="L883" class="ln">   883  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
+<span id="L875" class="ln">   875  </span>		var count int
+<span id="L876" class="ln">   876  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;count)
+<span id="L877" class="ln">   877  </span>		a.NoError(err)
+<span id="L878" class="ln">   878  </span>		a.Equal(3, count) <span class="comment">// 1 active + 2 stale</span>
+<span id="L879" class="ln">   879  </span>
+<span id="L880" class="ln">   880  </span>		<span class="comment">// Run maintenance - should remove stale entries</span>
+<span id="L881" class="ln">   881  </span>		pgw.MaintainUniqueSources()
+<span id="L882" class="ln">   882  </span>
+<span id="L883" class="ln">   883  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;count)
 <span id="L884" class="ln">   884  </span>		a.NoError(err)
-<span id="L885" class="ln">   885  </span>		a.Equal(1, count, &#34;Only active entry should remain after maintenance runs&#34;)
+<span id="L885" class="ln">   885  </span>		a.Equal(1, count) <span class="comment">// only active one remains</span>
 <span id="L886" class="ln">   886  </span>
 <span id="L887" class="ln">   887  </span>		var dbname string
-<span id="L888" class="ln">   888  </span>		err = conn.QueryRow(ctx, &#34;SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;dbname)
+<span id="L888" class="ln">   888  </span>		err = conn.QueryRow(ctx, &#34;SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_c&#39;;&#34;).Scan(&amp;dbname)
 <span id="L889" class="ln">   889  </span>		a.NoError(err)
-<span id="L890" class="ln">   890  </span>		a.Equal(&#34;db1&#34;, dbname, &#34;Remaining entry should be the active one&#34;)
+<span id="L890" class="ln">   890  </span>		a.Equal(&#34;db_active&#34;, dbname)
 <span id="L891" class="ln">   891  </span>
 <span id="L892" class="ln">   892  </span>		<span class="comment">// Cleanup</span>
-<span id="L893" class="ln">   893  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_d;&#34;)
+<span id="L893" class="ln">   893  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_c;&#34;)
 <span id="L894" class="ln">   894  </span>		r.NoError(err)
 <span id="L895" class="ln">   895  </span>		pgw.MaintainUniqueSources()
 <span id="L896" class="ln">   896  </span>	})
 <span id="L897" class="ln">   897  </span>
-<span id="L898" class="ln">   898  </span>	t.Run(&#34;DeleteOldPartitions&#34;, func(_ *testing.T) {
-<span id="L899" class="ln">   899  </span>		<span class="comment">// Creates a new top level table for `test_metric_2`</span>
-<span id="L900" class="ln">   900  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_2&#34;, AddOp)
+<span id="L898" class="ln">   898  </span>	t.Run(&#34;MaintainUniqueSources_AdvisoryLock&#34;, func(_ *testing.T) {
+<span id="L899" class="ln">   899  </span>		<span class="comment">// Create a second connection to simulate concurrent maintenance</span>
+<span id="L900" class="ln">   900  </span>		conn2, err := pgx.Connect(ctx, connStr)
 <span id="L901" class="ln">   901  </span>		r.NoError(err)
-<span id="L902" class="ln">   902  </span>
-<span id="L903" class="ln">   903  </span>		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
-<span id="L904" class="ln">   904  </span>		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
-<span id="L905" class="ln">   905  </span>
-<span id="L906" class="ln">   906  </span>		<span class="comment">// create the time partition with end bound yesterday</span>
-<span id="L907" class="ln">   907  </span>		_, err = conn.Exec(ctx,
-<span id="L908" class="ln">   908  </span>			fmt.Sprintf(
-<span id="L909" class="ln">   909  </span>				`CREATE TABLE subpartitions.test_metric_2_yesterday
-<span id="L910" class="ln">   910  </span>			PARTITION OF public.test_metric_2
-<span id="L911" class="ln">   911  </span>			FOR VALUES FROM (&#39;%s&#39;) TO (&#39;%s&#39;)`,
-<span id="L912" class="ln">   912  </span>				boundStart, boundEnd),
-<span id="L913" class="ln">   913  </span>		)
-<span id="L914" class="ln">   914  </span>		a.NoError(err)
-<span id="L915" class="ln">   915  </span>		_, err = conn.Exec(ctx, &#34;COMMENT ON TABLE subpartitions.test_metric_2_yesterday IS $$pgwatch-generated-metric-time-lvl$$&#34;)
-<span id="L916" class="ln">   916  </span>		a.NoError(err)
-<span id="L917" class="ln">   917  </span>
-<span id="L918" class="ln">   918  </span>		var partitionsNum int
-<span id="L919" class="ln">   919  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L920" class="ln">   920  </span>		a.NoError(err)
-<span id="L921" class="ln">   921  </span>		a.Equal(2, partitionsNum)
-<span id="L922" class="ln">   922  </span>
-<span id="L923" class="ln">   923  </span>		pgw.opts.RetentionInterval = &#34;2 days&#34;
-<span id="L924" class="ln">   924  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &lt; 2 days, shouldn&#39;t delete anything</span>
-<span id="L925" class="ln">   925  </span>
-<span id="L926" class="ln">   926  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L927" class="ln">   927  </span>		a.NoError(err)
-<span id="L928" class="ln">   928  </span>		a.Equal(2, partitionsNum)
-<span id="L929" class="ln">   929  </span>
-<span id="L930" class="ln">   930  </span>		pgw.opts.RetentionInterval = &#34;1 hour&#34;
-<span id="L931" class="ln">   931  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &gt; 1 hour, should delete the partition</span>
-<span id="L932" class="ln">   932  </span>
-<span id="L933" class="ln">   933  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
-<span id="L934" class="ln">   934  </span>		a.NoError(err)
-<span id="L935" class="ln">   935  </span>		a.Equal(1, partitionsNum)
-<span id="L936" class="ln">   936  </span>	})
-<span id="L937" class="ln">   937  </span>
-<span id="L938" class="ln">   938  </span>	t.Run(&#34;Epoch to Duration Conversion&#34;, func(_ *testing.T) {
-<span id="L939" class="ln">   939  </span>		table := map[string]time.Duration{
-<span id="L940" class="ln">   940  </span>			&#34;1 hour&#34;:   time.Hour,
-<span id="L941" class="ln">   941  </span>			&#34;2 hours&#34;:  2 * time.Hour,
-<span id="L942" class="ln">   942  </span>			&#34;4 days&#34;:   4 * 24 * time.Hour,
-<span id="L943" class="ln">   943  </span>			&#34;1 day&#34;:    24 * time.Hour,
-<span id="L944" class="ln">   944  </span>			&#34;1 year&#34;:   365.25 * 24 * time.Hour,
-<span id="L945" class="ln">   945  </span>			&#34;1 week&#34;:   7 * 24 * time.Hour,
-<span id="L946" class="ln">   946  </span>			&#34;3 weeks&#34;:  3 * 7 * 24 * time.Hour,
-<span id="L947" class="ln">   947  </span>			&#34;2 months&#34;: 2 * 30 * 24 * time.Hour,
-<span id="L948" class="ln">   948  </span>			&#34;1 month&#34;:  30 * 24 * time.Hour,
-<span id="L949" class="ln">   949  </span>		}
+<span id="L902" class="ln">   902  </span>		defer conn2.Close(ctx)
+<span id="L903" class="ln">   903  </span>
+<span id="L904" class="ln">   904  </span>		<span class="comment">// Create metric table and partition</span>
+<span id="L905" class="ln">   905  </span>		err = pgw.EnsureMetricDummy(&#34;test_metric_d&#34;)
+<span id="L906" class="ln">   906  </span>		r.NoError(err)
+<span id="L907" class="ln">   907  </span>
+<span id="L908" class="ln">   908  </span>		_, err = conn.Exec(ctx, `
+<span id="L909" class="ln">   909  </span>			CREATE TABLE subpartitions.test_metric_d_2024w01 PARTITION OF public.test_metric_d FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L910" class="ln">   910  </span>		`)
+<span id="L911" class="ln">   911  </span>		r.NoError(err)
+<span id="L912" class="ln">   912  </span>
+<span id="L913" class="ln">   913  </span>		<span class="comment">// Directly insert test data for only db1</span>
+<span id="L914" class="ln">   914  </span>		_, err = conn.Exec(ctx, `
+<span id="L915" class="ln">   915  </span>			INSERT INTO test_metric_d (time, dbname, data) VALUES
+<span id="L916" class="ln">   916  </span>				(&#39;2024-01-03&#39;, &#39;db1&#39;, &#39;{}&#39;::jsonb)
+<span id="L917" class="ln">   917  </span>		`)
+<span id="L918" class="ln">   918  </span>		r.NoError(err)
+<span id="L919" class="ln">   919  </span>
+<span id="L920" class="ln">   920  </span>		<span class="comment">// Add both active and stale entries to the listing table</span>
+<span id="L921" class="ln">   921  </span>		_, err = conn.Exec(ctx, &#34;INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES (&#39;db1&#39;, &#39;test_metric_d&#39;), (&#39;db_stale&#39;, &#39;test_metric_d&#39;);&#34;)
+<span id="L922" class="ln">   922  </span>		r.NoError(err)
+<span id="L923" class="ln">   923  </span>
+<span id="L924" class="ln">   924  </span>		var count int
+<span id="L925" class="ln">   925  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
+<span id="L926" class="ln">   926  </span>		a.NoError(err)
+<span id="L927" class="ln">   927  </span>		a.Equal(2, count, &#34;Should have 2 entries initially (1 active + 1 stale)&#34;)
+<span id="L928" class="ln">   928  </span>
+<span id="L929" class="ln">   929  </span>		<span class="comment">// Acquire the advisory lock using session-level lock in conn2</span>
+<span id="L930" class="ln">   930  </span>		<span class="comment">// This will block transaction-level locks from the same lock ID</span>
+<span id="L931" class="ln">   931  </span>		var lockAcquired bool
+<span id="L932" class="ln">   932  </span>		err = conn2.QueryRow(ctx, &#34;SELECT pg_try_advisory_lock(1571543679778230000);&#34;).Scan(&amp;lockAcquired)
+<span id="L933" class="ln">   933  </span>		r.NoError(err)
+<span id="L934" class="ln">   934  </span>		a.True(lockAcquired, &#34;Should acquire advisory lock&#34;)
+<span id="L935" class="ln">   935  </span>
+<span id="L936" class="ln">   936  </span>		<span class="comment">// Try to run maintenance - should skip because lock is held by conn2</span>
+<span id="L937" class="ln">   937  </span>		pgw.MaintainUniqueSources()
+<span id="L938" class="ln">   938  </span>
+<span id="L939" class="ln">   939  </span>		<span class="comment">// Stale entry should still exist because maintenance was skipped</span>
+<span id="L940" class="ln">   940  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
+<span id="L941" class="ln">   941  </span>		a.NoError(err)
+<span id="L942" class="ln">   942  </span>		a.Equal(2, count, &#34;Stale entry should remain because maintenance was skipped due to lock&#34;)
+<span id="L943" class="ln">   943  </span>
+<span id="L944" class="ln">   944  </span>		<span class="comment">// Release lock from conn2</span>
+<span id="L945" class="ln">   945  </span>		_, err = conn2.Exec(ctx, &#34;SELECT pg_advisory_unlock(1571543679778230000);&#34;)
+<span id="L946" class="ln">   946  </span>		r.NoError(err)
+<span id="L947" class="ln">   947  </span>
+<span id="L948" class="ln">   948  </span>		<span class="comment">// Now maintenance should work and clean up stale entry</span>
+<span id="L949" class="ln">   949  </span>		pgw.MaintainUniqueSources()
 <span id="L950" class="ln">   950  </span>
-<span id="L951" class="ln">   951  </span>		for k, v := range table {
-<span id="L952" class="ln">   952  </span>			opts := &amp;CmdOpts{
-<span id="L953" class="ln">   953  </span>				PartitionInterval:   &#34;1 hour&#34;,
-<span id="L954" class="ln">   954  </span>				RetentionInterval:   k,
-<span id="L955" class="ln">   955  </span>				MaintenanceInterval: k,
-<span id="L956" class="ln">   956  </span>				BatchingDelay:       time.Hour,
-<span id="L957" class="ln">   957  </span>			}
-<span id="L958" class="ln">   958  </span>
-<span id="L959" class="ln">   959  </span>			pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L960" class="ln">   960  </span>			a.NoError(err)
-<span id="L961" class="ln">   961  </span>			a.Equal(pgw.retentionInterval, v)
-<span id="L962" class="ln">   962  </span>			a.Equal(pgw.maintenanceInterval, v)
-<span id="L963" class="ln">   963  </span>		}
-<span id="L964" class="ln">   964  </span>	})
-<span id="L965" class="ln">   965  </span>}
+<span id="L951" class="ln">   951  </span>		<span class="comment">// Should only have the active entry, stale one removed</span>
+<span id="L952" class="ln">   952  </span>		err = conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;count)
+<span id="L953" class="ln">   953  </span>		a.NoError(err)
+<span id="L954" class="ln">   954  </span>		a.Equal(1, count, &#34;Only active entry should remain after maintenance runs&#34;)
+<span id="L955" class="ln">   955  </span>
+<span id="L956" class="ln">   956  </span>		var dbname string
+<span id="L957" class="ln">   957  </span>		err = conn.QueryRow(ctx, &#34;SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = &#39;test_metric_d&#39;;&#34;).Scan(&amp;dbname)
+<span id="L958" class="ln">   958  </span>		a.NoError(err)
+<span id="L959" class="ln">   959  </span>		a.Equal(&#34;db1&#34;, dbname, &#34;Remaining entry should be the active one&#34;)
+<span id="L960" class="ln">   960  </span>
+<span id="L961" class="ln">   961  </span>		<span class="comment">// Cleanup</span>
+<span id="L962" class="ln">   962  </span>		_, err = conn.Exec(ctx, &#34;DROP TABLE test_metric_d;&#34;)
+<span id="L963" class="ln">   963  </span>		r.NoError(err)
+<span id="L964" class="ln">   964  </span>		pgw.MaintainUniqueSources()
+<span id="L965" class="ln">   965  </span>	})
 <span id="L966" class="ln">   966  </span>
-<span id="L967" class="ln">   967  </span><span class="comment">// TestEnsureMetricTimePartsExist_SpecialMetricNames verifies that metric names with special characters</span>
-<span id="L968" class="ln">   968  </span><span class="comment">// (dots, uppercase, hyphens, underscores) are accepted by the partition functions.</span>
-<span id="L969" class="ln">   969  </span>func TestEnsureMetricTimePartsExist_SpecialMetricNames(t *testing.T) {
-<span id="L970" class="ln">   970  </span>	r := require.New(t)
-<span id="L971" class="ln">   971  </span>	a := assert.New(t)
-<span id="L972" class="ln">   972  </span>
-<span id="L973" class="ln">   973  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
-<span id="L974" class="ln">   974  </span>	r.NoError(err)
-<span id="L975" class="ln">   975  </span>	defer pgTearDown()
-<span id="L976" class="ln">   976  </span>
-<span id="L977" class="ln">   977  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
-<span id="L978" class="ln">   978  </span>	r.NoError(err)
-<span id="L979" class="ln">   979  </span>
-<span id="L980" class="ln">   980  </span>	opts := &amp;CmdOpts{
-<span id="L981" class="ln">   981  </span>		PartitionInterval:   &#34;1 day&#34;,
-<span id="L982" class="ln">   982  </span>		RetentionInterval:   &#34;7 days&#34;,
-<span id="L983" class="ln">   983  </span>		MaintenanceInterval: &#34;12 hours&#34;,
-<span id="L984" class="ln">   984  </span>		BatchingDelay:       time.Second,
-<span id="L985" class="ln">   985  </span>	}
-<span id="L986" class="ln">   986  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L987" class="ln">   987  </span>	r.NoError(err)
-<span id="L988" class="ln">   988  </span>
-<span id="L989" class="ln">   989  </span>	specialNames := []string{
-<span id="L990" class="ln">   990  </span>		&#34;metric.new&#34;,
-<span id="L991" class="ln">   991  </span>		&#34;Metric.With.Dots&#34;,
-<span id="L992" class="ln">   992  </span>		&#34;UPPERCASE_METRIC&#34;,
-<span id="L993" class="ln">   993  </span>		&#34;MixedCase_Metric-123&#34;,
-<span id="L994" class="ln">   994  </span>		&#34;metric-with-hyphens&#34;,
-<span id="L995" class="ln">   995  </span>		&#34;metric_with_underscores&#34;,
-<span id="L996" class="ln">   996  </span>		&#34;Metric123.Test_Name-456&#34;,
-<span id="L997" class="ln">   997  </span>	}
+<span id="L967" class="ln">   967  </span>	t.Run(&#34;DeleteOldPartitions&#34;, func(_ *testing.T) {
+<span id="L968" class="ln">   968  </span>		<span class="comment">// Creates a new top level table for `test_metric_2`</span>
+<span id="L969" class="ln">   969  </span>		err = pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_2&#34;, AddOp)
+<span id="L970" class="ln">   970  </span>		r.NoError(err)
+<span id="L971" class="ln">   971  </span>
+<span id="L972" class="ln">   972  </span>		boundStart := time.Now().Add(-1 * 2 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
+<span id="L973" class="ln">   973  </span>		boundEnd := time.Now().Add(-1 * 24 * time.Hour).Format(&#34;2006-01-02&#34;)
+<span id="L974" class="ln">   974  </span>
+<span id="L975" class="ln">   975  </span>		<span class="comment">// create the time partition with end bound yesterday</span>
+<span id="L976" class="ln">   976  </span>		_, err = conn.Exec(ctx,
+<span id="L977" class="ln">   977  </span>			fmt.Sprintf(
+<span id="L978" class="ln">   978  </span>				`CREATE TABLE subpartitions.test_metric_2_yesterday
+<span id="L979" class="ln">   979  </span>			PARTITION OF public.test_metric_2
+<span id="L980" class="ln">   980  </span>			FOR VALUES FROM (&#39;%s&#39;) TO (&#39;%s&#39;)`,
+<span id="L981" class="ln">   981  </span>				boundStart, boundEnd),
+<span id="L982" class="ln">   982  </span>		)
+<span id="L983" class="ln">   983  </span>		a.NoError(err)
+<span id="L984" class="ln">   984  </span>		_, err = conn.Exec(ctx, &#34;COMMENT ON TABLE subpartitions.test_metric_2_yesterday IS $$pgwatch-generated-metric-time-lvl$$&#34;)
+<span id="L985" class="ln">   985  </span>		a.NoError(err)
+<span id="L986" class="ln">   986  </span>
+<span id="L987" class="ln">   987  </span>		var partitionsNum int
+<span id="L988" class="ln">   988  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L989" class="ln">   989  </span>		a.NoError(err)
+<span id="L990" class="ln">   990  </span>		a.Equal(2, partitionsNum)
+<span id="L991" class="ln">   991  </span>
+<span id="L992" class="ln">   992  </span>		pgw.opts.RetentionInterval = &#34;2 days&#34;
+<span id="L993" class="ln">   993  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &lt; 2 days, shouldn&#39;t delete anything</span>
+<span id="L994" class="ln">   994  </span>
+<span id="L995" class="ln">   995  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L996" class="ln">   996  </span>		a.NoError(err)
+<span id="L997" class="ln">   997  </span>		a.Equal(2, partitionsNum)
 <span id="L998" class="ln">   998  </span>
-<span id="L999" class="ln">   999  </span>	m := make(map[string]ExistingPartitionInfo)
-<span id="L1000" class="ln">  1000  </span>	for _, name := range specialNames {
-<span id="L1001" class="ln">  1001  </span>		m[name] = ExistingPartitionInfo{
-<span id="L1002" class="ln">  1002  </span>			StartTime: time.Now(),
-<span id="L1003" class="ln">  1003  </span>			EndTime:   time.Now().Add(time.Hour),
-<span id="L1004" class="ln">  1004  </span>		}
-<span id="L1005" class="ln">  1005  </span>	}
+<span id="L999" class="ln">   999  </span>		pgw.opts.RetentionInterval = &#34;1 hour&#34;
+<span id="L1000" class="ln">  1000  </span>		pgw.DeleteOldPartitions() <span class="comment">// 1 day &gt; 1 hour, should delete the partition</span>
+<span id="L1001" class="ln">  1001  </span>
+<span id="L1002" class="ln">  1002  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;test_metric_2&#39;);&#34;).Scan(&amp;partitionsNum)
+<span id="L1003" class="ln">  1003  </span>		a.NoError(err)
+<span id="L1004" class="ln">  1004  </span>		a.Equal(1, partitionsNum)
+<span id="L1005" class="ln">  1005  </span>	})
 <span id="L1006" class="ln">  1006  </span>
-<span id="L1007" class="ln">  1007  </span>	err = pgw.EnsureMetricTimePartsExist(m)
-<span id="L1008" class="ln">  1008  </span>	r.NoError(err, &#34;EnsureMetricTimePartsExist should handle special metric names&#34;)
-<span id="L1009" class="ln">  1009  </span>
-<span id="L1010" class="ln">  1010  </span>	conn, err := pgx.Connect(ctx, connStr)
-<span id="L1011" class="ln">  1011  </span>	r.NoError(err)
-<span id="L1012" class="ln">  1012  </span>	defer conn.Close(ctx)
-<span id="L1013" class="ln">  1013  </span>
-<span id="L1014" class="ln">  1014  </span>	var partitionCount int
-<span id="L1015" class="ln">  1015  </span>	err = conn.QueryRow(ctx, `SELECT COUNT(*) FROM pg_partition_tree(&#39;&#34;metric.new&#34;&#39;) WHERE level = 1`).Scan(&amp;partitionCount)
-<span id="L1016" class="ln">  1016  </span>	r.NoError(err)
-<span id="L1017" class="ln">  1017  </span>	<span class="comment">// 4 time partitions (1 requested + 3 precreated) per metric</span>
-<span id="L1018" class="ln">  1018  </span>	a.Equal(4, partitionCount)
-<span id="L1019" class="ln">  1019  </span>}
-<span id="L1020" class="ln">  1020  </span>
-<span id="L1021" class="ln">  1021  </span><span class="comment">// TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts verifies that repeated calls to</span>
-<span id="L1022" class="ln">  1022  </span><span class="comment">// EnsureMetricTimePartsExist with fresh writer instances (simulating process restarts)</span>
-<span id="L1023" class="ln">  1023  </span><span class="comment">// do not create duplicate partitions.</span>
-<span id="L1024" class="ln">  1024  </span>func TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts(t *testing.T) {
-<span id="L1025" class="ln">  1025  </span>	r := require.New(t)
-<span id="L1026" class="ln">  1026  </span>	a := assert.New(t)
+<span id="L1007" class="ln">  1007  </span>	t.Run(&#34;Epoch to Duration Conversion&#34;, func(_ *testing.T) {
+<span id="L1008" class="ln">  1008  </span>		table := map[string]time.Duration{
+<span id="L1009" class="ln">  1009  </span>			&#34;1 hour&#34;:   time.Hour,
+<span id="L1010" class="ln">  1010  </span>			&#34;2 hours&#34;:  2 * time.Hour,
+<span id="L1011" class="ln">  1011  </span>			&#34;4 days&#34;:   4 * 24 * time.Hour,
+<span id="L1012" class="ln">  1012  </span>			&#34;1 day&#34;:    24 * time.Hour,
+<span id="L1013" class="ln">  1013  </span>			&#34;1 year&#34;:   365.25 * 24 * time.Hour,
+<span id="L1014" class="ln">  1014  </span>			&#34;1 week&#34;:   7 * 24 * time.Hour,
+<span id="L1015" class="ln">  1015  </span>			&#34;3 weeks&#34;:  3 * 7 * 24 * time.Hour,
+<span id="L1016" class="ln">  1016  </span>			&#34;2 months&#34;: 2 * 30 * 24 * time.Hour,
+<span id="L1017" class="ln">  1017  </span>			&#34;1 month&#34;:  30 * 24 * time.Hour,
+<span id="L1018" class="ln">  1018  </span>		}
+<span id="L1019" class="ln">  1019  </span>
+<span id="L1020" class="ln">  1020  </span>		for k, v := range table {
+<span id="L1021" class="ln">  1021  </span>			opts := &amp;CmdOpts{
+<span id="L1022" class="ln">  1022  </span>				PartitionInterval:   &#34;1 hour&#34;,
+<span id="L1023" class="ln">  1023  </span>				RetentionInterval:   k,
+<span id="L1024" class="ln">  1024  </span>				MaintenanceInterval: k,
+<span id="L1025" class="ln">  1025  </span>				BatchingDelay:       time.Hour,
+<span id="L1026" class="ln">  1026  </span>			}
 <span id="L1027" class="ln">  1027  </span>
-<span id="L1028" class="ln">  1028  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
-<span id="L1029" class="ln">  1029  </span>	r.NoError(err)
-<span id="L1030" class="ln">  1030  </span>	defer pgTearDown()
-<span id="L1031" class="ln">  1031  </span>
-<span id="L1032" class="ln">  1032  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
-<span id="L1033" class="ln">  1033  </span>	r.NoError(err)
-<span id="L1034" class="ln">  1034  </span>
-<span id="L1035" class="ln">  1035  </span>	opts := &amp;CmdOpts{
-<span id="L1036" class="ln">  1036  </span>		PartitionInterval:   &#34;1 day&#34;,
-<span id="L1037" class="ln">  1037  </span>		RetentionInterval:   &#34;7 days&#34;,
-<span id="L1038" class="ln">  1038  </span>		MaintenanceInterval: &#34;12 hours&#34;,
-<span id="L1039" class="ln">  1039  </span>		BatchingDelay:       time.Second,
-<span id="L1040" class="ln">  1040  </span>	}
+<span id="L1028" class="ln">  1028  </span>			pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1029" class="ln">  1029  </span>			a.NoError(err)
+<span id="L1030" class="ln">  1030  </span>			a.Equal(pgw.retentionInterval, v)
+<span id="L1031" class="ln">  1031  </span>			a.Equal(pgw.maintenanceInterval, v)
+<span id="L1032" class="ln">  1032  </span>		}
+<span id="L1033" class="ln">  1033  </span>	})
+<span id="L1034" class="ln">  1034  </span>}
+<span id="L1035" class="ln">  1035  </span>
+<span id="L1036" class="ln">  1036  </span><span class="comment">// TestEnsureMetricTimePartsExist_SpecialMetricNames verifies that metric names with special characters</span>
+<span id="L1037" class="ln">  1037  </span><span class="comment">// (dots, uppercase, hyphens, underscores) are accepted by the partition functions.</span>
+<span id="L1038" class="ln">  1038  </span>func TestEnsureMetricTimePartsExist_SpecialMetricNames(t *testing.T) {
+<span id="L1039" class="ln">  1039  </span>	r := require.New(t)
+<span id="L1040" class="ln">  1040  </span>	a := assert.New(t)
 <span id="L1041" class="ln">  1041  </span>
-<span id="L1042" class="ln">  1042  </span>	m := map[string]ExistingPartitionInfo{
-<span id="L1043" class="ln">  1043  </span>		&#34;restart_test_metric&#34;: {
-<span id="L1044" class="ln">  1044  </span>			StartTime: time.Now(),
-<span id="L1045" class="ln">  1045  </span>			EndTime:   time.Now().Add(time.Hour),
-<span id="L1046" class="ln">  1046  </span>		},
-<span id="L1047" class="ln">  1047  </span>	}
+<span id="L1042" class="ln">  1042  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L1043" class="ln">  1043  </span>	r.NoError(err)
+<span id="L1044" class="ln">  1044  </span>	defer pgTearDown()
+<span id="L1045" class="ln">  1045  </span>
+<span id="L1046" class="ln">  1046  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L1047" class="ln">  1047  </span>	r.NoError(err)
 <span id="L1048" class="ln">  1048  </span>
-<span id="L1049" class="ln">  1049  </span>	for i := range 5 {
-<span id="L1050" class="ln">  1050  </span>		pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L1051" class="ln">  1051  </span>		r.NoError(err)
-<span id="L1052" class="ln">  1052  </span>		r.NoError(pgw.EnsureMetricTimePartsExist(m))
-<span id="L1053" class="ln">  1053  </span>
-<span id="L1054" class="ln">  1054  </span>		conn, err := pgx.Connect(ctx, connStr)
-<span id="L1055" class="ln">  1055  </span>		r.NoError(err)
-<span id="L1056" class="ln">  1056  </span>		var count int
-<span id="L1057" class="ln">  1057  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;restart_test_metric&#39;) WHERE isleaf&#34;).Scan(&amp;count)
-<span id="L1058" class="ln">  1058  </span>		conn.Close(ctx)
-<span id="L1059" class="ln">  1059  </span>		r.NoError(err)
-<span id="L1060" class="ln">  1060  </span>		a.Equal(4, count, &#34;partition count should not grow on restart %d&#34;, i+1)
-<span id="L1061" class="ln">  1061  </span>	}
-<span id="L1062" class="ln">  1062  </span>}
-<span id="L1063" class="ln">  1063  </span>
-<span id="L1064" class="ln">  1064  </span>func TestFlush_SinkDBIsDown(t *testing.T) {
-<span id="L1065" class="ln">  1065  </span>	r := require.New(t)
-<span id="L1066" class="ln">  1066  </span>
-<span id="L1067" class="ln">  1067  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
-<span id="L1068" class="ln">  1068  </span>	r.NoError(err)
-<span id="L1069" class="ln">  1069  </span>
-<span id="L1070" class="ln">  1070  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
-<span id="L1071" class="ln">  1071  </span>	r.NoError(err)
-<span id="L1072" class="ln">  1072  </span>
-<span id="L1073" class="ln">  1073  </span>	opts := &amp;CmdOpts{
-<span id="L1074" class="ln">  1074  </span>		PartitionInterval:   &#34;1 day&#34;,
-<span id="L1075" class="ln">  1075  </span>		RetentionInterval:   &#34;7 days&#34;,
-<span id="L1076" class="ln">  1076  </span>		MaintenanceInterval: &#34;12 hours&#34;,
-<span id="L1077" class="ln">  1077  </span>		BatchingDelay:       time.Second,
-<span id="L1078" class="ln">  1078  </span>	}
-<span id="L1079" class="ln">  1079  </span>
-<span id="L1080" class="ln">  1080  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L1081" class="ln">  1081  </span>	r.NoError(err)
-<span id="L1082" class="ln">  1082  </span>	<span class="comment">// Bring the sink db down</span>
-<span id="L1083" class="ln">  1083  </span>	pgTearDown()
-<span id="L1084" class="ln">  1084  </span>
-<span id="L1085" class="ln">  1085  </span>	msgs := []metrics.MeasurementEnvelope{
-<span id="L1086" class="ln">  1086  </span>		{
-<span id="L1087" class="ln">  1087  </span>			MetricName: &#34;test_metric&#34;,
-<span id="L1088" class="ln">  1088  </span>			Data: metrics.Measurements{
-<span id="L1089" class="ln">  1089  </span>				{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;value&#34;: 1},
-<span id="L1090" class="ln">  1090  </span>			},
-<span id="L1091" class="ln">  1091  </span>			DBName: &#34;test_db&#34;,
-<span id="L1092" class="ln">  1092  </span>		},
-<span id="L1093" class="ln">  1093  </span>	}
-<span id="L1094" class="ln">  1094  </span>
-<span id="L1095" class="ln">  1095  </span>	<span class="comment">// It should return, Issue:#1426 will keep it spinning forever</span>
-<span id="L1096" class="ln">  1096  </span>	pgw.flush(msgs)
-<span id="L1097" class="ln">  1097  </span>}
-<span id="L1098" class="ln">  1098  </span>
-<span id="L1099" class="ln">  1099  </span><span class="comment">// TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that</span>
-<span id="L1100" class="ln">  1100  </span><span class="comment">// drops every top-level metric table partition by partition and cleans up the listing table.</span>
-<span id="L1101" class="ln">  1101  </span><span class="comment">// The partition-by-partition drop with COMMIT between drops is the contract that lets large</span>
-<span id="L1102" class="ln">  1102  </span><span class="comment">// installs avoid blowing past max_locks_per_transaction. See issue #1474.</span>
-<span id="L1103" class="ln">  1103  </span>func TestDropAllMetricTables(t *testing.T) {
-<span id="L1104" class="ln">  1104  </span>	a := assert.New(t)
-<span id="L1105" class="ln">  1105  </span>	r := require.New(t)
-<span id="L1106" class="ln">  1106  </span>
-<span id="L1107" class="ln">  1107  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
-<span id="L1108" class="ln">  1108  </span>	r.NoError(err)
-<span id="L1109" class="ln">  1109  </span>	defer pgTearDown()
+<span id="L1049" class="ln">  1049  </span>	opts := &amp;CmdOpts{
+<span id="L1050" class="ln">  1050  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L1051" class="ln">  1051  </span>		RetentionInterval:   &#34;7 days&#34;,
+<span id="L1052" class="ln">  1052  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L1053" class="ln">  1053  </span>		BatchingDelay:       time.Second,
+<span id="L1054" class="ln">  1054  </span>	}
+<span id="L1055" class="ln">  1055  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1056" class="ln">  1056  </span>	r.NoError(err)
+<span id="L1057" class="ln">  1057  </span>
+<span id="L1058" class="ln">  1058  </span>	specialNames := []string{
+<span id="L1059" class="ln">  1059  </span>		&#34;metric.new&#34;,
+<span id="L1060" class="ln">  1060  </span>		&#34;Metric.With.Dots&#34;,
+<span id="L1061" class="ln">  1061  </span>		&#34;UPPERCASE_METRIC&#34;,
+<span id="L1062" class="ln">  1062  </span>		&#34;MixedCase_Metric-123&#34;,
+<span id="L1063" class="ln">  1063  </span>		&#34;metric-with-hyphens&#34;,
+<span id="L1064" class="ln">  1064  </span>		&#34;metric_with_underscores&#34;,
+<span id="L1065" class="ln">  1065  </span>		&#34;Metric123.Test_Name-456&#34;,
+<span id="L1066" class="ln">  1066  </span>	}
+<span id="L1067" class="ln">  1067  </span>
+<span id="L1068" class="ln">  1068  </span>	m := make(map[string]ExistingPartitionInfo)
+<span id="L1069" class="ln">  1069  </span>	for _, name := range specialNames {
+<span id="L1070" class="ln">  1070  </span>		m[name] = ExistingPartitionInfo{
+<span id="L1071" class="ln">  1071  </span>			StartTime: time.Now(),
+<span id="L1072" class="ln">  1072  </span>			EndTime:   time.Now().Add(time.Hour),
+<span id="L1073" class="ln">  1073  </span>		}
+<span id="L1074" class="ln">  1074  </span>	}
+<span id="L1075" class="ln">  1075  </span>
+<span id="L1076" class="ln">  1076  </span>	err = pgw.EnsureMetricTimePartsExist(m)
+<span id="L1077" class="ln">  1077  </span>	r.NoError(err, &#34;EnsureMetricTimePartsExist should handle special metric names&#34;)
+<span id="L1078" class="ln">  1078  </span>
+<span id="L1079" class="ln">  1079  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L1080" class="ln">  1080  </span>	r.NoError(err)
+<span id="L1081" class="ln">  1081  </span>	defer conn.Close(ctx)
+<span id="L1082" class="ln">  1082  </span>
+<span id="L1083" class="ln">  1083  </span>	var partitionCount int
+<span id="L1084" class="ln">  1084  </span>	err = conn.QueryRow(ctx, `SELECT COUNT(*) FROM pg_partition_tree(&#39;&#34;metric.new&#34;&#39;) WHERE level = 1`).Scan(&amp;partitionCount)
+<span id="L1085" class="ln">  1085  </span>	r.NoError(err)
+<span id="L1086" class="ln">  1086  </span>	<span class="comment">// 4 time partitions (1 requested + 3 precreated) per metric</span>
+<span id="L1087" class="ln">  1087  </span>	a.Equal(4, partitionCount)
+<span id="L1088" class="ln">  1088  </span>}
+<span id="L1089" class="ln">  1089  </span>
+<span id="L1090" class="ln">  1090  </span><span class="comment">// TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts verifies that repeated calls to</span>
+<span id="L1091" class="ln">  1091  </span><span class="comment">// EnsureMetricTimePartsExist with fresh writer instances (simulating process restarts)</span>
+<span id="L1092" class="ln">  1092  </span><span class="comment">// do not create duplicate partitions.</span>
+<span id="L1093" class="ln">  1093  </span>func TestEnsureMetricTimePartsExist_IdempotentAcrossRestarts(t *testing.T) {
+<span id="L1094" class="ln">  1094  </span>	r := require.New(t)
+<span id="L1095" class="ln">  1095  </span>	a := assert.New(t)
+<span id="L1096" class="ln">  1096  </span>
+<span id="L1097" class="ln">  1097  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L1098" class="ln">  1098  </span>	r.NoError(err)
+<span id="L1099" class="ln">  1099  </span>	defer pgTearDown()
+<span id="L1100" class="ln">  1100  </span>
+<span id="L1101" class="ln">  1101  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L1102" class="ln">  1102  </span>	r.NoError(err)
+<span id="L1103" class="ln">  1103  </span>
+<span id="L1104" class="ln">  1104  </span>	opts := &amp;CmdOpts{
+<span id="L1105" class="ln">  1105  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L1106" class="ln">  1106  </span>		RetentionInterval:   &#34;7 days&#34;,
+<span id="L1107" class="ln">  1107  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L1108" class="ln">  1108  </span>		BatchingDelay:       time.Second,
+<span id="L1109" class="ln">  1109  </span>	}
 <span id="L1110" class="ln">  1110  </span>
-<span id="L1111" class="ln">  1111  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
-<span id="L1112" class="ln">  1112  </span>	r.NoError(err)
-<span id="L1113" class="ln">  1113  </span>	conn, err := pgx.Connect(ctx, connStr)
-<span id="L1114" class="ln">  1114  </span>	r.NoError(err)
-<span id="L1115" class="ln">  1115  </span>	defer conn.Close(ctx)
-<span id="L1116" class="ln">  1116  </span>
-<span id="L1117" class="ln">  1117  </span>	opts := &amp;CmdOpts{
-<span id="L1118" class="ln">  1118  </span>		PartitionInterval:   &#34;1 hour&#34;,
-<span id="L1119" class="ln">  1119  </span>		RetentionInterval:   &#34;1 hour&#34;,
-<span id="L1120" class="ln">  1120  </span>		MaintenanceInterval: &#34;0 days&#34;,
-<span id="L1121" class="ln">  1121  </span>		BatchingDelay:       time.Hour,
-<span id="L1122" class="ln">  1122  </span>	}
-<span id="L1123" class="ln">  1123  </span>
-<span id="L1124" class="ln">  1124  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
-<span id="L1125" class="ln">  1125  </span>	r.NoError(err)
-<span id="L1126" class="ln">  1126  </span>
-<span id="L1127" class="ln">  1127  </span>	<span class="comment">// Create two dummy metric tables and seed a listing row for each.</span>
-<span id="L1128" class="ln">  1128  </span>	r.NoError(pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_a&#34;, AddOp))
-<span id="L1129" class="ln">  1129  </span>	r.NoError(pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_b&#34;, AddOp))
-<span id="L1130" class="ln">  1130  </span>
-<span id="L1131" class="ln">  1131  </span>	<span class="comment">// Attach a single weekly partition to each so the partition-by-partition drop branch</span>
-<span id="L1132" class="ln">  1132  </span>	<span class="comment">// is exercised.</span>
-<span id="L1133" class="ln">  1133  </span>	_, err = conn.Exec(ctx, `
-<span id="L1134" class="ln">  1134  </span>		CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L1135" class="ln">  1135  </span>		COMMENT ON TABLE subpartitions.test_metric_a_2024w01 IS &#39;pgwatch-generated-metric-time-lvl&#39;;
-<span id="L1136" class="ln">  1136  </span>		CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
-<span id="L1137" class="ln">  1137  </span>		COMMENT ON TABLE subpartitions.test_metric_b_2024w01 IS &#39;pgwatch-generated-metric-time-lvl&#39;;
-<span id="L1138" class="ln">  1138  </span>	`)
-<span id="L1139" class="ln">  1139  </span>	r.NoError(err)
-<span id="L1140" class="ln">  1140  </span>
-<span id="L1141" class="ln">  1141  </span>	<span class="comment">// Sanity: the two test top-level metric tables exist before the call.</span>
-<span id="L1142" class="ln">  1142  </span>	var regA0, regB0 *string
-<span id="L1143" class="ln">  1143  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT to_regclass(&#39;public.test_metric_a&#39;)::text, to_regclass(&#39;public.test_metric_b&#39;)::text&#34;).Scan(&amp;regA0, &amp;regB0))
-<span id="L1144" class="ln">  1144  </span>	r.NotNil(regA0, &#34;public.test_metric_a must exist after SyncMetric&#34;)
-<span id="L1145" class="ln">  1145  </span>	r.NotNil(regB0, &#34;public.test_metric_b must exist after SyncMetric&#34;)
-<span id="L1146" class="ln">  1146  </span>
-<span id="L1147" class="ln">  1147  </span>	var topLevelCount int
-<span id="L1148" class="ln">  1148  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.get_top_level_metric_tables() WHERE table_name IN (&#39;test_metric_a&#39;, &#39;test_metric_b&#39;)&#34;).Scan(&amp;topLevelCount))
-<span id="L1149" class="ln">  1149  </span>	a.Equal(2, topLevelCount)
-<span id="L1150" class="ln">  1150  </span>
-<span id="L1151" class="ln">  1151  </span>	<span class="comment">// Invoke the procedure on a bare connection (CALL is rejected inside an explicit transaction).</span>
-<span id="L1152" class="ln">  1152  </span>	_, err = conn.Exec(ctx, &#34;CALL admin.drop_all_metric_tables();&#34;)
-<span id="L1153" class="ln">  1153  </span>	r.NoError(err)
-<span id="L1154" class="ln">  1154  </span>
-<span id="L1155" class="ln">  1155  </span>	<span class="comment">// Both top-level tables must be gone.</span>
-<span id="L1156" class="ln">  1156  </span>	var regA, regB *string
-<span id="L1157" class="ln">  1157  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT to_regclass(&#39;public.test_metric_a&#39;)::text, to_regclass(&#39;public.test_metric_b&#39;)::text&#34;).Scan(&amp;regA, &amp;regB))
-<span id="L1158" class="ln">  1158  </span>	a.Nil(regA, &#34;public.test_metric_a should be dropped&#34;)
-<span id="L1159" class="ln">  1159  </span>	a.Nil(regB, &#34;public.test_metric_b should be dropped&#34;)
-<span id="L1160" class="ln">  1160  </span>
-<span id="L1161" class="ln">  1161  </span>	<span class="comment">// The leaf partitions must be gone too (not left behind as detached tables).</span>
-<span id="L1162" class="ln">  1162  </span>	var subpartCount int
-<span id="L1163" class="ln">  1163  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM pg_class WHERE relnamespace = &#39;subpartitions&#39;::regnamespace&#34;).Scan(&amp;subpartCount))
-<span id="L1164" class="ln">  1164  </span>	a.Equal(0, subpartCount, &#34;no tables should remain in the subpartitions schema&#34;)
-<span id="L1165" class="ln">  1165  </span>
-<span id="L1166" class="ln">  1166  </span>	<span class="comment">// The listing table must be truncated.</span>
-<span id="L1167" class="ln">  1167  </span>	var listingCount int
-<span id="L1168" class="ln">  1168  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics&#34;).Scan(&amp;listingCount))
-<span id="L1169" class="ln">  1169  </span>	a.Equal(0, listingCount)
-<span id="L1170" class="ln">  1170  </span>
-<span id="L1171" class="ln">  1171  </span>	<span class="comment">// The routine must exist as a procedure (prokind = &#39;p&#39;), not a function.</span>
-<span id="L1172" class="ln">  1172  </span>	var prokind string
-<span id="L1173" class="ln">  1173  </span>	r.NoError(conn.QueryRow(ctx, `
-<span id="L1174" class="ln">  1174  </span>		SELECT p.prokind FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-<span id="L1175" class="ln">  1175  </span>		WHERE n.nspname = &#39;admin&#39; AND p.proname = &#39;drop_all_metric_tables&#39;
-<span id="L1176" class="ln">  1176  </span>	`).Scan(&amp;prokind))
-<span id="L1177" class="ln">  1177  </span>	a.Equal(&#34;p&#34;, prokind, &#34;admin.drop_all_metric_tables must be a procedure&#34;)
-<span id="L1178" class="ln">  1178  </span>}
+<span id="L1111" class="ln">  1111  </span>	m := map[string]ExistingPartitionInfo{
+<span id="L1112" class="ln">  1112  </span>		&#34;restart_test_metric&#34;: {
+<span id="L1113" class="ln">  1113  </span>			StartTime: time.Now(),
+<span id="L1114" class="ln">  1114  </span>			EndTime:   time.Now().Add(time.Hour),
+<span id="L1115" class="ln">  1115  </span>		},
+<span id="L1116" class="ln">  1116  </span>	}
+<span id="L1117" class="ln">  1117  </span>
+<span id="L1118" class="ln">  1118  </span>	for i := range 5 {
+<span id="L1119" class="ln">  1119  </span>		pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1120" class="ln">  1120  </span>		r.NoError(err)
+<span id="L1121" class="ln">  1121  </span>		r.NoError(pgw.EnsureMetricTimePartsExist(m))
+<span id="L1122" class="ln">  1122  </span>
+<span id="L1123" class="ln">  1123  </span>		conn, err := pgx.Connect(ctx, connStr)
+<span id="L1124" class="ln">  1124  </span>		r.NoError(err)
+<span id="L1125" class="ln">  1125  </span>		var count int
+<span id="L1126" class="ln">  1126  </span>		err = conn.QueryRow(ctx, &#34;SELECT COUNT(*) FROM pg_partition_tree(&#39;restart_test_metric&#39;) WHERE isleaf&#34;).Scan(&amp;count)
+<span id="L1127" class="ln">  1127  </span>		conn.Close(ctx)
+<span id="L1128" class="ln">  1128  </span>		r.NoError(err)
+<span id="L1129" class="ln">  1129  </span>		a.Equal(4, count, &#34;partition count should not grow on restart %d&#34;, i+1)
+<span id="L1130" class="ln">  1130  </span>	}
+<span id="L1131" class="ln">  1131  </span>}
+<span id="L1132" class="ln">  1132  </span>
+<span id="L1133" class="ln">  1133  </span>func TestFlush_SinkDBIsDown(t *testing.T) {
+<span id="L1134" class="ln">  1134  </span>	r := require.New(t)
+<span id="L1135" class="ln">  1135  </span>
+<span id="L1136" class="ln">  1136  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L1137" class="ln">  1137  </span>	r.NoError(err)
+<span id="L1138" class="ln">  1138  </span>
+<span id="L1139" class="ln">  1139  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L1140" class="ln">  1140  </span>	r.NoError(err)
+<span id="L1141" class="ln">  1141  </span>
+<span id="L1142" class="ln">  1142  </span>	opts := &amp;CmdOpts{
+<span id="L1143" class="ln">  1143  </span>		PartitionInterval:   &#34;1 day&#34;,
+<span id="L1144" class="ln">  1144  </span>		RetentionInterval:   &#34;7 days&#34;,
+<span id="L1145" class="ln">  1145  </span>		MaintenanceInterval: &#34;12 hours&#34;,
+<span id="L1146" class="ln">  1146  </span>		BatchingDelay:       time.Second,
+<span id="L1147" class="ln">  1147  </span>	}
+<span id="L1148" class="ln">  1148  </span>
+<span id="L1149" class="ln">  1149  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1150" class="ln">  1150  </span>	r.NoError(err)
+<span id="L1151" class="ln">  1151  </span>	<span class="comment">// Bring the sink db down</span>
+<span id="L1152" class="ln">  1152  </span>	pgTearDown()
+<span id="L1153" class="ln">  1153  </span>
+<span id="L1154" class="ln">  1154  </span>	msgs := []metrics.MeasurementEnvelope{
+<span id="L1155" class="ln">  1155  </span>		{
+<span id="L1156" class="ln">  1156  </span>			MetricName: &#34;test_metric&#34;,
+<span id="L1157" class="ln">  1157  </span>			Data: metrics.Measurements{
+<span id="L1158" class="ln">  1158  </span>				{&#34;epoch_ns&#34;: time.Now().UnixNano(), &#34;value&#34;: 1},
+<span id="L1159" class="ln">  1159  </span>			},
+<span id="L1160" class="ln">  1160  </span>			DBName: &#34;test_db&#34;,
+<span id="L1161" class="ln">  1161  </span>		},
+<span id="L1162" class="ln">  1162  </span>	}
+<span id="L1163" class="ln">  1163  </span>
+<span id="L1164" class="ln">  1164  </span>	<span class="comment">// It should return, Issue:#1426 will keep it spinning forever</span>
+<span id="L1165" class="ln">  1165  </span>	pgw.flush(msgs)
+<span id="L1166" class="ln">  1166  </span>}
+<span id="L1167" class="ln">  1167  </span>
+<span id="L1168" class="ln">  1168  </span><span class="comment">// TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that</span>
+<span id="L1169" class="ln">  1169  </span><span class="comment">// drops every top-level metric table partition by partition and cleans up the listing table.</span>
+<span id="L1170" class="ln">  1170  </span><span class="comment">// The partition-by-partition drop with COMMIT between drops is the contract that lets large</span>
+<span id="L1171" class="ln">  1171  </span><span class="comment">// installs avoid blowing past max_locks_per_transaction. See issue #1474.</span>
+<span id="L1172" class="ln">  1172  </span>func TestDropAllMetricTables(t *testing.T) {
+<span id="L1173" class="ln">  1173  </span>	a := assert.New(t)
+<span id="L1174" class="ln">  1174  </span>	r := require.New(t)
+<span id="L1175" class="ln">  1175  </span>
+<span id="L1176" class="ln">  1176  </span>	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+<span id="L1177" class="ln">  1177  </span>	r.NoError(err)
+<span id="L1178" class="ln">  1178  </span>	defer pgTearDown()
 <span id="L1179" class="ln">  1179  </span>
+<span id="L1180" class="ln">  1180  </span>	connStr, err := pgContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L1181" class="ln">  1181  </span>	r.NoError(err)
+<span id="L1182" class="ln">  1182  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L1183" class="ln">  1183  </span>	r.NoError(err)
+<span id="L1184" class="ln">  1184  </span>	defer conn.Close(ctx)
+<span id="L1185" class="ln">  1185  </span>
+<span id="L1186" class="ln">  1186  </span>	opts := &amp;CmdOpts{
+<span id="L1187" class="ln">  1187  </span>		PartitionInterval:   &#34;1 hour&#34;,
+<span id="L1188" class="ln">  1188  </span>		RetentionInterval:   &#34;1 hour&#34;,
+<span id="L1189" class="ln">  1189  </span>		MaintenanceInterval: &#34;0 days&#34;,
+<span id="L1190" class="ln">  1190  </span>		BatchingDelay:       time.Hour,
+<span id="L1191" class="ln">  1191  </span>	}
+<span id="L1192" class="ln">  1192  </span>
+<span id="L1193" class="ln">  1193  </span>	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+<span id="L1194" class="ln">  1194  </span>	r.NoError(err)
+<span id="L1195" class="ln">  1195  </span>
+<span id="L1196" class="ln">  1196  </span>	<span class="comment">// Create two dummy metric tables and seed a listing row for each.</span>
+<span id="L1197" class="ln">  1197  </span>	r.NoError(pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_a&#34;, AddOp))
+<span id="L1198" class="ln">  1198  </span>	r.NoError(pgw.SyncMetric(&#34;test&#34;, &#34;test_metric_b&#34;, AddOp))
+<span id="L1199" class="ln">  1199  </span>
+<span id="L1200" class="ln">  1200  </span>	<span class="comment">// Attach a single weekly partition to each so the partition-by-partition drop branch</span>
+<span id="L1201" class="ln">  1201  </span>	<span class="comment">// is exercised.</span>
+<span id="L1202" class="ln">  1202  </span>	_, err = conn.Exec(ctx, `
+<span id="L1203" class="ln">  1203  </span>		CREATE TABLE subpartitions.test_metric_a_2024w01 PARTITION OF public.test_metric_a FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L1204" class="ln">  1204  </span>		COMMENT ON TABLE subpartitions.test_metric_a_2024w01 IS &#39;pgwatch-generated-metric-time-lvl&#39;;
+<span id="L1205" class="ln">  1205  </span>		CREATE TABLE subpartitions.test_metric_b_2024w01 PARTITION OF public.test_metric_b FOR VALUES FROM (&#39;2024-01-01&#39;) TO (&#39;2024-01-08&#39;);
+<span id="L1206" class="ln">  1206  </span>		COMMENT ON TABLE subpartitions.test_metric_b_2024w01 IS &#39;pgwatch-generated-metric-time-lvl&#39;;
+<span id="L1207" class="ln">  1207  </span>	`)
+<span id="L1208" class="ln">  1208  </span>	r.NoError(err)
+<span id="L1209" class="ln">  1209  </span>
+<span id="L1210" class="ln">  1210  </span>	<span class="comment">// Sanity: the two test top-level metric tables exist before the call.</span>
+<span id="L1211" class="ln">  1211  </span>	var regA0, regB0 *string
+<span id="L1212" class="ln">  1212  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT to_regclass(&#39;public.test_metric_a&#39;)::text, to_regclass(&#39;public.test_metric_b&#39;)::text&#34;).Scan(&amp;regA0, &amp;regB0))
+<span id="L1213" class="ln">  1213  </span>	r.NotNil(regA0, &#34;public.test_metric_a must exist after SyncMetric&#34;)
+<span id="L1214" class="ln">  1214  </span>	r.NotNil(regB0, &#34;public.test_metric_b must exist after SyncMetric&#34;)
+<span id="L1215" class="ln">  1215  </span>
+<span id="L1216" class="ln">  1216  </span>	var topLevelCount int
+<span id="L1217" class="ln">  1217  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.get_top_level_metric_tables() WHERE table_name IN (&#39;test_metric_a&#39;, &#39;test_metric_b&#39;)&#34;).Scan(&amp;topLevelCount))
+<span id="L1218" class="ln">  1218  </span>	a.Equal(2, topLevelCount)
+<span id="L1219" class="ln">  1219  </span>
+<span id="L1220" class="ln">  1220  </span>	<span class="comment">// Invoke the procedure on a bare connection (CALL is rejected inside an explicit transaction).</span>
+<span id="L1221" class="ln">  1221  </span>	_, err = conn.Exec(ctx, &#34;CALL admin.drop_all_metric_tables();&#34;)
+<span id="L1222" class="ln">  1222  </span>	r.NoError(err)
+<span id="L1223" class="ln">  1223  </span>
+<span id="L1224" class="ln">  1224  </span>	<span class="comment">// Both top-level tables must be gone.</span>
+<span id="L1225" class="ln">  1225  </span>	var regA, regB *string
+<span id="L1226" class="ln">  1226  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT to_regclass(&#39;public.test_metric_a&#39;)::text, to_regclass(&#39;public.test_metric_b&#39;)::text&#34;).Scan(&amp;regA, &amp;regB))
+<span id="L1227" class="ln">  1227  </span>	a.Nil(regA, &#34;public.test_metric_a should be dropped&#34;)
+<span id="L1228" class="ln">  1228  </span>	a.Nil(regB, &#34;public.test_metric_b should be dropped&#34;)
+<span id="L1229" class="ln">  1229  </span>
+<span id="L1230" class="ln">  1230  </span>	<span class="comment">// The leaf partitions must be gone too (not left behind as detached tables).</span>
+<span id="L1231" class="ln">  1231  </span>	var subpartCount int
+<span id="L1232" class="ln">  1232  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM pg_class WHERE relnamespace = &#39;subpartitions&#39;::regnamespace&#34;).Scan(&amp;subpartCount))
+<span id="L1233" class="ln">  1233  </span>	a.Equal(0, subpartCount, &#34;no tables should remain in the subpartitions schema&#34;)
+<span id="L1234" class="ln">  1234  </span>
+<span id="L1235" class="ln">  1235  </span>	<span class="comment">// The listing table must be truncated.</span>
+<span id="L1236" class="ln">  1236  </span>	var listingCount int
+<span id="L1237" class="ln">  1237  </span>	r.NoError(conn.QueryRow(ctx, &#34;SELECT count(*) FROM admin.all_distinct_dbname_metrics&#34;).Scan(&amp;listingCount))
+<span id="L1238" class="ln">  1238  </span>	a.Equal(0, listingCount)
+<span id="L1239" class="ln">  1239  </span>
+<span id="L1240" class="ln">  1240  </span>	<span class="comment">// The routine must exist as a procedure (prokind = &#39;p&#39;), not a function.</span>
+<span id="L1241" class="ln">  1241  </span>	var prokind string
+<span id="L1242" class="ln">  1242  </span>	r.NoError(conn.QueryRow(ctx, `
+<span id="L1243" class="ln">  1243  </span>		SELECT p.prokind FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+<span id="L1244" class="ln">  1244  </span>		WHERE n.nspname = &#39;admin&#39; AND p.proname = &#39;drop_all_metric_tables&#39;
+<span id="L1245" class="ln">  1245  </span>	`).Scan(&amp;prokind))
+<span id="L1246" class="ln">  1246  </span>	a.Equal(&#34;p&#34;, prokind, &#34;admin.drop_all_metric_tables must be a procedure&#34;)
+<span id="L1247" class="ln">  1247  </span>}
+<span id="L1248" class="ln">  1248  </span>
 </pre><p></p>
 
 <div id="footer">

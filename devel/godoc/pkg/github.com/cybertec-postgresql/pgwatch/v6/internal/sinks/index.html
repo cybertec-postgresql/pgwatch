@@ -607,6 +607,14 @@
                 return err
             },
         },
+
+        &amp;<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/">migrator</a>.<a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration">Migration</a>{
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Name">Name</a>: &#34;01529 Fix ensure_partition_metric_time partitioning strategy&#34;,
+            <a href="https://pkg.go.dev/github.com/cybertec-postgresql/pgx-migrator/#Migration.Func">Func</a>: func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, tx pgx.<a href="#Tx">Tx</a>) <a href="https://pkg.go.dev/builtin/#error">error</a> {
+                _, err := tx.<a href="#Exec">Exec</a>(ctx, sqlMetricEnsurePartitionPostgres)
+                return err
+            },
+        },
     )
 }</pre>
 			
@@ -654,7 +662,7 @@
 		
 			
 			
-			<h2 id="NewPostgresSinkMigrator">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L523">NewPostgresSinkMigrator</a>
+			<h2 id="NewPostgresSinkMigrator">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L532">NewPostgresSinkMigrator</a>
 				<a class="permalink" href="#NewPostgresSinkMigrator">&#xb6;</a>
 				
 				
@@ -681,7 +689,7 @@
 		
 			
 			
-			<h2 id="registeredMigrationsCount">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L742">registeredMigrationsCount</a>
+			<h2 id="registeredMigrationsCount">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L759">registeredMigrationsCount</a>
 				<a class="permalink" href="#registeredMigrationsCount">&#xb6;</a>
 				
 				
@@ -1090,7 +1098,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 
 			
 				
-				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L513">AddDBUniqueMetricToListingTable</a>
+				<h3 id="PostgresWriter.AddDBUniqueMetricToListingTable">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L522">AddDBUniqueMetricToListingTable</a>
 					<a class="permalink" href="#PostgresWriter.AddDBUniqueMetricToListingTable">&#xb6;</a>
 					
 					
@@ -1102,7 +1110,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.DeleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L488">DeleteOldPartitions</a>
+				<h3 id="PostgresWriter.DeleteOldPartitions">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L497">DeleteOldPartitions</a>
 					<a class="permalink" href="#PostgresWriter.DeleteOldPartitions">&#xb6;</a>
 					
 					
@@ -1165,7 +1173,7 @@ e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
 				
 			
 				
-				<h3 id="PostgresWriter.MaintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L503">MaintainUniqueSources</a>
+				<h3 id="PostgresWriter.MaintainUniqueSources">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L512">MaintainUniqueSources</a>
 					<a class="permalink" href="#PostgresWriter.MaintainUniqueSources">&#xb6;</a>
 					
 					
@@ -1180,7 +1188,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.Migrate">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L558">Migrate</a>
+				<h3 id="PostgresWriter.Migrate">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L567">Migrate</a>
 					<a class="permalink" href="#PostgresWriter.Migrate">&#xb6;</a>
 					
 					
@@ -1193,7 +1201,7 @@ This is used to avoid listing the same source multiple times in Grafana dropdown
 				
 			
 				
-				<h3 id="PostgresWriter.NeedsMigration">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L567">NeedsMigration</a>
+				<h3 id="PostgresWriter.NeedsMigration">func (*PostgresWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sinks/postgres.go.html#L576">NeedsMigration</a>
 					<a class="permalink" href="#PostgresWriter.NeedsMigration">&#xb6;</a>
 					
 					
