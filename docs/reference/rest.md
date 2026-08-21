@@ -1,3 +1,7 @@
+---
+title: REST API Reference
+---
+
 # REST API Reference
 
 pgwatch provides a RESTful API for managing monitoring sources, metrics, and presets. All endpoints require authentication unless explicitly noted.

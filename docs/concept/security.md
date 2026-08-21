@@ -36,31 +36,5 @@ Some points on security:
     cases it's better to still use the standard LibPQ *.pgpass* file to
     store passwords.
 
-## Launching a more secure Docker container
-
-Some common sense security is built into default Docker images for all
-components but not activated by default. A sample command to launch
-pgwatch with following security "checkpoints" enabled:
-
-1. HTTPS for both Grafana and the Web UI with self-signed certificates
-1. No anonymous viewing of graphs in Grafana
-1. Custom user / password for the Grafana "admin" account
-1. No anonymous access / editing over the admin Web UI
-1. No viewing of internal logs of components running inside Docker
-1. Password encryption for connect strings stored in the Config DB
-
-    ```properties
-    docker run --name pgwatch -d --restart=unless-stopped \
-      -p 3000:3000 -p 8080:8080 \
-      -e PW_GRAFANASSL=1 -e PW_WEBSSL=1 \
-      -e PW_GRAFANANOANONYMOUS=1 -e PW_GRAFANAUSER=myuser \
-      -e PW_GRAFANAPASSWORD=mypass \
-      -e PW_WEBNOANONYMOUS=1 -e PW_WEBNOCOMPONENTLOGS=1 \
-      -e PW_WEBUSER=myuser -e PW_WEBPASSWORD=mypass \
-      -e PW_AES_GCM_KEYPHRASE=qwerty \
-      cybertec/pgwatch
-    ```
-
-For custom installs it's up to the user though. A hint - Docker
-*launcher* files can also be inspected to see which config parameters
-are being touched.
+For a concrete recipe that turns all of the above on at once, see
+[How-to: Harden a Docker deployment](../howto/harden_docker_deployment.md).

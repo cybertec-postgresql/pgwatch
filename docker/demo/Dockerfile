@@ -116,7 +116,7 @@ EXPOSE 5432
 # Grafana UI
 EXPOSE 3000
 # Prometheus scraping port
-EXPOSE 9187
+EXPOSE 9090
 # pprof port
 EXPOSE 6060
 

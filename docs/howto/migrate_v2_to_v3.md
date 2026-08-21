@@ -2,6 +2,8 @@
 title: Migrating from v2 to v3
 ---
 
+For a broader look at the configuration store (Postgres DB vs YAML files) and what changes between v2 and v3, see [Concept: Installation options](../concept/installation_options.md). For the boot-time initialization and migration CLI commands, see [Reference: CLI & environment variables](../reference/cli_env.md).
+
 ## Introduction
 
 This guide will help you migrate from pgwatch2 to pgwatch v3. The migration process is straightforward and should not take long.
@@ -77,10 +79,10 @@ Execute the following queries to migrate the metrics and presets:
 
 ```sql
 insert into pgwatch.preset
-select 
-    pc_name as name, 
-    pc_description as description, 
-    pc_config as metrics 
+select
+    pc_name as name,
+    pc_description as description,
+    pc_config as metrics
 from pgwatch2.preset_config
 on conflict do nothing;
 ```

@@ -22,7 +22,7 @@ theme:
       accent: indigo
       toggle:
         icon: material/lightbulb
-        name: Switch to light mode    
+        name: Switch to light mode
   features:
     - announce.dismiss
     - search.suggest
@@ -38,54 +38,68 @@ theme:
 
 plugins:
   - search
-  - tags  
+  - tags
   - glightbox
   # - minify:
   #     minify_html: true
- 
+
 nav:
-  - Intro: 
-    - Hello World!: index.md
-    - Project Background: intro/project_background.md
-    - Features: intro/features.md
+  - Hello World!: index.md
+
   - Concepts:
     - Components: concept/components.md
     - Installation Options: concept/installation_options.md
-    - Long Term Installations: concept/long_term_installations.md
-    - Security: concept/security.md    
-    - Sizing Recommendations: howto/sizing_recommendations.md
+    - Operating in Production: concept/operating_in_production.md
+    - Security: concept/security.md
     - Web UI: concept/web_ui.md
-    - Kubernetes: concept/kubernetes.md
+    - Metrics and Presets: concept/metrics_and_presets.md
+    - Advanced Features: concept/advanced_features.md
+    - OS Metrics via PL/Python Helpers: concept/os_helpers.md
+    - Observability Stack: concept/observability_stack.md
   - Tutorials:
+    - Quickstart: tutorial/quickstart.md
     - Docker Installation: tutorial/docker_installation.md
     - Custom Installation: tutorial/custom_installation.md
     - Preparing Databases: tutorial/preparing_databases.md
     - Upgrading: tutorial/upgrading.md
   - How-To Guides:
     - Dashboarding and Alerting: howto/dashboarding_alerting.md
-    - Using Managed Services: howto/using_managed_services.md
+    - Set Up Alerting: howto/set_up_alerting.md
     - Bootstrapping the Configuration Database: howto/config_db_bootstrap.md
     - Bootstrapping the Measurements Database (Sink): howto/metrics_db_bootstrap.md
     - Migration from pgwatch v2: howto/migrate_v2_to_v3.md
     - Implement Custom gRPC Sink: howto/implement_grpc_server.md
     - Reverse Proxy Setup: howto/reverse_proxy.md
     - Monitoring a Prometheus Exporter: howto/monitor_prometheus_exporter.md
+    - Harden a Docker Deployment: howto/harden_docker_deployment.md
+    - Add a Custom Metric: howto/add_custom_metric.md
+    - Deploy to Kubernetes: howto/deploy_to_kubernetes.md
+    - Configure with YAML Files: howto/yaml_configuration.md
+    - Monitor a Patroni Cluster: howto/monitor_patroni_cluster.md
+    - Enable Log Parsing: howto/enable_log_parsing.md
+    - Monitor PgBouncer: howto/monitor_pgbouncer.md
+    - Expose Metrics for Prometheus Scraping: howto/enable_prometheus_scrape.md
   - Reference:
     - CLI & Environment Variables: reference/cli_env.md
     - REST API: reference/rest.md
-    - Advanced Features: reference/advanced_features.md
     - Metric Definitions: reference/metric_definitions.md
-    - Docker Variables: reference/env_variables.md
+    - Docker Variables: reference/docker_variables.md
     - Sinks Options: reference/sinks_options.md
-  - Gallery: 
+    - Managed PostgreSQL Providers: reference/managed_postgres_support.md
+    - Sizing Recommendations: reference/sizing_recommendations.md
+    - Docker Images: reference/docker_images.md
+    - Listening Ports and Endpoints: reference/ports.md
+    - Source Types: reference/source_types.md
+    - Prometheus Source: reference/prometheus_source.md
+  - Gallery:
     - Dashboards: gallery/dashboards.md
     - Web UI: gallery/webui.md
-  - Developer: 
+  - Developer:
     - Contributing: developer/contributing.md
-    - Documentation: ../devel/godoc/index.html
+    - Developer Docs: ../devel/godoc/index.html
     - Code of Conduct: developer/CODE_OF_CONDUCT.md
     - License: developer/LICENSE.md
-    
+
 
 markdown_extensions:
   - admonition

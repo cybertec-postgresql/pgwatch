@@ -2,6 +2,8 @@
 title: Running Behind a Reverse Proxy
 ---
 
+For background on why a reverse proxy is needed in production (TLS termination, base-path prefixing, WebSocket handling), see [Concept: Security](../concept/security.md). For the full CLI flag and environment-variable reference covering `--web-base-path`, see [Reference: CLI & environment variables](../reference/cli_env.md#webui).
+
 When running pgwatch in production environments, you may want to expose it through a reverse proxy (like Apache, Nginx, or Traefik) on a different path instead of exposing its port directly. This guide shows you how to configure pgwatch for such setups.
 
 ## Configuration

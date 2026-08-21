@@ -2,164 +2,82 @@
 title: Custom installation
 ---
 
-This chapter describes how to set up pgwatch manually, giving you full control over each component. For a simpler setup, see the [Docker installation](docker_installation.md) guide.
+This tutorial walks you through installing pgwatch manually, one component at a time, on a Linux host. It uses the **PostgreSQL configuration database** as the source of truth for monitored sources and metric definitions, and stores metric measurements in a second PostgreSQL database. This is the recommended path for production deployments.
+
+If you prefer to drive pgwatch with YAML files instead, see [How-to: Configure pgwatch with YAML files](../howto/yaml_configuration.md). For a one-step containerised alternative, see [Tutorial: Installing using Docker](docker_installation.md).
 
 ## Overview
 
-pgwatch consists of four main components:
+pgwatch has four components:
 
-1. **Metrics collector** - The pgwatch daemon that gathers metrics from your databases
-2. **Configuration store** - Where you define which databases to monitor and their settings  
-    - PostgreSQL database or
-    - YAML file.
-3. **Metrics storage** - Where collected metrics are stored  
-    - PostgreSQL,
-    - Prometheus,
-    - custom gRPC server,
-    - JSON file.
-4. **Visualization** - Grafana dashboards for analyzing metrics
+1. **Metrics collector** — the `pgwatch` daemon, written in Go
+2. **Configuration store** — a PostgreSQL database holding sources, metrics, and presets
+3. **Metrics storage (sink)** — a PostgreSQL database that holds historical metric measurements
+4. **Visualisation** — Grafana with the pgwatch dashboards
+
+For background, see [Concept: Components](../concept/components.md).
 
 ## Requirements
 
-- PostgreSQL v14+ (latest major version recommended)
-- Grafana (for visualization)
-- A user account on each database you want to monitor
+- PostgreSQL 14 or newer (latest major recommended)
+- Grafana 13 or newer — the supported version going forward. Grafana 12 still works with the shipped dashboards but is in legacy/compatibility mode and will be dropped after v12 EOL.
+- A user account on every database you want to monitor
 
-## Installation Methods
+## Step 1 — Install the pgwatch binary
 
-Choose how you want to manage your monitoring configurations:
-
-1. **PostgreSQL Database**  
-    - Store monitored databases and metrics configs in a PostgreSQL database.  
-
-2. **YAML File**
-    - Store monitored databases and metrics configs in a YAML file.
-  
-!!! info
-    You can use pgwatch's built-in web UI or REST API to manage both configuration stores.
-
-## Installation Steps
-
-### 1. Install pgwatch
-
-- **Using apt (Debian/Ubuntu)**
-    ```bash
-    # Follow instructions from: https://wiki.postgresql.org/wiki/Apt#Quickstart to add the official PostgreSQL apt repository 
-    sudo apt update && sudo apt install pgwatch
-    ```
-
-- **From GitHub releases**
-    ```bash
-    # Find the latest release at https://github.com/cybertec-postgresql/pgwatch/releases
-    wget https://github.com/cybertec-postgresql/pgwatch/releases/download/v5.1.0/pgwatch_Linux_x86_64.deb
-    sudo dpkg -i pgwatch_Linux_x86_64.deb
-    ```
-
-- **Build from source**
-    ```bash
-    # Install Go - https://golang.org/doc/install
-    # Install Protoc - https://grpc.io/docs/languages/go/quickstart/
-
-    git clone https://github.com/cybertec-postgresql/pgwatch.git
-    cd pgwatch/internal/webui
-    yarn install --network-timeout 100000 && yarn build
-    cd ../../
-    go generate ./api/pb
-    go build ./cmd/pgwatch/
-    ```
-
-    The executable will be created in the current directory. Copy it to `/usr/bin/pgwatch` for system-wide access.
-
-### 2. Bootstrap the configuration store
-
-#### Using a PostgreSQL database
-
-Create a database to store pgwatch configurations:
+On Debian/Ubuntu:
 
 ```bash
-psql -c "create user pgwatch password 'your_password'"
-psql -c "create database pgwatch owner pgwatch"
+sudo apt update && sudo apt install pgwatch
 ```
 
-pgwatch will automatically create the required config tables on first run. To create them manually:
+On RPM-based distros, install the latest `.rpm` from the [GitHub releases page](https://github.com/cybertec-postgresql/pgwatch/releases).
+
+To build from source instead, see the project's `README.md`.
+
+## Step 2 — Create the configuration database
+
+```bash
+sudo -u postgres psql -c "create user pgwatch password 'your_password'"
+sudo -u postgres psql -c "create database pgwatch owner pgwatch"
+```
+
+pgwatch creates the schema in this database on first start. To do it explicitly:
 
 ```bash
 pgwatch --sources=postgresql://pgwatch:your_password@localhost:5432/pgwatch config init
 ```
 
-!!! note
-    See [Bootstrapping the Configuration Database](../howto/config_db_bootstrap.md) for detailed instructions.
-
-
-#### Using a YAML file
-
-Create `/etc/pgwatch/sources.yaml`:
-
-```yaml
-- name: my_database
-  conn_str: postgresql://pgwatch:your_password@localhost:5432/mydb
-  preset_metrics: exhaustive
-  is_enabled: true
-  group: default
-
-# - name: the_second_monitored_database
-# ...
-```
-
-**Sources configuration options**:
-
-| Option | Description | Example |
-|--------|-------------|---------|
-| `name` | Unique name for this source | `mydb` |
-| `kind` | Source type: `postgres`, `postgres-continuous-discovery`, `pgbouncer`, `pgpool`, `patroni` | `postgres` |
-| `conn_str` | PostgreSQL or etcd connection string | `postgresql://user:pass@host/db` or `etcd://host1:1234,host2:1344/scope/member` |
-| `preset_metrics` | Preset to use: `minimal`, `basic`, `exhaustive`, `unprivileged`, etc. | `exhaustive` |
-| `custom_metrics` | Custom metrics with intervals (seconds) | `{ backends: 300 }` |
-| `include_pattern` | Regex to filter databases (for continuous discovery) | `^mydb_` |
-| `exclude_pattern` | Regex to exclude databases (for continuous discovery) | `^test_` |
-| `is_enabled` | Enable/disable monitoring | `true` |
-| `group` | For distributed pgwatch setups with centralized configs | `default` |
-| `custom_tags` | Custom tags added to all metrics | `{ env: production }` |
-
-
-!!! note
-    Allow up to 2 minutes - can be adjusted via `--refresh` - for newly added sources to be picked up by a running pgwatch daemon.
-
-### 3. Bootstrap the metrics storage database
-
-Create a database to store collected metrics:
+## Step 3 — Create the metrics measurements database
 
 ```bash
-psql -c "create database pgwatch_metrics owner pgwatch"
+sudo -u postgres psql -c "create database pgwatch_metrics owner pgwatch"
 ```
 
-!!! note
-    See [Bootstrapping the Metrics Measurements Database (Sink)](../howto/metrics_db_bootstrap.md) for detailed instructions.
+pgwatch creates the metrics schema here automatically as soon as it runs.
 
-### 4. Prepare databases for monitoring
+## Step 4 — Prepare each database you want to monitor
 
-On each database you want to monitor, create a dedicated user:
+For every database you want pgwatch to watch, create a dedicated role with the `pg_monitor` privilege:
 
 ```sql
 CREATE USER pgwatch WITH PASSWORD 'your_password';
 GRANT pg_monitor TO pgwatch;
 ```
 
-!!! note
-    For additional details, see [Preparing databases for monitoring](preparing_databases.md).
+For the full set of preparation steps (extensions, helper functions, etc.), see [Tutorial: Preparing databases for monitoring](preparing_databases.md).
 
-### 5. Start pgwatch
+## Step 5 — Start the gatherer
 
 ```bash
 pgwatch \
-    --sources=postgresql://pgwatch:your_password@localhost:5432/pgwatch \
-    --sink=postgresql://pgwatch:your_password@localhost:5432/pgwatch_metrics
-    # or use --sources=/etc/pgwatch/sources.yaml
+  --sources=postgresql://pgwatch:your_password@localhost:5432/pgwatch \
+  --sink=postgresql://pgwatch:your_password@localhost:5432/pgwatch_metrics
 ```
 
-Wait a few seconds to see the success of initial metrics fetches.
+Wait a few seconds — you should see `sources and metrics refreshed` on stdout.
 
-#### Running as a systemd service
+### Running as a systemd service
 
 Create `/etc/systemd/system/pgwatch.service`:
 
@@ -172,7 +90,6 @@ After=network-online.target
 Type=exec
 User=pgwatch
 ExecStart=/usr/bin/pgwatch --sources=postgresql://pgwatch:your_password@localhost:5432/pgwatch --sink=postgresql://pgwatch:your_password@localhost:5432/pgwatch_metrics
-# or ExecStart=/usr/bin/pgwatch --sources=/etc/pgwatch/sources.yaml --sink=postgresql://pgwatch:your_password@localhost:5432/pgwatch_metrics
 Restart=on-failure
 TimeoutStartSec=0
 RestartSec=5s
@@ -181,35 +98,33 @@ RestartSec=5s
 WantedBy=multi-user.target
 ```
 
+Then:
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl start pgwatch
 sudo systemctl enable pgwatch
 ```
 
-### 6. Configure monitored sources
+## Step 6 — Add a source to monitor
 
-Add databases to monitor via one of the methods:
+Open the admin Web UI at `http://localhost:8080` and go to **SOURCES**. Click **+ NEW**, fill in the connection details of the database you want to monitor, and pick a preset (`minimal`, `basic`, or `exhaustive`). Save the source.
 
-  - [web UI](../concept/web_ui.md) (port 8080 by default),
-  - [REST API](../reference/rest.md),
-  - directly with sql for PostgreSQL config store,
-  - editing the YAML file for YAML config store.
+Or use the [REST API](../reference/rest.md), or insert directly into the `pgwatch.source` table.
 
-!!! note
-    Allow up to 2 minutes - can be adjusted via `--refresh` - for new sources to appear in metrics collection.
+> It can take up to 2 minutes for a newly added source to start producing metrics. Tune this via `--refresh`.
 
-### 7. Install and configure Grafana
+## Step 7 — Install Grafana and import dashboards
 
-1. Refer to the official Grafana documentation for the [installation](https://grafana.com/docs/grafana/latest/setup-grafana/installation/), [configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/), and [data sources](https://grafana.com/docs/grafana/latest/datasources/) setup steps.
-2. Import the default postgres and/or prometheus dashboards from the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder into your Grafana instance.
+Follow the [official Grafana installation guide](https://grafana.com/docs/grafana/latest/setup-grafana/installation/) for your OS.
+
+Then add the `pgwatch-metrics` (Postgres) or `pgwatch-prometheus` (Prometheus) data source — these UIDs are what the built-in dashboards expect — and import the dashboards from the [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) folder of the pgwatch repository.
 
 !!! note
-    The default built-in dashboards expect `postgres` or `prometheus` data sources with the default UIDs `pgwatch-metrics` or `pgwatch-prometheus`, respectively.
+    Starting from Grafana 12.4, set `newPanelPadding = false` under `[feature_toggles]` in `grafana.ini` to keep dashboard font sizes sensible.
 
-!!! note
-    Starting from Grafana 12.4, a small adjustment to `grafana.ini` is needed for avoiding too small fonts for displayed values in some of the dashboards.  Add `newPanelPadding = false` to the `[feature_toggles]` section.
+## Next steps
 
-## Next Steps
-
-- Explore the [Components](../concept/components.md) chapter to better understand the pgwatch architecture.
+- [Tutorial: Preparing databases for monitoring](preparing_databases.md) — install helper functions for OS-level metrics
+- [Tutorial: Upgrading](upgrading.md) — keep pgwatch up to date
+- [Concept: Operating in production](../concept/operating_in_production.md) — running pgwatch in production over months and years
