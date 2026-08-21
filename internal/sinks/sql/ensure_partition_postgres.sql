@@ -95,8 +95,10 @@ BEGIN
       l_part_start := date_trunc('hour', metric_timestamp);
   END CASE;
 
-  -- Avoid overlapping with existing partitions
-  l_part_start := GREATEST(l_part_start, l_existing_upper_bound);
+  IF l_existing_upper_bound IS NULL OR metric_timestamp >= l_existing_upper_bound THEN
+    -- Avoid overlapping with existing partitions
+    l_part_start := GREATEST(l_part_start, l_existing_upper_bound);
+  END IF;
 
   -- Create partitions
   FOR i IN 0..partitions_to_precreate LOOP
