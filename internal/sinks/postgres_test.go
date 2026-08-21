@@ -662,6 +662,75 @@ func TestPartitionInterval(t *testing.T) {
 	a.Equal(part.StartTime.Add(3*7*24*time.Hour), part.EndTime)
 }
 
+// TestPartitionForwardTimeJump checks #1529
+func TestPartitionForwardTimeJump(t *testing.T) {
+	a := assert.New(t)
+	r := require.New(t)
+
+	pgContainer, pgTearDown, err := testutil.SetupPostgresContainer()
+	r.NoError(err)
+	defer pgTearDown()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
+	opts := &CmdOpts{
+		PartitionInterval:   "1 day",
+		RetentionInterval:   "14 days",
+		MaintenanceInterval: "12 hours",
+		BatchingDelay:       time.Second,
+	}
+
+	pgw, err := NewPostgresWriter(ctx, connStr, opts)
+	r.NoError(err)
+
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+	defer conn.Close(ctx)
+
+	// 1. Create partitions for an early period.
+	early := time.Date(2026, 2, 5, 10, 0, 0, 0, time.UTC)
+	r.NoError(pgw.EnsureMetricTimePartsExist(map[string]ExistingPartitionInfo{
+		"jump_metric": {StartTime: early, EndTime: early},
+	}))
+
+	// 2. Simulate a restart: the in-memory partition cache is lost, while the
+	//    existing partitions remain in the database.
+	pgw.partitionMapMetric = make(map[string]ExistingPartitionInfo)
+
+	// 3. New data arrives weeks later, well beyond the pre-created partitions'
+	//    upper bound (the "forward time jump" / gap scenario).
+	late := time.Date(2026, 8, 19, 0, 49, 18, 0, time.UTC)
+	err = pgw.EnsureMetricTimePartsExist(map[string]ExistingPartitionInfo{
+		"jump_metric": {StartTime: late, EndTime: late},
+	})
+	// Must not error (previously failed with "cannot scan NULL into *time.Time").
+	r.NoError(err)
+
+	// The returned/cached range must be non-zero and must contain the new timestamp.
+	part := pgw.partitionMapMetric["jump_metric"]
+	a.False(part.StartTime.IsZero(), "part_available_from must not be NULL")
+	a.False(part.EndTime.IsZero(), "part_available_to must not be NULL")
+	a.False(late.Before(part.StartTime), "new timestamp must be >= partition start")
+	a.True(late.Before(part.EndTime), "new timestamp must be < partition end")
+
+	// A subpartition physically covering the new timestamp must exist, otherwise
+	// the CopyFrom insert would fail with SQLSTATE 23514 (no partition for row).
+	var covering int
+	r.NoError(conn.QueryRow(ctx, `
+		SELECT count(*)
+		FROM pg_catalog.pg_class c
+		JOIN pg_catalog.pg_inherits i ON i.inhrelid = c.oid
+		JOIN pg_catalog.pg_class parent ON parent.oid = i.inhparent
+		WHERE c.relispartition
+		  AND c.relnamespace = 'subpartitions'::regnamespace
+		  AND parent.relname = 'jump_metric'
+		  AND $1::timestamptz >= substring(pg_catalog.pg_get_expr(c.relpartbound, c.oid, true) from 'FOR VALUES FROM \(''([^'']+)''')::timestamptz
+		  AND $1::timestamptz <  substring(pg_catalog.pg_get_expr(c.relpartbound, c.oid, true) from 'TO \(''([^'']+)''')::timestamptz
+	`, late).Scan(&covering))
+	a.Equal(1, covering, "exactly one subpartition must cover the new timestamp")
+}
+
 func Test_Maintain(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)

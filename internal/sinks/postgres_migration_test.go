@@ -240,7 +240,7 @@ func TestMigration01474_DropAllMetricTablesProcedure(t *testing.T) {
 	_, err = conn.Exec(ctx, `
 		DROP PROCEDURE IF EXISTS admin.drop_all_metric_tables();
 		CREATE FUNCTION admin.drop_all_metric_tables() RETURNS int AS $$ BEGIN RETURN 0; END $$ LANGUAGE plpgsql;
-		DELETE FROM admin.migration WHERE id = (SELECT max(id) FROM admin.migration);
+		DELETE FROM admin.migration WHERE id >= 3;
 	`)
 	r.NoError(err)
 
