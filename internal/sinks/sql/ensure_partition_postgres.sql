@@ -78,7 +78,10 @@ BEGIN
     WHERE metric_timestamp >= lower_text::timestamptz
       AND metric_timestamp < upper_text::timestamptz
     LIMIT 1;
-    RETURN; -- No need to create more partitions.
+    IF part_available_from IS NOT NULL AND part_available_to IS NOT NULL THEN
+      RETURN; -- No need to create more partitions.
+    END IF;
+    -- Fallthrough to creating new partitions to hold the metric_timestamp
   END IF;
 
   -- Determine starting point for new partitions
