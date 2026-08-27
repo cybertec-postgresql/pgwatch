@@ -2,163 +2,92 @@
 title: Upgrading
 ---
 
-The pgwatch daemon code doesn't need too much maintenance itself (if
-you're not interested in new features), but the preset metrics,
-dashboards and the other components that pgwatch relies on, like Grafana,
-are under very active development and get updates quite regularly so
-already purely from the security standpoint it would make sense to stay
-up to date.
+This tutorial walks you through the upgrade paths for a pgwatch deployment. The pgwatch daemon itself rarely needs urgent upgrades, but the metrics, dashboards, and bundled components (PostgreSQL, Grafana) move quickly — staying current is worth doing for security alone.
 
-We also regularly include new component versions in the Docker images
-after verifying that they work. If using Docker, you could also choose
-to build your own images any time some new component versions are
-released, just increment the version numbers in the Dockerfile.
+If you launched pgwatch with Docker, follow [Step 1](#step-1-update-the-docker-image). If you installed pgwatch natively, skip ahead to [Step 2](#step-2-upgrade-a-native-installation).
 
-## Updating to a newer Docker version
+## Step 1 — Update the Docker image
+
+### With named volumes (recommended)
+
+This is the easiest case — see [Tutorial: Installing using Docker — More future-proof setup](docker_installation.md#more-future-proof-setup) for how to set this up.
+
+1. `docker compose pull` (or `docker pull cybertecpostgresql/pgwatch-demo:latest`).
+2. `docker compose up -d` (or stop and re-run the existing `docker run` line).
+3. Watch the logs for the upgrade banner. If you see `config database schema is outdated, please run migrations`, follow [Apply pgwatch schema migrations](#apply-pgwatch-schema-migrations) below.
 
 ### Without volumes
 
-If pgwatch container was started in the simplest way possible without
-volumes, and if previously gathered metrics are not of great importance,
-and there are no user modified metric or dashboard changes that should
-be preserved, then the easiest way to get the latest components would be
-just to launch new container and import the old monitoring config:
+This path is only viable when you do not care about preserving historical metric data. If you do, set up volumes first or back up the bundled Postgres database before upgrading.
 
-    # let's backup up the monitored hosts
-    psql -p5432 -U pgwatch -d pgwatch -c "\copy monitored_db to 'monitored_db.copy'"
+1. Stop the old container: `docker stop pgwatch-demo`.
+2. Back up the bundled Postgres config DB to a host folder so you can re-import it:
 
-    # stop the old container and start a new one ...
-    docker stop ... && docker run ....
+    ```bash
+    mkdir -p ~/pgwatch_backups
+    docker run --rm --volumes-from pgwatch-demo \
+        -v ~/pgwatch_backups:/backup busybox \
+        cp -a /var/lib/postgresql /backup/
+    ```
 
-    # import the monitored hosts
-    psql -p5432 -U pgwatch -d pgwatch -c "\copy monitored_db from 'monitored_db.copy'"
+3. Pull the new image and start a fresh container with the same env / ports / volumes.
+4. Re-import the config from the backup if needed.
 
-If metrics data and other settings like custom dashboards need to be
-preserved then some more steps are needed, but basically it's about
-pulling Postgres backups and restoring them into the new container.
+## Step 2 — Upgrade a native installation
 
-A tip: to make the restore process easier it would already make sense to
-mount the host folder with the backups in it on the new container with
-`"-v \~/pgwatch_backups:/pgwatch_backups:rw,z"` when starting the
-Docker image. Otherwise, one needs to set up SSH or use something like S3
-for example. Also note that port 5432 need to be exposed to take backups
-outside of Docker for Postgres respectively.
+Native installations have looser coupling between components. The pgwatch daemon, the configuration store, the metrics sink, and Grafana can usually be upgraded independently.
 
-### With volumes
+1. Upgrade the gatherer binary: `apt upgrade pgwatch` (Debian/Ubuntu) or `dnf upgrade pgwatch` (RPM distros).
+2. Restart the daemon:
 
-To make updates a bit easier, the preferred way to launch pgwatch
-should be to use Docker volumes for each individual component - see the
-[Installing using Docker](docker_installation.md)
-chapter for details. Then one can just stop the old
-container and start a new one, re-using the volumes.
+    ```bash
+    sudo systemctl restart pgwatch
+    ```
 
-With some releases though, updating to newer version might additionally
-still require manual rollout of Config DB *schema migrations scripts*,
-so always check the release notes for hints on that or just go to the
-`"pgwatch/sql/migrations"` folder and execute all SQL scripts that have
-a higher version than the old pgwatch container. Error messages like
-will "missing columns" or "wrong datatype" will also hint at that,
-after launching with a new image. FYI - such SQL "patches" are
-generally not provided for metric updates, nor dashboard changes, and
-they need to be updated separately.
+3. Watch the logs for the upgrade banner. If you see `config database schema is outdated`, follow [Apply pgwatch schema migrations](#apply-pgwatch-schema-migrations) below.
 
-## Updating without Docker
+4. Upgrade Grafana via your package manager. Grafana has a built-in schema migrator — updating the binaries and restarting is enough.
 
-For a custom installation there's quite some freedom in doing updates -
-as components (Grafana, PostgreSQL) are loosely coupled, they can be
-updated any time without worrying too much about the other components.
-Only "tightly coupled" components are the pgwatch metrics collector,
-config DB and the optional Web UI - if the pgwatch config is kept in
-the database. If [YAML based approach](../concept/installation_options.md) is used, then things
-are even more simple - the pgwatch daemon can be updated any time as
-YAML schema has default values for everything and there are no other
-"tightly coupled" components like the Web UI.
+5. For PostgreSQL upgrades, follow the official [release-notes guidance](https://www.postgresql.org/docs/current/release.html). Major version upgrades need a planned maintenance window.
 
-### Updating Grafana
+## Apply pgwatch schema migrations
 
-The update process for Grafana looks pretty much like the installation
-so take a look at the according
-[chapter](custom_installation.md#detailed-steps-for-the-configuration-database-approach-with-postgres-sink).
-If using Grafana package repository it should happen automatically along
-with other system packages. Grafana has a built-in database schema
-migrator, so updating the binaries and restarting is enough.
+Whenever the pgwatch binary version is newer than the schema in the Config DB, pgwatch refuses to start until migrations are applied. The fix is one command:
 
-### Updating Grafana dashboards
+```bash
+pgwatch \
+  --sources=postgresql://pgwatch:secret@localhost:5432/pgwatch \
+  --sink=postgresql://pgwatch:secret@localhost:5432/pgwatch_metrics \
+  config upgrade
+```
 
-There are no update or migration scripts for the built-in Grafana
-dashboards as it would break possible user applied changes. If you know
-that there are no user changes, then one can just delete or rename the
-existing ones in bulk and import the latest JSON definitions.
-See [some more advice](../concept/long_term_installations.md) on how to
-manage dashboards.
+The command automatically detects which databases (sources, metrics, sinks) need migration and applies every pending migration in order. You only need to pass the connection strings you actually use.
 
-### Updating the config / metrics DB version
+## Update metric definitions
 
-Database updates can be quite complex, with many steps, so it makes
-sense to follow the manufacturer's instructions here.
+Built-in metric SQL ships with each release.
 
-For PostgreSQL one should distinguish between minor version updates and
-major version upgrades. Minor updates are quite straightforward and
-problem-free, consisting of running something like:
+- **YAML mode** — refresh the metrics file the daemon was started with (`--metrics`); the new SQL comes in with the package upgrade.
+- **Config-DB mode** — back up any custom metrics, then re-run `config init` against the metrics database. The new binary's built-in definitions overwrite `pgwatch.metric`.
 
-    apt update && apt install postgresql
-    sudo systemctl restart postgresql
+    ```bash
+    # 1. Back up custom metrics (YAML export of everything currently in the DB)
+    pgwatch --metrics=postgresql://pgwatch:secret@localhost:5432/pgwatch metric list > my_metrics.yaml
 
-For PostgreSQL major version upgrades one should read through the
-according [release notes](https://www.postgresql.org/docs/current/release.html)
-and be prepared for the unavoidable downtime.
+    # 2. Re-initialise the metrics database with the built-in definitions
+    pgwatch --metrics=postgresql://pgwatch:secret@localhost:5432/pgwatch config init
+    ```
 
-### Updating the pgwatch schema
+    !!! warning
+        `config init --metrics=...` rewrites the `pgwatch.metric` table. **Save your custom metrics first** (step 1, or via the [REST API](../reference/rest.md)); otherwise they will be overwritten. Re-apply them after the init.
 
-This is the pgwatch specific part, with some coupling between the
-following components - Configuration DB SQL schema,
-Sink DB SQL schema (if using PostgreSQL sink), and pgwatch binary.
+## Update Grafana dashboards
 
-First of all, the pgwatch binary needs to be updated to a newer version.
-Then try to run the pgwatch as usual:
+There is no automatic migration for the built-in dashboards — pgwatch leaves user-modified dashboards alone to avoid clobbering customisation. To pick up new panels:
 
-    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics
-    
-    [ERROR] config database schema is outdated, please run migrations using `pgwatch config upgrade` command
-    exit status 4
+1. Note any customisations you have made to the built-in dashboards.
+2. Rename or delete the existing dashboards.
+3. Import the latest JSON from [`grafana/`](https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana) in the repository.
+4. Re-apply your customisations.
 
-If you see the above error message, then the pgwatch schema needs updating.
-This is done by running the following command, which will apply all
-the necessary SQL migrations to the configuration database and sink database:
-
-    pgwatch --sources=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch --sink=postgresql://pgwatch:pgwatchadmin@localhost/pgwatch_metrics config upgrade
-
-    [INFO] Applying migration to config database...
-    [INFO] Applying migration named '00824 Refactor recommendations'...
-    [INFO] Applied migration named '00824 Refactor recommendations'
-    [INFO] Applying migration to sink database...
-    [INFO] All migrations applied successfully
-
-!!! info
-    The `config upgrade` command will automatically detect which databases (sources, metrics, sinks) need migrations and apply them.
-    You only need to provide the connection strings for the databases you're using.
-
-### Updating the metrics collector
-
-Compile or install the gatherer from RPM / DEB / tarball packages. See
-the [Custom installation](custom_installation.md)  chapter for details.
-
-If using a SystemD service file to auto-start the collector then you
-might want to also check for possible updates on the template there -
-`/etc/pgwatch/startup-scripts/pgwatch.service`.
-
-### Updating metric definitions
-
-In the YAML mode you always get new SQL definitions for the built-in
-metrics automatically when refreshing the sources via GitHub or
-pre-built packages, but with Config DB approach one needs to do it
-manually. Given that there are no user added metrics, it's simple
-enough though - just delete all old ones and re-insert everything from
-the latest metric definition SQL file.
-
-    pg_dump -t pgwatch.metric pgwatch > old_metric.sql  # a just-in-case backup
-    psql  -c "truncate pgwatch.metric" pgwatch
-    psql -f /etc/pgwatch/sql/config_store/metric_definitions.sql pgwatch
-
-!!! Warning
-    If you have added some own custom metrics be sure not to delete or truncate them!
+For longer-term dashboard management strategy, see [Concept: Operating in production → Dashboard maintenance](../concept/operating_in_production.md#dashboard-maintenance).

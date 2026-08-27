@@ -2,6 +2,8 @@
 title: Bootstrapping the Measurements Database (Sink)
 ---
 
+For the full list of supported sinks (Postgres, TimescaleDB, Prometheus, JSON file, gRPC) and their connection-string formats, see [Reference: Sinks options](../reference/sinks_options.md). For background on what a sink is and where it fits in the architecture, see [Concept: Components](../concept/components.md).
+
 ## Choosing a Database
 
 pgwatch supports multiple databases for storing metrics measurements. The following databases are supported:

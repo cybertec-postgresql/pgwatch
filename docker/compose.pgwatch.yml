@@ -12,11 +12,11 @@ services:
       PW_METRICS: /etc/pgwatch/metrics.yml
     command:
       - "--sink=postgresql://pgwatch@postgres:5432/pgwatch_metrics"
-      - "--sink=prometheus://pgwatch:9187/pgwatch"
+      - "--sink=prometheus://pgwatch:9090/pgwatch"
       # - "--web-base-path=pgwatch"
     ports:
       - "8080:8080"
-      - "9187:9187"
+      - "9090:9090"
       # - "6060:6060" # Uncomment for profiling
     volumes:
       - "../internal/metrics/metrics.yaml:/etc/pgwatch/metrics.yml"

@@ -1,3 +1,7 @@
+---
+title: Web User Interface
+---
+
 # Web User Interface
 
 The Web User Interface (WebUI) allows you to interact with pgwatch to control monitored sources, update metrics and presets definitions, and view logs.

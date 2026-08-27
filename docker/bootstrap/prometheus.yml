@@ -27,4 +27,4 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - pgwatch:9187
+    - pgwatch:9090

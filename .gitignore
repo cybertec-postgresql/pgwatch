@@ -38,3 +38,7 @@ debug
 
 # Task-specific files
 .task/
+
+# Local harness / runtime files
+WATCHDOG.yml
+

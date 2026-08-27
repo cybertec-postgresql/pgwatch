@@ -1,3 +1,7 @@
+---
+title: Contributing
+---
+
 # Contributing to PGWatch
 
 Thank you for considering contributing to PGWatch! Here are some guidelines to help you get started.
