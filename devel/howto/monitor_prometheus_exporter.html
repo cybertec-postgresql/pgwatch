@@ -13,7 +13,7 @@
         <link rel="prev" href="reverse_proxy.html">
       
       
-        <link rel="next" href="../reference/cli_env.html">
+        <link rel="next" href="harden_docker_deployment.html">
       
       
         
@@ -24,7 +24,7 @@
     
     
       
-        <title>Monitoring a Prometheus Exporter - 🔬 pgwatch</title>
+        <title>Monitor a Prometheus exporter - 🔬 pgwatch</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#quick-start" class="md-skip">
+        <a href="#prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -103,7 +103,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Monitoring a Prometheus Exporter
+              Monitor a Prometheus exporter
             
           </span>
         </div>
@@ -240,18 +240,17 @@
   
   
   
-    
-    
-      <li class="md-tabs__item">
-        <a href="../index.html" class="md-tabs__link">
-          
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
   
   
-  Intro
+    
+  
+  Hello World!
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -283,7 +282,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorial/docker_installation.html" class="md-tabs__link">
+        <a href="../tutorial/quickstart.html" class="md-tabs__link">
           
   
   
@@ -399,7 +398,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -428,56 +427,6 @@
   
   
   
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1">
-        
-          
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intro
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Intro
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix="">
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../index.html" class="md-nav__link">
         
@@ -495,70 +444,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/project_background.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Project Background
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -676,14 +561,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/long_term_installations.html" class="md-nav__link">
+      <a href="../concept/operating_in_production.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Long Term Installations
+    Operating in Production
   
 
     
@@ -732,34 +617,6 @@
   
   
     <li class="md-nav__item">
-      <a href="sizing_recommendations.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sizing Recommendations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../concept/web_ui.html" class="md-nav__link">
         
   
@@ -788,14 +645,98 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/kubernetes.html" class="md-nav__link">
+      <a href="../concept/metrics_and_presets.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Kubernetes
+    Metrics and Presets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/advanced_features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/os_helpers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OS Metrics via PL/Python Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/observability_stack.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Stack
   
 
     
@@ -865,6 +806,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1075,14 +1044,14 @@
   
   
     <li class="md-nav__item">
-      <a href="using_managed_services.html" class="md-nav__link">
+      <a href="set_up_alerting.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Using Managed Services
+    Set Up Alerting
   
 
     
@@ -1299,10 +1268,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        Prerequisites
       
     </span>
   </a>
@@ -1310,77 +1279,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#connection-string-format" class="md-nav__link">
+  <a href="#steps" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Connection String Format
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Connection String Format">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#presets" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Presets
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Presets">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#patroni" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        patroni
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#postgres-exporter-basic" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        postgres-exporter-basic
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Metrics
+        Steps
       
     </span>
   </a>
@@ -1388,10 +1290,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-tags" class="md-nav__link">
+  <a href="#verifying-metrics-are-flowing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tags
+        Verifying metrics are flowing
       
     </span>
   </a>
@@ -1399,10 +1301,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#full-example" class="md-nav__link">
+  <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Full Example
+        See also
       
     </span>
   </a>
@@ -1413,6 +1315,230 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="harden_docker_deployment.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden a Docker Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="add_custom_metric.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add a Custom Metric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="deploy_to_kubernetes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="yaml_configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configure with YAML Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="monitor_patroni_cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor a Patroni Cluster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="enable_log_parsing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enable Log Parsing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="monitor_pgbouncer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor PgBouncer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="enable_prometheus_scrape.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Expose Metrics for Prometheus Scraping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1538,34 +1664,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/advanced_features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Advanced Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../reference/metric_definitions.html" class="md-nav__link">
         
   
@@ -1594,7 +1692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/env_variables.html" class="md-nav__link">
+      <a href="../reference/docker_variables.html" class="md-nav__link">
         
   
   
@@ -1630,6 +1728,174 @@
     
   
     Sinks Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/managed_postgres_support.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managed PostgreSQL Providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sizing_recommendations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sizing Recommendations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/docker_images.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/ports.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listening Ports and Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/source_types.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/prometheus_source.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus Source
   
 
     
@@ -1855,7 +2121,7 @@
   <span class="md-ellipsis">
     
   
-    Documentation
+    Developer Docs
   
 
     
@@ -1957,10 +2223,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        Prerequisites
       
     </span>
   </a>
@@ -1968,77 +2234,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#connection-string-format" class="md-nav__link">
+  <a href="#steps" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Connection String Format
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Connection String Format">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#presets" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Presets
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Presets">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#patroni" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        patroni
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#postgres-exporter-basic" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        postgres-exporter-basic
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Metrics
+        Steps
       
     </span>
   </a>
@@ -2046,10 +2245,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-tags" class="md-nav__link">
+  <a href="#verifying-metrics-are-flowing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tags
+        Verifying metrics are flowing
       
     </span>
   </a>
@@ -2057,10 +2256,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#full-example" class="md-nav__link">
+  <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Full Example
+        See also
       
     </span>
   </a>
@@ -2094,209 +2293,58 @@
 
   <h1>Monitoring a Prometheus Exporter</h1>
 
-<p>pgwatch's native strength is collecting metrics from PostgreSQL via SQL queries.  For metrics that
-cannot be expressed as SQL — such as HA cluster state, node roles, replication lag as seen by the
-cluster manager, or OS-level metrics like CPU, memory, and I/O that are not accessible to Postgres
-without special extensions — pgwatch can scrape any HTTP endpoint that exposes data in the
-<a href="https://prometheus.io/docs/instrumenting/exposition_formats/">Prometheus text exposition format</a>.</p>
-<p>A typical use case is <a href="https://patroni.readthedocs.io/">Patroni</a>, which exposes cluster health
-metrics (node role, WAL position, DCS connectivity, …) through its <code>GET /metrics</code> endpoint.  These
-metrics complement the SQL-based metrics already collected from the PostgreSQL instances themselves.</p>
-<h2 id="quick-start">Quick Start</h2>
-<p>Add a source with <code>kind: prometheus</code>, point <code>conn_str</code> at Patroni's <code>/metrics</code> endpoint, and choose
-the built-in <code>patroni</code> preset:</p>
+<p>This how-to wires pgwatch to a Prometheus text-format HTTP exporter. A common use case is <a href="https://patroni.readthedocs.io/">Patroni</a>, which exposes cluster-health metrics (node role, WAL position, DCS connectivity, …) on <code>GET /metrics</code>. The same recipe works for <a href="https://github.com/prometheus-community/postgres_exporter"><code>postgres_exporter</code></a> and any other endpoint that emits the Prometheus exposition format.</p>
+<p>For the connection-string format, query parameters, and full preset/metric tables, see <a href="../reference/prometheus_source.html">Reference: Prometheus source</a>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A reachable Prometheus text exposition endpoint</li>
+<li>Network access from the pgwatch host to the exporter port</li>
+<li>(Optional) A CA certificate file if the exporter is served over HTTPS with a non-public CA</li>
+</ul>
+<h2 id="steps">Steps</h2>
+<ol>
+<li>
+<p>Add a source of kind <code>prometheus</code>. Point <code>conn_str</code> at the exporter URL and pick the right preset.</p>
+<p>For Patroni:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node1</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node1:8008/metrics"</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span></code></pre></div>
-<p>pgwatch periodically fetches the URL, parses the Prometheus text format, and forwards each metric
-family to the configured sink.</p>
-<h2 id="connection-string-format">Connection String Format</h2>
-<p>The <code>conn_str</code> field is a plain HTTP or HTTPS URL.  Optional query parameters control TLS
-validation and are stripped before the request is sent to the exporter:</p>
-<table>
-<thead>
-<tr>
-<th>Query parameter</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>tlsskipverify=true</code></td>
-<td>Disable TLS certificate verification (use with caution).</td>
-</tr>
-<tr>
-<td><code>tlsrootcert=&lt;path&gt;</code></td>
-<td>Absolute path to a PEM-encoded CA certificate file used to verify the server certificate.</td>
-</tr>
-</tbody>
-</table>
-<p>Basic Auth credentials are embedded in the URL in the standard <code>user:password@host</code> form.</p>
-<h3 id="examples">Examples</h3>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Plain HTTP – no auth</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node1:8008/metrics"</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># HTTPS with a custom CA certificate</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"https://patroni-node1:8008/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem"</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># HTTPS with Basic Auth and TLS certificate verification disabled</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"https://user:secret@patroni-node1:8008/metrics?tlsskipverify=true"</span>
+<p>For <code>postgres_exporter</code>, pick <code>postgres-exporter-basic</code> instead.</p>
+</li>
+<li>
+<p>For HTTPS endpoints with a private CA, pass the CA file path via a query parameter:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"https://patroni-node1:8008/metrics?tlsrootcert=/etc/ssl/certs/my-ca.pem"</span>
 </span></code></pre></div>
-<h2 id="presets">Presets</h2>
-<h3 id="patroni"><code>patroni</code></h3>
-<p>Covers the key metric families emitted by Patroni's <code>GET /metrics</code> endpoint (default port <strong>8008</strong>):</p>
-<table>
-<thead>
-<tr>
-<th>Metric family</th>
-<th>What it measures</th>
-<th>Interval</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>patroni_postgres_running</code></td>
-<td>1 if Postgres is running</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_primary</code></td>
-<td>1 if this node is the primary</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_replica</code></td>
-<td>1 if this node is a replica</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_standby_leader</code></td>
-<td>1 if this node is standby leader</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_cluster_unlocked</code></td>
-<td>1 if the cluster has no leader lock</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_xlog_location</code></td>
-<td>WAL location on primary</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_xlog_received_location</code></td>
-<td>received WAL on replica</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_xlog_replayed_location</code></td>
-<td>replayed WAL on replica</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_dcs_last_seen</code></td>
-<td>seconds since DCS last contacted</td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>patroni_pending_restart</code></td>
-<td>1 if node needs a restart</td>
-<td>60 s</td>
-</tr>
-<tr>
-<td><code>patroni_is_paused</code></td>
-<td>1 if auto-failover is disabled</td>
-<td>60 s</td>
-</tr>
-<tr>
-<td><code>patroni_postgres_timeline</code></td>
-<td>Postgres timeline</td>
-<td>60 s</td>
-</tr>
-</tbody>
-</table>
-<h3 id="postgres-exporter-basic"><code>postgres-exporter-basic</code></h3>
-<p>Covers the most important metric families emitted by
-<a href="https://github.com/prometheus-community/postgres_exporter">postgres_exporter</a>:</p>
-<table>
-<thead>
-<tr>
-<th>Metric family</th>
-<th>Interval</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>pg_stat_activity_count</code></td>
-<td>30 s</td>
-</tr>
-<tr>
-<td><code>pg_stat_bgwriter_checkpoints_timed</code></td>
-<td>60 s</td>
-</tr>
-<tr>
-<td><code>pg_stat_replication_pg_wal_lsn_diff</code></td>
-<td>30 s</td>
-</tr>
-</tbody>
-</table>
-<h2 id="custom-metrics">Custom Metrics</h2>
-<p>You can specify individual metric families and their intervals with <code>custom_metrics</code>:</p>
+</li>
+<li>
+<p>(Optional) Attach <code>custom_tags</code> so multi-node metrics can be distinguished in Grafana:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node1</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node1:8008/metrics"</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">custom_metrics</span><span class="p">:</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">patroni_primary</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">patroni_cluster_unlocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">patroni_dcs_last_seen</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prod</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span></code></pre></div>
-<h2 id="custom-tags">Custom Tags</h2>
-<p>Use <code>custom_tags</code> to attach arbitrary key-value pairs to every stored data point.  This is
-useful when multiple nodes feed the same sink and you need to distinguish them:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node1</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node1:8008/metrics"</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prod</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</li>
+<li>
+<p>Wait for the next refresh cycle (default 120 seconds). pgwatch fetches the URL, parses the Prometheus text, and forwards every metric family to the sink.</p>
+</li>
+</ol>
+<h2 id="verifying-metrics-are-flowing">Verifying metrics are flowing</h2>
+<p>List the metrics the source is producing:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Token: </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>http://localhost:8080/source/patroni-prod-node1/metric<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.[].Name'</span>
 </span></code></pre></div>
-<h2 id="full-example">Full Example</h2>
-<p>The following snippet monitors all three nodes of a Patroni HA cluster.  Each node's metrics are
-tagged with the cluster name and node identifier so they can be queried independently:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node1</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node1:8008/metrics"</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prod</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node2</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node2:8008/metrics"</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prod</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node2</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni-prod-node3</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">  </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prometheus</span>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">  </span><span class="nt">conn_str</span><span class="p">:</span><span class="w"> </span><span class="s">"http://patroni-node3:8008/metrics"</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">  </span><span class="nt">preset_metrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">patroni</span>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">  </span><span class="nt">custom_tags</span><span class="p">:</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">    </span><span class="nt">cluster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prod</span>
-</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">    </span><span class="nt">node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node3</span>
-</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">  </span><span class="nt">is_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span></code></pre></div>
+<p>You should see the metric families from the chosen preset (or your <code>custom_metrics</code> list).</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../reference/prometheus_source.html">Reference: Prometheus source</a> — URI format, query parameters, preset/metric tables</li>
+<li><a href="../reference/source_types.html">Reference: Source types</a> — <code>prometheus</code> vs <code>postgres</code> vs <code>patroni</code></li>
+</ul>
 
 
 
@@ -2348,13 +2396,13 @@ tagged with the cluster name and node identifier so they can be queried independ
         
         
           
-          <a href="../reference/cli_env.html" class="md-footer__link md-footer__link--next" aria-label="Next: CLI &amp; Environment Variables">
+          <a href="harden_docker_deployment.html" class="md-footer__link md-footer__link--next" aria-label="Next: Harden a Docker Deployment">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                CLI &amp; Environment Variables
+                Harden a Docker Deployment
               </div>
             </div>
             <div class="md-footer__button md-icon">

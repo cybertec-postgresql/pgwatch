@@ -7,13 +7,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/devel/reference/advanced_features.html">
+        <link rel="canonical" href="https://pgwat.ch/devel/concept/metrics_and_presets.html">
       
       
-        <link rel="prev" href="rest.html">
+        <link rel="prev" href="web_ui.html">
       
       
-        <link rel="next" href="metric_definitions.html">
+        <link rel="next" href="advanced_features.html">
       
       
         
@@ -24,7 +24,7 @@
     
     
       
-        <title>Advanced features - 🔬 pgwatch</title>
+        <title>Metrics and presets - 🔬 pgwatch</title>
       
     
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#patroni-support" class="md-skip">
+        <a href="#what-is-a-metric" class="md-skip">
           Skip to content
         </a>
       
@@ -103,7 +103,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Advanced features
+              Metrics and presets
             
           </span>
         </div>
@@ -240,18 +240,17 @@
   
   
   
-    
-    
-      <li class="md-tabs__item">
-        <a href="../index.html" class="md-tabs__link">
-          
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
   
   
-  Intro
+    
+  
+  Hello World!
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -259,11 +258,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../concept/components.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="components.html" class="md-tabs__link">
           
   
   
@@ -283,7 +284,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorial/docker_installation.html" class="md-tabs__link">
+        <a href="../tutorial/quickstart.html" class="md-tabs__link">
           
   
   
@@ -319,13 +320,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="cli_env.html" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../reference/cli_env.html" class="md-tabs__link">
           
   
   
@@ -399,7 +398,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -428,56 +427,6 @@
   
   
   
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1">
-        
-          
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intro
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Intro
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix="">
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../index.html" class="md-nav__link">
         
@@ -498,93 +447,34 @@
     </li>
   
 
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/project_background.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Project Background
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
     
       
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked="">
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -602,7 +492,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -620,7 +510,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/components.html" class="md-nav__link">
+      <a href="components.html" class="md-nav__link">
         
   
   
@@ -648,7 +538,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/installation_options.html" class="md-nav__link">
+      <a href="installation_options.html" class="md-nav__link">
         
   
   
@@ -676,14 +566,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/long_term_installations.html" class="md-nav__link">
+      <a href="operating_in_production.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Long Term Installations
+    Operating in Production
   
 
     
@@ -704,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/security.html" class="md-nav__link">
+      <a href="security.html" class="md-nav__link">
         
   
   
@@ -732,35 +622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sizing Recommendations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../concept/web_ui.html" class="md-nav__link">
+      <a href="web_ui.html" class="md-nav__link">
         
   
   
@@ -785,17 +647,188 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../concept/kubernetes.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics and Presets
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="metrics_and_presets.html" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Kubernetes
+    Metrics and Presets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is a metric?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-preset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is a preset?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-metrics-and-presets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in metrics and presets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-metric-design-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom-metric design rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="advanced_features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="os_helpers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OS Metrics via PL/Python Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="observability_stack.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Stack
   
 
     
@@ -865,6 +898,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1070,14 +1131,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/using_managed_services.html" class="md-nav__link">
+      <a href="../howto/set_up_alerting.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Using Managed Services
+    Set Up Alerting
   
 
     
@@ -1259,6 +1320,230 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/harden_docker_deployment.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden a Docker Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/add_custom_metric.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add a Custom Metric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/deploy_to_kubernetes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/yaml_configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configure with YAML Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_patroni_cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor a Patroni Cluster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_log_parsing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enable Log Parsing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_pgbouncer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor PgBouncer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_prometheus_scrape.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Expose Metrics for Prometheus Scraping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1270,29 +1555,24 @@
       
   
   
-    
   
   
-  
     
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked="">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1310,7 +1590,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1328,7 +1608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="cli_env.html" class="md-nav__link">
+      <a href="../reference/cli_env.html" class="md-nav__link">
         
   
   
@@ -1356,7 +1636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="rest.html" class="md-nav__link">
+      <a href="../reference/rest.html" class="md-nav__link">
         
   
   
@@ -1381,147 +1661,10 @@
                 
   
   
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Advanced Features
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="advanced_features.html" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Advanced Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#patroni-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Patroni support
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#log-parsing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Log parsing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pgbouncer-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PgBouncer support
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pgpool-ii-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pgpool-II support
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-scraping" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus scraping
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cloud-providers-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cloud providers support
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
   
   
     <li class="md-nav__item">
-      <a href="metric_definitions.html" class="md-nav__link">
+      <a href="../reference/metric_definitions.html" class="md-nav__link">
         
   
   
@@ -1549,7 +1692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="env_variables.html" class="md-nav__link">
+      <a href="../reference/docker_variables.html" class="md-nav__link">
         
   
   
@@ -1577,7 +1720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="sinks_options.html" class="md-nav__link">
+      <a href="../reference/sinks_options.html" class="md-nav__link">
         
   
   
@@ -1585,6 +1728,174 @@
     
   
     Sinks Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/managed_postgres_support.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managed PostgreSQL Providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sizing_recommendations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sizing Recommendations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/docker_images.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/ports.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listening Ports and Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/source_types.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/prometheus_source.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus Source
   
 
     
@@ -1810,7 +2121,7 @@
   <span class="md-ellipsis">
     
   
-    Documentation
+    Developer Docs
   
 
     
@@ -1912,10 +2223,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#patroni-support" class="md-nav__link">
+  <a href="#what-is-a-metric" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Patroni support
+        What is a metric?
       
     </span>
   </a>
@@ -1923,10 +2234,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#log-parsing" class="md-nav__link">
+  <a href="#what-is-a-preset" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Log parsing
+        What is a preset?
       
     </span>
   </a>
@@ -1934,10 +2245,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pgbouncer-support" class="md-nav__link">
+  <a href="#built-in-metrics-and-presets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PgBouncer support
+        Built-in metrics and presets
       
     </span>
   </a>
@@ -1945,32 +2256,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pgpool-ii-support" class="md-nav__link">
+  <a href="#custom-metric-design-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pgpool-II support
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prometheus-scraping" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prometheus scraping
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cloud-providers-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cloud providers support
+        Custom-metric design rules
       
     </span>
   </a>
@@ -1994,7 +2283,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/advanced_features.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/concept/metrics_and_presets.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -2002,110 +2291,41 @@
   
 
 
-  <h1>Advanced Features</h1>
+  <h1>Metrics and Presets</h1>
 
-<p>Over the years the core functionality of fetching metrics from a set of
-plain Postgres DB-s has been extended in many ways to cover some common
-problem areas like server log monitoring and supporting monitoring of
-some other popular tools often used together with Postgres, like the
-PgBouncer connection pooler for example.</p>
-<h2 id="patroni-support">Patroni support</h2>
-<p>Patroni is a popular Postgres specific HA-cluster manager that makes
-node management simpler than ever, meaning that everything is dynamic
-though - cluster members can come and go, making monitoring in the
-standard way a bit tricky. But luckily Patroni cluster members
-information is stored in a DCS (Distributed Consensus Store), like
-<em>etcd</em>, so it can be fetched from there periodically.</p>
-<p>When 'patroni' is selected as a <strong>source type</strong> then the connection
-string should point to the DCS, and then pgwatch will
-periodically scan the DCS and add any found and not yet monitored:
-If you use etcd as the DCS, then your connection string should
-look like this: <code>etcd://host:port[,host:port..]/namespace/scope</code>,
-for example <code>etcd://localhost:2379/service/batman</code>.</p>
-<p>For YAML based setups an example can be found from the
-<a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/contrib/sample.sources.yaml#L21">instances.yaml</a>
-file.</p>
-<p>If Patroni is powered by <em>etcd</em>, then also username, password, ca_file,
-cert_file, key_file optional security parameters can be defined in the
-connection string, for example 
-<code>etcd://username:password@localhost:2379/service/batman?ca_file=/path/to/ca.crt&amp;cert_file=/path/to/client.crt&amp;key_file=/path/to/client.key</code>.</p>
-<p>Also, if you don't use the standby nodes actively for queries then it
-might make sense to decrease the volume of gathered metrics and to
-disable the monitoring of such nodes with the "Primary mode only".</p>
-<h2 id="log-parsing">Log parsing</h2>
-<p>pgwatch can parse PostgreSQL server logs to count errors, warnings, and other log events.
-This feature only works when logs are in <strong>CSVLOG</strong> format.</p>
-<p>Only event counts are stored - no error messages, usernames, or other details. Events are grouped by severity level for both the monitored database and the entire instance.</p>
-<p>pgwatch automatically selects between two parsing modes:</p>
-<ol>
-<li>
-<p><strong>Local mode</strong> - Used when pgwatch runs on the same host as the database server and can access log files directly. Requires OS user with read privileges on the logs directory and its files and <code>pg_read_all_settings</code> role.</p>
-</li>
-<li>
-<p><strong>Remote mode</strong> - Used when pgwatch runs on a different host. Requires <code>pg_monitor</code> role and execute privilege on <code>pg_read_file(text, bigint, bigint)</code>.</p>
-</li>
-</ol>
-<p>To enable this feature, use the <code>server_log_event_counts</code> metric or a preset that includes it (e.g., <code>full</code>).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>pgwatch detects local mode when connected via a unix socket or when the <code>data_directory</code> system identifier matches the one from <code>pg_control_system()</code>. Otherwise, it falls back to remote mode.</p>
-</div>
-<p>For optimal performance, <strong>Local mode</strong> should be preferred for instances running on the same host as the database server.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>pgwatch reads from a single log file each interval with a maximum of 10MBs at a time. Knowing that and based on your log generation rate, adjust your metric interval to avoid having out-of-sync measurements.</p>
-</div>
-<h2 id="pgbouncer-support">PgBouncer support</h2>
-<p>pgwatch also supports collecting internal statistics from the PgBouncer
-connection pooler, via the built-in special "pgbouncer" database and
-the <code>SHOW STATS</code> command. To enable it choose the according <em>DB Type</em>,
-provide connection info to the pooler port and make sure the
-<strong>pgbouncer_stats</strong> metric or "pgbouncer" preset config is selected
-for the host. Note that for the "DB Name" field you should insert not
-"pgbouncer" (although this special DB provides all the statistics) but
-the real name of the pool you wish to monitor or leave it empty to track
-all pools. In latter case individual pools will be identified /
-separated via the "database" tag.</p>
-<p>There's also a built-in Grafana dashboard for PgBouncer data, looking
-like that:</p>
-<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png"><img alt="Grafana dash for PgBouncer stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgbouncer_stats.png"></a></p>
-<h2 id="pgpool-ii-support">Pgpool-II support</h2>
-<p>Quite similar to PgBouncer, also Pgpool offers some statistics on pool
-performance and status, which might be of interest especially if using
-the load balancing features. To enable it choose the according <em>DB
-Type</em>, provide connection info to the pooler port and make sure the
-<strong>pgpool_stats</strong> and <strong>pgpool_processes</strong> metrics or <strong>pgpool</strong> preset config
-is selected for the host.</p>
-<p>The built-in Grafana dashboard for Pgpool data looks something like
-that:</p>
-<p><a href="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png"><img alt="Grafana dash for PgPool stats" src="https://raw.githubusercontent.com/cybertec-postgresql/pgwatch/refs/heads/master/docs/gallery/pgpool_status.png"></a></p>
-<h2 id="prometheus-scraping">Prometheus scraping</h2>
-<p>pgwatch was originally designed with direct metrics storage in mind,
-but later also support for externally controlled
-<a href="https://prometheus.io/">Prometheus</a> scraping was added.</p>
-<p>To enable the scraping endpoint, add this commandline parameter:
-<code>--sink=prometheus://&lt;host&gt;:&lt;port&gt;/&lt;namespace&gt;</code>.
-If you omit host (Ex: <code>--sink=prometheus://:9187</code>), server listens on all
-interfaces and supplied port. If you omit namespace, default is <code>pgwatch</code>.</p>
-<p>Additionally, note that you still need to
-specify some metrics config as usual - only metrics with interval
-values bigger than zero will be populated on scraping.</p>
-<p>Currently, a few built-in metrics that require some state to be stored
-between scrapes, e.g. the "change_events" metric, will currently be
-ignored. Also, non-numeric data columns will be ignored! Tag columns will
-be preserved though as Prometheus "labels".</p>
-<h2 id="cloud-providers-support">Cloud providers support</h2>
-<p>Due to popularity of various managed PostgreSQL offerings there's also
-support for some managed options in sense of <em>Preset Configs</em>, that take
-into account the fact that on such platforms you get a limited user that
-doesn't have access to all metrics or some features have just been
-plain removed. Thus, to reduce server log errors and save time on
-experimenting there are following presets available:</p>
+<p>This page explains what metrics and presets are in pgwatch and the design rules that custom metrics must follow. For the YAML schema, see <a href="../reference/metric_definitions.html">Metric definitions</a>. For the workflow to add a metric, see <a href="../howto/add_custom_metric.html">How-to: Add a custom metric</a>.</p>
+<h2 id="what-is-a-metric">What is a metric?</h2>
+<p>A metric is a named SQL query that the gatherer runs against a monitored database. The query must return a column named <code>epoch_ns</code> (nanoseconds since the Unix epoch) plus any number of additional columns you want stored. Most metrics ship multiple query versions — one per minimum supported PostgreSQL major version — and may also differ for primary versus standby roles.</p>
+<p>The gatherer selects the right version of a metric at runtime by inspecting the target database: it checks the PostgreSQL major version, the recovery state, and whether the monitoring user has superuser rights.</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">-- a sample metric</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">SELECT</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="p">(</span><span class="k">extract</span><span class="p">(</span><span class="n">epoch</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">now</span><span class="p">())</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1</span><span class="n">e9</span><span class="p">)::</span><span class="nb">int8</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">epoch_ns</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="k">extract</span><span class="p">(</span><span class="n">epoch</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span><span class="n">now</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">pg_postmaster_start_time</span><span class="p">()))::</span><span class="nb">int8</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postmaster_uptime_s</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">pg_is_in_recovery</span><span class="p">()</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">in_recovery_int</span><span class="p">;</span>
+</span></code></pre></div>
+<h2 id="what-is-a-preset">What is a preset?</h2>
+<p>A preset is a named collection of <code>metric_name: time_interval</code> pairs. Presets let you define a monitoring profile once — for example <code>basic</code> or <code>exhaustive</code> — and apply it consistently across many monitored databases. Sources can override individual intervals without leaving the preset.</p>
+<h2 id="built-in-metrics-and-presets">Built-in metrics and presets</h2>
+<p>The pgwatch project ships a set of pre-defined metrics and presets that cover most common needs. For deployments at scale, you will usually want to extend this set with custom metrics or adjust fetch intervals to match your monitoring goals. The full list lives in the <a href="https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml">default metrics.yaml</a> file in the pgwatch repository, and the Web UI exposes them under the Metrics and Presets pages (see the <a href="../gallery/webui.html">Web UI gallery</a>).</p>
+<p>A few things to know about the built-in set:</p>
 <ul>
-<li><strong>aws</strong> - for standard AWS RDS managed PostgreSQL databases</li>
-<li><strong>azure</strong> - for Azure Database for PostgreSQL managed databases</li>
-<li><strong>gce</strong> - for Google Cloud SQL for PostgreSQL managed databases</li>
+<li>Roughly half of the built-in metrics are referenced by one of the shipped presets and are ready to use out of the box. The rest need extra Postgres extensions, OS-level tooling, or elevated privileges.</li>
+<li>A handful of built-in metrics are restricted to a specific node role — primary-only or standby-only — and the gatherer skips them on nodes in the opposite role.</li>
+<li>Some metrics have non-standard behavior. <code>change_events</code>, <code>server_log_event_counts</code>, and <code>instance_up</code> are the most prominent examples.</li>
 </ul>
+<h2 id="custom-metric-design-rules">Custom-metric design rules</h2>
+<p>Custom metric definitions must obey a small set of rules so the gatherer can store, label, and serve them correctly:</p>
+<ul>
+<li>Every metric query must return an <code>epoch_ns</code> column (nanoseconds since epoch). If the column is missing, the gatherer falls back to its own clock; this works but loses precision when there is clock skew between the database server and the gatherer host.</li>
+<li>Returned columns must be of type <code>text</code>, <code>integer</code>, <code>boolean</code>, or <code>double precision</code>. Columns whose value is <code>NULL</code> are dropped before storage — design with that in mind.</li>
+<li>Column names should be descriptive enough to be self-explanatory on a Grafana panel but short enough not to bloat storage.</li>
+<li>Queries must execute within the configured <code>statement_timeout_seconds</code> (default 5 seconds).</li>
+<li>A column can be promoted to a <strong>tag</strong> by prefixing its name with <code>tag_</code>. Tagged columns are indexed and become available for fast filtering in Grafana.</li>
+<li>All rows produced for a source can be enriched with static <strong>custom tags</strong> via the source's <code>custom_tags</code> field (Web UI or YAML). Custom tags are added to every metric emitted by that source.</li>
+<li>For Prometheus output, numeric columns are mapped to a Counter value type by default (because most Statistics Collector columns are cumulative). Columns that go up <strong>and</strong> down — connection counts, queue depths, and the like — must be listed under <code>gauges</code> in the metric definition.</li>
+<li>In Prometheus output all <code>text</code> columns are turned into labels; only numeric values can be exposed as samples.</li>
+</ul>
+<p>For the field-by-field YAML schema that realises these rules, see <a href="../reference/metric_definitions.html">Metric definitions</a>.</p>
 
 
 
@@ -2140,7 +2360,7 @@ experimenting there are following presets available:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="rest.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: REST API">
+          <a href="web_ui.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Web UI">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2150,20 +2370,20 @@ experimenting there are following presets available:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                REST API
+                Web UI
               </div>
             </div>
           </a>
         
         
           
-          <a href="metric_definitions.html" class="md-footer__link md-footer__link--next" aria-label="Next: Metric Definitions">
+          <a href="advanced_features.html" class="md-footer__link md-footer__link--next" aria-label="Next: Advanced Features">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Metric Definitions
+                Advanced Features
               </div>
             </div>
             <div class="md-footer__button md-icon">

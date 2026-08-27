@@ -7,13 +7,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/devel/concept/long_term_installations.html">
+        <link rel="canonical" href="https://pgwat.ch/devel/reference/sizing_recommendations.html">
       
       
-        <link rel="prev" href="installation_options.html">
+        <link rel="prev" href="managed_postgres_support.html">
       
       
-        <link rel="next" href="security.html">
+        <link rel="next" href="docker_images.html">
       
       
         
@@ -24,7 +24,7 @@
     
     
       
-        <title>Long term installations - 🔬 pgwatch</title>
+        <title>Sizing recommendations - 🔬 pgwatch</title>
       
     
     
@@ -84,11 +84,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#keeping-inventory-in-sync" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -103,7 +98,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -123,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Long term installations
+              Sizing recommendations
             
           </span>
         </div>
@@ -240,18 +235,17 @@
   
   
   
-    
-    
-      <li class="md-tabs__item">
-        <a href="../index.html" class="md-tabs__link">
-          
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
   
   
-  Intro
+    
+  
+  Hello World!
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -259,13 +253,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="components.html" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../concept/components.html" class="md-tabs__link">
           
   
   
@@ -285,7 +277,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorial/docker_installation.html" class="md-tabs__link">
+        <a href="../tutorial/quickstart.html" class="md-tabs__link">
           
   
   
@@ -321,11 +313,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../reference/cli_env.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="cli_env.html" class="md-tabs__link">
           
   
   
@@ -399,7 +393,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -428,56 +422,6 @@
   
   
   
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1">
-        
-          
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intro
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Intro
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix="">
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../index.html" class="md-nav__link">
         
@@ -498,98 +442,29 @@
     </li>
   
 
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/project_background.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Project Background
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
     
       
       
   
   
-    
   
   
-  
     
     
     
     
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked="">
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   
@@ -607,7 +482,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -625,7 +500,7 @@
   
   
     <li class="md-nav__item">
-      <a href="components.html" class="md-nav__link">
+      <a href="../concept/components.html" class="md-nav__link">
         
   
   
@@ -653,7 +528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="installation_options.html" class="md-nav__link">
+      <a href="../concept/installation_options.html" class="md-nav__link">
         
   
   
@@ -678,42 +553,17 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Long Term Installations
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="long_term_installations.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../concept/operating_in_production.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Long Term Installations
+    Operating in Production
   
 
     
@@ -722,79 +572,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#keeping-inventory-in-sync" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Keeping inventory in sync
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Updating the pgwatch collector
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#metrics-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics maintenance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dashboard-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dashboard maintenance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#storage-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Storage monitoring
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -807,7 +584,7 @@
   
   
     <li class="md-nav__item">
-      <a href="security.html" class="md-nav__link">
+      <a href="../concept/security.html" class="md-nav__link">
         
   
   
@@ -835,35 +612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sizing Recommendations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="web_ui.html" class="md-nav__link">
+      <a href="../concept/web_ui.html" class="md-nav__link">
         
   
   
@@ -891,14 +640,98 @@
   
   
     <li class="md-nav__item">
-      <a href="kubernetes.html" class="md-nav__link">
+      <a href="../concept/metrics_and_presets.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Kubernetes
+    Metrics and Presets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/advanced_features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/os_helpers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OS Metrics via PL/Python Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/observability_stack.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Stack
   
 
     
@@ -968,6 +801,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1173,14 +1034,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/using_managed_services.html" class="md-nav__link">
+      <a href="../howto/set_up_alerting.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Using Managed Services
+    Set Up Alerting
   
 
     
@@ -1362,6 +1223,230 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/harden_docker_deployment.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden a Docker Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/add_custom_metric.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add a Custom Metric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/deploy_to_kubernetes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/yaml_configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configure with YAML Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_patroni_cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor a Patroni Cluster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_log_parsing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enable Log Parsing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_pgbouncer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor PgBouncer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_prometheus_scrape.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Expose Metrics for Prometheus Scraping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1373,24 +1458,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked="">
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1408,7 +1498,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1426,7 +1516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/cli_env.html" class="md-nav__link">
+      <a href="cli_env.html" class="md-nav__link">
         
   
   
@@ -1454,7 +1544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/rest.html" class="md-nav__link">
+      <a href="rest.html" class="md-nav__link">
         
   
   
@@ -1482,35 +1572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/advanced_features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Advanced Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/metric_definitions.html" class="md-nav__link">
+      <a href="metric_definitions.html" class="md-nav__link">
         
   
   
@@ -1538,7 +1600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/env_variables.html" class="md-nav__link">
+      <a href="docker_variables.html" class="md-nav__link">
         
   
   
@@ -1566,7 +1628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/sinks_options.html" class="md-nav__link">
+      <a href="sinks_options.html" class="md-nav__link">
         
   
   
@@ -1574,6 +1636,182 @@
     
   
     Sinks Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="managed_postgres_support.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managed PostgreSQL Providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="sizing_recommendations.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sizing Recommendations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="docker_images.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ports.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listening Ports and Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="source_types.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="prometheus_source.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus Source
   
 
     
@@ -1799,7 +2037,7 @@
   <span class="md-ellipsis">
     
   
-    Documentation
+    Developer Docs
   
 
     
@@ -1894,69 +2132,6 @@
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-      
-        <li class="md-nav__item">
-  <a href="#keeping-inventory-in-sync" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Keeping inventory in sync
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#updating-the-pgwatch-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Updating the pgwatch collector
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#metrics-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics maintenance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dashboard-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dashboard maintenance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#storage-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Storage monitoring
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -1972,7 +2147,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/concept/long_term_installations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/sizing_recommendations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -1980,63 +2155,68 @@
   
 
 
-  <h1>Long Term Installations</h1>
+  <h1>Sizing Recommendations</h1>
 
-<p>For long term pgwatch setups the main challenge is to keep the software
-up-to-date to guarantee stable operation and also to make sure that all
-DBs are under monitoring.</p>
-<h2 id="keeping-inventory-in-sync">Keeping inventory in sync</h2>
-<p>Adding new DBs to monitoring and removing those shut down, can become a
-problem if teams are big, databases are many, and it's done by hand
-(common for on-premise, non-orchestrated deployments). To combat that,
-the most typical approach would be to write some script or Cronjob that
-parses the company's internal inventory database, files or endpoints
-and translate changes to according CRUD operations on the
-<em>pgwatch.source</em> table directly.</p>
-<p>One could also use the <em>REST API</em> for that purpose.</p>
-<p>If pgwatch configuration is kept in YAML files, it should be also
-relatively easy to automate the maintenance as the configuration can be
-organized so that one file represent a single monitoring entry, i.e. the
-<code>--sources</code> and <code>--metrics</code> parameters can also refer to a folder of YAML files.</p>
-<h2 id="updating-the-pgwatch-collector">Updating the pgwatch collector</h2>
-<p>The pgwatch metrics gathering daemon is the core component of the
-solution alas the most critical one. So it's definitely recommended to
-update it at least once per year or minimally when some freshly released
-Postgres major version instances are added to monitoring. New Postgres
-versions don't necessary mean that something will break, but you'll be
-missing some newly added metrics, plus the occasional optimizations. See
-the <a href="../tutorial/upgrading.html">upgrading chapter</a> for details, but basically
-the process is very similar to initial installation as the collector
-doesn't have any state on its own - it's just one executable file.</p>
-<h2 id="metrics-maintenance">Metrics maintenance</h2>
-<p>Metric definition SQLs are regularly corrected as suggestions and
-improvements come in and also new ones are added to cover latest
-Postgres versions, so would make sense to refresh them 1-2x per year.</p>
-<p>If using built-in metrics, just installing newer pre-built RPM / DEB
-packages will do the trick automatically but for configuration database based
-setups you'd need to follow a simple process described
-<a href="../tutorial/upgrading.html#updating-metric-definitions">here</a>.</p>
-<h2 id="dashboard-maintenance">Dashboard maintenance</h2>
-<p>Same as with metrics, also the built-in Grafana dashboards are being
-actively updates, so would make sense to refresh them occasionally also.
-You could manually just re-import some dashboards of interest
-from JSON files in [/etc/pgwatch/grafana-dashboards] folder or from
-<a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/grafana">GitHub</a>.</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>Notable new dashboards are usually listed also in <a href="https://github.com/cybertec-postgresql/pgwatch/releases">release notes</a>
-and most dashboards also have a sample <a href="https://github.com/cybertec-postgresql/pgwatch/tree/master/docs/gallery">screenshots</a>
-available.</p>
+<ul>
+<li>
+<p>Min 1GB of RAM is required for a Docker setup using Postgres to
+    store metrics.</p>
+<p>The gatherer alone needs typically less than 50 MB if the metric 
+measurements are stored online. Memory consumption will increase a lot when the
+metrics store is offline though, as then metrics are cached in RAM
+in ring buffer style up to a limit of 10k data points (for all
+databases) and then memory consumption is dependent on how "wide"
+are the metrics gathered.</p>
+</li>
+</ul>
+<div class="admonition notice">
+<p class="admonition-title">Notice</p>
+<p>In high-load environments, some metrics may return thousands of rows per monitoring target at each fetch. 
+So, sharing the collection interval for these metrics between all sources can cause a huge memory load.
+In such scenarios, adding a <code>LIMIT</code> clause to the metric query is usually the way to go, 
+but otherwise, consider varying the collection interval of these metrics between sources 
+to reduce memory load — or disable them entirely, if necessary.</p>
 </div>
-<h2 id="storage-monitoring">Storage monitoring</h2>
-<p>In addition to all that you should at least initially periodically
-monitor the metric measurements databases size as it can grow quite a lot (especially
-when using Postgres for storage) when the monitored databases have
-hundreds of tables and indexes, and if a lot of unique SQLs are used and
-<code>pg_stat_statements</code> monitoring is enabled. If the storage grows too
-fast, one can increase the metric intervals (especially for
-"table_stats", "index_stats" and "stat_statements") or decrease
-the data retention periods via <code>--retention</code> param.</p>
+<ul>
+<li>
+<p>Storage requirements vary a lot and are hard to predict.</p>
+<p>10GB of disk space should be enough though for monitoring a single
+DB with "exhaustive" <em>preset</em> for 1 month with Postgres storage. 2
+weeks is also the default metrics retention policy for Postgres
+running in Docker (configurable). Depending on the amount of schema
+objects - tables, indexes, stored procedures and especially on
+number of unique SQLs, it could be also much more. If disk size
+reduction is wanted for PostgreSQL storage then best would be to use
+the TimescaleDB extension - it has built-in compression and disk
+footprint is x5 time less than vanilla Postgres, while retaining full
+SQL support.</p>
+</li>
+<li>
+<p>A low-spec (1 vCPU, 2 GB RAM) cloud machine can easily monitor 100
+    DBs in "exhaustive" settings (i.e. almost all metrics are
+    monitored in 1-2min intervals) without breaking a sweat (\&lt;20%
+    load).</p>
+</li>
+<li>
+<p>A single Postgres node should handle thousands of requests per
+    second.</p>
+</li>
+<li>
+<p>When high metrics write latency is problematic (e.g. using a DBaaS
+    across the Atlantic) then increasing the default maximum batching flush
+    delay of 950ms usually gives good results.
+    Relevant params: <code>--batching-delay / PW_BATCHING_DELAY</code>.</p>
+</li>
+<li>
+<p>Note that when monitoring a very large number of databases, it's
+    possible to "shard" / distribute them between many metric
+    collection instances running on different hosts, via the <code>group</code>
+    attribute. This requires that sources have been assigned a
+    non-default <em>group</em> identifier, which is just a text field exactly
+    for this sharding purpose.
+    Relevant params: <code>--group / PW_GROUP</code>.</p>
+</li>
+</ul>
 
 
 
@@ -2071,7 +2251,7 @@ the data retention periods via <code>--retention</code> param.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer">
         
           
-          <a href="installation_options.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation Options">
+          <a href="managed_postgres_support.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Managed PostgreSQL Providers">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
@@ -2081,20 +2261,20 @@ the data retention periods via <code>--retention</code> param.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Installation Options
+                Managed PostgreSQL Providers
               </div>
             </div>
           </a>
         
         
           
-          <a href="security.html" class="md-footer__link md-footer__link--next" aria-label="Next: Security">
+          <a href="docker_images.html" class="md-footer__link md-footer__link--next" aria-label="Next: Docker Images">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Security
+                Docker Images
               </div>
             </div>
             <div class="md-footer__button md-icon">

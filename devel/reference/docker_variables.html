@@ -7,9 +7,13 @@
       
       
       
-        <link rel="canonical" href="https://pgwat.ch/devel/developer/reaper-batch-consolidation.html">
+        <link rel="canonical" href="https://pgwat.ch/devel/reference/docker_variables.html">
       
       
+        <link rel="prev" href="metric_definitions.html">
+      
+      
+        <link rel="next" href="sinks_options.html">
       
       
         
@@ -20,7 +24,7 @@
     
     
       
-        <title>Reaper Batch Consolidation — Implementation Summary - 🔬 pgwatch</title>
+        <title>Docker image variables - 🔬 pgwatch</title>
       
     
     
@@ -81,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reaper-batch-consolidation-implementation-summary" class="md-skip">
+        <a href="#gatherer-daemon-within-the-docker-image" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +103,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-header__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -119,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Reaper Batch Consolidation — Implementation Summary
+              Docker image variables
             
           </span>
         </div>
@@ -236,18 +240,17 @@
   
   
   
-    
-    
-      <li class="md-tabs__item">
-        <a href="../index.html" class="md-tabs__link">
-          
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
   
   
-  Intro
+    
+  
+  Hello World!
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -279,7 +282,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorial/docker_installation.html" class="md-tabs__link">
+        <a href="../tutorial/quickstart.html" class="md-tabs__link">
           
   
   
@@ -315,11 +318,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../reference/cli_env.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="cli_env.html" class="md-tabs__link">
           
   
   
@@ -359,7 +364,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="contributing.html" class="md-tabs__link">
+        <a href="../developer/contributing.html" class="md-tabs__link">
           
   
   
@@ -393,7 +398,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
+    <a href="../index.html" title="🔬 pgwatch" class="md-nav__button md-logo" aria-label="🔬 pgwatch" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
@@ -422,56 +427,6 @@
   
   
   
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1">
-        
-          
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intro
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Intro
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix="">
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../index.html" class="md-nav__link">
         
@@ -489,70 +444,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/project_background.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Project Background
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../intro/features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -670,14 +561,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/long_term_installations.html" class="md-nav__link">
+      <a href="../concept/operating_in_production.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Long Term Installations
+    Operating in Production
   
 
     
@@ -726,34 +617,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/sizing_recommendations.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sizing Recommendations
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../concept/web_ui.html" class="md-nav__link">
         
   
@@ -782,14 +645,98 @@
   
   
     <li class="md-nav__item">
-      <a href="../concept/kubernetes.html" class="md-nav__link">
+      <a href="../concept/metrics_and_presets.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Kubernetes
+    Metrics and Presets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/advanced_features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/os_helpers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OS Metrics via PL/Python Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concept/observability_stack.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Stack
   
 
     
@@ -859,6 +806,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix="">
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1064,14 +1039,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../howto/using_managed_services.html" class="md-nav__link">
+      <a href="../howto/set_up_alerting.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Using Managed Services
+    Set Up Alerting
   
 
     
@@ -1253,6 +1228,230 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/harden_docker_deployment.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden a Docker Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/add_custom_metric.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add a Custom Metric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/deploy_to_kubernetes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy to Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/yaml_configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configure with YAML Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_patroni_cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor a Patroni Cluster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_log_parsing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enable Log Parsing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/monitor_pgbouncer.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitor PgBouncer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../howto/enable_prometheus_scrape.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Expose Metrics for Prometheus Scraping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1264,24 +1463,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked="">
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1299,7 +1503,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1317,7 +1521,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/cli_env.html" class="md-nav__link">
+      <a href="cli_env.html" class="md-nav__link">
         
   
   
@@ -1345,7 +1549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/rest.html" class="md-nav__link">
+      <a href="rest.html" class="md-nav__link">
         
   
   
@@ -1373,35 +1577,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/advanced_features.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Advanced Features
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/metric_definitions.html" class="md-nav__link">
+      <a href="metric_definitions.html" class="md-nav__link">
         
   
   
@@ -1426,10 +1602,35 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../reference/env_variables.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Variables
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="docker_variables.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1437,6 +1638,96 @@
     
   
     Docker Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#gatherer-daemon-within-the-docker-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gatherer daemon (within the Docker image)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-image-wrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker image wrapper
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grafana-inside-the-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grafana (inside the image)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web UI
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sinks_options.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sinks Options
   
 
     
@@ -1457,14 +1748,154 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/sinks_options.html" class="md-nav__link">
+      <a href="managed_postgres_support.html" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Sinks Options
+    Managed PostgreSQL Providers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sizing_recommendations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sizing Recommendations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="docker_images.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ports.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Listening Ports and Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="source_types.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="prometheus_source.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prometheus Source
   
 
     
@@ -1655,7 +2086,7 @@
   
   
     <li class="md-nav__item">
-      <a href="contributing.html" class="md-nav__link">
+      <a href="../developer/contributing.html" class="md-nav__link">
         
   
   
@@ -1690,7 +2121,7 @@
   <span class="md-ellipsis">
     
   
-    Documentation
+    Developer Docs
   
 
     
@@ -1711,7 +2142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CODE_OF_CONDUCT.html" class="md-nav__link">
+      <a href="../developer/CODE_OF_CONDUCT.html" class="md-nav__link">
         
   
   
@@ -1739,7 +2170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="LICENSE.html" class="md-nav__link">
+      <a href="../developer/LICENSE.html" class="md-nav__link">
         
   
   
@@ -1784,8 +2215,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1794,10 +2223,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#gatherer-daemon-within-the-docker-image" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Overview
+        Gatherer daemon (within the Docker image)
       
     </span>
   </a>
@@ -1805,221 +2234,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-changed" class="md-nav__link">
+  <a href="#docker-image-wrapper" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Changed
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="What Changed">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#architecture-before-vs-after" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Architecture: Before vs After
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#goroutine-reduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Goroutine Reduction
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#network-round-trip-reduction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Network Round-Trip Reduction
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implementation-phases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implementation Phases
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Implementation Phases">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#phase-1-core-infrastructure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phase 1: Core Infrastructure ✅
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-2-batch-query-execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phase 2: Batch Query Execution ✅
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-3-main-loop-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phase 3: Main Loop Integration ✅
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-4-change-detection-batching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phase 4: Change Detection Batching ✅
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#phase-5-cleanup-observability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phase 5: Cleanup &amp; Observability ✅
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#files-changed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Files Changed
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Files Changed">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#new-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        New Files
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#modified-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Modified Files
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-coverage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Test Coverage
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Test Coverage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#unit-tests-pgxmock-12-test-functions-20-subtests" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Unit Tests (pgxmock) — 12 test functions, 20+ subtests
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#integration-tests-testcontainers-6-test-functions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Integration Tests (testcontainers) — 6 test functions
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#existing-tests-0-regressions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Existing Tests — 0 regressions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#design-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Design Decisions
+        Docker image wrapper
       
     </span>
   </a>
@@ -2027,60 +2245,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#expected-production-impact" class="md-nav__link">
+  <a href="#grafana-inside-the-image" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Expected Production Impact
+        Grafana (inside the image)
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Expected Production Impact">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#resource-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resource Usage
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#network" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Network
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#observability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Observability
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#future-enhancements" class="md-nav__link">
+  <a href="#web-ui" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Future Enhancements
+        Web UI
       
     </span>
   </a>
@@ -2104,7 +2283,7 @@
 
 
   
-    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/developer/reaper-batch-consolidation.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/cybertec-postgresql/pgwatch/edit/master/docs/reference/docker_variables.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
     </a>
@@ -2112,383 +2291,79 @@
   
 
 
-<h1 id="reaper-batch-consolidation-implementation-summary">Reaper Batch Consolidation — Implementation Summary</h1>
-<h2 id="overview">Overview</h2>
-<p>This document summarizes the implementation of the pgwatch reaper goroutine consolidation, which replaces the previous one-goroutine-per-(source × metric) architecture with a one-goroutine-per-source model using pgx Batch queries.</p>
-<hr>
-<h2 id="what-changed">What Changed</h2>
-<h3 id="architecture-before-vs-after">Architecture: Before vs After</h3>
+  <h1>Docker Variables</h1>
+
+<p>This page lists the environment variables that are read by the official pgwatch <strong>Docker image wrappers</strong> and consumed by Grafana inside the container. It does <strong>not</strong> list the gatherer daemon's CLI flags — those live in <a href="cli_env.html">CLI &amp; environment variables</a>. Every gatherer flag also accepts an equivalent environment variable.</p>
+<blockquote>
+<p>Command-line flags always override environment variables.</p>
+</blockquote>
+<h2 id="gatherer-daemon-within-the-docker-image">Gatherer daemon (within the Docker image)</h2>
+<p>Every gatherer flag listed in <a href="cli_env.html">CLI &amp; environment variables</a> can be passed through to the daemon inside the container as an environment variable. The naming convention is <code>PW_&lt;FLAG_NAME&gt;</code> (uppercase flag, dashes replaced by underscores). Example: <code>--web-user</code> → <code>PW_WEBUSER</code>, <code>--batching-delay</code> → <code>PW_BATCHING_DELAY</code>.</p>
+<h2 id="docker-image-wrapper">Docker image wrapper</h2>
 <table>
 <thead>
 <tr>
-<th>Aspect</th>
-<th>Before</th>
-<th>After</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Goroutine model</td>
-<td>1 goroutine per (source × metric)</td>
-<td>1 goroutine per source</td>
-</tr>
-<tr>
-<td>SQL execution</td>
-<td>1 <code>Query()</code> call per metric per tick</td>
-<td>1 <code>SendBatch()</code> call per source per tick</td>
-</tr>
-<tr>
-<td>Query protocol</td>
-<td>Individual queries, each a network round-trip</td>
-<td>pgx pipeline protocol — multiple queries in one round-trip</td>
-</tr>
-<tr>
-<td>Cancel granularity</td>
-<td>Per <code>source¤¤¤metric</code> key</td>
-<td>Per source name</td>
-</tr>
-<tr>
-<td>Config hot-reload</td>
-<td>Cancel + re-spawn per metric goroutine</td>
-<td><code>UpdateSchedules()</code> on existing <code>SourceReaper</code></td>
-</tr>
-</tbody>
-</table>
-<h3 id="goroutine-reduction">Goroutine Reduction</h3>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Before</th>
-<th>After</th>
-<th>Reduction</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>10 sources × exhaustive (32 metrics)</td>
-<td>320</td>
-<td>10</td>
-<td><strong>97%</strong></td>
-</tr>
-<tr>
-<td>50 sources × exhaustive</td>
-<td>1,600</td>
-<td>50</td>
-<td><strong>97%</strong></td>
-</tr>
-<tr>
-<td>1 source × basic (4 metrics)</td>
-<td>4</td>
-<td>1</td>
-<td><strong>75%</strong></td>
-</tr>
-</tbody>
-</table>
-<h3 id="network-round-trip-reduction">Network Round-Trip Reduction</h3>
-<p>With the <code>exhaustive</code> preset at 60-second alignment, ~12 SQL metrics are due simultaneously.</p>
-<table>
-<thead>
-<tr>
-<th>Before</th>
-<th>After</th>
-<th>Reduction</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>12 separate <code>Query()</code> calls</td>
-<td>1 <code>SendBatch()</code> call</td>
-<td><strong>~92%</strong></td>
-</tr>
-</tbody>
-</table>
-<p>At peak alignment (t = 7200s, all 32 metrics due): <strong>32 → 1 round-trip = 97% reduction</strong>.</p>
-<hr>
-<h2 id="implementation-phases">Implementation Phases</h2>
-<h3 id="phase-1-core-infrastructure">Phase 1: Core Infrastructure ✅</h3>
-<ul>
-<li>Added <code>SendBatch(ctx, *pgx.Batch) pgx.BatchResults</code> to <code>PgxPoolIface</code> interface</li>
-<li>Created <code>SourceReaper</code> struct with per-source state: metric schedules, tick interval, connection</li>
-<li>Implemented <code>GCD()</code> / <code>GCDSlice()</code> for computing tick interval from metric intervals</li>
-<li>Implemented <code>isDue()</code> check with zero-value = "never fetched" semantics</li>
-<li>Minimum tick interval floor: <strong>5 seconds</strong> (prevents excessive wake-ups for coprime intervals)</li>
-</ul>
-<h3 id="phase-2-batch-query-execution">Phase 2: Batch Query Execution ✅</h3>
-<ul>
-<li><code>executeBatch()</code>: Builds <code>pgx.Batch</code> from due metrics, sends in one round-trip, dispatches results per-metric</li>
-<li>Preserves: instance-level caching, primary/standby filtering, <code>AddSysinfoToMeasurements</code>, server restart detection</li>
-<li><code>fetchSequentialMetric()</code>: Fallback for non-Postgres sources (pgbouncer, pgpool) using simple protocol</li>
-<li><code>fetchOSMetric()</code>, <code>fetchSpecialMetric()</code>: Handle gopsutil and special metrics inline</li>
-<li><code>BatchQueryMeasurements()</code>: Standalone batch helper with deterministic (sorted) key ordering</li>
-</ul>
-<h3 id="phase-3-main-loop-integration">Phase 3: Main Loop Integration ✅</h3>
-<ul>
-<li><code>Reap()</code> now spawns <code>go sr.Run(sourceCtx)</code> per source instead of per-metric goroutines</li>
-<li><code>cancelFuncs</code> map simplified from <code>map[string]context.CancelFunc</code> keyed by <code>db¤¤¤metric</code> to keyed by source name</li>
-<li>Added <code>sourceReapers map[string]*SourceReaper</code> to <code>Reaper</code> struct</li>
-<li><code>ShutdownOldWorkers()</code> simplified — only checks if source was removed from config</li>
-<li>Removed dead <code>reapMetricMeasurements()</code> function (was ~100 lines)</li>
-</ul>
-<h3 id="phase-4-change-detection-batching">Phase 4: Change Detection Batching ✅</h3>
-<ul>
-<li><code>GetObjectChangesMeasurement()</code> now calls <code>prefetchChangeDetectionData()</code> to batch-fetch all hash queries (<code>sproc_hashes</code>, <code>table_hashes</code>, <code>index_hashes</code>, <code>privilege_changes</code>) in one <code>pgx.Batch</code></li>
-<li>Added <code>Detect*ChangesWithData()</code> variants that accept pre-fetched data, falling back to original methods if nil</li>
-<li>Configuration changes (<code>DetectConfigurationChanges</code>) remain unbatched — different <code>Scan()</code> pattern with typed variables</li>
-</ul>
-<h3 id="phase-5-cleanup-observability">Phase 5: Cleanup &amp; Observability ✅</h3>
-<ul>
-<li>New Prometheus metrics in <code>observability.go</code>:</li>
-<li><code>pgwatch_reaper_batch_size</code> (histogram) — queries per batch</li>
-<li><code>pgwatch_reaper_batch_duration_seconds</code> (histogram) — wall-clock time per batch</li>
-<li><code>pgwatch_reaper_metric_fetch_total</code> (counter, labels: source, status) — success/error counts</li>
-<li><code>pgwatch_reaper_active_source_reapers</code> (gauge) — currently running source reapers</li>
-<li>Batch timeout: 80% of tick interval, prevents slow queries from blocking the next tick</li>
-</ul>
-<hr>
-<h2 id="files-changed">Files Changed</h2>
-<h3 id="new-files">New Files</h3>
-<table>
-<thead>
-<tr>
-<th>File</th>
-<th>Lines</th>
+<th>Variable</th>
 <th>Purpose</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>internal/reaper/source_reaper.go</code></td>
-<td>494</td>
-<td>SourceReaper struct, GCD, batch execution, Run loop</td>
-</tr>
-<tr>
-<td><code>internal/reaper/source_reaper_test.go</code></td>
-<td>471</td>
-<td>pgxmock unit tests (12 test functions, 20+ subtests)</td>
-</tr>
-<tr>
-<td><code>internal/reaper/source_reaper_integration_test.go</code></td>
-<td>301</td>
-<td>testcontainers integration tests (6 test functions)</td>
-</tr>
-<tr>
-<td><code>internal/reaper/observability.go</code></td>
-<td>38</td>
-<td>Prometheus metrics for batch observability</td>
+<td><code>PW_TESTDB</code></td>
+<td>When set, the internal Config DB is added to monitoring as a source named <code>test</code>.</td>
+<td><em>unset</em></td>
 </tr>
 </tbody>
 </table>
-<h3 id="modified-files">Modified Files</h3>
+<h2 id="grafana-inside-the-image">Grafana (inside the image)</h2>
 <table>
 <thead>
 <tr>
-<th>File</th>
-<th>Changes</th>
+<th>Variable</th>
 <th>Purpose</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>internal/db/conn.go</code></td>
-<td>+1 line</td>
-<td>Added <code>SendBatch</code> to <code>PgxPoolIface</code> interface</td>
+<td><code>PW_GRAFANANOANONYMOUS</code></td>
+<td>When set, viewing dashboards requires login.</td>
+<td><em>unset</em> (anonymous viewing allowed)</td>
 </tr>
 <tr>
-<td><code>internal/reaper/reaper.go</code></td>
-<td>+21 / -186 lines</td>
-<td>Per-source goroutines, simplified cancel management</td>
+<td><code>PW_GRAFANAUSER</code></td>
+<td>Grafana administrative user.</td>
+<td><code>admin</code></td>
 </tr>
 <tr>
-<td><code>internal/reaper/database.go</code></td>
-<td>+303 lines</td>
-<td>Batched change detection, <code>prefetchChangeDetectionData</code></td>
+<td><code>PW_GRAFANAPASSWORD</code></td>
+<td>Grafana administrative user password.</td>
+<td><code>pgwatchadmin</code></td>
 </tr>
 <tr>
-<td><code>internal/reaper/reaper_test.go</code></td>
-<td>+15 / -14 lines</td>
-<td>Updated tests for per-source cancel pattern</td>
+<td><code>PW_GRAFANASSL</code></td>
+<td>When set, Grafana serves over HTTPS.</td>
+<td><em>unset</em></td>
+</tr>
+<tr>
+<td><code>PW_GRAFANA_BASEURL</code></td>
+<td>Public base URL — used for "Query details" links in the Stat Statement Overview dashboard.</td>
+<td><code>http://0.0.0.0:3000</code></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Total: 4 new files (1,304 lines), 4 modified files (+340 / -200 net)</strong></p>
-<hr>
-<h2 id="test-coverage">Test Coverage</h2>
-<h3 id="unit-tests-pgxmock-12-test-functions-20-subtests">Unit Tests (pgxmock) — 12 test functions, 20+ subtests</h3>
-<table>
-<thead>
-<tr>
-<th>Test</th>
-<th>What it verifies</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TestGCD</code></td>
-<td>Euclidean GCD for two integers</td>
-</tr>
-<tr>
-<td><code>TestGCDSlice</code></td>
-<td>GCD across slices: empty, single, coprime, exhaustive preset (30s)</td>
-</tr>
-<tr>
-<td><code>TestCalcTickInterval</code></td>
-<td>Tick interval calculation: normal, floor to 5s, single metric, empty</td>
-</tr>
-<tr>
-<td><code>TestIsDue</code></td>
-<td>Never-fetched (always due), recently fetched (not due), past interval (due)</td>
-</tr>
-<tr>
-<td><code>TestSourceReaper_DueMetrics</code></td>
-<td>Correct partitioning of due vs not-yet-due metrics</td>
-</tr>
-<tr>
-<td><code>TestNewSourceReaper</code></td>
-<td>Constructor sets schedules and tick interval</td>
-</tr>
-<tr>
-<td><code>TestUpdateSchedules</code></td>
-<td>Hot-reload preserves lastFetch for retained metrics, purges removed</td>
-</tr>
-<tr>
-<td><code>TestSourceReaper_ExecuteBatch</code></td>
-<td>Full batch path: 2 metrics → pgxmock batch → 2 envelopes on channel</td>
-</tr>
-<tr>
-<td><code>TestSourceReaper_RunOneIteration</code></td>
-<td>Run() loop fires, collects metrics, exits on context cancel</td>
-</tr>
-<tr>
-<td><code>TestSourceReaper_DetectServerRestart</code></td>
-<td>Detects uptime regression → emits <code>object_changes</code> envelope</td>
-</tr>
-<tr>
-<td><code>TestSourceReaper_NonPostgresSequential</code></td>
-<td>Sequential fallback path for postgres source</td>
-</tr>
-<tr>
-<td><code>TestBatchQueryMeasurements</code></td>
-<td>Standalone batch (Postgres) and sequential (non-Postgres) paths</td>
-</tr>
-</tbody>
-</table>
-<h3 id="integration-tests-testcontainers-6-test-functions">Integration Tests (testcontainers) — 6 test functions</h3>
-<table>
-<thead>
-<tr>
-<th>Test</th>
-<th>What it verifies</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>TestIntegration_BatchQueryMeasurements</code></td>
-<td>4 real SQL queries batched against Postgres 18, all return correct data</td>
-</tr>
-<tr>
-<td><code>TestIntegration_ExecuteBatch</code></td>
-<td>Full <code>executeBatch()</code> path with 2 metric definitions → envelopes arrive</td>
-</tr>
-<tr>
-<td><code>TestIntegration_SourceReaper_RunCollectsMetrics</code></td>
-<td><code>Run()</code> loop starts, collects 2 metrics within 15s, exits cleanly</td>
-</tr>
-<tr>
-<td><code>TestIntegration_BatchVsSequentialConsistency</code></td>
-<td>Batch and sequential paths return identical results for same query</td>
-</tr>
-<tr>
-<td><code>TestIntegration_BatchEmptySQL</code></td>
-<td>Empty/whitespace SQL queries are silently skipped</td>
-</tr>
-<tr>
-<td><code>TestIntegration_BatchMultipleMetricsSameRoundTrip</code></td>
-<td>10 queries sent in one batch, all 10 return results</td>
-</tr>
-</tbody>
-</table>
-<h3 id="existing-tests-0-regressions">Existing Tests — 0 regressions</h3>
-<p>All 152 test cases in <code>internal/reaper/</code> pass, including all pre-existing tests for <code>DetectSprocChanges</code>, <code>DetectTableChanges</code>, <code>DetectIndexChanges</code>, <code>DetectPrivilegeChanges</code>, <code>DetectConfigurationChanges</code>, <code>FetchMetric</code>, <code>LoadSources</code>, <code>LoadMetrics</code>, log parser tests, and OS metric tests.</p>
-<hr>
-<h2 id="design-decisions">Design Decisions</h2>
-<table>
-<thead>
-<tr>
-<th>Decision</th>
-<th>Rationale</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>GCD-based tick loop (Option A)</td>
-<td>Zero external dependencies, natural fit with <code>context</code> cancellation, simple reasoning</td>
-</tr>
-<tr>
-<td>No external scheduler (gocron)</td>
-<td>gocron v2 uses one goroutine per job, defeating the consolidation purpose</td>
-</tr>
-<tr>
-<td>5-second minimum tick</td>
-<td>Prevents excessive wake-ups for coprime intervals (e.g., GCD(7, 13) = 1)</td>
-</tr>
-<tr>
-<td>Sequential fallback for non-Postgres</td>
-<td>pgbouncer/pgpool use <code>SimpleProtocol</code> and don't support pipeline batching</td>
-</tr>
-<tr>
-<td><code>server_log_event_counts</code> keeps its own goroutine</td>
-<td>Streaming CSV parser with long-running I/O, not batchable</td>
-</tr>
-<tr>
-<td>Batch timeout = 80% of tick interval</td>
-<td>Prevents slow queries from blocking the next tick cycle</td>
-</tr>
-<tr>
-<td>Sorted keys in <code>BatchQueryMeasurements</code></td>
-<td>Ensures deterministic batch ordering for testing and debugging</td>
-</tr>
-<tr>
-<td><code>Detect*ChangesWithData()</code> variants</td>
-<td>Allow pre-fetched batch data while preserving original methods as fallbacks</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h2 id="expected-production-impact">Expected Production Impact</h2>
-<h3 id="resource-usage">Resource Usage</h3>
-<ul>
-<li><strong>Memory</strong>: ~97% reduction in goroutine stack allocations (320 × 8KB default stack → 10 × 8KB)</li>
-<li><strong>CPU scheduling</strong>: Fewer goroutines means less scheduler overhead and context switching</li>
-<li><strong>Connection pool</strong>: Batch acquires 1 connection per tick instead of N concurrent acquires; reduces pool contention</li>
-</ul>
-<h3 id="network">Network</h3>
-<ul>
-<li><strong>Round-trips</strong>: ~92% reduction at 60s alignment for exhaustive preset</li>
-<li><strong>Latency</strong>: Batch queries benefit from TCP connection reuse and PostgreSQL's pipeline protocol</li>
-<li><strong>Bandwidth</strong>: Slight reduction from fewer TCP handshakes and acknowledgements</li>
-</ul>
-<h3 id="observability">Observability</h3>
-<ul>
-<li><code>pgwatch_reaper_batch_size</code> histogram reveals how many queries are batched per tick</li>
-<li><code>pgwatch_reaper_batch_duration_seconds</code> tracks end-to-end batch latency</li>
-<li><code>pgwatch_reaper_metric_fetch_total</code> with source/status labels enables per-source error rate alerting</li>
-<li><code>pgwatch_reaper_active_source_reapers</code> gauge shows current source count</li>
-</ul>
-<hr>
-<h2 id="future-enhancements">Future Enhancements</h2>
-<ol>
-<li><strong>Overflow workers (Option D)</strong>: Offload known-slow metrics (e.g., <code>table_bloat_approx_summary_sql</code>) to a separate goroutine if they exceed a time threshold, preventing them from blocking the batch</li>
-<li><strong>Adaptive tick interval</strong>: Dynamically adjust tick interval based on observed query latency</li>
-<li><strong>Per-metric batch timeout</strong>: Use <code>SET LOCAL statement_timeout</code> within the batch for metrics with <code>StatementTimeoutSeconds</code> configured</li>
-<li><strong>Batch configuration changes</strong>: Batch the <code>DetectConfigurationChanges</code> hash queries (currently excluded due to different <code>Scan()</code> pattern)</li>
-</ol>
+<h2 id="web-ui">Web UI</h2>
+<p>Web UI authentication and TLS are configured through gatherer flags, not image-level variables. See <a href="cli_env.html#webui">CLI &amp; environment variables — WebUI</a>.</p>
 
 
 
 
 
 
+
+  
+  
 
 
 
@@ -2509,6 +2384,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer">
+        
+          
+          <a href="metric_definitions.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Metric Definitions">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Metric Definitions
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="sinks_options.html" class="md-footer__link md-footer__link--next" aria-label="Next: Sinks Options">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Sinks Options
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">
