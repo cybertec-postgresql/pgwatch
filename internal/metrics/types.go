@@ -134,7 +134,8 @@ func (m Measurement) GetEpoch() int64 {
 			return epoch
 		}
 	}
-	return time.Now().UnixNano()
+	m[EpochColumnName] = time.Now().UnixNano()
+	return m[EpochColumnName].(int64)
 }
 
 type Measurements []map[string]any
