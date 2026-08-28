@@ -13,7 +13,7 @@
 
 
 
-<script>var goVersion = "go1.26.6";</script>
+<script>var goVersion = "go1.26.7";</script>
 <script src="/devel/godoc/lib/godoc/godocs.js" defer=""></script>
 
 </head>
@@ -191,114 +191,116 @@
 <span id="L134" class="ln">   134  </span>			return epoch
 <span id="L135" class="ln">   135  </span>		}
 <span id="L136" class="ln">   136  </span>	}
-<span id="L137" class="ln">   137  </span>	return time.Now().UnixNano()
-<span id="L138" class="ln">   138  </span>}
-<span id="L139" class="ln">   139  </span>
-<span id="L140" class="ln">   140  </span>type Measurements []map[string]any
+<span id="L137" class="ln">   137  </span>	t := time.Now().UnixNano()
+<span id="L138" class="ln">   138  </span>	m[EpochColumnName] = t
+<span id="L139" class="ln">   139  </span>	return t
+<span id="L140" class="ln">   140  </span>}
 <span id="L141" class="ln">   141  </span>
-<span id="L142" class="ln">   142  </span>func (m Measurements) GetEpoch() int64 {
-<span id="L143" class="ln">   143  </span>	if len(m) == 0 {
-<span id="L144" class="ln">   144  </span>		return time.Now().UnixNano()
-<span id="L145" class="ln">   145  </span>	}
-<span id="L146" class="ln">   146  </span>	return Measurement(m[0]).GetEpoch()
-<span id="L147" class="ln">   147  </span>}
-<span id="L148" class="ln">   148  </span>
-<span id="L149" class="ln">   149  </span>func (m Measurements) IsEpochSet() bool {
-<span id="L150" class="ln">   150  </span>	if len(m) == 0 {
-<span id="L151" class="ln">   151  </span>		return false
-<span id="L152" class="ln">   152  </span>	}
-<span id="L153" class="ln">   153  </span>	_, ok := m[0][EpochColumnName]
-<span id="L154" class="ln">   154  </span>	return ok
-<span id="L155" class="ln">   155  </span>}
-<span id="L156" class="ln">   156  </span>
-<span id="L157" class="ln">   157  </span>func (m Measurements) DeepCopy() Measurements {
-<span id="L158" class="ln">   158  </span>	newData := make(Measurements, len(m))
-<span id="L159" class="ln">   159  </span>	for i, dr := range m {
-<span id="L160" class="ln">   160  </span>		newData[i] = maps.Clone(dr)
-<span id="L161" class="ln">   161  </span>	}
-<span id="L162" class="ln">   162  </span>	return newData
-<span id="L163" class="ln">   163  </span>}
-<span id="L164" class="ln">   164  </span>
-<span id="L165" class="ln">   165  </span><span class="comment">// Touch updates the last modified time of the metric definitions</span>
-<span id="L166" class="ln">   166  </span>func (m Measurements) Touch() {
-<span id="L167" class="ln">   167  </span>	ns := time.Now().UnixNano()
-<span id="L168" class="ln">   168  </span>	for _, measurement := range m {
-<span id="L169" class="ln">   169  </span>		measurement[EpochColumnName] = ns
-<span id="L170" class="ln">   170  </span>	}
-<span id="L171" class="ln">   171  </span>}
-<span id="L172" class="ln">   172  </span>
-<span id="L173" class="ln">   173  </span>type MeasurementEnvelope struct {
-<span id="L174" class="ln">   174  </span>	DBName     string
-<span id="L175" class="ln">   175  </span>	MetricName string
-<span id="L176" class="ln">   176  </span>	SourceKind string
-<span id="L177" class="ln">   177  </span>	CustomTags map[string]string
-<span id="L178" class="ln">   178  </span>	Data       Measurements
-<span id="L179" class="ln">   179  </span>}
-<span id="L180" class="ln">   180  </span>
-<span id="L181" class="ln">   181  </span>type Metrics struct {
-<span id="L182" class="ln">   182  </span>	MetricDefs MetricDefs `yaml:&#34;metrics,omitempty&#34;`
-<span id="L183" class="ln">   183  </span>	PresetDefs PresetDefs `yaml:&#34;presets,omitempty&#34;`
-<span id="L184" class="ln">   184  </span>}
-<span id="L185" class="ln">   185  </span>
-<span id="L186" class="ln">   186  </span><span class="comment">// FilterByNames returns a new Metrics struct containing only the specified metrics and/or presets.</span>
-<span id="L187" class="ln">   187  </span><span class="comment">// When a preset is requested, it includes both the preset definition and all its metrics.</span>
-<span id="L188" class="ln">   188  </span><span class="comment">// If names is empty, returns a full copy of all metrics and presets.</span>
-<span id="L189" class="ln">   189  </span><span class="comment">// Returns an error if any name is not found.</span>
-<span id="L190" class="ln">   190  </span>func (m *Metrics) FilterByNames(names []string) (*Metrics, error) {
-<span id="L191" class="ln">   191  </span>	result := &amp;Metrics{
-<span id="L192" class="ln">   192  </span>		MetricDefs: make(MetricDefs),
-<span id="L193" class="ln">   193  </span>		PresetDefs: make(PresetDefs),
-<span id="L194" class="ln">   194  </span>	}
-<span id="L195" class="ln">   195  </span>
-<span id="L196" class="ln">   196  </span>	<span class="comment">// If no names provided, return full copy</span>
-<span id="L197" class="ln">   197  </span>	if len(names) == 0 {
-<span id="L198" class="ln">   198  </span>		maps.Copy(result.MetricDefs, m.MetricDefs)
-<span id="L199" class="ln">   199  </span>		maps.Copy(result.PresetDefs, m.PresetDefs)
-<span id="L200" class="ln">   200  </span>		return result, nil
-<span id="L201" class="ln">   201  </span>	}
-<span id="L202" class="ln">   202  </span>
-<span id="L203" class="ln">   203  </span>	for _, name := range names {
-<span id="L204" class="ln">   204  </span>		if preset, ok := m.PresetDefs[name]; ok {
-<span id="L205" class="ln">   205  </span>			result.PresetDefs[name] = preset
-<span id="L206" class="ln">   206  </span>			<span class="comment">// Include all metrics from the preset</span>
-<span id="L207" class="ln">   207  </span>			for metricName := range preset.Metrics {
-<span id="L208" class="ln">   208  </span>				if metric, exists := m.MetricDefs[metricName]; exists {
-<span id="L209" class="ln">   209  </span>					result.MetricDefs[metricName] = metric
-<span id="L210" class="ln">   210  </span>				}
-<span id="L211" class="ln">   211  </span>			}
-<span id="L212" class="ln">   212  </span>		} else if metric, ok := m.MetricDefs[name]; ok {
-<span id="L213" class="ln">   213  </span>			result.MetricDefs[name] = metric
-<span id="L214" class="ln">   214  </span>		} else {
-<span id="L215" class="ln">   215  </span>			return nil, fmt.Errorf(&#34;metric or preset &#39;%s&#39; not found&#34;, name)
-<span id="L216" class="ln">   216  </span>		}
-<span id="L217" class="ln">   217  </span>	}
-<span id="L218" class="ln">   218  </span>
-<span id="L219" class="ln">   219  </span>	return result, nil
-<span id="L220" class="ln">   220  </span>}
-<span id="L221" class="ln">   221  </span>
-<span id="L222" class="ln">   222  </span>type Reader interface {
-<span id="L223" class="ln">   223  </span>	GetMetrics() (*Metrics, error)
-<span id="L224" class="ln">   224  </span>}
-<span id="L225" class="ln">   225  </span>
-<span id="L226" class="ln">   226  </span>type Writer interface {
-<span id="L227" class="ln">   227  </span>	WriteMetrics(metricDefs *Metrics) error
-<span id="L228" class="ln">   228  </span>	DeleteMetric(metricName string) error
-<span id="L229" class="ln">   229  </span>	DeletePreset(presetName string) error
-<span id="L230" class="ln">   230  </span>	UpdateMetric(metricName string, metric Metric) error
-<span id="L231" class="ln">   231  </span>	UpdatePreset(presetName string, preset Preset) error
-<span id="L232" class="ln">   232  </span>	CreateMetric(metricName string, metric Metric) error
-<span id="L233" class="ln">   233  </span>	CreatePreset(presetName string, preset Preset) error
-<span id="L234" class="ln">   234  </span>}
-<span id="L235" class="ln">   235  </span>
-<span id="L236" class="ln">   236  </span>type ReaderWriter interface {
-<span id="L237" class="ln">   237  </span>	Reader
-<span id="L238" class="ln">   238  </span>	Writer
-<span id="L239" class="ln">   239  </span>}
-<span id="L240" class="ln">   240  </span>
+<span id="L142" class="ln">   142  </span>type Measurements []map[string]any
+<span id="L143" class="ln">   143  </span>
+<span id="L144" class="ln">   144  </span>func (m Measurements) GetEpoch() int64 {
+<span id="L145" class="ln">   145  </span>	if len(m) == 0 {
+<span id="L146" class="ln">   146  </span>		return time.Now().UnixNano()
+<span id="L147" class="ln">   147  </span>	}
+<span id="L148" class="ln">   148  </span>	return Measurement(m[0]).GetEpoch()
+<span id="L149" class="ln">   149  </span>}
+<span id="L150" class="ln">   150  </span>
+<span id="L151" class="ln">   151  </span>func (m Measurements) IsEpochSet() bool {
+<span id="L152" class="ln">   152  </span>	if len(m) == 0 {
+<span id="L153" class="ln">   153  </span>		return false
+<span id="L154" class="ln">   154  </span>	}
+<span id="L155" class="ln">   155  </span>	_, ok := m[0][EpochColumnName]
+<span id="L156" class="ln">   156  </span>	return ok
+<span id="L157" class="ln">   157  </span>}
+<span id="L158" class="ln">   158  </span>
+<span id="L159" class="ln">   159  </span>func (m Measurements) DeepCopy() Measurements {
+<span id="L160" class="ln">   160  </span>	newData := make(Measurements, len(m))
+<span id="L161" class="ln">   161  </span>	for i, dr := range m {
+<span id="L162" class="ln">   162  </span>		newData[i] = maps.Clone(dr)
+<span id="L163" class="ln">   163  </span>	}
+<span id="L164" class="ln">   164  </span>	return newData
+<span id="L165" class="ln">   165  </span>}
+<span id="L166" class="ln">   166  </span>
+<span id="L167" class="ln">   167  </span><span class="comment">// Touch updates the last modified time of the metric definitions</span>
+<span id="L168" class="ln">   168  </span>func (m Measurements) Touch() {
+<span id="L169" class="ln">   169  </span>	ns := time.Now().UnixNano()
+<span id="L170" class="ln">   170  </span>	for _, measurement := range m {
+<span id="L171" class="ln">   171  </span>		measurement[EpochColumnName] = ns
+<span id="L172" class="ln">   172  </span>	}
+<span id="L173" class="ln">   173  </span>}
+<span id="L174" class="ln">   174  </span>
+<span id="L175" class="ln">   175  </span>type MeasurementEnvelope struct {
+<span id="L176" class="ln">   176  </span>	DBName     string
+<span id="L177" class="ln">   177  </span>	MetricName string
+<span id="L178" class="ln">   178  </span>	SourceKind string
+<span id="L179" class="ln">   179  </span>	CustomTags map[string]string
+<span id="L180" class="ln">   180  </span>	Data       Measurements
+<span id="L181" class="ln">   181  </span>}
+<span id="L182" class="ln">   182  </span>
+<span id="L183" class="ln">   183  </span>type Metrics struct {
+<span id="L184" class="ln">   184  </span>	MetricDefs MetricDefs `yaml:&#34;metrics,omitempty&#34;`
+<span id="L185" class="ln">   185  </span>	PresetDefs PresetDefs `yaml:&#34;presets,omitempty&#34;`
+<span id="L186" class="ln">   186  </span>}
+<span id="L187" class="ln">   187  </span>
+<span id="L188" class="ln">   188  </span><span class="comment">// FilterByNames returns a new Metrics struct containing only the specified metrics and/or presets.</span>
+<span id="L189" class="ln">   189  </span><span class="comment">// When a preset is requested, it includes both the preset definition and all its metrics.</span>
+<span id="L190" class="ln">   190  </span><span class="comment">// If names is empty, returns a full copy of all metrics and presets.</span>
+<span id="L191" class="ln">   191  </span><span class="comment">// Returns an error if any name is not found.</span>
+<span id="L192" class="ln">   192  </span>func (m *Metrics) FilterByNames(names []string) (*Metrics, error) {
+<span id="L193" class="ln">   193  </span>	result := &amp;Metrics{
+<span id="L194" class="ln">   194  </span>		MetricDefs: make(MetricDefs),
+<span id="L195" class="ln">   195  </span>		PresetDefs: make(PresetDefs),
+<span id="L196" class="ln">   196  </span>	}
+<span id="L197" class="ln">   197  </span>
+<span id="L198" class="ln">   198  </span>	<span class="comment">// If no names provided, return full copy</span>
+<span id="L199" class="ln">   199  </span>	if len(names) == 0 {
+<span id="L200" class="ln">   200  </span>		maps.Copy(result.MetricDefs, m.MetricDefs)
+<span id="L201" class="ln">   201  </span>		maps.Copy(result.PresetDefs, m.PresetDefs)
+<span id="L202" class="ln">   202  </span>		return result, nil
+<span id="L203" class="ln">   203  </span>	}
+<span id="L204" class="ln">   204  </span>
+<span id="L205" class="ln">   205  </span>	for _, name := range names {
+<span id="L206" class="ln">   206  </span>		if preset, ok := m.PresetDefs[name]; ok {
+<span id="L207" class="ln">   207  </span>			result.PresetDefs[name] = preset
+<span id="L208" class="ln">   208  </span>			<span class="comment">// Include all metrics from the preset</span>
+<span id="L209" class="ln">   209  </span>			for metricName := range preset.Metrics {
+<span id="L210" class="ln">   210  </span>				if metric, exists := m.MetricDefs[metricName]; exists {
+<span id="L211" class="ln">   211  </span>					result.MetricDefs[metricName] = metric
+<span id="L212" class="ln">   212  </span>				}
+<span id="L213" class="ln">   213  </span>			}
+<span id="L214" class="ln">   214  </span>		} else if metric, ok := m.MetricDefs[name]; ok {
+<span id="L215" class="ln">   215  </span>			result.MetricDefs[name] = metric
+<span id="L216" class="ln">   216  </span>		} else {
+<span id="L217" class="ln">   217  </span>			return nil, fmt.Errorf(&#34;metric or preset &#39;%s&#39; not found&#34;, name)
+<span id="L218" class="ln">   218  </span>		}
+<span id="L219" class="ln">   219  </span>	}
+<span id="L220" class="ln">   220  </span>
+<span id="L221" class="ln">   221  </span>	return result, nil
+<span id="L222" class="ln">   222  </span>}
+<span id="L223" class="ln">   223  </span>
+<span id="L224" class="ln">   224  </span>type Reader interface {
+<span id="L225" class="ln">   225  </span>	GetMetrics() (*Metrics, error)
+<span id="L226" class="ln">   226  </span>}
+<span id="L227" class="ln">   227  </span>
+<span id="L228" class="ln">   228  </span>type Writer interface {
+<span id="L229" class="ln">   229  </span>	WriteMetrics(metricDefs *Metrics) error
+<span id="L230" class="ln">   230  </span>	DeleteMetric(metricName string) error
+<span id="L231" class="ln">   231  </span>	DeletePreset(presetName string) error
+<span id="L232" class="ln">   232  </span>	UpdateMetric(metricName string, metric Metric) error
+<span id="L233" class="ln">   233  </span>	UpdatePreset(presetName string, preset Preset) error
+<span id="L234" class="ln">   234  </span>	CreateMetric(metricName string, metric Metric) error
+<span id="L235" class="ln">   235  </span>	CreatePreset(presetName string, preset Preset) error
+<span id="L236" class="ln">   236  </span>}
+<span id="L237" class="ln">   237  </span>
+<span id="L238" class="ln">   238  </span>type ReaderWriter interface {
+<span id="L239" class="ln">   239  </span>	Reader
+<span id="L240" class="ln">   240  </span>	Writer
+<span id="L241" class="ln">   241  </span>}
+<span id="L242" class="ln">   242  </span>
 </pre><p></p>
 
 <div id="footer">
-Build version go1.26.6.<br/>
+Build version go1.26.7.<br/>
 </div>
 
 </div><!-- .container -->
