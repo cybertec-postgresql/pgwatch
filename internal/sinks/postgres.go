@@ -382,8 +382,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	})
 
 	for _, msg := range msgs {
-		for _, dataRow := range msg.Data {
-			epochTime := time.Unix(0, metrics.Measurement(dataRow).GetEpoch())
+		if len(msg.Data) > 0 {
+			epochTime := time.Unix(0, msg.Data.GetEpoch())
 			bounds, ok := pgPartBounds[msg.MetricName]
 			if !ok || (ok && epochTime.Before(bounds.StartTime)) {
 				bounds.StartTime = epochTime
