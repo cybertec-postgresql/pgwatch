@@ -220,6 +220,7 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 					break
 				}
 				batch = append(batch, batchEntry{metricName: name, metric: metric, sql: sql})
+				continue
 			}
 			if err != nil {
 				l.WithError(err).WithField("metric", name).Error("failed to fetch metric")
