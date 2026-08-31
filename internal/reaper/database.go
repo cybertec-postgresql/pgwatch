@@ -232,11 +232,16 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 				err = sr.executeBatch(ctx, batch)
 			} else {
 				for _, e := range batch {
-					err = sr.fetchMetric(ctx, e)
+					err = errors.Join(err, sr.fetchMetric(ctx, e))
 				}
 			}
-			if err != nil {
-				l.WithError(err).Error("failed to fetch metrics")
+
+			if errs, ok := err.(interface{ Unwrap() []error }); ok {
+				for _, err = range errs.Unwrap() {
+					l.WithError(err).Error("failed to fetch metric")
+				}
+			} else if err != nil {
+				l.WithError(err).Error("failed to fetch metric")
 			}
 
 			now := time.Now()
@@ -276,7 +281,7 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 	defer func() { _ = br.Close() }()
 
 	var (
-		errs    []error
+		errs    error
 		retries []batchEntry
 	)
 	for _, e := range entries {
@@ -286,20 +291,17 @@ func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) 
 			retries = append(retries, e)
 			continue
 		}
-		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric))
+		errs = errors.Join(errs, sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric))
 	}
 
 	for _, e := range retries {
 		if err := sr.fetchMetric(ctx, e); err != nil {
-			errs = append(errs, fmt.Errorf("failed to fetch metric %s: %v", e.metricName, err))
+			errs = errors.Join(errs, fmt.Errorf("failed to fetch metric %s: %v", e.metricName, err))
 			log.GetLogger(ctx).WithField("metric", e.metricName).Warning("metric degraded after repeated failures, switching to individual fetch")
 			sr.markDegraded(e.metricName)
 		}
 	}
-	if joined := errors.Join(errs...); joined != nil {
-		return fmt.Errorf("batch: %w", joined)
-	}
-	return nil
+	return errs
 }
 
 // fetchMetric executes a single SQL query and returns the resulting measurements.
