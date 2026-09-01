@@ -150,7 +150,7 @@ func (lp *LogParser) ParseLogs() error {
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host, parsing logs locally")
 		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
-			lp.offsets = newEndSeededOffsets(lp.Directory, localFileSize)
+			lp.offsets = newEndSeededOffsets(localFileSize)
 			rc, err := lp.openLocal()
 			if err != nil {
 				return err
@@ -165,7 +165,7 @@ func (lp *LogParser) ParseLogs() error {
 		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
-	lp.offsets = newEndSeededOffsets(lp.Directory, remoteFileSizes(lp.ctx, lp))
+	lp.offsets = newEndSeededOffsets(remoteFileSizes(lp.ctx, lp))
 	rc, err := lp.openRemote()
 	if err != nil {
 		return err

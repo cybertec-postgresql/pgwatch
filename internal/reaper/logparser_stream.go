@@ -223,18 +223,26 @@ func (lp *LogParser) remoteGlob() string {
 	}
 }
 
-// endSeededOffsets starts every file it has not seen at that file's current
-// end, and remembers byte offsets thereafter.
+// endSeededOffsets records how far each log file has been read, in BYTES.
 //
-// Starting at the end is the pre-migration behaviour and it matters: a fresh
-// pgwatch pointed at a server with months of logs would otherwise count every
-// severity in all of them and report the lot as one interval's worth. The old
-// local parser did this with an explicit Seek(0, io.SeekEnd) on first run, and
+// This replaces the pre-migration resumption, which counted LINES and then
+// re-read them one ReadString at a time to skip them: resuming 400 000 lines
+// into a file meant reading 400 000 lines to arrive where it left off, and
+// paying for it again after every restart. A byte offset is a seek, and it is
+// also what pg_read_file(path, offset, len) takes natively, so local and
+// remote finally resume the same way.
+//
+// It also starts every file it has not seen at that file's current end.
+// Starting there is the pre-migration behaviour and it matters: a fresh
+// pgwatch pointed at a server with months of retained logs would otherwise
+// count every severity in all of them and report the lot as one interval's
+// worth. The old local parser did this with Seek(0, io.SeekEnd) on first run,
 // the old remote one by setting offset = size.
 type endSeededOffsets struct {
-	mu   sync.Mutex
-	dir  string
-	seen map[string]int64
+	mu    sync.Mutex
+	seen  map[string]offsetEntry
+	max   int
+	clock uint64 // monotonic tick, for eviction order
 
 	// sizeOf reports a file's current length. It is a field so the remote
 	// path can supply pg_ls_logdir sizes where the local path stats the
@@ -242,10 +250,15 @@ type endSeededOffsets struct {
 	sizeOf func(path string) (int64, bool)
 }
 
-func newEndSeededOffsets(dir string, sizeOf func(string) (int64, bool)) *endSeededOffsets {
+type offsetEntry struct {
+	offset   int64
+	lastUsed uint64
+}
+
+func newEndSeededOffsets(sizeOf func(string) (int64, bool)) *endSeededOffsets {
 	return &endSeededOffsets{
-		dir:    dir,
-		seen:   make(map[string]int64),
+		seen:   make(map[string]offsetEntry),
+		max:    maxTrackedFiles,
 		sizeOf: sizeOf,
 	}
 }
@@ -253,13 +266,15 @@ func newEndSeededOffsets(dir string, sizeOf func(string) (int64, bool)) *endSeed
 func (o *endSeededOffsets) Get(path string) (int64, bool) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	if off, ok := o.seen[path]; ok {
-		return off, true
+
+	if e, ok := o.seen[path]; ok {
+		o.touchLocked(path, e.offset)
+		return e.offset, true
 	}
 	// First sight of this file. If it already has content, that content
 	// predates this process and is not ours to report.
 	if size, ok := o.sizeOf(path); ok && size > 0 {
-		o.seen[path] = size
+		o.touchLocked(path, size)
 		return size, true
 	}
 	return 0, false
@@ -267,8 +282,35 @@ func (o *endSeededOffsets) Get(path string) (int64, bool) {
 
 func (o *endSeededOffsets) Set(path string, offset int64) {
 	o.mu.Lock()
-	o.seen[path] = offset
+	o.touchLocked(path, offset)
 	o.mu.Unlock()
+}
+
+// touchLocked stores an offset and evicts the least recently used entry if the
+// map has outgrown its bound.
+//
+// The bound is the point. A log directory accumulates rotated files forever
+// and pgwatch runs for months, so an unbounded map is a slow leak in the one
+// component that is supposed to be cheap. The pre-migration code bounded it by
+// clearing the WHOLE map at the limit, which also discarded the offset of the
+// file currently being read -- that file would then be re-seeded to its
+// current end and every record written since would be skipped. Evicting one
+// entry, least recently used, cannot do that: the active file is by definition
+// the most recently used.
+func (o *endSeededOffsets) touchLocked(path string, offset int64) {
+	o.clock++
+	o.seen[path] = offsetEntry{offset: offset, lastUsed: o.clock}
+	if len(o.seen) <= o.max {
+		return
+	}
+	var oldest string
+	var oldestUse uint64
+	for p, e := range o.seen {
+		if oldest == "" || e.lastUsed < oldestUse {
+			oldest, oldestUse = p, e.lastUsed
+		}
+	}
+	delete(o.seen, oldest)
 }
 
 // localFileSize stats the filesystem.
