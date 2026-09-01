@@ -95,14 +95,34 @@ func TestNewLogParser(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
+	// Retained deliberately, unlike the log_destination error.
+	//
+	// With logging_collector off there are no files in log_directory at
+	// all -- PostgreSQL writes to the postmaster's stderr -- so this is a
+	// fact about the server rather than a limitation of the parser. The
+	// subtests below check it holds for every destination, since the
+	// obvious way to widen the destination check is a switch that reaches a
+	// working stderr branch before ever testing the collector.
 	t.Run("logging_collector disabled", func(t *testing.T) {
-		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
-				AddRow(false, true, false, true, "/data/pg_log", "de", defaultLinePrefix))
+		for _, d := range []struct {
+			name       string
+			csv, jsonl bool
+		}{
+			{"csvlog", true, false},
+			{"jsonlog", false, true},
+			{"stderr", false, false},
+		} {
+			t.Run(d.name, func(t *testing.T) {
+				mock.ExpectQuery(expectedSettingsQuery).
+					WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+						AddRow(false, d.csv, d.jsonl, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-		assert.Equal(t, err.Error(), "logging_collector is not enabled on the db server")
-		assert.Nil(t, lp)
+				lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+				require.Error(t, err)
+				assert.Equal(t, "logging_collector is not enabled on the db server", err.Error())
+				assert.Nil(t, lp)
+			})
+		}
 	})
 
 	// stderr is accepted, where it used to be a hard error.

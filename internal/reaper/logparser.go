@@ -109,6 +109,15 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 		return nil, fmt.Errorf("could not determine Postgres logs settings: %w", err)
 	}
 
+	// This error stays, where the log_destination one went.
+	//
+	// The two look alike and are not. log_destination only chooses a
+	// FORMAT, and pglogwatch reads all three of them, so rejecting a server
+	// over it was a limitation of the old regex rather than a fact about
+	// the server. logging_collector is different in kind: with it off,
+	// PostgreSQL writes to the postmaster's stderr and there are no log
+	// files in log_directory to read. No parser fixes that, and reporting
+	// zero events would be indistinguishable from a healthy quiet server.
 	if !cfg.CollectorEnabled {
 		return nil, errors.New("logging_collector is not enabled on the db server")
 	}
