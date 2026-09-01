@@ -728,7 +728,7 @@ from pg_catalog.pg_tablespace where spcname !~ &#39;pg_.+&#39;`</pre>
 		
 			
 			
-			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L415">QueryMeasurements</a>
+			<h2 id="QueryMeasurements">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L418">QueryMeasurements</a>
 				<a class="permalink" href="#QueryMeasurements">&#xb6;</a>
 				
 				
@@ -1065,7 +1065,7 @@ connection (non-pgbouncer, non-pgpool).
 
 			
 				
-				<h3 id="DbConnReaper.CollectAndDispatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L329">CollectAndDispatch</a>
+				<h3 id="DbConnReaper.CollectAndDispatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L332">CollectAndDispatch</a>
 					<a class="permalink" href="#DbConnReaper.CollectAndDispatch">&#xb6;</a>
 					
 					
@@ -1145,7 +1145,7 @@ as durations, delegating recovery-state selection to md.ActiveMetrics().
 				
 			
 				
-				<h3 id="DbConnReaper.detectServerRestart">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L388">detectServerRestart</a>
+				<h3 id="DbConnReaper.detectServerRestart">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L391">detectServerRestart</a>
 					<a class="permalink" href="#DbConnReaper.detectServerRestart">&#xb6;</a>
 					
 					
@@ -1173,7 +1173,7 @@ caching, sysinfo enrichment, sending, and restart detection.
 				
 			
 				
-				<h3 id="DbConnReaper.executeBatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L261">executeBatch</a>
+				<h3 id="DbConnReaper.executeBatch">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L267">executeBatch</a>
 					<a class="permalink" href="#DbConnReaper.executeBatch">&#xb6;</a>
 					
 					
@@ -1192,7 +1192,7 @@ so that subsequent runs use fetchMetric for them until they recover.
 				
 			
 				
-				<h3 id="DbConnReaper.fetchMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L305">fetchMetric</a>
+				<h3 id="DbConnReaper.fetchMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L308">fetchMetric</a>
 					<a class="permalink" href="#DbConnReaper.fetchMetric">&#xb6;</a>
 					
 					
@@ -1205,7 +1205,7 @@ so that subsequent runs use fetchMetric for them until they recover.
 				
 			
 				
-				<h3 id="DbConnReaper.fetchMetricOnce">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L320">fetchMetricOnce</a>
+				<h3 id="DbConnReaper.fetchMetricOnce">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L323">fetchMetricOnce</a>
 					<a class="permalink" href="#DbConnReaper.fetchMetricOnce">&#xb6;</a>
 					
 					
@@ -1218,7 +1218,7 @@ so that subsequent runs use fetchMetric for them until they recover.
 				
 			
 				
-				<h3 id="DbConnReaper.fetchOSMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L341">fetchOSMetric</a>
+				<h3 id="DbConnReaper.fetchOSMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L344">fetchOSMetric</a>
 					<a class="permalink" href="#DbConnReaper.fetchOSMetric">&#xb6;</a>
 					
 					
@@ -1231,7 +1231,7 @@ so that subsequent runs use fetchMetric for them until they recover.
 				
 			
 				
-				<h3 id="DbConnReaper.fetchSpecialMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L354">fetchSpecialMetric</a>
+				<h3 id="DbConnReaper.fetchSpecialMetric">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L357">fetchSpecialMetric</a>
 					<a class="permalink" href="#DbConnReaper.fetchSpecialMetric">&#xb6;</a>
 					
 					
@@ -1284,7 +1284,7 @@ source&apos;s recovery state (e.g. primary-only metric on a standby).
 				
 			
 				
-				<h3 id="DbConnReaper.runLogParser">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L375">runLogParser</a>
+				<h3 id="DbConnReaper.runLogParser">func (*DbConnReaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L378">runLogParser</a>
 					<a class="permalink" href="#DbConnReaper.runLogParser">&#xb6;</a>
 					
 					
@@ -1852,7 +1852,7 @@ for any sources that disappeared from the previous loop without a running worker
 				
 			
 				
-				<h3 id="reaper.DetectConfigurationChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L746">DetectConfigurationChanges</a>
+				<h3 id="reaper.DetectConfigurationChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L749">DetectConfigurationChanges</a>
 					<a class="permalink" href="#reaper.DetectConfigurationChanges">&#xb6;</a>
 					
 					
@@ -1864,7 +1864,7 @@ for any sources that disappeared from the previous loop without a running worker
 				
 			
 				
-				<h3 id="reaper.DetectIndexChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L590">DetectIndexChanges</a>
+				<h3 id="reaper.DetectIndexChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L593">DetectIndexChanges</a>
 					<a class="permalink" href="#reaper.DetectIndexChanges">&#xb6;</a>
 					
 					
@@ -1876,7 +1876,7 @@ for any sources that disappeared from the previous loop without a running worker
 				
 			
 				
-				<h3 id="reaper.DetectPrivilegeChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L669">DetectPrivilegeChanges</a>
+				<h3 id="reaper.DetectPrivilegeChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L672">DetectPrivilegeChanges</a>
 					<a class="permalink" href="#reaper.DetectPrivilegeChanges">&#xb6;</a>
 					
 					
@@ -1888,7 +1888,7 @@ for any sources that disappeared from the previous loop without a running worker
 				
 			
 				
-				<h3 id="reaper.DetectSprocChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L436">DetectSprocChanges</a>
+				<h3 id="reaper.DetectSprocChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L439">DetectSprocChanges</a>
 					<a class="permalink" href="#reaper.DetectSprocChanges">&#xb6;</a>
 					
 					
@@ -1900,7 +1900,7 @@ for any sources that disappeared from the previous loop without a running worker
 				
 			
 				
-				<h3 id="reaper.DetectTableChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L511">DetectTableChanges</a>
+				<h3 id="reaper.DetectTableChanges">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L514">DetectTableChanges</a>
 					<a class="permalink" href="#reaper.DetectTableChanges">&#xb6;</a>
 					
 					
@@ -1943,7 +1943,7 @@ the connection status, and applies both eligibility filters:
 				
 			
 				
-				<h3 id="reaper.GetInstanceUpMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L817">GetInstanceUpMeasurement</a>
+				<h3 id="reaper.GetInstanceUpMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L820">GetInstanceUpMeasurement</a>
 					<a class="permalink" href="#reaper.GetInstanceUpMeasurement">&#xb6;</a>
 					
 					
@@ -1970,7 +1970,7 @@ used to detect if the instance is up or down
 				
 			
 				
-				<h3 id="reaper.GetObjectChangesMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L831">GetObjectChangesMeasurement</a>
+				<h3 id="reaper.GetObjectChangesMeasurement">func (*reaper) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/reaper/database.go.html#L834">GetObjectChangesMeasurement</a>
 					<a class="permalink" href="#reaper.GetObjectChangesMeasurement">&#xb6;</a>
 					
 					

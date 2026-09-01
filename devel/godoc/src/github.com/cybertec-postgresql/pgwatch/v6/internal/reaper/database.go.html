@@ -277,630 +277,633 @@
 <span id="L220" class="ln">   220  </span>					break
 <span id="L221" class="ln">   221  </span>				}
 <span id="L222" class="ln">   222  </span>				batch = append(batch, batchEntry{metricName: name, metric: metric, sql: sql})
-<span id="L223" class="ln">   223  </span>			}
-<span id="L224" class="ln">   224  </span>			if err != nil {
-<span id="L225" class="ln">   225  </span>				l.WithError(err).WithField(&#34;metric&#34;, name).Error(&#34;failed to fetch metric&#34;)
-<span id="L226" class="ln">   226  </span>			}
-<span id="L227" class="ln">   227  </span>		}
-<span id="L228" class="ln">   228  </span>
-<span id="L229" class="ln">   229  </span>		if len(batch) &gt; 0 {
-<span id="L230" class="ln">   230  </span>			if sr.md.IsPostgresSource() {
-<span id="L231" class="ln">   231  </span>				err = sr.executeBatch(ctx, batch)
-<span id="L232" class="ln">   232  </span>			} else {
-<span id="L233" class="ln">   233  </span>				for _, e := range batch {
-<span id="L234" class="ln">   234  </span>					err = sr.fetchMetric(ctx, e)
-<span id="L235" class="ln">   235  </span>				}
-<span id="L236" class="ln">   236  </span>			}
-<span id="L237" class="ln">   237  </span>			if err != nil {
-<span id="L238" class="ln">   238  </span>				l.WithError(err).Error(&#34;failed to fetch metrics&#34;)
-<span id="L239" class="ln">   239  </span>			}
-<span id="L240" class="ln">   240  </span>
-<span id="L241" class="ln">   241  </span>			now := time.Now()
-<span id="L242" class="ln">   242  </span>			for _, e := range batch {
-<span id="L243" class="ln">   243  </span>				sr.lastFetch[e.metricName] = now
-<span id="L244" class="ln">   244  </span>			}
-<span id="L245" class="ln">   245  </span>		}
-<span id="L246" class="ln">   246  </span>		select {
-<span id="L247" class="ln">   247  </span>		case &lt;-ctx.Done():
-<span id="L248" class="ln">   248  </span>			return
-<span id="L249" class="ln">   249  </span>		case &lt;-time.After(sr.calcTickInterval()):
-<span id="L250" class="ln">   250  </span>		}
-<span id="L251" class="ln">   251  </span>	}
-<span id="L252" class="ln">   252  </span>}
-<span id="L253" class="ln">   253  </span>
-<span id="L254" class="ln">   254  </span><span class="comment">// executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching</span>
-<span id="L255" class="ln">   255  </span><span class="comment">// each result immediately as it arrives. If any query fails, PostgreSQL&#39;s</span>
-<span id="L256" class="ln">   256  </span><span class="comment">// extended protocol aborts all subsequent queries in the same sync boundary</span>
-<span id="L257" class="ln">   257  </span><span class="comment">// (cascade failure). Any entry that returns an error from the batch is retried</span>
-<span id="L258" class="ln">   258  </span><span class="comment">// individually via fetchMetric to isolate real failures from cascade failures.</span>
-<span id="L259" class="ln">   259  </span><span class="comment">// Entries that fail even after the individual retry are marked as degraded</span>
-<span id="L260" class="ln">   260  </span><span class="comment">// so that subsequent runs use fetchMetric for them until they recover.</span>
-<span id="L261" class="ln">   261  </span>func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
-<span id="L262" class="ln">   262  </span>	batch := &amp;pgx.Batch{}
-<span id="L263" class="ln">   263  </span>	for _, e := range entries {
-<span id="L264" class="ln">   264  </span>		batch.Queue(e.sql)
-<span id="L265" class="ln">   265  </span>	}
-<span id="L266" class="ln">   266  </span>
-<span id="L267" class="ln">   267  </span>	<span class="comment">// Bound the batch round-trip by the tick interval (with the floor from</span>
-<span id="L268" class="ln">   268  </span>	<span class="comment">// db.MinFetchTimeout) so a wedged connection cannot stall the source</span>
-<span id="L269" class="ln">   269  </span>	<span class="comment">// worker past the next tick. The derived ctx embeds an op-named cause</span>
-<span id="L270" class="ln">   270  </span>	<span class="comment">// so the error chain is greppable per call site.</span>
-<span id="L271" class="ln">   271  </span>	bctx, cancel := db.WithFetchTimeout(ctx, &#34;batch&#34;, sr.calcTickInterval())
-<span id="L272" class="ln">   272  </span>	defer cancel()
-<span id="L273" class="ln">   273  </span>
-<span id="L274" class="ln">   274  </span>	br := sr.md.Conn.SendBatch(bctx, batch)
-<span id="L275" class="ln">   275  </span>	defer func() { _ = br.Close() }()
-<span id="L276" class="ln">   276  </span>
-<span id="L277" class="ln">   277  </span>	var (
-<span id="L278" class="ln">   278  </span>		errs    []error
-<span id="L279" class="ln">   279  </span>		retries []batchEntry
-<span id="L280" class="ln">   280  </span>	)
-<span id="L281" class="ln">   281  </span>	for _, e := range entries {
-<span id="L282" class="ln">   282  </span>		rows, err := br.Query()
-<span id="L283" class="ln">   283  </span>		if err != nil {
-<span id="L284" class="ln">   284  </span>			<span class="comment">// May be a real error or a cascade from an earlier failure; retry individually.</span>
-<span id="L285" class="ln">   285  </span>			retries = append(retries, e)
-<span id="L286" class="ln">   286  </span>			continue
-<span id="L287" class="ln">   287  </span>		}
-<span id="L288" class="ln">   288  </span>		errs = append(errs, sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric))
-<span id="L289" class="ln">   289  </span>	}
-<span id="L290" class="ln">   290  </span>
-<span id="L291" class="ln">   291  </span>	for _, e := range retries {
-<span id="L292" class="ln">   292  </span>		if err := sr.fetchMetric(ctx, e); err != nil {
-<span id="L293" class="ln">   293  </span>			errs = append(errs, fmt.Errorf(&#34;failed to fetch metric %s: %v&#34;, e.metricName, err))
-<span id="L294" class="ln">   294  </span>			log.GetLogger(ctx).WithField(&#34;metric&#34;, e.metricName).Warning(&#34;metric degraded after repeated failures, switching to individual fetch&#34;)
-<span id="L295" class="ln">   295  </span>			sr.markDegraded(e.metricName)
-<span id="L296" class="ln">   296  </span>		}
-<span id="L297" class="ln">   297  </span>	}
-<span id="L298" class="ln">   298  </span>	if joined := errors.Join(errs...); joined != nil {
-<span id="L299" class="ln">   299  </span>		return fmt.Errorf(&#34;batch: %w&#34;, joined)
-<span id="L300" class="ln">   300  </span>	}
-<span id="L301" class="ln">   301  </span>	return nil
-<span id="L302" class="ln">   302  </span>}
-<span id="L303" class="ln">   303  </span>
-<span id="L304" class="ln">   304  </span><span class="comment">// fetchMetric executes a single SQL query and returns the resulting measurements.</span>
-<span id="L305" class="ln">   305  </span>func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
-<span id="L306" class="ln">   306  </span>	<span class="comment">// Bound the per-metric round-trip by max(GetMetricInterval, MinFetchTimeout).</span>
-<span id="L307" class="ln">   307  </span>	<span class="comment">// GetMetricInterval already returns a time.Duration in seconds — do NOT</span>
-<span id="L308" class="ln">   308  </span>	<span class="comment">// multiply by time.Second again.</span>
-<span id="L309" class="ln">   309  </span>	interval := sr.md.GetMetricInterval(entry.metricName)
-<span id="L310" class="ln">   310  </span>	op := &#34;fetch &#34; + entry.metricName
-<span id="L311" class="ln">   311  </span>	fctx, cancel := db.WithFetchTimeout(ctx, op, interval)
-<span id="L312" class="ln">   312  </span>	defer cancel()
-<span id="L313" class="ln">   313  </span>	if err := sr.fetchMetricOnce(fctx, entry); err != nil {
-<span id="L314" class="ln">   314  </span>		return fmt.Errorf(&#34;%s: %w&#34;, op, err)
-<span id="L315" class="ln">   315  </span>	}
-<span id="L316" class="ln">   316  </span>	return nil
-<span id="L317" class="ln">   317  </span>}
-<span id="L318" class="ln">   318  </span>
-<span id="L319" class="ln">   319  </span><span class="comment">// fetchMetricOnce is the unwrapped round-trip — deadline-bound by the caller.</span>
-<span id="L320" class="ln">   320  </span>func (sr *DbConnReaper) fetchMetricOnce(ctx context.Context, entry batchEntry) error {
-<span id="L321" class="ln">   321  </span>	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
-<span id="L322" class="ln">   322  </span>	if err != nil {
-<span id="L323" class="ln">   323  </span>		return err
-<span id="L324" class="ln">   324  </span>	}
-<span id="L325" class="ln">   325  </span>	return sr.CollectAndDispatch(ctx, rows, entry.metricName, entry.metric)
-<span id="L326" class="ln">   326  </span>}
-<span id="L327" class="ln">   327  </span>
-<span id="L328" class="ln">   328  </span><span class="comment">// CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.</span>
-<span id="L329" class="ln">   329  </span>func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
-<span id="L330" class="ln">   330  </span>	data, err := pgx.CollectRows(rows, metrics.RowToMeasurement)
-<span id="L331" class="ln">   331  </span>	if err != nil {
-<span id="L332" class="ln">   332  </span>		return err
-<span id="L333" class="ln">   333  </span>	}
-<span id="L334" class="ln">   334  </span>	if len(data) &gt; 0 {
-<span id="L335" class="ln">   335  </span>		sr.dispatchMetricData(ctx, name, metric, data)
+<span id="L223" class="ln">   223  </span>				continue
+<span id="L224" class="ln">   224  </span>			}
+<span id="L225" class="ln">   225  </span>			if err != nil {
+<span id="L226" class="ln">   226  </span>				l.WithError(err).WithField(&#34;metric&#34;, name).Error(&#34;failed to fetch metric&#34;)
+<span id="L227" class="ln">   227  </span>			}
+<span id="L228" class="ln">   228  </span>		}
+<span id="L229" class="ln">   229  </span>
+<span id="L230" class="ln">   230  </span>		if len(batch) &gt; 0 {
+<span id="L231" class="ln">   231  </span>			if sr.md.IsPostgresSource() {
+<span id="L232" class="ln">   232  </span>				err = sr.executeBatch(ctx, batch)
+<span id="L233" class="ln">   233  </span>			} else {
+<span id="L234" class="ln">   234  </span>				for _, e := range batch {
+<span id="L235" class="ln">   235  </span>					err = errors.Join(err, sr.fetchMetric(ctx, e))
+<span id="L236" class="ln">   236  </span>				}
+<span id="L237" class="ln">   237  </span>			}
+<span id="L238" class="ln">   238  </span>
+<span id="L239" class="ln">   239  </span>			if errs, ok := err.(interface{ Unwrap() []error }); ok {
+<span id="L240" class="ln">   240  </span>				for _, err = range errs.Unwrap() {
+<span id="L241" class="ln">   241  </span>					l.WithError(err).Error(&#34;failed to fetch metric&#34;)
+<span id="L242" class="ln">   242  </span>				}
+<span id="L243" class="ln">   243  </span>			} else if err != nil {
+<span id="L244" class="ln">   244  </span>				l.WithError(err).Error(&#34;failed to fetch metric&#34;)
+<span id="L245" class="ln">   245  </span>			}
+<span id="L246" class="ln">   246  </span>
+<span id="L247" class="ln">   247  </span>			now := time.Now()
+<span id="L248" class="ln">   248  </span>			for _, e := range batch {
+<span id="L249" class="ln">   249  </span>				sr.lastFetch[e.metricName] = now
+<span id="L250" class="ln">   250  </span>			}
+<span id="L251" class="ln">   251  </span>		}
+<span id="L252" class="ln">   252  </span>		select {
+<span id="L253" class="ln">   253  </span>		case &lt;-ctx.Done():
+<span id="L254" class="ln">   254  </span>			return
+<span id="L255" class="ln">   255  </span>		case &lt;-time.After(sr.calcTickInterval()):
+<span id="L256" class="ln">   256  </span>		}
+<span id="L257" class="ln">   257  </span>	}
+<span id="L258" class="ln">   258  </span>}
+<span id="L259" class="ln">   259  </span>
+<span id="L260" class="ln">   260  </span><span class="comment">// executeBatch sends all SQLs in a single pgx.Batch round-trip, dispatching</span>
+<span id="L261" class="ln">   261  </span><span class="comment">// each result immediately as it arrives. If any query fails, PostgreSQL&#39;s</span>
+<span id="L262" class="ln">   262  </span><span class="comment">// extended protocol aborts all subsequent queries in the same sync boundary</span>
+<span id="L263" class="ln">   263  </span><span class="comment">// (cascade failure). Any entry that returns an error from the batch is retried</span>
+<span id="L264" class="ln">   264  </span><span class="comment">// individually via fetchMetric to isolate real failures from cascade failures.</span>
+<span id="L265" class="ln">   265  </span><span class="comment">// Entries that fail even after the individual retry are marked as degraded</span>
+<span id="L266" class="ln">   266  </span><span class="comment">// so that subsequent runs use fetchMetric for them until they recover.</span>
+<span id="L267" class="ln">   267  </span>func (sr *DbConnReaper) executeBatch(ctx context.Context, entries []batchEntry) error {
+<span id="L268" class="ln">   268  </span>	batch := &amp;pgx.Batch{}
+<span id="L269" class="ln">   269  </span>	for _, e := range entries {
+<span id="L270" class="ln">   270  </span>		batch.Queue(e.sql)
+<span id="L271" class="ln">   271  </span>	}
+<span id="L272" class="ln">   272  </span>
+<span id="L273" class="ln">   273  </span>	<span class="comment">// Bound the batch round-trip by the tick interval (with the floor from</span>
+<span id="L274" class="ln">   274  </span>	<span class="comment">// db.MinFetchTimeout) so a wedged connection cannot stall the source</span>
+<span id="L275" class="ln">   275  </span>	<span class="comment">// worker past the next tick. The derived ctx embeds an op-named cause</span>
+<span id="L276" class="ln">   276  </span>	<span class="comment">// so the error chain is greppable per call site.</span>
+<span id="L277" class="ln">   277  </span>	bctx, cancel := db.WithFetchTimeout(ctx, &#34;batch&#34;, sr.calcTickInterval())
+<span id="L278" class="ln">   278  </span>	defer cancel()
+<span id="L279" class="ln">   279  </span>
+<span id="L280" class="ln">   280  </span>	br := sr.md.Conn.SendBatch(bctx, batch)
+<span id="L281" class="ln">   281  </span>	defer func() { _ = br.Close() }()
+<span id="L282" class="ln">   282  </span>
+<span id="L283" class="ln">   283  </span>	var (
+<span id="L284" class="ln">   284  </span>		errs    error
+<span id="L285" class="ln">   285  </span>		retries []batchEntry
+<span id="L286" class="ln">   286  </span>	)
+<span id="L287" class="ln">   287  </span>	for _, e := range entries {
+<span id="L288" class="ln">   288  </span>		rows, err := br.Query()
+<span id="L289" class="ln">   289  </span>		if err != nil {
+<span id="L290" class="ln">   290  </span>			<span class="comment">// May be a real error or a cascade from an earlier failure; retry individually.</span>
+<span id="L291" class="ln">   291  </span>			retries = append(retries, e)
+<span id="L292" class="ln">   292  </span>			continue
+<span id="L293" class="ln">   293  </span>		}
+<span id="L294" class="ln">   294  </span>		errs = errors.Join(errs, sr.CollectAndDispatch(ctx, rows, e.metricName, e.metric))
+<span id="L295" class="ln">   295  </span>	}
+<span id="L296" class="ln">   296  </span>
+<span id="L297" class="ln">   297  </span>	for _, e := range retries {
+<span id="L298" class="ln">   298  </span>		if err := sr.fetchMetric(ctx, e); err != nil {
+<span id="L299" class="ln">   299  </span>			errs = errors.Join(errs, fmt.Errorf(&#34;failed to fetch metric %s: %v&#34;, e.metricName, err))
+<span id="L300" class="ln">   300  </span>			log.GetLogger(ctx).WithField(&#34;metric&#34;, e.metricName).Warning(&#34;metric degraded after repeated failures, switching to individual fetch&#34;)
+<span id="L301" class="ln">   301  </span>			sr.markDegraded(e.metricName)
+<span id="L302" class="ln">   302  </span>		}
+<span id="L303" class="ln">   303  </span>	}
+<span id="L304" class="ln">   304  </span>	return errs
+<span id="L305" class="ln">   305  </span>}
+<span id="L306" class="ln">   306  </span>
+<span id="L307" class="ln">   307  </span><span class="comment">// fetchMetric executes a single SQL query and returns the resulting measurements.</span>
+<span id="L308" class="ln">   308  </span>func (sr *DbConnReaper) fetchMetric(ctx context.Context, entry batchEntry) error {
+<span id="L309" class="ln">   309  </span>	<span class="comment">// Bound the per-metric round-trip by max(GetMetricInterval, MinFetchTimeout).</span>
+<span id="L310" class="ln">   310  </span>	<span class="comment">// GetMetricInterval already returns a time.Duration in seconds — do NOT</span>
+<span id="L311" class="ln">   311  </span>	<span class="comment">// multiply by time.Second again.</span>
+<span id="L312" class="ln">   312  </span>	interval := sr.md.GetMetricInterval(entry.metricName)
+<span id="L313" class="ln">   313  </span>	op := &#34;fetch &#34; + entry.metricName
+<span id="L314" class="ln">   314  </span>	fctx, cancel := db.WithFetchTimeout(ctx, op, interval)
+<span id="L315" class="ln">   315  </span>	defer cancel()
+<span id="L316" class="ln">   316  </span>	if err := sr.fetchMetricOnce(fctx, entry); err != nil {
+<span id="L317" class="ln">   317  </span>		return fmt.Errorf(&#34;%s: %w&#34;, op, err)
+<span id="L318" class="ln">   318  </span>	}
+<span id="L319" class="ln">   319  </span>	return nil
+<span id="L320" class="ln">   320  </span>}
+<span id="L321" class="ln">   321  </span>
+<span id="L322" class="ln">   322  </span><span class="comment">// fetchMetricOnce is the unwrapped round-trip — deadline-bound by the caller.</span>
+<span id="L323" class="ln">   323  </span>func (sr *DbConnReaper) fetchMetricOnce(ctx context.Context, entry batchEntry) error {
+<span id="L324" class="ln">   324  </span>	rows, err := sr.md.Conn.Query(ctx, entry.sql, pgx.QueryExecModeSimpleProtocol)
+<span id="L325" class="ln">   325  </span>	if err != nil {
+<span id="L326" class="ln">   326  </span>		return err
+<span id="L327" class="ln">   327  </span>	}
+<span id="L328" class="ln">   328  </span>	return sr.CollectAndDispatch(ctx, rows, entry.metricName, entry.metric)
+<span id="L329" class="ln">   329  </span>}
+<span id="L330" class="ln">   330  </span>
+<span id="L331" class="ln">   331  </span><span class="comment">// CollectAndDispatch is a helper that collects rows from a pgx.Rows and dispatches them.</span>
+<span id="L332" class="ln">   332  </span>func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, name string, metric metrics.Metric) error {
+<span id="L333" class="ln">   333  </span>	data, err := pgx.CollectRows(rows, metrics.RowToMeasurement)
+<span id="L334" class="ln">   334  </span>	if err != nil {
+<span id="L335" class="ln">   335  </span>		return err
 <span id="L336" class="ln">   336  </span>	}
-<span id="L337" class="ln">   337  </span>	return nil
-<span id="L338" class="ln">   338  </span>}
-<span id="L339" class="ln">   339  </span>
-<span id="L340" class="ln">   340  </span><span class="comment">// fetchOSMetric handles gopsutil-based OS metrics.</span>
-<span id="L341" class="ln">   341  </span>func (sr *DbConnReaper) fetchOSMetric(ctx context.Context, name string) error {
-<span id="L342" class="ln">   342  </span>	msg, err := sr.reaper.FetchStatsDirectlyFromOS(ctx, sr.md, name)
-<span id="L343" class="ln">   343  </span>	if err != nil {
-<span id="L344" class="ln">   344  </span>		return fmt.Errorf(&#34;could not read metric from OS: %v&#34;, err)
-<span id="L345" class="ln">   345  </span>	}
-<span id="L346" class="ln">   346  </span>	if msg != nil &amp;&amp; len(msg.Data) &gt; 0 {
-<span id="L347" class="ln">   347  </span>		log.GetLogger(ctx).WithField(&#34;metric&#34;, name).WithField(&#34;rows&#34;, len(msg.Data)).Info(&#34;measurements fetched&#34;)
-<span id="L348" class="ln">   348  </span>		sr.reaper.measurementCh &lt;- *msg
-<span id="L349" class="ln">   349  </span>	}
-<span id="L350" class="ln">   350  </span>	return nil
-<span id="L351" class="ln">   351  </span>}
-<span id="L352" class="ln">   352  </span>
-<span id="L353" class="ln">   353  </span><span class="comment">// fetchSpecialMetric handles change_events and instance_up metrics.</span>
-<span id="L354" class="ln">   354  </span>func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
-<span id="L355" class="ln">   355  </span>	var (
-<span id="L356" class="ln">   356  </span>		data metrics.Measurements
-<span id="L357" class="ln">   357  </span>		err  error
-<span id="L358" class="ln">   358  </span>	)
-<span id="L359" class="ln">   359  </span>	switch name {
-<span id="L360" class="ln">   360  </span>	case specialMetricChangeEvents:
-<span id="L361" class="ln">   361  </span>		data, err = sr.reaper.GetObjectChangesMeasurement(ctx, sr.md)
-<span id="L362" class="ln">   362  </span>	case specialMetricInstanceUp:
-<span id="L363" class="ln">   363  </span>		data, err = sr.reaper.GetInstanceUpMeasurement(ctx, sr.md)
-<span id="L364" class="ln">   364  </span>	}
-<span id="L365" class="ln">   365  </span>	if err != nil {
-<span id="L366" class="ln">   366  </span>		return fmt.Errorf(&#34;failed to fetch special metric: %v&#34;, err)
+<span id="L337" class="ln">   337  </span>	if len(data) &gt; 0 {
+<span id="L338" class="ln">   338  </span>		sr.dispatchMetricData(ctx, name, metric, data)
+<span id="L339" class="ln">   339  </span>	}
+<span id="L340" class="ln">   340  </span>	return nil
+<span id="L341" class="ln">   341  </span>}
+<span id="L342" class="ln">   342  </span>
+<span id="L343" class="ln">   343  </span><span class="comment">// fetchOSMetric handles gopsutil-based OS metrics.</span>
+<span id="L344" class="ln">   344  </span>func (sr *DbConnReaper) fetchOSMetric(ctx context.Context, name string) error {
+<span id="L345" class="ln">   345  </span>	msg, err := sr.reaper.FetchStatsDirectlyFromOS(ctx, sr.md, name)
+<span id="L346" class="ln">   346  </span>	if err != nil {
+<span id="L347" class="ln">   347  </span>		return fmt.Errorf(&#34;could not read metric from OS: %v&#34;, err)
+<span id="L348" class="ln">   348  </span>	}
+<span id="L349" class="ln">   349  </span>	if msg != nil &amp;&amp; len(msg.Data) &gt; 0 {
+<span id="L350" class="ln">   350  </span>		log.GetLogger(ctx).WithField(&#34;metric&#34;, name).WithField(&#34;rows&#34;, len(msg.Data)).Info(&#34;measurements fetched&#34;)
+<span id="L351" class="ln">   351  </span>		sr.reaper.measurementCh &lt;- *msg
+<span id="L352" class="ln">   352  </span>	}
+<span id="L353" class="ln">   353  </span>	return nil
+<span id="L354" class="ln">   354  </span>}
+<span id="L355" class="ln">   355  </span>
+<span id="L356" class="ln">   356  </span><span class="comment">// fetchSpecialMetric handles change_events and instance_up metrics.</span>
+<span id="L357" class="ln">   357  </span>func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageName string) error {
+<span id="L358" class="ln">   358  </span>	var (
+<span id="L359" class="ln">   359  </span>		data metrics.Measurements
+<span id="L360" class="ln">   360  </span>		err  error
+<span id="L361" class="ln">   361  </span>	)
+<span id="L362" class="ln">   362  </span>	switch name {
+<span id="L363" class="ln">   363  </span>	case specialMetricChangeEvents:
+<span id="L364" class="ln">   364  </span>		data, err = sr.reaper.GetObjectChangesMeasurement(ctx, sr.md)
+<span id="L365" class="ln">   365  </span>	case specialMetricInstanceUp:
+<span id="L366" class="ln">   366  </span>		data, err = sr.reaper.GetInstanceUpMeasurement(ctx, sr.md)
 <span id="L367" class="ln">   367  </span>	}
-<span id="L368" class="ln">   368  </span>	if len(data) &gt; 0 {
-<span id="L369" class="ln">   369  </span>		sr.sendEnvelope(ctx, name, storageName, data)
+<span id="L368" class="ln">   368  </span>	if err != nil {
+<span id="L369" class="ln">   369  </span>		return fmt.Errorf(&#34;failed to fetch special metric: %v&#34;, err)
 <span id="L370" class="ln">   370  </span>	}
-<span id="L371" class="ln">   371  </span>	return err
-<span id="L372" class="ln">   372  </span>}
-<span id="L373" class="ln">   373  </span>
-<span id="L374" class="ln">   374  </span><span class="comment">// runLogParser launches the server log event counts parser.</span>
-<span id="L375" class="ln">   375  </span>func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
-<span id="L376" class="ln">   376  </span>	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
-<span id="L377" class="ln">   377  </span>	if err != nil {
-<span id="L378" class="ln">   378  </span>		return fmt.Errorf(&#34;failed to initialize log parser: %v&#34;, err)
-<span id="L379" class="ln">   379  </span>	}
-<span id="L380" class="ln">   380  </span>	if err := lp.ParseLogs(); err != nil {
-<span id="L381" class="ln">   381  </span>		return fmt.Errorf(&#34;log parser error: %v&#34;, err)
+<span id="L371" class="ln">   371  </span>	if len(data) &gt; 0 {
+<span id="L372" class="ln">   372  </span>		sr.sendEnvelope(ctx, name, storageName, data)
+<span id="L373" class="ln">   373  </span>	}
+<span id="L374" class="ln">   374  </span>	return err
+<span id="L375" class="ln">   375  </span>}
+<span id="L376" class="ln">   376  </span>
+<span id="L377" class="ln">   377  </span><span class="comment">// runLogParser launches the server log event counts parser.</span>
+<span id="L378" class="ln">   378  </span>func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
+<span id="L379" class="ln">   379  </span>	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
+<span id="L380" class="ln">   380  </span>	if err != nil {
+<span id="L381" class="ln">   381  </span>		return fmt.Errorf(&#34;failed to initialize log parser: %v&#34;, err)
 <span id="L382" class="ln">   382  </span>	}
-<span id="L383" class="ln">   383  </span>	return nil
-<span id="L384" class="ln">   384  </span>}
-<span id="L385" class="ln">   385  </span>
-<span id="L386" class="ln">   386  </span><span class="comment">// detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s</span>
-<span id="L387" class="ln">   387  </span><span class="comment">// in db_stats metric data and emits an object_changes measurement if detected.</span>
-<span id="L388" class="ln">   388  </span>func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
-<span id="L389" class="ln">   389  </span>	if len(data) == 0 {
-<span id="L390" class="ln">   390  </span>		return
-<span id="L391" class="ln">   391  </span>	}
-<span id="L392" class="ln">   392  </span>	uptimeS, ok := data[0][&#34;postmaster_uptime_s&#34;].(int64)
-<span id="L393" class="ln">   393  </span>	if !ok {
-<span id="L394" class="ln">   394  </span>		return
-<span id="L395" class="ln">   395  </span>	}
-<span id="L396" class="ln">   396  </span>	prev := sr.lastUptimeS
-<span id="L397" class="ln">   397  </span>	sr.lastUptimeS = uptimeS
-<span id="L398" class="ln">   398  </span>	if prev &gt; 0 &amp;&amp; uptimeS &lt; prev {
-<span id="L399" class="ln">   399  </span>		l := log.GetLogger(ctx)
-<span id="L400" class="ln">   400  </span>		l.Warning(&#34;Detected server restart (or failover)&#34;)
-<span id="L401" class="ln">   401  </span>		entry := metrics.NewMeasurement(data.GetEpoch())
-<span id="L402" class="ln">   402  </span>		entry[&#34;details&#34;] = &#34;Detected server restart (or failover)&#34;
-<span id="L403" class="ln">   403  </span>		sr.reaper.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L404" class="ln">   404  </span>			DBName:     sr.md.Name,
-<span id="L405" class="ln">   405  </span>			MetricName: &#34;object_changes&#34;,
-<span id="L406" class="ln">   406  </span>			Data:       metrics.Measurements{entry},
-<span id="L407" class="ln">   407  </span>			CustomTags: sr.md.CustomTags,
-<span id="L408" class="ln">   408  </span>		}
-<span id="L409" class="ln">   409  </span>	}
-<span id="L410" class="ln">   410  </span>}
-<span id="L411" class="ln">   411  </span>
-<span id="L412" class="ln">   412  </span><span class="comment">// QueryMeasurements runs the given SQL on the source connection and returns</span>
-<span id="L413" class="ln">   413  </span><span class="comment">// the collected rows. The round-trip is bounded by db.ChangeDetectionTimeout</span>
-<span id="L414" class="ln">   414  </span><span class="comment">// so a hung source cannot block the change-detection sweep indefinitely.</span>
-<span id="L415" class="ln">   415  </span>func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error) {
-<span id="L416" class="ln">   416  </span>	if strings.TrimSpace(sql) == &#34;&#34; {
-<span id="L417" class="ln">   417  </span>		return nil, errors.New(&#34;empty SQL&#34;)
-<span id="L418" class="ln">   418  </span>	}
-<span id="L419" class="ln">   419  </span>	qctx, cancel := db.WithOpTimeout(ctx, &#34;change_detection_query&#34;, db.ChangeDetectionTimeout)
-<span id="L420" class="ln">   420  </span>	defer cancel()
-<span id="L421" class="ln">   421  </span>	<span class="comment">// For non-postgres connections (e.g. pgbouncer, pgpool), use simple protocol</span>
-<span id="L422" class="ln">   422  </span>	if !md.IsPostgresSource() {
-<span id="L423" class="ln">   423  </span>		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
-<span id="L424" class="ln">   424  </span>	}
-<span id="L425" class="ln">   425  </span>	<span class="comment">// lock_timeout is set at connection level via RuntimeParams, no need for transaction wrapper</span>
-<span id="L426" class="ln">   426  </span>	rows, err := md.Conn.Query(qctx, sql, args...)
-<span id="L427" class="ln">   427  </span>	if err == nil {
-<span id="L428" class="ln">   428  </span>		return pgx.CollectRows(rows, metrics.RowToMeasurement)
-<span id="L429" class="ln">   429  </span>	}
-<span id="L430" class="ln">   430  </span>	if errors.Is(err, context.DeadlineExceeded) {
-<span id="L431" class="ln">   431  </span>		return nil, fmt.Errorf(&#34;change_detection_query: %w&#34;, context.Cause(qctx))
+<span id="L383" class="ln">   383  </span>	if err := lp.ParseLogs(); err != nil {
+<span id="L384" class="ln">   384  </span>		return fmt.Errorf(&#34;log parser error: %v&#34;, err)
+<span id="L385" class="ln">   385  </span>	}
+<span id="L386" class="ln">   386  </span>	return nil
+<span id="L387" class="ln">   387  </span>}
+<span id="L388" class="ln">   388  </span>
+<span id="L389" class="ln">   389  </span><span class="comment">// detectServerRestart checks for PostgreSQL server restarts via postmaster_uptime_s</span>
+<span id="L390" class="ln">   390  </span><span class="comment">// in db_stats metric data and emits an object_changes measurement if detected.</span>
+<span id="L391" class="ln">   391  </span>func (sr *DbConnReaper) detectServerRestart(ctx context.Context, data metrics.Measurements) {
+<span id="L392" class="ln">   392  </span>	if len(data) == 0 {
+<span id="L393" class="ln">   393  </span>		return
+<span id="L394" class="ln">   394  </span>	}
+<span id="L395" class="ln">   395  </span>	uptimeS, ok := data[0][&#34;postmaster_uptime_s&#34;].(int64)
+<span id="L396" class="ln">   396  </span>	if !ok {
+<span id="L397" class="ln">   397  </span>		return
+<span id="L398" class="ln">   398  </span>	}
+<span id="L399" class="ln">   399  </span>	prev := sr.lastUptimeS
+<span id="L400" class="ln">   400  </span>	sr.lastUptimeS = uptimeS
+<span id="L401" class="ln">   401  </span>	if prev &gt; 0 &amp;&amp; uptimeS &lt; prev {
+<span id="L402" class="ln">   402  </span>		l := log.GetLogger(ctx)
+<span id="L403" class="ln">   403  </span>		l.Warning(&#34;Detected server restart (or failover)&#34;)
+<span id="L404" class="ln">   404  </span>		entry := metrics.NewMeasurement(data.GetEpoch())
+<span id="L405" class="ln">   405  </span>		entry[&#34;details&#34;] = &#34;Detected server restart (or failover)&#34;
+<span id="L406" class="ln">   406  </span>		sr.reaper.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L407" class="ln">   407  </span>			DBName:     sr.md.Name,
+<span id="L408" class="ln">   408  </span>			MetricName: &#34;object_changes&#34;,
+<span id="L409" class="ln">   409  </span>			Data:       metrics.Measurements{entry},
+<span id="L410" class="ln">   410  </span>			CustomTags: sr.md.CustomTags,
+<span id="L411" class="ln">   411  </span>		}
+<span id="L412" class="ln">   412  </span>	}
+<span id="L413" class="ln">   413  </span>}
+<span id="L414" class="ln">   414  </span>
+<span id="L415" class="ln">   415  </span><span class="comment">// QueryMeasurements runs the given SQL on the source connection and returns</span>
+<span id="L416" class="ln">   416  </span><span class="comment">// the collected rows. The round-trip is bounded by db.ChangeDetectionTimeout</span>
+<span id="L417" class="ln">   417  </span><span class="comment">// so a hung source cannot block the change-detection sweep indefinitely.</span>
+<span id="L418" class="ln">   418  </span>func QueryMeasurements(ctx context.Context, md *sources.DbConn, sql string, args ...any) (metrics.Measurements, error) {
+<span id="L419" class="ln">   419  </span>	if strings.TrimSpace(sql) == &#34;&#34; {
+<span id="L420" class="ln">   420  </span>		return nil, errors.New(&#34;empty SQL&#34;)
+<span id="L421" class="ln">   421  </span>	}
+<span id="L422" class="ln">   422  </span>	qctx, cancel := db.WithOpTimeout(ctx, &#34;change_detection_query&#34;, db.ChangeDetectionTimeout)
+<span id="L423" class="ln">   423  </span>	defer cancel()
+<span id="L424" class="ln">   424  </span>	<span class="comment">// For non-postgres connections (e.g. pgbouncer, pgpool), use simple protocol</span>
+<span id="L425" class="ln">   425  </span>	if !md.IsPostgresSource() {
+<span id="L426" class="ln">   426  </span>		args = append([]any{pgx.QueryExecModeSimpleProtocol}, args...)
+<span id="L427" class="ln">   427  </span>	}
+<span id="L428" class="ln">   428  </span>	<span class="comment">// lock_timeout is set at connection level via RuntimeParams, no need for transaction wrapper</span>
+<span id="L429" class="ln">   429  </span>	rows, err := md.Conn.Query(qctx, sql, args...)
+<span id="L430" class="ln">   430  </span>	if err == nil {
+<span id="L431" class="ln">   431  </span>		return pgx.CollectRows(rows, metrics.RowToMeasurement)
 <span id="L432" class="ln">   432  </span>	}
-<span id="L433" class="ln">   433  </span>	return nil, err
-<span id="L434" class="ln">   434  </span>}
-<span id="L435" class="ln">   435  </span>
-<span id="L436" class="ln">   436  </span>func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
-<span id="L437" class="ln">   437  </span>	detectedChanges := make(metrics.Measurements, 0)
-<span id="L438" class="ln">   438  </span>	var firstRun bool
-<span id="L439" class="ln">   439  </span>	l := log.GetLogger(ctx)
-<span id="L440" class="ln">   440  </span>	changeCounts.Target = &#34;functions&#34;
-<span id="L441" class="ln">   441  </span>	l.Debug(&#34;checking for sproc changes...&#34;)
-<span id="L442" class="ln">   442  </span>	if _, ok := md.ChangeState[&#34;sproc_hashes&#34;]; !ok {
-<span id="L443" class="ln">   443  </span>		firstRun = true
-<span id="L444" class="ln">   444  </span>		md.ChangeState[&#34;sproc_hashes&#34;] = make(map[string]string)
-<span id="L445" class="ln">   445  </span>	}
-<span id="L446" class="ln">   446  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;sproc_hashes&#34;)
-<span id="L447" class="ln">   447  </span>	if !ok {
-<span id="L448" class="ln">   448  </span>		l.Error(&#34;could not get sproc_hashes sql&#34;)
-<span id="L449" class="ln">   449  </span>		return
-<span id="L450" class="ln">   450  </span>	}
-<span id="L451" class="ln">   451  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
-<span id="L452" class="ln">   452  </span>	if err != nil {
-<span id="L453" class="ln">   453  </span>		l.Error(err)
-<span id="L454" class="ln">   454  </span>		return
-<span id="L455" class="ln">   455  </span>	}
-<span id="L456" class="ln">   456  </span>	for _, dr := range data {
-<span id="L457" class="ln">   457  </span>		objIdent := dr[&#34;tag_sproc&#34;].(string) + dbMetricJoinStr + dr[&#34;tag_oid&#34;].(string)
-<span id="L458" class="ln">   458  </span>		prevHash, ok := md.ChangeState[&#34;sproc_hashes&#34;][objIdent]
-<span id="L459" class="ln">   459  </span>		ll := l.WithField(&#34;sproc&#34;, dr[&#34;tag_sproc&#34;]).WithField(&#34;oid&#34;, dr[&#34;tag_oid&#34;])
-<span id="L460" class="ln">   460  </span>		if ok { <span class="comment">// we have existing state</span>
-<span id="L461" class="ln">   461  </span>			if prevHash != dr[&#34;md5&#34;].(string) {
-<span id="L462" class="ln">   462  </span>				ll.Debug(&#34;change detected&#34;)
-<span id="L463" class="ln">   463  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
-<span id="L464" class="ln">   464  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L465" class="ln">   465  </span>				md.ChangeState[&#34;sproc_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
-<span id="L466" class="ln">   466  </span>				changeCounts.Altered++
-<span id="L467" class="ln">   467  </span>			}
-<span id="L468" class="ln">   468  </span>		} else { <span class="comment">// check for new / delete</span>
-<span id="L469" class="ln">   469  </span>			if !firstRun {
-<span id="L470" class="ln">   470  </span>				ll.Debug(&#34;new sproc detected&#34;)
-<span id="L471" class="ln">   471  </span>				dr[&#34;event&#34;] = &#34;create&#34;
-<span id="L472" class="ln">   472  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L473" class="ln">   473  </span>				changeCounts.Created++
-<span id="L474" class="ln">   474  </span>			}
-<span id="L475" class="ln">   475  </span>			md.ChangeState[&#34;sproc_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
-<span id="L476" class="ln">   476  </span>		}
-<span id="L477" class="ln">   477  </span>	}
-<span id="L478" class="ln">   478  </span>	<span class="comment">// detect deletes</span>
-<span id="L479" class="ln">   479  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;sproc_hashes&#34;]) != len(data) {
-<span id="L480" class="ln">   480  </span>		currentOidMap := make(map[string]bool)
-<span id="L481" class="ln">   481  </span>		for _, dr := range data {
-<span id="L482" class="ln">   482  </span>			currentOidMap[dr[&#34;tag_sproc&#34;].(string)+dbMetricJoinStr+dr[&#34;tag_oid&#34;].(string)] = true
-<span id="L483" class="ln">   483  </span>		}
-<span id="L484" class="ln">   484  </span>		for sprocIdent := range md.ChangeState[&#34;sproc_hashes&#34;] {
-<span id="L485" class="ln">   485  </span>			_, ok := currentOidMap[sprocIdent]
-<span id="L486" class="ln">   486  </span>			if !ok {
-<span id="L487" class="ln">   487  </span>				splits := strings.Split(sprocIdent, dbMetricJoinStr)
-<span id="L488" class="ln">   488  </span>				l.WithField(&#34;sproc&#34;, splits[0]).WithField(&#34;oid&#34;, splits[1]).Debug(&#34;deleted sproc detected&#34;)
-<span id="L489" class="ln">   489  </span>				m := metrics.NewMeasurement(data.GetEpoch())
-<span id="L490" class="ln">   490  </span>				m[&#34;event&#34;] = &#34;drop&#34;
-<span id="L491" class="ln">   491  </span>				m[&#34;tag_sproc&#34;] = splits[0]
-<span id="L492" class="ln">   492  </span>				m[&#34;tag_oid&#34;] = splits[1]
-<span id="L493" class="ln">   493  </span>				detectedChanges = append(detectedChanges, m)
-<span id="L494" class="ln">   494  </span>				delete(md.ChangeState[&#34;sproc_hashes&#34;], sprocIdent)
-<span id="L495" class="ln">   495  </span>				changeCounts.Dropped++
-<span id="L496" class="ln">   496  </span>			}
-<span id="L497" class="ln">   497  </span>		}
-<span id="L498" class="ln">   498  </span>	}
-<span id="L499" class="ln">   499  </span>	l.Debugf(&#34;sproc changes detected: %d&#34;, len(detectedChanges))
-<span id="L500" class="ln">   500  </span>	if len(detectedChanges) &gt; 0 {
-<span id="L501" class="ln">   501  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L502" class="ln">   502  </span>			DBName:     md.Name,
-<span id="L503" class="ln">   503  </span>			MetricName: &#34;sproc_changes&#34;,
-<span id="L504" class="ln">   504  </span>			Data:       detectedChanges,
-<span id="L505" class="ln">   505  </span>			CustomTags: md.CustomTags,
-<span id="L506" class="ln">   506  </span>		}
-<span id="L507" class="ln">   507  </span>	}
-<span id="L508" class="ln">   508  </span>	return changeCounts
-<span id="L509" class="ln">   509  </span>}
-<span id="L510" class="ln">   510  </span>
-<span id="L511" class="ln">   511  </span>func (r *reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
-<span id="L512" class="ln">   512  </span>	detectedChanges := make(metrics.Measurements, 0)
-<span id="L513" class="ln">   513  </span>	var firstRun bool
-<span id="L514" class="ln">   514  </span>	var changeCounts ChangeDetectionResults
-<span id="L515" class="ln">   515  </span>	l := log.GetLogger(ctx)
-<span id="L516" class="ln">   516  </span>	changeCounts.Target = &#34;tables&#34;
-<span id="L517" class="ln">   517  </span>	l.Debug(&#34;checking for table changes...&#34;)
-<span id="L518" class="ln">   518  </span>	if _, ok := md.ChangeState[&#34;table_hashes&#34;]; !ok {
-<span id="L519" class="ln">   519  </span>		firstRun = true
-<span id="L520" class="ln">   520  </span>		md.ChangeState[&#34;table_hashes&#34;] = make(map[string]string)
-<span id="L521" class="ln">   521  </span>	}
-<span id="L522" class="ln">   522  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;table_hashes&#34;)
-<span id="L523" class="ln">   523  </span>	if !ok {
-<span id="L524" class="ln">   524  </span>		l.Error(&#34;could not get table_hashes sql&#34;)
-<span id="L525" class="ln">   525  </span>		return changeCounts
-<span id="L526" class="ln">   526  </span>	}
-<span id="L527" class="ln">   527  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
-<span id="L528" class="ln">   528  </span>	if err != nil {
-<span id="L529" class="ln">   529  </span>		l.Error(err)
-<span id="L530" class="ln">   530  </span>		return changeCounts
-<span id="L531" class="ln">   531  </span>	}
-<span id="L532" class="ln">   532  </span>	for _, dr := range data {
-<span id="L533" class="ln">   533  </span>		objIdent := dr[&#34;tag_table&#34;].(string)
-<span id="L534" class="ln">   534  </span>		prevHash, ok := md.ChangeState[&#34;table_hashes&#34;][objIdent]
-<span id="L535" class="ln">   535  </span>		ll := l.WithField(&#34;table&#34;, dr[&#34;tag_table&#34;])
-<span id="L536" class="ln">   536  </span>		if ok { <span class="comment">// we have existing state</span>
-<span id="L537" class="ln">   537  </span>			if prevHash != dr[&#34;md5&#34;].(string) {
-<span id="L538" class="ln">   538  </span>				ll.Debug(&#34;change detected&#34;)
-<span id="L539" class="ln">   539  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
-<span id="L540" class="ln">   540  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L541" class="ln">   541  </span>				md.ChangeState[&#34;table_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
-<span id="L542" class="ln">   542  </span>				changeCounts.Altered++
-<span id="L543" class="ln">   543  </span>			}
-<span id="L544" class="ln">   544  </span>		} else { <span class="comment">// check for new / delete</span>
-<span id="L545" class="ln">   545  </span>			if !firstRun {
-<span id="L546" class="ln">   546  </span>				ll.Debug(&#34;new table detected&#34;)
-<span id="L547" class="ln">   547  </span>				dr[&#34;event&#34;] = &#34;create&#34;
-<span id="L548" class="ln">   548  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L549" class="ln">   549  </span>				changeCounts.Created++
-<span id="L550" class="ln">   550  </span>			}
-<span id="L551" class="ln">   551  </span>			md.ChangeState[&#34;table_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
-<span id="L552" class="ln">   552  </span>		}
-<span id="L553" class="ln">   553  </span>	}
-<span id="L554" class="ln">   554  </span>	<span class="comment">// detect deletes</span>
-<span id="L555" class="ln">   555  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;table_hashes&#34;]) != len(data) {
-<span id="L556" class="ln">   556  </span>		deletedTables := make([]string, 0)
-<span id="L557" class="ln">   557  </span>		<span class="comment">// turn resultset to map =&gt; [table]=true for faster checks</span>
-<span id="L558" class="ln">   558  </span>		currentTableMap := make(map[string]bool)
-<span id="L559" class="ln">   559  </span>		for _, dr := range data {
-<span id="L560" class="ln">   560  </span>			currentTableMap[dr[&#34;tag_table&#34;].(string)] = true
-<span id="L561" class="ln">   561  </span>		}
-<span id="L562" class="ln">   562  </span>		for table := range md.ChangeState[&#34;table_hashes&#34;] {
-<span id="L563" class="ln">   563  </span>			_, ok := currentTableMap[table]
-<span id="L564" class="ln">   564  </span>			if !ok {
-<span id="L565" class="ln">   565  </span>				l.WithField(&#34;table&#34;, table).Debug(&#34;deleted table detected&#34;)
-<span id="L566" class="ln">   566  </span>				influxEntry := metrics.NewMeasurement(data.GetEpoch())
-<span id="L567" class="ln">   567  </span>				influxEntry[&#34;event&#34;] = &#34;drop&#34;
-<span id="L568" class="ln">   568  </span>				influxEntry[&#34;tag_table&#34;] = table
-<span id="L569" class="ln">   569  </span>				detectedChanges = append(detectedChanges, influxEntry)
-<span id="L570" class="ln">   570  </span>				deletedTables = append(deletedTables, table)
-<span id="L571" class="ln">   571  </span>				changeCounts.Dropped++
-<span id="L572" class="ln">   572  </span>			}
-<span id="L573" class="ln">   573  </span>		}
-<span id="L574" class="ln">   574  </span>		for _, deletedTable := range deletedTables {
-<span id="L575" class="ln">   575  </span>			delete(md.ChangeState[&#34;table_hashes&#34;], deletedTable)
+<span id="L433" class="ln">   433  </span>	if errors.Is(err, context.DeadlineExceeded) {
+<span id="L434" class="ln">   434  </span>		return nil, fmt.Errorf(&#34;change_detection_query: %w&#34;, context.Cause(qctx))
+<span id="L435" class="ln">   435  </span>	}
+<span id="L436" class="ln">   436  </span>	return nil, err
+<span id="L437" class="ln">   437  </span>}
+<span id="L438" class="ln">   438  </span>
+<span id="L439" class="ln">   439  </span>func (r *reaper) DetectSprocChanges(ctx context.Context, md *sources.DbConn) (changeCounts ChangeDetectionResults) {
+<span id="L440" class="ln">   440  </span>	detectedChanges := make(metrics.Measurements, 0)
+<span id="L441" class="ln">   441  </span>	var firstRun bool
+<span id="L442" class="ln">   442  </span>	l := log.GetLogger(ctx)
+<span id="L443" class="ln">   443  </span>	changeCounts.Target = &#34;functions&#34;
+<span id="L444" class="ln">   444  </span>	l.Debug(&#34;checking for sproc changes...&#34;)
+<span id="L445" class="ln">   445  </span>	if _, ok := md.ChangeState[&#34;sproc_hashes&#34;]; !ok {
+<span id="L446" class="ln">   446  </span>		firstRun = true
+<span id="L447" class="ln">   447  </span>		md.ChangeState[&#34;sproc_hashes&#34;] = make(map[string]string)
+<span id="L448" class="ln">   448  </span>	}
+<span id="L449" class="ln">   449  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;sproc_hashes&#34;)
+<span id="L450" class="ln">   450  </span>	if !ok {
+<span id="L451" class="ln">   451  </span>		l.Error(&#34;could not get sproc_hashes sql&#34;)
+<span id="L452" class="ln">   452  </span>		return
+<span id="L453" class="ln">   453  </span>	}
+<span id="L454" class="ln">   454  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
+<span id="L455" class="ln">   455  </span>	if err != nil {
+<span id="L456" class="ln">   456  </span>		l.Error(err)
+<span id="L457" class="ln">   457  </span>		return
+<span id="L458" class="ln">   458  </span>	}
+<span id="L459" class="ln">   459  </span>	for _, dr := range data {
+<span id="L460" class="ln">   460  </span>		objIdent := dr[&#34;tag_sproc&#34;].(string) + dbMetricJoinStr + dr[&#34;tag_oid&#34;].(string)
+<span id="L461" class="ln">   461  </span>		prevHash, ok := md.ChangeState[&#34;sproc_hashes&#34;][objIdent]
+<span id="L462" class="ln">   462  </span>		ll := l.WithField(&#34;sproc&#34;, dr[&#34;tag_sproc&#34;]).WithField(&#34;oid&#34;, dr[&#34;tag_oid&#34;])
+<span id="L463" class="ln">   463  </span>		if ok { <span class="comment">// we have existing state</span>
+<span id="L464" class="ln">   464  </span>			if prevHash != dr[&#34;md5&#34;].(string) {
+<span id="L465" class="ln">   465  </span>				ll.Debug(&#34;change detected&#34;)
+<span id="L466" class="ln">   466  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
+<span id="L467" class="ln">   467  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L468" class="ln">   468  </span>				md.ChangeState[&#34;sproc_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
+<span id="L469" class="ln">   469  </span>				changeCounts.Altered++
+<span id="L470" class="ln">   470  </span>			}
+<span id="L471" class="ln">   471  </span>		} else { <span class="comment">// check for new / delete</span>
+<span id="L472" class="ln">   472  </span>			if !firstRun {
+<span id="L473" class="ln">   473  </span>				ll.Debug(&#34;new sproc detected&#34;)
+<span id="L474" class="ln">   474  </span>				dr[&#34;event&#34;] = &#34;create&#34;
+<span id="L475" class="ln">   475  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L476" class="ln">   476  </span>				changeCounts.Created++
+<span id="L477" class="ln">   477  </span>			}
+<span id="L478" class="ln">   478  </span>			md.ChangeState[&#34;sproc_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
+<span id="L479" class="ln">   479  </span>		}
+<span id="L480" class="ln">   480  </span>	}
+<span id="L481" class="ln">   481  </span>	<span class="comment">// detect deletes</span>
+<span id="L482" class="ln">   482  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;sproc_hashes&#34;]) != len(data) {
+<span id="L483" class="ln">   483  </span>		currentOidMap := make(map[string]bool)
+<span id="L484" class="ln">   484  </span>		for _, dr := range data {
+<span id="L485" class="ln">   485  </span>			currentOidMap[dr[&#34;tag_sproc&#34;].(string)+dbMetricJoinStr+dr[&#34;tag_oid&#34;].(string)] = true
+<span id="L486" class="ln">   486  </span>		}
+<span id="L487" class="ln">   487  </span>		for sprocIdent := range md.ChangeState[&#34;sproc_hashes&#34;] {
+<span id="L488" class="ln">   488  </span>			_, ok := currentOidMap[sprocIdent]
+<span id="L489" class="ln">   489  </span>			if !ok {
+<span id="L490" class="ln">   490  </span>				splits := strings.Split(sprocIdent, dbMetricJoinStr)
+<span id="L491" class="ln">   491  </span>				l.WithField(&#34;sproc&#34;, splits[0]).WithField(&#34;oid&#34;, splits[1]).Debug(&#34;deleted sproc detected&#34;)
+<span id="L492" class="ln">   492  </span>				m := metrics.NewMeasurement(data.GetEpoch())
+<span id="L493" class="ln">   493  </span>				m[&#34;event&#34;] = &#34;drop&#34;
+<span id="L494" class="ln">   494  </span>				m[&#34;tag_sproc&#34;] = splits[0]
+<span id="L495" class="ln">   495  </span>				m[&#34;tag_oid&#34;] = splits[1]
+<span id="L496" class="ln">   496  </span>				detectedChanges = append(detectedChanges, m)
+<span id="L497" class="ln">   497  </span>				delete(md.ChangeState[&#34;sproc_hashes&#34;], sprocIdent)
+<span id="L498" class="ln">   498  </span>				changeCounts.Dropped++
+<span id="L499" class="ln">   499  </span>			}
+<span id="L500" class="ln">   500  </span>		}
+<span id="L501" class="ln">   501  </span>	}
+<span id="L502" class="ln">   502  </span>	l.Debugf(&#34;sproc changes detected: %d&#34;, len(detectedChanges))
+<span id="L503" class="ln">   503  </span>	if len(detectedChanges) &gt; 0 {
+<span id="L504" class="ln">   504  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L505" class="ln">   505  </span>			DBName:     md.Name,
+<span id="L506" class="ln">   506  </span>			MetricName: &#34;sproc_changes&#34;,
+<span id="L507" class="ln">   507  </span>			Data:       detectedChanges,
+<span id="L508" class="ln">   508  </span>			CustomTags: md.CustomTags,
+<span id="L509" class="ln">   509  </span>		}
+<span id="L510" class="ln">   510  </span>	}
+<span id="L511" class="ln">   511  </span>	return changeCounts
+<span id="L512" class="ln">   512  </span>}
+<span id="L513" class="ln">   513  </span>
+<span id="L514" class="ln">   514  </span>func (r *reaper) DetectTableChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+<span id="L515" class="ln">   515  </span>	detectedChanges := make(metrics.Measurements, 0)
+<span id="L516" class="ln">   516  </span>	var firstRun bool
+<span id="L517" class="ln">   517  </span>	var changeCounts ChangeDetectionResults
+<span id="L518" class="ln">   518  </span>	l := log.GetLogger(ctx)
+<span id="L519" class="ln">   519  </span>	changeCounts.Target = &#34;tables&#34;
+<span id="L520" class="ln">   520  </span>	l.Debug(&#34;checking for table changes...&#34;)
+<span id="L521" class="ln">   521  </span>	if _, ok := md.ChangeState[&#34;table_hashes&#34;]; !ok {
+<span id="L522" class="ln">   522  </span>		firstRun = true
+<span id="L523" class="ln">   523  </span>		md.ChangeState[&#34;table_hashes&#34;] = make(map[string]string)
+<span id="L524" class="ln">   524  </span>	}
+<span id="L525" class="ln">   525  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;table_hashes&#34;)
+<span id="L526" class="ln">   526  </span>	if !ok {
+<span id="L527" class="ln">   527  </span>		l.Error(&#34;could not get table_hashes sql&#34;)
+<span id="L528" class="ln">   528  </span>		return changeCounts
+<span id="L529" class="ln">   529  </span>	}
+<span id="L530" class="ln">   530  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
+<span id="L531" class="ln">   531  </span>	if err != nil {
+<span id="L532" class="ln">   532  </span>		l.Error(err)
+<span id="L533" class="ln">   533  </span>		return changeCounts
+<span id="L534" class="ln">   534  </span>	}
+<span id="L535" class="ln">   535  </span>	for _, dr := range data {
+<span id="L536" class="ln">   536  </span>		objIdent := dr[&#34;tag_table&#34;].(string)
+<span id="L537" class="ln">   537  </span>		prevHash, ok := md.ChangeState[&#34;table_hashes&#34;][objIdent]
+<span id="L538" class="ln">   538  </span>		ll := l.WithField(&#34;table&#34;, dr[&#34;tag_table&#34;])
+<span id="L539" class="ln">   539  </span>		if ok { <span class="comment">// we have existing state</span>
+<span id="L540" class="ln">   540  </span>			if prevHash != dr[&#34;md5&#34;].(string) {
+<span id="L541" class="ln">   541  </span>				ll.Debug(&#34;change detected&#34;)
+<span id="L542" class="ln">   542  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
+<span id="L543" class="ln">   543  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L544" class="ln">   544  </span>				md.ChangeState[&#34;table_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
+<span id="L545" class="ln">   545  </span>				changeCounts.Altered++
+<span id="L546" class="ln">   546  </span>			}
+<span id="L547" class="ln">   547  </span>		} else { <span class="comment">// check for new / delete</span>
+<span id="L548" class="ln">   548  </span>			if !firstRun {
+<span id="L549" class="ln">   549  </span>				ll.Debug(&#34;new table detected&#34;)
+<span id="L550" class="ln">   550  </span>				dr[&#34;event&#34;] = &#34;create&#34;
+<span id="L551" class="ln">   551  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L552" class="ln">   552  </span>				changeCounts.Created++
+<span id="L553" class="ln">   553  </span>			}
+<span id="L554" class="ln">   554  </span>			md.ChangeState[&#34;table_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string)
+<span id="L555" class="ln">   555  </span>		}
+<span id="L556" class="ln">   556  </span>	}
+<span id="L557" class="ln">   557  </span>	<span class="comment">// detect deletes</span>
+<span id="L558" class="ln">   558  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;table_hashes&#34;]) != len(data) {
+<span id="L559" class="ln">   559  </span>		deletedTables := make([]string, 0)
+<span id="L560" class="ln">   560  </span>		<span class="comment">// turn resultset to map =&gt; [table]=true for faster checks</span>
+<span id="L561" class="ln">   561  </span>		currentTableMap := make(map[string]bool)
+<span id="L562" class="ln">   562  </span>		for _, dr := range data {
+<span id="L563" class="ln">   563  </span>			currentTableMap[dr[&#34;tag_table&#34;].(string)] = true
+<span id="L564" class="ln">   564  </span>		}
+<span id="L565" class="ln">   565  </span>		for table := range md.ChangeState[&#34;table_hashes&#34;] {
+<span id="L566" class="ln">   566  </span>			_, ok := currentTableMap[table]
+<span id="L567" class="ln">   567  </span>			if !ok {
+<span id="L568" class="ln">   568  </span>				l.WithField(&#34;table&#34;, table).Debug(&#34;deleted table detected&#34;)
+<span id="L569" class="ln">   569  </span>				influxEntry := metrics.NewMeasurement(data.GetEpoch())
+<span id="L570" class="ln">   570  </span>				influxEntry[&#34;event&#34;] = &#34;drop&#34;
+<span id="L571" class="ln">   571  </span>				influxEntry[&#34;tag_table&#34;] = table
+<span id="L572" class="ln">   572  </span>				detectedChanges = append(detectedChanges, influxEntry)
+<span id="L573" class="ln">   573  </span>				deletedTables = append(deletedTables, table)
+<span id="L574" class="ln">   574  </span>				changeCounts.Dropped++
+<span id="L575" class="ln">   575  </span>			}
 <span id="L576" class="ln">   576  </span>		}
-<span id="L577" class="ln">   577  </span>	}
-<span id="L578" class="ln">   578  </span>	l.Debugf(&#34;table changes detected: %d&#34;, len(detectedChanges))
-<span id="L579" class="ln">   579  </span>	if len(detectedChanges) &gt; 0 {
-<span id="L580" class="ln">   580  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L581" class="ln">   581  </span>			DBName:     md.Name,
-<span id="L582" class="ln">   582  </span>			MetricName: &#34;table_changes&#34;,
-<span id="L583" class="ln">   583  </span>			Data:       detectedChanges,
-<span id="L584" class="ln">   584  </span>			CustomTags: md.CustomTags,
-<span id="L585" class="ln">   585  </span>		}
-<span id="L586" class="ln">   586  </span>	}
-<span id="L587" class="ln">   587  </span>	return changeCounts
-<span id="L588" class="ln">   588  </span>}
-<span id="L589" class="ln">   589  </span>
-<span id="L590" class="ln">   590  </span>func (r *reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
-<span id="L591" class="ln">   591  </span>	detectedChanges := make(metrics.Measurements, 0)
-<span id="L592" class="ln">   592  </span>	var firstRun bool
-<span id="L593" class="ln">   593  </span>	var changeCounts ChangeDetectionResults
-<span id="L594" class="ln">   594  </span>	l := log.GetLogger(ctx)
-<span id="L595" class="ln">   595  </span>	changeCounts.Target = &#34;indexes&#34;
-<span id="L596" class="ln">   596  </span>	l.Debug(&#34;checking for index changes...&#34;)
-<span id="L597" class="ln">   597  </span>	if _, ok := md.ChangeState[&#34;index_hashes&#34;]; !ok {
-<span id="L598" class="ln">   598  </span>		firstRun = true
-<span id="L599" class="ln">   599  </span>		md.ChangeState[&#34;index_hashes&#34;] = make(map[string]string)
-<span id="L600" class="ln">   600  </span>	}
-<span id="L601" class="ln">   601  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;index_hashes&#34;)
-<span id="L602" class="ln">   602  </span>	if !ok {
-<span id="L603" class="ln">   603  </span>		l.Error(&#34;could not get index_hashes sql&#34;)
-<span id="L604" class="ln">   604  </span>		return changeCounts
-<span id="L605" class="ln">   605  </span>	}
-<span id="L606" class="ln">   606  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
-<span id="L607" class="ln">   607  </span>	if err != nil {
-<span id="L608" class="ln">   608  </span>		l.Error(err)
-<span id="L609" class="ln">   609  </span>		return changeCounts
-<span id="L610" class="ln">   610  </span>	}
-<span id="L611" class="ln">   611  </span>	for _, dr := range data {
-<span id="L612" class="ln">   612  </span>		objIdent := dr[&#34;tag_index&#34;].(string)
-<span id="L613" class="ln">   613  </span>		prevHash, ok := md.ChangeState[&#34;index_hashes&#34;][objIdent]
-<span id="L614" class="ln">   614  </span>		ll := l.WithField(&#34;index&#34;, dr[&#34;tag_index&#34;]).WithField(&#34;table&#34;, dr[&#34;table&#34;])
-<span id="L615" class="ln">   615  </span>		if ok { <span class="comment">// we have existing state</span>
-<span id="L616" class="ln">   616  </span>			if prevHash != (dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)) {
-<span id="L617" class="ln">   617  </span>				ll.Debug(&#34;change detected&#34;)
-<span id="L618" class="ln">   618  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
-<span id="L619" class="ln">   619  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L620" class="ln">   620  </span>				md.ChangeState[&#34;index_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)
-<span id="L621" class="ln">   621  </span>				changeCounts.Altered++
-<span id="L622" class="ln">   622  </span>			}
-<span id="L623" class="ln">   623  </span>		} else { <span class="comment">// check for new / delete</span>
-<span id="L624" class="ln">   624  </span>			if !firstRun {
-<span id="L625" class="ln">   625  </span>				ll.Debug(&#34;new index detected&#34;)
-<span id="L626" class="ln">   626  </span>				dr[&#34;event&#34;] = &#34;create&#34;
-<span id="L627" class="ln">   627  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L628" class="ln">   628  </span>				changeCounts.Created++
-<span id="L629" class="ln">   629  </span>			}
-<span id="L630" class="ln">   630  </span>			md.ChangeState[&#34;index_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)
-<span id="L631" class="ln">   631  </span>		}
-<span id="L632" class="ln">   632  </span>	}
-<span id="L633" class="ln">   633  </span>	<span class="comment">// detect deletes</span>
-<span id="L634" class="ln">   634  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;index_hashes&#34;]) != len(data) {
-<span id="L635" class="ln">   635  </span>		deletedIndexes := make([]string, 0)
-<span id="L636" class="ln">   636  </span>		<span class="comment">// turn resultset to map =&gt; [table]=true for faster checks</span>
-<span id="L637" class="ln">   637  </span>		currentIndexMap := make(map[string]bool)
-<span id="L638" class="ln">   638  </span>		for _, dr := range data {
-<span id="L639" class="ln">   639  </span>			currentIndexMap[dr[&#34;tag_index&#34;].(string)] = true
-<span id="L640" class="ln">   640  </span>		}
-<span id="L641" class="ln">   641  </span>		for indexName := range md.ChangeState[&#34;index_hashes&#34;] {
-<span id="L642" class="ln">   642  </span>			_, ok := currentIndexMap[indexName]
-<span id="L643" class="ln">   643  </span>			if !ok {
-<span id="L644" class="ln">   644  </span>				l.WithField(&#34;index&#34;, indexName).Debug(&#34;deleted index detected&#34;)
-<span id="L645" class="ln">   645  </span>				influxEntry := metrics.NewMeasurement(data.GetEpoch())
-<span id="L646" class="ln">   646  </span>				influxEntry[&#34;event&#34;] = &#34;drop&#34;
-<span id="L647" class="ln">   647  </span>				influxEntry[&#34;tag_index&#34;] = indexName
-<span id="L648" class="ln">   648  </span>				detectedChanges = append(detectedChanges, influxEntry)
-<span id="L649" class="ln">   649  </span>				deletedIndexes = append(deletedIndexes, indexName)
-<span id="L650" class="ln">   650  </span>				changeCounts.Dropped++
-<span id="L651" class="ln">   651  </span>			}
-<span id="L652" class="ln">   652  </span>		}
-<span id="L653" class="ln">   653  </span>		for _, deletedIndex := range deletedIndexes {
-<span id="L654" class="ln">   654  </span>			delete(md.ChangeState[&#34;index_hashes&#34;], deletedIndex)
+<span id="L577" class="ln">   577  </span>		for _, deletedTable := range deletedTables {
+<span id="L578" class="ln">   578  </span>			delete(md.ChangeState[&#34;table_hashes&#34;], deletedTable)
+<span id="L579" class="ln">   579  </span>		}
+<span id="L580" class="ln">   580  </span>	}
+<span id="L581" class="ln">   581  </span>	l.Debugf(&#34;table changes detected: %d&#34;, len(detectedChanges))
+<span id="L582" class="ln">   582  </span>	if len(detectedChanges) &gt; 0 {
+<span id="L583" class="ln">   583  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L584" class="ln">   584  </span>			DBName:     md.Name,
+<span id="L585" class="ln">   585  </span>			MetricName: &#34;table_changes&#34;,
+<span id="L586" class="ln">   586  </span>			Data:       detectedChanges,
+<span id="L587" class="ln">   587  </span>			CustomTags: md.CustomTags,
+<span id="L588" class="ln">   588  </span>		}
+<span id="L589" class="ln">   589  </span>	}
+<span id="L590" class="ln">   590  </span>	return changeCounts
+<span id="L591" class="ln">   591  </span>}
+<span id="L592" class="ln">   592  </span>
+<span id="L593" class="ln">   593  </span>func (r *reaper) DetectIndexChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+<span id="L594" class="ln">   594  </span>	detectedChanges := make(metrics.Measurements, 0)
+<span id="L595" class="ln">   595  </span>	var firstRun bool
+<span id="L596" class="ln">   596  </span>	var changeCounts ChangeDetectionResults
+<span id="L597" class="ln">   597  </span>	l := log.GetLogger(ctx)
+<span id="L598" class="ln">   598  </span>	changeCounts.Target = &#34;indexes&#34;
+<span id="L599" class="ln">   599  </span>	l.Debug(&#34;checking for index changes...&#34;)
+<span id="L600" class="ln">   600  </span>	if _, ok := md.ChangeState[&#34;index_hashes&#34;]; !ok {
+<span id="L601" class="ln">   601  </span>		firstRun = true
+<span id="L602" class="ln">   602  </span>		md.ChangeState[&#34;index_hashes&#34;] = make(map[string]string)
+<span id="L603" class="ln">   603  </span>	}
+<span id="L604" class="ln">   604  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;index_hashes&#34;)
+<span id="L605" class="ln">   605  </span>	if !ok {
+<span id="L606" class="ln">   606  </span>		l.Error(&#34;could not get index_hashes sql&#34;)
+<span id="L607" class="ln">   607  </span>		return changeCounts
+<span id="L608" class="ln">   608  </span>	}
+<span id="L609" class="ln">   609  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
+<span id="L610" class="ln">   610  </span>	if err != nil {
+<span id="L611" class="ln">   611  </span>		l.Error(err)
+<span id="L612" class="ln">   612  </span>		return changeCounts
+<span id="L613" class="ln">   613  </span>	}
+<span id="L614" class="ln">   614  </span>	for _, dr := range data {
+<span id="L615" class="ln">   615  </span>		objIdent := dr[&#34;tag_index&#34;].(string)
+<span id="L616" class="ln">   616  </span>		prevHash, ok := md.ChangeState[&#34;index_hashes&#34;][objIdent]
+<span id="L617" class="ln">   617  </span>		ll := l.WithField(&#34;index&#34;, dr[&#34;tag_index&#34;]).WithField(&#34;table&#34;, dr[&#34;table&#34;])
+<span id="L618" class="ln">   618  </span>		if ok { <span class="comment">// we have existing state</span>
+<span id="L619" class="ln">   619  </span>			if prevHash != (dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)) {
+<span id="L620" class="ln">   620  </span>				ll.Debug(&#34;change detected&#34;)
+<span id="L621" class="ln">   621  </span>				dr[&#34;event&#34;] = &#34;alter&#34;
+<span id="L622" class="ln">   622  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L623" class="ln">   623  </span>				md.ChangeState[&#34;index_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)
+<span id="L624" class="ln">   624  </span>				changeCounts.Altered++
+<span id="L625" class="ln">   625  </span>			}
+<span id="L626" class="ln">   626  </span>		} else { <span class="comment">// check for new / delete</span>
+<span id="L627" class="ln">   627  </span>			if !firstRun {
+<span id="L628" class="ln">   628  </span>				ll.Debug(&#34;new index detected&#34;)
+<span id="L629" class="ln">   629  </span>				dr[&#34;event&#34;] = &#34;create&#34;
+<span id="L630" class="ln">   630  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L631" class="ln">   631  </span>				changeCounts.Created++
+<span id="L632" class="ln">   632  </span>			}
+<span id="L633" class="ln">   633  </span>			md.ChangeState[&#34;index_hashes&#34;][objIdent] = dr[&#34;md5&#34;].(string) + dr[&#34;is_valid&#34;].(string)
+<span id="L634" class="ln">   634  </span>		}
+<span id="L635" class="ln">   635  </span>	}
+<span id="L636" class="ln">   636  </span>	<span class="comment">// detect deletes</span>
+<span id="L637" class="ln">   637  </span>	if !firstRun &amp;&amp; len(md.ChangeState[&#34;index_hashes&#34;]) != len(data) {
+<span id="L638" class="ln">   638  </span>		deletedIndexes := make([]string, 0)
+<span id="L639" class="ln">   639  </span>		<span class="comment">// turn resultset to map =&gt; [table]=true for faster checks</span>
+<span id="L640" class="ln">   640  </span>		currentIndexMap := make(map[string]bool)
+<span id="L641" class="ln">   641  </span>		for _, dr := range data {
+<span id="L642" class="ln">   642  </span>			currentIndexMap[dr[&#34;tag_index&#34;].(string)] = true
+<span id="L643" class="ln">   643  </span>		}
+<span id="L644" class="ln">   644  </span>		for indexName := range md.ChangeState[&#34;index_hashes&#34;] {
+<span id="L645" class="ln">   645  </span>			_, ok := currentIndexMap[indexName]
+<span id="L646" class="ln">   646  </span>			if !ok {
+<span id="L647" class="ln">   647  </span>				l.WithField(&#34;index&#34;, indexName).Debug(&#34;deleted index detected&#34;)
+<span id="L648" class="ln">   648  </span>				influxEntry := metrics.NewMeasurement(data.GetEpoch())
+<span id="L649" class="ln">   649  </span>				influxEntry[&#34;event&#34;] = &#34;drop&#34;
+<span id="L650" class="ln">   650  </span>				influxEntry[&#34;tag_index&#34;] = indexName
+<span id="L651" class="ln">   651  </span>				detectedChanges = append(detectedChanges, influxEntry)
+<span id="L652" class="ln">   652  </span>				deletedIndexes = append(deletedIndexes, indexName)
+<span id="L653" class="ln">   653  </span>				changeCounts.Dropped++
+<span id="L654" class="ln">   654  </span>			}
 <span id="L655" class="ln">   655  </span>		}
-<span id="L656" class="ln">   656  </span>	}
-<span id="L657" class="ln">   657  </span>	l.Debugf(&#34;index changes detected: %d&#34;, len(detectedChanges))
-<span id="L658" class="ln">   658  </span>	if len(detectedChanges) &gt; 0 {
-<span id="L659" class="ln">   659  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L660" class="ln">   660  </span>			DBName:     md.Name,
-<span id="L661" class="ln">   661  </span>			MetricName: &#34;index_changes&#34;,
-<span id="L662" class="ln">   662  </span>			Data:       detectedChanges,
-<span id="L663" class="ln">   663  </span>			CustomTags: md.CustomTags,
-<span id="L664" class="ln">   664  </span>		}
-<span id="L665" class="ln">   665  </span>	}
-<span id="L666" class="ln">   666  </span>	return changeCounts
-<span id="L667" class="ln">   667  </span>}
-<span id="L668" class="ln">   668  </span>
-<span id="L669" class="ln">   669  </span>func (r *reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
-<span id="L670" class="ln">   670  </span>	detectedChanges := make(metrics.Measurements, 0)
-<span id="L671" class="ln">   671  </span>	var firstRun bool
-<span id="L672" class="ln">   672  </span>	var changeCounts ChangeDetectionResults
-<span id="L673" class="ln">   673  </span>	l := log.GetLogger(ctx)
-<span id="L674" class="ln">   674  </span>	changeCounts.Target = &#34;privileges&#34;
-<span id="L675" class="ln">   675  </span>	l.Debug(&#34;checking object privilege changes...&#34;)
-<span id="L676" class="ln">   676  </span>	if _, ok := md.ChangeState[&#34;object_privileges&#34;]; !ok {
-<span id="L677" class="ln">   677  </span>		firstRun = true
-<span id="L678" class="ln">   678  </span>		md.ChangeState[&#34;object_privileges&#34;] = make(map[string]string)
-<span id="L679" class="ln">   679  </span>	}
-<span id="L680" class="ln">   680  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;privilege_changes&#34;)
-<span id="L681" class="ln">   681  </span>	if !ok || mvp.GetSQL(int(md.Version)) == &#34;&#34; {
-<span id="L682" class="ln">   682  </span>		l.Warning(&#34;could not get SQL for &#39;privilege_changes&#39;. cannot detect privilege changes&#34;)
-<span id="L683" class="ln">   683  </span>		return changeCounts
-<span id="L684" class="ln">   684  </span>	}
-<span id="L685" class="ln">   685  </span>	<span class="comment">// returns rows of: object_type, tag_role, tag_object, privilege_type</span>
-<span id="L686" class="ln">   686  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
-<span id="L687" class="ln">   687  </span>	if err != nil {
-<span id="L688" class="ln">   688  </span>		l.Error(err)
-<span id="L689" class="ln">   689  </span>		return changeCounts
-<span id="L690" class="ln">   690  </span>	}
-<span id="L691" class="ln">   691  </span>	currentState := make(map[string]bool)
-<span id="L692" class="ln">   692  </span>	for _, dr := range data {
-<span id="L693" class="ln">   693  </span>		objIdent := fmt.Sprintf(&#34;%s#:#%s#:#%s#:#%s&#34;, dr[&#34;object_type&#34;], dr[&#34;tag_role&#34;], dr[&#34;tag_object&#34;], dr[&#34;privilege_type&#34;])
-<span id="L694" class="ln">   694  </span>		ll := l.WithField(&#34;role&#34;, dr[&#34;tag_role&#34;]).
-<span id="L695" class="ln">   695  </span>			WithField(&#34;object_type&#34;, dr[&#34;object_type&#34;]).
-<span id="L696" class="ln">   696  </span>			WithField(&#34;object&#34;, dr[&#34;tag_object&#34;]).
-<span id="L697" class="ln">   697  </span>			WithField(&#34;privilege_type&#34;, dr[&#34;privilege_type&#34;])
-<span id="L698" class="ln">   698  </span>		if firstRun {
-<span id="L699" class="ln">   699  </span>			md.ChangeState[&#34;object_privileges&#34;][objIdent] = &#34;&#34;
-<span id="L700" class="ln">   700  </span>		} else {
-<span id="L701" class="ln">   701  </span>			_, ok := md.ChangeState[&#34;object_privileges&#34;][objIdent]
-<span id="L702" class="ln">   702  </span>			if !ok {
-<span id="L703" class="ln">   703  </span>				ll.Debug(&#34;new object privileges detected&#34;)
-<span id="L704" class="ln">   704  </span>				dr[&#34;event&#34;] = &#34;GRANT&#34;
-<span id="L705" class="ln">   705  </span>				detectedChanges = append(detectedChanges, dr)
-<span id="L706" class="ln">   706  </span>				changeCounts.Created++
-<span id="L707" class="ln">   707  </span>				md.ChangeState[&#34;object_privileges&#34;][objIdent] = &#34;&#34;
-<span id="L708" class="ln">   708  </span>			}
-<span id="L709" class="ln">   709  </span>			currentState[objIdent] = true
-<span id="L710" class="ln">   710  </span>		}
-<span id="L711" class="ln">   711  </span>	}
-<span id="L712" class="ln">   712  </span>	<span class="comment">// check revokes - exists in old state only</span>
-<span id="L713" class="ln">   713  </span>	if !firstRun &amp;&amp; len(currentState) &gt; 0 {
-<span id="L714" class="ln">   714  </span>		for objPrevRun := range md.ChangeState[&#34;object_privileges&#34;] {
-<span id="L715" class="ln">   715  </span>			if _, ok := currentState[objPrevRun]; !ok {
-<span id="L716" class="ln">   716  </span>				splits := strings.Split(objPrevRun, &#34;#:#&#34;)
-<span id="L717" class="ln">   717  </span>				l.WithField(&#34;role&#34;, splits[1]).
-<span id="L718" class="ln">   718  </span>					WithField(&#34;object_type&#34;, splits[0]).
-<span id="L719" class="ln">   719  </span>					WithField(&#34;object&#34;, splits[2]).
-<span id="L720" class="ln">   720  </span>					WithField(&#34;privilege_type&#34;, splits[3]).
-<span id="L721" class="ln">   721  </span>					Debug(&#34;removed object privileges detected&#34;)
-<span id="L722" class="ln">   722  </span>				revokeEntry := metrics.NewMeasurement(data.GetEpoch())
-<span id="L723" class="ln">   723  </span>				revokeEntry[&#34;object_type&#34;] = splits[0]
-<span id="L724" class="ln">   724  </span>				revokeEntry[&#34;tag_role&#34;] = splits[1]
-<span id="L725" class="ln">   725  </span>				revokeEntry[&#34;tag_object&#34;] = splits[2]
-<span id="L726" class="ln">   726  </span>				revokeEntry[&#34;privilege_type&#34;] = splits[3]
-<span id="L727" class="ln">   727  </span>				revokeEntry[&#34;event&#34;] = &#34;REVOKE&#34;
-<span id="L728" class="ln">   728  </span>				detectedChanges = append(detectedChanges, revokeEntry)
-<span id="L729" class="ln">   729  </span>				changeCounts.Dropped++
-<span id="L730" class="ln">   730  </span>				delete(md.ChangeState[&#34;object_privileges&#34;], objPrevRun)
-<span id="L731" class="ln">   731  </span>			}
-<span id="L732" class="ln">   732  </span>		}
-<span id="L733" class="ln">   733  </span>	}
-<span id="L734" class="ln">   734  </span>	l.Debugf(&#34;object privilege changes detected: %d&#34;, len(detectedChanges))
-<span id="L735" class="ln">   735  </span>	if len(detectedChanges) &gt; 0 {
-<span id="L736" class="ln">   736  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L737" class="ln">   737  </span>			DBName:     md.Name,
-<span id="L738" class="ln">   738  </span>			MetricName: &#34;privilege_changes&#34;,
-<span id="L739" class="ln">   739  </span>			Data:       detectedChanges,
-<span id="L740" class="ln">   740  </span>			CustomTags: md.CustomTags,
-<span id="L741" class="ln">   741  </span>		}
-<span id="L742" class="ln">   742  </span>	}
-<span id="L743" class="ln">   743  </span>	return changeCounts
-<span id="L744" class="ln">   744  </span>}
-<span id="L745" class="ln">   745  </span>
-<span id="L746" class="ln">   746  </span>func (r *reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
-<span id="L747" class="ln">   747  </span>	detectedChanges := make(metrics.Measurements, 0)
-<span id="L748" class="ln">   748  </span>	var firstRun bool
-<span id="L749" class="ln">   749  </span>	var changeCounts ChangeDetectionResults
-<span id="L750" class="ln">   750  </span>	l := log.GetLogger(ctx)
-<span id="L751" class="ln">   751  </span>	changeCounts.Target = &#34;settings&#34;
-<span id="L752" class="ln">   752  </span>	l.Debug(&#34;checking for configuration changes...&#34;)
-<span id="L753" class="ln">   753  </span>	if _, ok := md.ChangeState[&#34;configuration_hashes&#34;]; !ok {
-<span id="L754" class="ln">   754  </span>		firstRun = true
-<span id="L755" class="ln">   755  </span>		md.ChangeState[&#34;configuration_hashes&#34;] = make(map[string]string)
-<span id="L756" class="ln">   756  </span>	}
-<span id="L757" class="ln">   757  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;configuration_hashes&#34;)
-<span id="L758" class="ln">   758  </span>	if !ok {
-<span id="L759" class="ln">   759  </span>		l.Error(&#34;could not get configuration_hashes sql&#34;)
-<span id="L760" class="ln">   760  </span>		return changeCounts
-<span id="L761" class="ln">   761  </span>	}
-<span id="L762" class="ln">   762  </span>	rows, err := md.Conn.Query(ctx, mvp.GetSQL(md.Version))
-<span id="L763" class="ln">   763  </span>	if err != nil {
-<span id="L764" class="ln">   764  </span>		l.Error(err)
-<span id="L765" class="ln">   765  </span>		return changeCounts
-<span id="L766" class="ln">   766  </span>	}
-<span id="L767" class="ln">   767  </span>	defer rows.Close()
-<span id="L768" class="ln">   768  </span>	var (
-<span id="L769" class="ln">   769  </span>		objIdent, objValue string
-<span id="L770" class="ln">   770  </span>		epoch              int64
-<span id="L771" class="ln">   771  </span>	)
-<span id="L772" class="ln">   772  </span>	for rows.Next() {
-<span id="L773" class="ln">   773  </span>		if rows.Scan(&amp;epoch, &amp;objIdent, &amp;objValue) != nil {
-<span id="L774" class="ln">   774  </span>			return changeCounts
-<span id="L775" class="ln">   775  </span>		}
-<span id="L776" class="ln">   776  </span>		prevРash, ok := md.ChangeState[&#34;configuration_hashes&#34;][objIdent]
-<span id="L777" class="ln">   777  </span>		ll := l.WithField(&#34;setting&#34;, objIdent)
-<span id="L778" class="ln">   778  </span>		if ok { <span class="comment">// we have existing state</span>
-<span id="L779" class="ln">   779  </span>			if prevРash != objValue {
-<span id="L780" class="ln">   780  </span>				ll.Warningf(&#34;settings change detected: %s = %s (prev: %s)&#34;, objIdent, objValue, prevРash)
-<span id="L781" class="ln">   781  </span>				detectedChanges = append(detectedChanges, metrics.Measurement{
-<span id="L782" class="ln">   782  </span>					metrics.EpochColumnName: epoch,
-<span id="L783" class="ln">   783  </span>					&#34;tag_setting&#34;:           objIdent,
-<span id="L784" class="ln">   784  </span>					&#34;value&#34;:                 objValue,
-<span id="L785" class="ln">   785  </span>					&#34;event&#34;:                 &#34;alter&#34;})
-<span id="L786" class="ln">   786  </span>				md.ChangeState[&#34;configuration_hashes&#34;][objIdent] = objValue
-<span id="L787" class="ln">   787  </span>				changeCounts.Altered++
-<span id="L788" class="ln">   788  </span>			}
-<span id="L789" class="ln">   789  </span>		} else { <span class="comment">// check for new, delete not relevant here (pg_upgrade)</span>
-<span id="L790" class="ln">   790  </span>			md.ChangeState[&#34;configuration_hashes&#34;][objIdent] = objValue
-<span id="L791" class="ln">   791  </span>			if firstRun {
-<span id="L792" class="ln">   792  </span>				continue
-<span id="L793" class="ln">   793  </span>			}
-<span id="L794" class="ln">   794  </span>			ll.Debug(&#34;new setting detected&#34;)
-<span id="L795" class="ln">   795  </span>			detectedChanges = append(detectedChanges, metrics.Measurement{
-<span id="L796" class="ln">   796  </span>				metrics.EpochColumnName: epoch,
-<span id="L797" class="ln">   797  </span>				&#34;tag_setting&#34;:           objIdent,
-<span id="L798" class="ln">   798  </span>				&#34;value&#34;:                 objValue,
-<span id="L799" class="ln">   799  </span>				&#34;event&#34;:                 &#34;create&#34;})
-<span id="L800" class="ln">   800  </span>			changeCounts.Created++
-<span id="L801" class="ln">   801  </span>		}
-<span id="L802" class="ln">   802  </span>	}
-<span id="L803" class="ln">   803  </span>	l.Debugf(&#34;configuration changes detected: %d&#34;, len(detectedChanges))
-<span id="L804" class="ln">   804  </span>	if len(detectedChanges) &gt; 0 {
-<span id="L805" class="ln">   805  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
-<span id="L806" class="ln">   806  </span>			DBName:     md.Name,
-<span id="L807" class="ln">   807  </span>			MetricName: &#34;configuration_changes&#34;,
-<span id="L808" class="ln">   808  </span>			Data:       detectedChanges,
-<span id="L809" class="ln">   809  </span>			CustomTags: md.CustomTags,
-<span id="L810" class="ln">   810  </span>		}
-<span id="L811" class="ln">   811  </span>	}
-<span id="L812" class="ln">   812  </span>	return changeCounts
-<span id="L813" class="ln">   813  </span>}
-<span id="L814" class="ln">   814  </span>
-<span id="L815" class="ln">   815  </span><span class="comment">// GetInstanceUpMeasurement returns a single measurement with &#34;instance_up&#34; metric</span>
-<span id="L816" class="ln">   816  </span><span class="comment">// used to detect if the instance is up or down</span>
-<span id="L817" class="ln">   817  </span>func (r *reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
-<span id="L818" class="ln">   818  </span>	return metrics.Measurements{
-<span id="L819" class="ln">   819  </span>		metrics.Measurement{
-<span id="L820" class="ln">   820  </span>			metrics.EpochColumnName: time.Now().UnixNano(),
-<span id="L821" class="ln">   821  </span>			&#34;instance_up&#34;: func() int {
-<span id="L822" class="ln">   822  </span>				if md.Conn.Ping(ctx) == nil {
-<span id="L823" class="ln">   823  </span>					return 1
-<span id="L824" class="ln">   824  </span>				}
-<span id="L825" class="ln">   825  </span>				return 0
-<span id="L826" class="ln">   826  </span>			}(), <span class="comment">// true if connection is up</span>
-<span id="L827" class="ln">   827  </span>		},
-<span id="L828" class="ln">   828  </span>	}, nil <span class="comment">// always return nil error for the status metric</span>
-<span id="L829" class="ln">   829  </span>}
-<span id="L830" class="ln">   830  </span>
-<span id="L831" class="ln">   831  </span>func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
-<span id="L832" class="ln">   832  </span>	md.Lock()
-<span id="L833" class="ln">   833  </span>	defer md.Unlock()
-<span id="L834" class="ln">   834  </span>	spN := r.DetectSprocChanges(ctx, md)
-<span id="L835" class="ln">   835  </span>	tblN := r.DetectTableChanges(ctx, md)
-<span id="L836" class="ln">   836  </span>	idxN := r.DetectIndexChanges(ctx, md)
-<span id="L837" class="ln">   837  </span>	cnfN := r.DetectConfigurationChanges(ctx, md)
-<span id="L838" class="ln">   838  </span>	privN := r.DetectPrivilegeChanges(ctx, md)
-<span id="L839" class="ln">   839  </span>	if spN.Total()+tblN.Total()+idxN.Total()+cnfN.Total()+privN.Total() == 0 {
-<span id="L840" class="ln">   840  </span>		return nil, nil
-<span id="L841" class="ln">   841  </span>	}
-<span id="L842" class="ln">   842  </span>	m := metrics.NewMeasurement(time.Now().UnixNano())
-<span id="L843" class="ln">   843  </span>	m[&#34;details&#34;] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, &#34; &#34;)
-<span id="L844" class="ln">   844  </span>	return metrics.Measurements{m}, nil
-<span id="L845" class="ln">   845  </span>}
-<span id="L846" class="ln">   846  </span>
+<span id="L656" class="ln">   656  </span>		for _, deletedIndex := range deletedIndexes {
+<span id="L657" class="ln">   657  </span>			delete(md.ChangeState[&#34;index_hashes&#34;], deletedIndex)
+<span id="L658" class="ln">   658  </span>		}
+<span id="L659" class="ln">   659  </span>	}
+<span id="L660" class="ln">   660  </span>	l.Debugf(&#34;index changes detected: %d&#34;, len(detectedChanges))
+<span id="L661" class="ln">   661  </span>	if len(detectedChanges) &gt; 0 {
+<span id="L662" class="ln">   662  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L663" class="ln">   663  </span>			DBName:     md.Name,
+<span id="L664" class="ln">   664  </span>			MetricName: &#34;index_changes&#34;,
+<span id="L665" class="ln">   665  </span>			Data:       detectedChanges,
+<span id="L666" class="ln">   666  </span>			CustomTags: md.CustomTags,
+<span id="L667" class="ln">   667  </span>		}
+<span id="L668" class="ln">   668  </span>	}
+<span id="L669" class="ln">   669  </span>	return changeCounts
+<span id="L670" class="ln">   670  </span>}
+<span id="L671" class="ln">   671  </span>
+<span id="L672" class="ln">   672  </span>func (r *reaper) DetectPrivilegeChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+<span id="L673" class="ln">   673  </span>	detectedChanges := make(metrics.Measurements, 0)
+<span id="L674" class="ln">   674  </span>	var firstRun bool
+<span id="L675" class="ln">   675  </span>	var changeCounts ChangeDetectionResults
+<span id="L676" class="ln">   676  </span>	l := log.GetLogger(ctx)
+<span id="L677" class="ln">   677  </span>	changeCounts.Target = &#34;privileges&#34;
+<span id="L678" class="ln">   678  </span>	l.Debug(&#34;checking object privilege changes...&#34;)
+<span id="L679" class="ln">   679  </span>	if _, ok := md.ChangeState[&#34;object_privileges&#34;]; !ok {
+<span id="L680" class="ln">   680  </span>		firstRun = true
+<span id="L681" class="ln">   681  </span>		md.ChangeState[&#34;object_privileges&#34;] = make(map[string]string)
+<span id="L682" class="ln">   682  </span>	}
+<span id="L683" class="ln">   683  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;privilege_changes&#34;)
+<span id="L684" class="ln">   684  </span>	if !ok || mvp.GetSQL(int(md.Version)) == &#34;&#34; {
+<span id="L685" class="ln">   685  </span>		l.Warning(&#34;could not get SQL for &#39;privilege_changes&#39;. cannot detect privilege changes&#34;)
+<span id="L686" class="ln">   686  </span>		return changeCounts
+<span id="L687" class="ln">   687  </span>	}
+<span id="L688" class="ln">   688  </span>	<span class="comment">// returns rows of: object_type, tag_role, tag_object, privilege_type</span>
+<span id="L689" class="ln">   689  </span>	data, err := QueryMeasurements(ctx, md, mvp.GetSQL(int(md.Version)))
+<span id="L690" class="ln">   690  </span>	if err != nil {
+<span id="L691" class="ln">   691  </span>		l.Error(err)
+<span id="L692" class="ln">   692  </span>		return changeCounts
+<span id="L693" class="ln">   693  </span>	}
+<span id="L694" class="ln">   694  </span>	currentState := make(map[string]bool)
+<span id="L695" class="ln">   695  </span>	for _, dr := range data {
+<span id="L696" class="ln">   696  </span>		objIdent := fmt.Sprintf(&#34;%s#:#%s#:#%s#:#%s&#34;, dr[&#34;object_type&#34;], dr[&#34;tag_role&#34;], dr[&#34;tag_object&#34;], dr[&#34;privilege_type&#34;])
+<span id="L697" class="ln">   697  </span>		ll := l.WithField(&#34;role&#34;, dr[&#34;tag_role&#34;]).
+<span id="L698" class="ln">   698  </span>			WithField(&#34;object_type&#34;, dr[&#34;object_type&#34;]).
+<span id="L699" class="ln">   699  </span>			WithField(&#34;object&#34;, dr[&#34;tag_object&#34;]).
+<span id="L700" class="ln">   700  </span>			WithField(&#34;privilege_type&#34;, dr[&#34;privilege_type&#34;])
+<span id="L701" class="ln">   701  </span>		if firstRun {
+<span id="L702" class="ln">   702  </span>			md.ChangeState[&#34;object_privileges&#34;][objIdent] = &#34;&#34;
+<span id="L703" class="ln">   703  </span>		} else {
+<span id="L704" class="ln">   704  </span>			_, ok := md.ChangeState[&#34;object_privileges&#34;][objIdent]
+<span id="L705" class="ln">   705  </span>			if !ok {
+<span id="L706" class="ln">   706  </span>				ll.Debug(&#34;new object privileges detected&#34;)
+<span id="L707" class="ln">   707  </span>				dr[&#34;event&#34;] = &#34;GRANT&#34;
+<span id="L708" class="ln">   708  </span>				detectedChanges = append(detectedChanges, dr)
+<span id="L709" class="ln">   709  </span>				changeCounts.Created++
+<span id="L710" class="ln">   710  </span>				md.ChangeState[&#34;object_privileges&#34;][objIdent] = &#34;&#34;
+<span id="L711" class="ln">   711  </span>			}
+<span id="L712" class="ln">   712  </span>			currentState[objIdent] = true
+<span id="L713" class="ln">   713  </span>		}
+<span id="L714" class="ln">   714  </span>	}
+<span id="L715" class="ln">   715  </span>	<span class="comment">// check revokes - exists in old state only</span>
+<span id="L716" class="ln">   716  </span>	if !firstRun &amp;&amp; len(currentState) &gt; 0 {
+<span id="L717" class="ln">   717  </span>		for objPrevRun := range md.ChangeState[&#34;object_privileges&#34;] {
+<span id="L718" class="ln">   718  </span>			if _, ok := currentState[objPrevRun]; !ok {
+<span id="L719" class="ln">   719  </span>				splits := strings.Split(objPrevRun, &#34;#:#&#34;)
+<span id="L720" class="ln">   720  </span>				l.WithField(&#34;role&#34;, splits[1]).
+<span id="L721" class="ln">   721  </span>					WithField(&#34;object_type&#34;, splits[0]).
+<span id="L722" class="ln">   722  </span>					WithField(&#34;object&#34;, splits[2]).
+<span id="L723" class="ln">   723  </span>					WithField(&#34;privilege_type&#34;, splits[3]).
+<span id="L724" class="ln">   724  </span>					Debug(&#34;removed object privileges detected&#34;)
+<span id="L725" class="ln">   725  </span>				revokeEntry := metrics.NewMeasurement(data.GetEpoch())
+<span id="L726" class="ln">   726  </span>				revokeEntry[&#34;object_type&#34;] = splits[0]
+<span id="L727" class="ln">   727  </span>				revokeEntry[&#34;tag_role&#34;] = splits[1]
+<span id="L728" class="ln">   728  </span>				revokeEntry[&#34;tag_object&#34;] = splits[2]
+<span id="L729" class="ln">   729  </span>				revokeEntry[&#34;privilege_type&#34;] = splits[3]
+<span id="L730" class="ln">   730  </span>				revokeEntry[&#34;event&#34;] = &#34;REVOKE&#34;
+<span id="L731" class="ln">   731  </span>				detectedChanges = append(detectedChanges, revokeEntry)
+<span id="L732" class="ln">   732  </span>				changeCounts.Dropped++
+<span id="L733" class="ln">   733  </span>				delete(md.ChangeState[&#34;object_privileges&#34;], objPrevRun)
+<span id="L734" class="ln">   734  </span>			}
+<span id="L735" class="ln">   735  </span>		}
+<span id="L736" class="ln">   736  </span>	}
+<span id="L737" class="ln">   737  </span>	l.Debugf(&#34;object privilege changes detected: %d&#34;, len(detectedChanges))
+<span id="L738" class="ln">   738  </span>	if len(detectedChanges) &gt; 0 {
+<span id="L739" class="ln">   739  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L740" class="ln">   740  </span>			DBName:     md.Name,
+<span id="L741" class="ln">   741  </span>			MetricName: &#34;privilege_changes&#34;,
+<span id="L742" class="ln">   742  </span>			Data:       detectedChanges,
+<span id="L743" class="ln">   743  </span>			CustomTags: md.CustomTags,
+<span id="L744" class="ln">   744  </span>		}
+<span id="L745" class="ln">   745  </span>	}
+<span id="L746" class="ln">   746  </span>	return changeCounts
+<span id="L747" class="ln">   747  </span>}
+<span id="L748" class="ln">   748  </span>
+<span id="L749" class="ln">   749  </span>func (r *reaper) DetectConfigurationChanges(ctx context.Context, md *sources.DbConn) ChangeDetectionResults {
+<span id="L750" class="ln">   750  </span>	detectedChanges := make(metrics.Measurements, 0)
+<span id="L751" class="ln">   751  </span>	var firstRun bool
+<span id="L752" class="ln">   752  </span>	var changeCounts ChangeDetectionResults
+<span id="L753" class="ln">   753  </span>	l := log.GetLogger(ctx)
+<span id="L754" class="ln">   754  </span>	changeCounts.Target = &#34;settings&#34;
+<span id="L755" class="ln">   755  </span>	l.Debug(&#34;checking for configuration changes...&#34;)
+<span id="L756" class="ln">   756  </span>	if _, ok := md.ChangeState[&#34;configuration_hashes&#34;]; !ok {
+<span id="L757" class="ln">   757  </span>		firstRun = true
+<span id="L758" class="ln">   758  </span>		md.ChangeState[&#34;configuration_hashes&#34;] = make(map[string]string)
+<span id="L759" class="ln">   759  </span>	}
+<span id="L760" class="ln">   760  </span>	mvp, ok := metricDefs.GetMetricDef(&#34;configuration_hashes&#34;)
+<span id="L761" class="ln">   761  </span>	if !ok {
+<span id="L762" class="ln">   762  </span>		l.Error(&#34;could not get configuration_hashes sql&#34;)
+<span id="L763" class="ln">   763  </span>		return changeCounts
+<span id="L764" class="ln">   764  </span>	}
+<span id="L765" class="ln">   765  </span>	rows, err := md.Conn.Query(ctx, mvp.GetSQL(md.Version))
+<span id="L766" class="ln">   766  </span>	if err != nil {
+<span id="L767" class="ln">   767  </span>		l.Error(err)
+<span id="L768" class="ln">   768  </span>		return changeCounts
+<span id="L769" class="ln">   769  </span>	}
+<span id="L770" class="ln">   770  </span>	defer rows.Close()
+<span id="L771" class="ln">   771  </span>	var (
+<span id="L772" class="ln">   772  </span>		objIdent, objValue string
+<span id="L773" class="ln">   773  </span>		epoch              int64
+<span id="L774" class="ln">   774  </span>	)
+<span id="L775" class="ln">   775  </span>	for rows.Next() {
+<span id="L776" class="ln">   776  </span>		if rows.Scan(&amp;epoch, &amp;objIdent, &amp;objValue) != nil {
+<span id="L777" class="ln">   777  </span>			return changeCounts
+<span id="L778" class="ln">   778  </span>		}
+<span id="L779" class="ln">   779  </span>		prevРash, ok := md.ChangeState[&#34;configuration_hashes&#34;][objIdent]
+<span id="L780" class="ln">   780  </span>		ll := l.WithField(&#34;setting&#34;, objIdent)
+<span id="L781" class="ln">   781  </span>		if ok { <span class="comment">// we have existing state</span>
+<span id="L782" class="ln">   782  </span>			if prevРash != objValue {
+<span id="L783" class="ln">   783  </span>				ll.Warningf(&#34;settings change detected: %s = %s (prev: %s)&#34;, objIdent, objValue, prevРash)
+<span id="L784" class="ln">   784  </span>				detectedChanges = append(detectedChanges, metrics.Measurement{
+<span id="L785" class="ln">   785  </span>					metrics.EpochColumnName: epoch,
+<span id="L786" class="ln">   786  </span>					&#34;tag_setting&#34;:           objIdent,
+<span id="L787" class="ln">   787  </span>					&#34;value&#34;:                 objValue,
+<span id="L788" class="ln">   788  </span>					&#34;event&#34;:                 &#34;alter&#34;})
+<span id="L789" class="ln">   789  </span>				md.ChangeState[&#34;configuration_hashes&#34;][objIdent] = objValue
+<span id="L790" class="ln">   790  </span>				changeCounts.Altered++
+<span id="L791" class="ln">   791  </span>			}
+<span id="L792" class="ln">   792  </span>		} else { <span class="comment">// check for new, delete not relevant here (pg_upgrade)</span>
+<span id="L793" class="ln">   793  </span>			md.ChangeState[&#34;configuration_hashes&#34;][objIdent] = objValue
+<span id="L794" class="ln">   794  </span>			if firstRun {
+<span id="L795" class="ln">   795  </span>				continue
+<span id="L796" class="ln">   796  </span>			}
+<span id="L797" class="ln">   797  </span>			ll.Debug(&#34;new setting detected&#34;)
+<span id="L798" class="ln">   798  </span>			detectedChanges = append(detectedChanges, metrics.Measurement{
+<span id="L799" class="ln">   799  </span>				metrics.EpochColumnName: epoch,
+<span id="L800" class="ln">   800  </span>				&#34;tag_setting&#34;:           objIdent,
+<span id="L801" class="ln">   801  </span>				&#34;value&#34;:                 objValue,
+<span id="L802" class="ln">   802  </span>				&#34;event&#34;:                 &#34;create&#34;})
+<span id="L803" class="ln">   803  </span>			changeCounts.Created++
+<span id="L804" class="ln">   804  </span>		}
+<span id="L805" class="ln">   805  </span>	}
+<span id="L806" class="ln">   806  </span>	l.Debugf(&#34;configuration changes detected: %d&#34;, len(detectedChanges))
+<span id="L807" class="ln">   807  </span>	if len(detectedChanges) &gt; 0 {
+<span id="L808" class="ln">   808  </span>		r.measurementCh &lt;- metrics.MeasurementEnvelope{
+<span id="L809" class="ln">   809  </span>			DBName:     md.Name,
+<span id="L810" class="ln">   810  </span>			MetricName: &#34;configuration_changes&#34;,
+<span id="L811" class="ln">   811  </span>			Data:       detectedChanges,
+<span id="L812" class="ln">   812  </span>			CustomTags: md.CustomTags,
+<span id="L813" class="ln">   813  </span>		}
+<span id="L814" class="ln">   814  </span>	}
+<span id="L815" class="ln">   815  </span>	return changeCounts
+<span id="L816" class="ln">   816  </span>}
+<span id="L817" class="ln">   817  </span>
+<span id="L818" class="ln">   818  </span><span class="comment">// GetInstanceUpMeasurement returns a single measurement with &#34;instance_up&#34; metric</span>
+<span id="L819" class="ln">   819  </span><span class="comment">// used to detect if the instance is up or down</span>
+<span id="L820" class="ln">   820  </span>func (r *reaper) GetInstanceUpMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
+<span id="L821" class="ln">   821  </span>	return metrics.Measurements{
+<span id="L822" class="ln">   822  </span>		metrics.Measurement{
+<span id="L823" class="ln">   823  </span>			metrics.EpochColumnName: time.Now().UnixNano(),
+<span id="L824" class="ln">   824  </span>			&#34;instance_up&#34;: func() int {
+<span id="L825" class="ln">   825  </span>				if md.Conn.Ping(ctx) == nil {
+<span id="L826" class="ln">   826  </span>					return 1
+<span id="L827" class="ln">   827  </span>				}
+<span id="L828" class="ln">   828  </span>				return 0
+<span id="L829" class="ln">   829  </span>			}(), <span class="comment">// true if connection is up</span>
+<span id="L830" class="ln">   830  </span>		},
+<span id="L831" class="ln">   831  </span>	}, nil <span class="comment">// always return nil error for the status metric</span>
+<span id="L832" class="ln">   832  </span>}
+<span id="L833" class="ln">   833  </span>
+<span id="L834" class="ln">   834  </span>func (r *reaper) GetObjectChangesMeasurement(ctx context.Context, md *sources.DbConn) (metrics.Measurements, error) {
+<span id="L835" class="ln">   835  </span>	md.Lock()
+<span id="L836" class="ln">   836  </span>	defer md.Unlock()
+<span id="L837" class="ln">   837  </span>	spN := r.DetectSprocChanges(ctx, md)
+<span id="L838" class="ln">   838  </span>	tblN := r.DetectTableChanges(ctx, md)
+<span id="L839" class="ln">   839  </span>	idxN := r.DetectIndexChanges(ctx, md)
+<span id="L840" class="ln">   840  </span>	cnfN := r.DetectConfigurationChanges(ctx, md)
+<span id="L841" class="ln">   841  </span>	privN := r.DetectPrivilegeChanges(ctx, md)
+<span id="L842" class="ln">   842  </span>	if spN.Total()+tblN.Total()+idxN.Total()+cnfN.Total()+privN.Total() == 0 {
+<span id="L843" class="ln">   843  </span>		return nil, nil
+<span id="L844" class="ln">   844  </span>	}
+<span id="L845" class="ln">   845  </span>	m := metrics.NewMeasurement(time.Now().UnixNano())
+<span id="L846" class="ln">   846  </span>	m[&#34;details&#34;] = strings.Join([]string{spN.String(), tblN.String(), idxN.String(), cnfN.String(), privN.String()}, &#34; &#34;)
+<span id="L847" class="ln">   847  </span>	return metrics.Measurements{m}, nil
+<span id="L848" class="ln">   848  </span>}
+<span id="L849" class="ln">   849  </span>
 </pre><p></p>
 
 <div id="footer">
