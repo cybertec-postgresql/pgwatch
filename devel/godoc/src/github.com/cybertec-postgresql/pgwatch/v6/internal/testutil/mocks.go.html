@@ -168,43 +168,43 @@
 <span id="L111" class="ln">   111  </span>	return m.WriteSourcesFunc(srcs)
 <span id="L112" class="ln">   112  </span>}
 <span id="L113" class="ln">   113  </span>
-<span id="L114" class="ln">   114  </span>
-<span id="L115" class="ln">   115  </span><span class="comment">// BlockingPool is a wedged PgxPoolIface used by fault-injection tests.</span>
-<span id="L116" class="ln">   116  </span><span class="comment">//</span>
-<span id="L117" class="ln">   117  </span><span class="comment">// It embeds db.PgxPoolIface as a nil interface so the type satisfies</span>
-<span id="L118" class="ln">   118  </span><span class="comment">// db.PgxPoolIface; only the methods overridden below are usable. Any</span>
-<span id="L119" class="ln">   119  </span><span class="comment">// direct call to a non-overridden method panics (nil interface call).</span>
-<span id="L120" class="ln">   120  </span><span class="comment">//</span>
-<span id="L121" class="ln">   121  </span><span class="comment">// Ping, Query, SendBatch, and Acquire all block until the supplied</span>
-<span id="L122" class="ln">   122  </span><span class="comment">// context is cancelled, then return ctx.Err(). This simulates a pool</span>
-<span id="L123" class="ln">   123  </span><span class="comment">// whose connections are stuck on the wire — the failure mode that</span>
-<span id="L124" class="ln">   124  </span><span class="comment">// client-side deadlines must convert into bounded failures.</span>
-<span id="L125" class="ln">   125  </span>type BlockingPool struct {
-<span id="L126" class="ln">   126  </span>	db.PgxPoolIface
-<span id="L127" class="ln">   127  </span>}
-<span id="L128" class="ln">   128  </span>
-<span id="L129" class="ln">   129  </span><span class="comment">// Ping blocks until ctx.Done() and returns ctx.Err().</span>
-<span id="L130" class="ln">   130  </span>func (BlockingPool) Ping(ctx context.Context) error {
-<span id="L131" class="ln">   131  </span>	&lt;-ctx.Done()
-<span id="L132" class="ln">   132  </span>	return ctx.Err()
-<span id="L133" class="ln">   133  </span>}
-<span id="L134" class="ln">   134  </span>
-<span id="L135" class="ln">   135  </span><span class="comment">// Query blocks until ctx.Done() and returns ctx.Err().</span>
-<span id="L136" class="ln">   136  </span>func (BlockingPool) Query(ctx context.Context, _ string, _ ...any) (pgx.Rows, error) {
-<span id="L137" class="ln">   137  </span>	&lt;-ctx.Done()
-<span id="L138" class="ln">   138  </span>	return nil, ctx.Err()
-<span id="L139" class="ln">   139  </span>}
-<span id="L140" class="ln">   140  </span>
-<span id="L141" class="ln">   141  </span><span class="comment">// QueryRow blocks until ctx.Done() and returns a row whose Scan returns ctx.Err().</span>
-<span id="L142" class="ln">   142  </span>func (BlockingPool) QueryRow(ctx context.Context, _ string, _ ...any) pgx.Row {
-<span id="L143" class="ln">   143  </span>	return blockingRow{ctx: ctx}
-<span id="L144" class="ln">   144  </span>}
-<span id="L145" class="ln">   145  </span>
-<span id="L146" class="ln">   146  </span><span class="comment">// Exec blocks until ctx.Done() and returns ctx.Err().</span>
-<span id="L147" class="ln">   147  </span>func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.CommandTag, error) {
-<span id="L148" class="ln">   148  </span>	&lt;-ctx.Done()
-<span id="L149" class="ln">   149  </span>	return pgconn.CommandTag{}, ctx.Err()
-<span id="L150" class="ln">   150  </span>}
+<span id="L114" class="ln">   114  </span><span class="comment">// BlockingPool is a wedged PgxPoolIface used by fault-injection tests.</span>
+<span id="L115" class="ln">   115  </span><span class="comment">//</span>
+<span id="L116" class="ln">   116  </span><span class="comment">// It embeds db.PgxPoolIface as a nil interface so the type satisfies</span>
+<span id="L117" class="ln">   117  </span><span class="comment">// db.PgxPoolIface; only the methods overridden below are usable. Any</span>
+<span id="L118" class="ln">   118  </span><span class="comment">// direct call to a non-overridden method panics (nil interface call).</span>
+<span id="L119" class="ln">   119  </span><span class="comment">//</span>
+<span id="L120" class="ln">   120  </span><span class="comment">// Ping, Query, SendBatch, and Acquire all block until the supplied</span>
+<span id="L121" class="ln">   121  </span><span class="comment">// context is cancelled, then return ctx.Err(). This simulates a pool</span>
+<span id="L122" class="ln">   122  </span><span class="comment">// whose connections are stuck on the wire — the failure mode that</span>
+<span id="L123" class="ln">   123  </span><span class="comment">// client-side deadlines must convert into bounded failures.</span>
+<span id="L124" class="ln">   124  </span>type BlockingPool struct {
+<span id="L125" class="ln">   125  </span>	db.PgxPoolIface
+<span id="L126" class="ln">   126  </span>}
+<span id="L127" class="ln">   127  </span>
+<span id="L128" class="ln">   128  </span><span class="comment">// Ping blocks until ctx.Done() and returns ctx.Err().</span>
+<span id="L129" class="ln">   129  </span>func (BlockingPool) Ping(ctx context.Context) error {
+<span id="L130" class="ln">   130  </span>	&lt;-ctx.Done()
+<span id="L131" class="ln">   131  </span>	return ctx.Err()
+<span id="L132" class="ln">   132  </span>}
+<span id="L133" class="ln">   133  </span>
+<span id="L134" class="ln">   134  </span><span class="comment">// Query blocks until ctx.Done() and returns ctx.Err().</span>
+<span id="L135" class="ln">   135  </span>func (BlockingPool) Query(ctx context.Context, _ string, _ ...any) (pgx.Rows, error) {
+<span id="L136" class="ln">   136  </span>	&lt;-ctx.Done()
+<span id="L137" class="ln">   137  </span>	return nil, ctx.Err()
+<span id="L138" class="ln">   138  </span>}
+<span id="L139" class="ln">   139  </span>
+<span id="L140" class="ln">   140  </span><span class="comment">// QueryRow blocks until ctx.Done() and returns a row whose Scan returns ctx.Err().</span>
+<span id="L141" class="ln">   141  </span>func (BlockingPool) QueryRow(ctx context.Context, _ string, _ ...any) pgx.Row {
+<span id="L142" class="ln">   142  </span>	return blockingRow{ctx: ctx}
+<span id="L143" class="ln">   143  </span>}
+<span id="L144" class="ln">   144  </span>
+<span id="L145" class="ln">   145  </span><span class="comment">// Exec blocks until ctx.Done() and returns ctx.Err().</span>
+<span id="L146" class="ln">   146  </span>func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.CommandTag, error) {
+<span id="L147" class="ln">   147  </span>	&lt;-ctx.Done()
+<span id="L148" class="ln">   148  </span>	return pgconn.CommandTag{}, ctx.Err()
+<span id="L149" class="ln">   149  </span>}
+<span id="L150" class="ln">   150  </span>
 <span id="L151" class="ln">   151  </span><span class="comment">// first Query call returns ctx.Err().</span>
 <span id="L152" class="ln">   152  </span><span class="comment">// SendBatch blocks until ctx.Done() and returns a BatchResults whose</span>
 <span id="L153" class="ln">   153  </span><span class="comment">// first Query call returns ctx.Err().</span>
@@ -266,6 +266,7 @@
 <span id="L209" class="ln">   209  </span>	}
 <span id="L210" class="ln">   210  </span>	return nil
 <span id="L211" class="ln">   211  </span>}
+<span id="L212" class="ln">   212  </span>
 </pre><p></p>
 
 <div id="footer">

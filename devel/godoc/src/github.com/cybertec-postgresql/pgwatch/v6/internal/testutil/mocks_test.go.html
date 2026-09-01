@@ -394,11 +394,12 @@
 <span id="L337" class="ln">   337  </span>		var dst any
 <span id="L338" class="ln">   338  </span>		assert.ErrorIs(t, br.QueryRow().Scan(&amp;dst), context.Canceled)
 <span id="L339" class="ln">   339  </span>
-<span id="L340" class="ln">   340  </span>		assert.NoError(t, br.Err())                       <span class="comment">// before Close</span>
+<span id="L340" class="ln">   340  </span>		assert.NoError(t, br.Err()) <span class="comment">// before Close</span>
 <span id="L341" class="ln">   341  </span>		assert.NoError(t, br.Close())
-<span id="L342" class="ln">   342  </span>		assert.ErrorIs(t, br.Err(), context.Canceled)     <span class="comment">// after Close</span>
+<span id="L342" class="ln">   342  </span>		assert.ErrorIs(t, br.Err(), context.Canceled) <span class="comment">// after Close</span>
 <span id="L343" class="ln">   343  </span>	})
 <span id="L344" class="ln">   344  </span>}
+<span id="L345" class="ln">   345  </span>
 </pre><p></p>
 
 <div id="footer">

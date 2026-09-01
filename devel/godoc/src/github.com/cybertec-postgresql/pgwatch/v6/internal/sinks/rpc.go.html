@@ -104,187 +104,187 @@
 <span id="L47" class="ln">    47  </span>	}
 <span id="L48" class="ln">    48  </span>}
 <span id="L49" class="ln">    49  </span>
-<span id="L50" class="ln">    50  </span>
-<span id="L51" class="ln">    51  </span>func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
-<span id="L52" class="ln">    52  </span>	uri, err := url.Parse(connStr)
-<span id="L53" class="ln">    53  </span>	if err != nil {
-<span id="L54" class="ln">    54  </span>		return nil, fmt.Errorf(&#34;error parsing gRPC URI: %s&#34;, err)
-<span id="L55" class="ln">    55  </span>	}
-<span id="L56" class="ln">    56  </span>
-<span id="L57" class="ln">    57  </span>	l := log.GetLogger(ctx).WithField(&#34;sink&#34;, &#34;grpc&#34;).WithField(&#34;address&#34;, uri.Host)
-<span id="L58" class="ln">    58  </span>	ctx = log.WithLogger(ctx, l)
-<span id="L59" class="ln">    59  </span>
-<span id="L60" class="ln">    60  </span>	params, err := url.ParseQuery(uri.RawQuery)
-<span id="L61" class="ln">    61  </span>	if err != nil {
-<span id="L62" class="ln">    62  </span>		return nil, fmt.Errorf(&#34;error parsing gRPC URI parameters: %s&#34;, err)
-<span id="L63" class="ln">    63  </span>	}
-<span id="L64" class="ln">    64  </span>
-<span id="L65" class="ln">    65  </span>	creds := insecure.NewCredentials()
-<span id="L66" class="ln">    66  </span>
-<span id="L67" class="ln">    67  </span>	CAFile, ok := params[&#34;sslrootca&#34;]
-<span id="L68" class="ln">    68  </span>	if ok {
-<span id="L69" class="ln">    69  </span>		creds, err = LoadTLSCredentials(CAFile[0])
-<span id="L70" class="ln">    70  </span>		if err != nil {
-<span id="L71" class="ln">    71  </span>			return nil, err
-<span id="L72" class="ln">    72  </span>		}
-<span id="L73" class="ln">    73  </span>		log.GetLogger(ctx).Infof(&#34;Valid CA File %s loaded - enabling TLS&#34;, CAFile)
-<span id="L74" class="ln">    74  </span>	}
-<span id="L75" class="ln">    75  </span>
-<span id="L76" class="ln">    76  </span>	conn, err := grpc.NewClient(uri.Host, grpc.WithTransportCredentials(creds))
-<span id="L77" class="ln">    77  </span>	if err != nil {
-<span id="L78" class="ln">    78  </span>		return nil, err
-<span id="L79" class="ln">    79  </span>	}
-<span id="L80" class="ln">    80  </span>	
-<span id="L81" class="ln">    81  </span>	password, _ := uri.User.Password()
-<span id="L82" class="ln">    82  </span>	md := metadata.Pairs(  
-<span id="L83" class="ln">    83  </span>		&#34;username&#34;, uri.User.Username(),  
-<span id="L84" class="ln">    84  </span>		&#34;password&#34;, password,
-<span id="L85" class="ln">    85  </span>	)  
-<span id="L86" class="ln">    86  </span>	newCtx := metadata.NewOutgoingContext(ctx, md)
-<span id="L87" class="ln">    87  </span>	
-<span id="L88" class="ln">    88  </span>	client := pb.NewReceiverClient(conn)
-<span id="L89" class="ln">    89  </span>	rw := &amp;RPCWriter{
-<span id="L90" class="ln">    90  </span>		ctx:    newCtx,
-<span id="L91" class="ln">    91  </span>		conn:   conn,
-<span id="L92" class="ln">    92  </span>		client: client,
-<span id="L93" class="ln">    93  </span>	}
-<span id="L94" class="ln">    94  </span>
-<span id="L95" class="ln">    95  </span>	if err = rw.Ping(); err != nil {
-<span id="L96" class="ln">    96  </span>		return nil, err
-<span id="L97" class="ln">    97  </span>	}
-<span id="L98" class="ln">    98  </span>
-<span id="L99" class="ln">    99  </span>	go rw.watchCtx()
-<span id="L100" class="ln">   100  </span>	return rw, nil
-<span id="L101" class="ln">   101  </span>}
-<span id="L102" class="ln">   102  </span>
-<span id="L103" class="ln">   103  </span>func (rw *RPCWriter) Ping() error {
-<span id="L104" class="ln">   104  </span>	err := rw.SyncMetric(&#34;&#34;, &#34;&#34;, InvalidOp)
-<span id="L105" class="ln">   105  </span>	st, ok := status.FromError(err)
-<span id="L106" class="ln">   106  </span>	if ok &amp;&amp; st.Code() == codes.Unavailable {
-<span id="L107" class="ln">   107  </span>		return err
-<span id="L108" class="ln">   108  </span>	}
-<span id="L109" class="ln">   109  </span>	return nil
-<span id="L110" class="ln">   110  </span>}
-<span id="L111" class="ln">   111  </span>
-<span id="L112" class="ln">   112  </span><span class="comment">// Sends Measurement Message to RPC Sink</span>
-<span id="L113" class="ln">   113  </span>func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
-<span id="L114" class="ln">   114  </span>	if rw.ctx.Err() != nil {
-<span id="L115" class="ln">   115  </span>		return rw.ctx.Err()
-<span id="L116" class="ln">   116  </span>	}
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>	dataLength := len(msg.Data)
-<span id="L119" class="ln">   119  </span>	failCnt := 0
-<span id="L120" class="ln">   120  </span>	measurements := make([]*structpb.Struct, 0, dataLength)
-<span id="L121" class="ln">   121  </span>	for _, item := range msg.Data {
-<span id="L122" class="ln">   122  </span>		st, err := structpb.NewStruct(item)
-<span id="L123" class="ln">   123  </span>		if err != nil {
-<span id="L124" class="ln">   124  </span>			failCnt++
-<span id="L125" class="ln">   125  </span>			continue
-<span id="L126" class="ln">   126  </span>		}
-<span id="L127" class="ln">   127  </span>		measurements = append(measurements, st)
-<span id="L128" class="ln">   128  </span>	}
-<span id="L129" class="ln">   129  </span>	if failCnt &gt; 0 {
-<span id="L130" class="ln">   130  </span>		log.GetLogger(rw.ctx).WithField(&#34;database&#34;, msg.DBName).WithField(&#34;metric&#34;,
-<span id="L131" class="ln">   131  </span>			msg.MetricName).Warningf(&#34;gRPC sink failed to encode %d rows&#34;, failCnt)
-<span id="L132" class="ln">   132  </span>	}
-<span id="L133" class="ln">   133  </span>
-<span id="L134" class="ln">   134  </span>	envelope := &amp;pb.MeasurementEnvelope{
-<span id="L135" class="ln">   135  </span>		DBName:     msg.DBName,
-<span id="L136" class="ln">   136  </span>		MetricName: msg.MetricName,
-<span id="L137" class="ln">   137  </span>		CustomTags: msg.CustomTags,
-<span id="L138" class="ln">   138  </span>		Data:       measurements,
-<span id="L139" class="ln">   139  </span>	}
-<span id="L140" class="ln">   140  </span>
-<span id="L141" class="ln">   141  </span>	t1 := time.Now()
-<span id="L142" class="ln">   142  </span>	reply, err := rw.client.UpdateMeasurements(rw.ctx, envelope)
-<span id="L143" class="ln">   143  </span>	if err != nil {
-<span id="L144" class="ln">   144  </span>		return err
-<span id="L145" class="ln">   145  </span>	}
-<span id="L146" class="ln">   146  </span>
-<span id="L147" class="ln">   147  </span>	diff := time.Since(t1)
-<span id="L148" class="ln">   148  </span>	log.GetLogger(rw.ctx).WithField(&#34;rows&#34;, dataLength).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
-<span id="L149" class="ln">   149  </span>	if reply.GetLogmsg() != &#34;&#34; {
-<span id="L150" class="ln">   150  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
-<span id="L151" class="ln">   151  </span>	}
-<span id="L152" class="ln">   152  </span>	return nil
-<span id="L153" class="ln">   153  </span>}
-<span id="L154" class="ln">   154  </span>
-<span id="L155" class="ln">   155  </span><span class="comment">// SyncMetric synchronizes a metric and monitored source with the remote server</span>
-<span id="L156" class="ln">   156  </span>func (rw *RPCWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
-<span id="L157" class="ln">   157  </span>	syncReq := &amp;pb.SyncReq{
-<span id="L158" class="ln">   158  </span>		DBName:     sourceName,
-<span id="L159" class="ln">   159  </span>		MetricName: metricName,
-<span id="L160" class="ln">   160  </span>		Operation:  convertSyncOp(op),
-<span id="L161" class="ln">   161  </span>	}
-<span id="L162" class="ln">   162  </span>
-<span id="L163" class="ln">   163  </span>	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)
-<span id="L164" class="ln">   164  </span>	if err != nil {
-<span id="L165" class="ln">   165  </span>		return err
-<span id="L166" class="ln">   166  </span>	}
-<span id="L167" class="ln">   167  </span>
-<span id="L168" class="ln">   168  </span>	if reply.GetLogmsg() != &#34;&#34; {
-<span id="L169" class="ln">   169  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
-<span id="L170" class="ln">   170  </span>	}
-<span id="L171" class="ln">   171  </span>	return nil
-<span id="L172" class="ln">   172  </span>}
-<span id="L173" class="ln">   173  </span>
-<span id="L174" class="ln">   174  </span><span class="comment">// DefineMetrics sends metric definitions to the remote server</span>
-<span id="L175" class="ln">   175  </span>func (rw *RPCWriter) DefineMetrics(metrics *metrics.Metrics) error {
-<span id="L176" class="ln">   176  </span>	var json = jsoniter.ConfigFastest
-<span id="L177" class="ln">   177  </span>
-<span id="L178" class="ln">   178  </span>	<span class="comment">// Convert metrics to JSON first, then to structpb.Struct</span>
-<span id="L179" class="ln">   179  </span>	<span class="comment">// to automatically handle all the type conversions</span>
-<span id="L180" class="ln">   180  </span>	jsonData, err := json.Marshal(metrics)
-<span id="L181" class="ln">   181  </span>	if err != nil {
-<span id="L182" class="ln">   182  </span>		return err
-<span id="L183" class="ln">   183  </span>	}
-<span id="L184" class="ln">   184  </span>
-<span id="L185" class="ln">   185  </span>	var metricMap map[string]any
-<span id="L186" class="ln">   186  </span>	if err := json.Unmarshal(jsonData, &amp;metricMap); err != nil {
-<span id="L187" class="ln">   187  </span>		return err
-<span id="L188" class="ln">   188  </span>	}
-<span id="L189" class="ln">   189  </span>
-<span id="L190" class="ln">   190  </span>	metricStruct, err := structpb.NewStruct(metricMap)
-<span id="L191" class="ln">   191  </span>	if err != nil {
-<span id="L192" class="ln">   192  </span>		return err
-<span id="L193" class="ln">   193  </span>	}
-<span id="L194" class="ln">   194  </span>
-<span id="L195" class="ln">   195  </span>	t1 := time.Now()
-<span id="L196" class="ln">   196  </span>	reply, err := rw.client.DefineMetrics(rw.ctx, metricStruct)
-<span id="L197" class="ln">   197  </span>	if err != nil {
-<span id="L198" class="ln">   198  </span>		return err
-<span id="L199" class="ln">   199  </span>	}
-<span id="L200" class="ln">   200  </span>
-<span id="L201" class="ln">   201  </span>	diff := time.Since(t1)
-<span id="L202" class="ln">   202  </span>	log.GetLogger(rw.ctx).WithField(&#34;elapsed&#34;, diff).Info(&#34;metric definitions written&#34;)
-<span id="L203" class="ln">   203  </span>	if reply.GetLogmsg() != &#34;&#34; {
-<span id="L204" class="ln">   204  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
-<span id="L205" class="ln">   205  </span>	}
-<span id="L206" class="ln">   206  </span>	return nil
-<span id="L207" class="ln">   207  </span>}
-<span id="L208" class="ln">   208  </span>
-<span id="L209" class="ln">   209  </span>func (rw *RPCWriter) watchCtx() {
-<span id="L210" class="ln">   210  </span>	&lt;-rw.ctx.Done()
-<span id="L211" class="ln">   211  </span>	rw.conn.Close()
-<span id="L212" class="ln">   212  </span>}
-<span id="L213" class="ln">   213  </span>
-<span id="L214" class="ln">   214  </span>func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error) {
-<span id="L215" class="ln">   215  </span>	ca, err := os.ReadFile(CAFile)
-<span id="L216" class="ln">   216  </span>	if err != nil {
-<span id="L217" class="ln">   217  </span>		return nil, fmt.Errorf(&#34;error loading CA file: %v&#34;, err)
-<span id="L218" class="ln">   218  </span>	}
-<span id="L219" class="ln">   219  </span>
-<span id="L220" class="ln">   220  </span>	certPool := x509.NewCertPool()
-<span id="L221" class="ln">   221  </span>	ok := certPool.AppendCertsFromPEM(ca)
-<span id="L222" class="ln">   222  </span>	if !ok {
-<span id="L223" class="ln">   223  </span>		return nil, errors.New(&#34;invalid CA file&#34;)
-<span id="L224" class="ln">   224  </span>	}
-<span id="L225" class="ln">   225  </span>
-<span id="L226" class="ln">   226  </span>	tlsClientConfig := &amp;tls.Config{
-<span id="L227" class="ln">   227  </span>		RootCAs: certPool,
-<span id="L228" class="ln">   228  </span>	}
-<span id="L229" class="ln">   229  </span>	return credentials.NewTLS(tlsClientConfig), nil
-<span id="L230" class="ln">   230  </span>}
+<span id="L50" class="ln">    50  </span>func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
+<span id="L51" class="ln">    51  </span>	uri, err := url.Parse(connStr)
+<span id="L52" class="ln">    52  </span>	if err != nil {
+<span id="L53" class="ln">    53  </span>		return nil, fmt.Errorf(&#34;error parsing gRPC URI: %s&#34;, err)
+<span id="L54" class="ln">    54  </span>	}
+<span id="L55" class="ln">    55  </span>
+<span id="L56" class="ln">    56  </span>	l := log.GetLogger(ctx).WithField(&#34;sink&#34;, &#34;grpc&#34;).WithField(&#34;address&#34;, uri.Host)
+<span id="L57" class="ln">    57  </span>	ctx = log.WithLogger(ctx, l)
+<span id="L58" class="ln">    58  </span>
+<span id="L59" class="ln">    59  </span>	params, err := url.ParseQuery(uri.RawQuery)
+<span id="L60" class="ln">    60  </span>	if err != nil {
+<span id="L61" class="ln">    61  </span>		return nil, fmt.Errorf(&#34;error parsing gRPC URI parameters: %s&#34;, err)
+<span id="L62" class="ln">    62  </span>	}
+<span id="L63" class="ln">    63  </span>
+<span id="L64" class="ln">    64  </span>	creds := insecure.NewCredentials()
+<span id="L65" class="ln">    65  </span>
+<span id="L66" class="ln">    66  </span>	CAFile, ok := params[&#34;sslrootca&#34;]
+<span id="L67" class="ln">    67  </span>	if ok {
+<span id="L68" class="ln">    68  </span>		creds, err = LoadTLSCredentials(CAFile[0])
+<span id="L69" class="ln">    69  </span>		if err != nil {
+<span id="L70" class="ln">    70  </span>			return nil, err
+<span id="L71" class="ln">    71  </span>		}
+<span id="L72" class="ln">    72  </span>		log.GetLogger(ctx).Infof(&#34;Valid CA File %s loaded - enabling TLS&#34;, CAFile)
+<span id="L73" class="ln">    73  </span>	}
+<span id="L74" class="ln">    74  </span>
+<span id="L75" class="ln">    75  </span>	conn, err := grpc.NewClient(uri.Host, grpc.WithTransportCredentials(creds))
+<span id="L76" class="ln">    76  </span>	if err != nil {
+<span id="L77" class="ln">    77  </span>		return nil, err
+<span id="L78" class="ln">    78  </span>	}
+<span id="L79" class="ln">    79  </span>
+<span id="L80" class="ln">    80  </span>	password, _ := uri.User.Password()
+<span id="L81" class="ln">    81  </span>	md := metadata.Pairs(
+<span id="L82" class="ln">    82  </span>		&#34;username&#34;, uri.User.Username(),
+<span id="L83" class="ln">    83  </span>		&#34;password&#34;, password,
+<span id="L84" class="ln">    84  </span>	)
+<span id="L85" class="ln">    85  </span>	newCtx := metadata.NewOutgoingContext(ctx, md)
+<span id="L86" class="ln">    86  </span>
+<span id="L87" class="ln">    87  </span>	client := pb.NewReceiverClient(conn)
+<span id="L88" class="ln">    88  </span>	rw := &amp;RPCWriter{
+<span id="L89" class="ln">    89  </span>		ctx:    newCtx,
+<span id="L90" class="ln">    90  </span>		conn:   conn,
+<span id="L91" class="ln">    91  </span>		client: client,
+<span id="L92" class="ln">    92  </span>	}
+<span id="L93" class="ln">    93  </span>
+<span id="L94" class="ln">    94  </span>	if err = rw.Ping(); err != nil {
+<span id="L95" class="ln">    95  </span>		return nil, err
+<span id="L96" class="ln">    96  </span>	}
+<span id="L97" class="ln">    97  </span>
+<span id="L98" class="ln">    98  </span>	go rw.watchCtx()
+<span id="L99" class="ln">    99  </span>	return rw, nil
+<span id="L100" class="ln">   100  </span>}
+<span id="L101" class="ln">   101  </span>
+<span id="L102" class="ln">   102  </span>func (rw *RPCWriter) Ping() error {
+<span id="L103" class="ln">   103  </span>	err := rw.SyncMetric(&#34;&#34;, &#34;&#34;, InvalidOp)
+<span id="L104" class="ln">   104  </span>	st, ok := status.FromError(err)
+<span id="L105" class="ln">   105  </span>	if ok &amp;&amp; st.Code() == codes.Unavailable {
+<span id="L106" class="ln">   106  </span>		return err
+<span id="L107" class="ln">   107  </span>	}
+<span id="L108" class="ln">   108  </span>	return nil
+<span id="L109" class="ln">   109  </span>}
+<span id="L110" class="ln">   110  </span>
+<span id="L111" class="ln">   111  </span><span class="comment">// Sends Measurement Message to RPC Sink</span>
+<span id="L112" class="ln">   112  </span>func (rw *RPCWriter) Write(msg metrics.MeasurementEnvelope) error {
+<span id="L113" class="ln">   113  </span>	if rw.ctx.Err() != nil {
+<span id="L114" class="ln">   114  </span>		return rw.ctx.Err()
+<span id="L115" class="ln">   115  </span>	}
+<span id="L116" class="ln">   116  </span>
+<span id="L117" class="ln">   117  </span>	dataLength := len(msg.Data)
+<span id="L118" class="ln">   118  </span>	failCnt := 0
+<span id="L119" class="ln">   119  </span>	measurements := make([]*structpb.Struct, 0, dataLength)
+<span id="L120" class="ln">   120  </span>	for _, item := range msg.Data {
+<span id="L121" class="ln">   121  </span>		st, err := structpb.NewStruct(item)
+<span id="L122" class="ln">   122  </span>		if err != nil {
+<span id="L123" class="ln">   123  </span>			failCnt++
+<span id="L124" class="ln">   124  </span>			continue
+<span id="L125" class="ln">   125  </span>		}
+<span id="L126" class="ln">   126  </span>		measurements = append(measurements, st)
+<span id="L127" class="ln">   127  </span>	}
+<span id="L128" class="ln">   128  </span>	if failCnt &gt; 0 {
+<span id="L129" class="ln">   129  </span>		log.GetLogger(rw.ctx).WithField(&#34;database&#34;, msg.DBName).WithField(&#34;metric&#34;,
+<span id="L130" class="ln">   130  </span>			msg.MetricName).Warningf(&#34;gRPC sink failed to encode %d rows&#34;, failCnt)
+<span id="L131" class="ln">   131  </span>	}
+<span id="L132" class="ln">   132  </span>
+<span id="L133" class="ln">   133  </span>	envelope := &amp;pb.MeasurementEnvelope{
+<span id="L134" class="ln">   134  </span>		DBName:     msg.DBName,
+<span id="L135" class="ln">   135  </span>		MetricName: msg.MetricName,
+<span id="L136" class="ln">   136  </span>		CustomTags: msg.CustomTags,
+<span id="L137" class="ln">   137  </span>		Data:       measurements,
+<span id="L138" class="ln">   138  </span>	}
+<span id="L139" class="ln">   139  </span>
+<span id="L140" class="ln">   140  </span>	t1 := time.Now()
+<span id="L141" class="ln">   141  </span>	reply, err := rw.client.UpdateMeasurements(rw.ctx, envelope)
+<span id="L142" class="ln">   142  </span>	if err != nil {
+<span id="L143" class="ln">   143  </span>		return err
+<span id="L144" class="ln">   144  </span>	}
+<span id="L145" class="ln">   145  </span>
+<span id="L146" class="ln">   146  </span>	diff := time.Since(t1)
+<span id="L147" class="ln">   147  </span>	log.GetLogger(rw.ctx).WithField(&#34;rows&#34;, dataLength).WithField(&#34;elapsed&#34;, diff).Info(&#34;measurements written&#34;)
+<span id="L148" class="ln">   148  </span>	if reply.GetLogmsg() != &#34;&#34; {
+<span id="L149" class="ln">   149  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
+<span id="L150" class="ln">   150  </span>	}
+<span id="L151" class="ln">   151  </span>	return nil
+<span id="L152" class="ln">   152  </span>}
+<span id="L153" class="ln">   153  </span>
+<span id="L154" class="ln">   154  </span><span class="comment">// SyncMetric synchronizes a metric and monitored source with the remote server</span>
+<span id="L155" class="ln">   155  </span>func (rw *RPCWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
+<span id="L156" class="ln">   156  </span>	syncReq := &amp;pb.SyncReq{
+<span id="L157" class="ln">   157  </span>		DBName:     sourceName,
+<span id="L158" class="ln">   158  </span>		MetricName: metricName,
+<span id="L159" class="ln">   159  </span>		Operation:  convertSyncOp(op),
+<span id="L160" class="ln">   160  </span>	}
+<span id="L161" class="ln">   161  </span>
+<span id="L162" class="ln">   162  </span>	reply, err := rw.client.SyncMetric(rw.ctx, syncReq)
+<span id="L163" class="ln">   163  </span>	if err != nil {
+<span id="L164" class="ln">   164  </span>		return err
+<span id="L165" class="ln">   165  </span>	}
+<span id="L166" class="ln">   166  </span>
+<span id="L167" class="ln">   167  </span>	if reply.GetLogmsg() != &#34;&#34; {
+<span id="L168" class="ln">   168  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
+<span id="L169" class="ln">   169  </span>	}
+<span id="L170" class="ln">   170  </span>	return nil
+<span id="L171" class="ln">   171  </span>}
+<span id="L172" class="ln">   172  </span>
+<span id="L173" class="ln">   173  </span><span class="comment">// DefineMetrics sends metric definitions to the remote server</span>
+<span id="L174" class="ln">   174  </span>func (rw *RPCWriter) DefineMetrics(metrics *metrics.Metrics) error {
+<span id="L175" class="ln">   175  </span>	var json = jsoniter.ConfigFastest
+<span id="L176" class="ln">   176  </span>
+<span id="L177" class="ln">   177  </span>	<span class="comment">// Convert metrics to JSON first, then to structpb.Struct</span>
+<span id="L178" class="ln">   178  </span>	<span class="comment">// to automatically handle all the type conversions</span>
+<span id="L179" class="ln">   179  </span>	jsonData, err := json.Marshal(metrics)
+<span id="L180" class="ln">   180  </span>	if err != nil {
+<span id="L181" class="ln">   181  </span>		return err
+<span id="L182" class="ln">   182  </span>	}
+<span id="L183" class="ln">   183  </span>
+<span id="L184" class="ln">   184  </span>	var metricMap map[string]any
+<span id="L185" class="ln">   185  </span>	if err := json.Unmarshal(jsonData, &amp;metricMap); err != nil {
+<span id="L186" class="ln">   186  </span>		return err
+<span id="L187" class="ln">   187  </span>	}
+<span id="L188" class="ln">   188  </span>
+<span id="L189" class="ln">   189  </span>	metricStruct, err := structpb.NewStruct(metricMap)
+<span id="L190" class="ln">   190  </span>	if err != nil {
+<span id="L191" class="ln">   191  </span>		return err
+<span id="L192" class="ln">   192  </span>	}
+<span id="L193" class="ln">   193  </span>
+<span id="L194" class="ln">   194  </span>	t1 := time.Now()
+<span id="L195" class="ln">   195  </span>	reply, err := rw.client.DefineMetrics(rw.ctx, metricStruct)
+<span id="L196" class="ln">   196  </span>	if err != nil {
+<span id="L197" class="ln">   197  </span>		return err
+<span id="L198" class="ln">   198  </span>	}
+<span id="L199" class="ln">   199  </span>
+<span id="L200" class="ln">   200  </span>	diff := time.Since(t1)
+<span id="L201" class="ln">   201  </span>	log.GetLogger(rw.ctx).WithField(&#34;elapsed&#34;, diff).Info(&#34;metric definitions written&#34;)
+<span id="L202" class="ln">   202  </span>	if reply.GetLogmsg() != &#34;&#34; {
+<span id="L203" class="ln">   203  </span>		log.GetLogger(rw.ctx).Info(reply.GetLogmsg())
+<span id="L204" class="ln">   204  </span>	}
+<span id="L205" class="ln">   205  </span>	return nil
+<span id="L206" class="ln">   206  </span>}
+<span id="L207" class="ln">   207  </span>
+<span id="L208" class="ln">   208  </span>func (rw *RPCWriter) watchCtx() {
+<span id="L209" class="ln">   209  </span>	&lt;-rw.ctx.Done()
+<span id="L210" class="ln">   210  </span>	rw.conn.Close()
+<span id="L211" class="ln">   211  </span>}
+<span id="L212" class="ln">   212  </span>
+<span id="L213" class="ln">   213  </span>func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error) {
+<span id="L214" class="ln">   214  </span>	ca, err := os.ReadFile(CAFile)
+<span id="L215" class="ln">   215  </span>	if err != nil {
+<span id="L216" class="ln">   216  </span>		return nil, fmt.Errorf(&#34;error loading CA file: %v&#34;, err)
+<span id="L217" class="ln">   217  </span>	}
+<span id="L218" class="ln">   218  </span>
+<span id="L219" class="ln">   219  </span>	certPool := x509.NewCertPool()
+<span id="L220" class="ln">   220  </span>	ok := certPool.AppendCertsFromPEM(ca)
+<span id="L221" class="ln">   221  </span>	if !ok {
+<span id="L222" class="ln">   222  </span>		return nil, errors.New(&#34;invalid CA file&#34;)
+<span id="L223" class="ln">   223  </span>	}
+<span id="L224" class="ln">   224  </span>
+<span id="L225" class="ln">   225  </span>	tlsClientConfig := &amp;tls.Config{
+<span id="L226" class="ln">   226  </span>		RootCAs: certPool,
+<span id="L227" class="ln">   227  </span>	}
+<span id="L228" class="ln">   228  </span>	return credentials.NewTLS(tlsClientConfig), nil
+<span id="L229" class="ln">   229  </span>}
+<span id="L230" class="ln">   230  </span>
 </pre><p></p>
 
 <div id="footer">
