@@ -588,11 +588,16 @@ func TestLogParseRemote(t *testing.T) {
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow("")) // 0 bytes read = permission test
 
-		// Phase 4: Log file discovery - finds the most recent CSV log file with existing content
-		// Note: parseLogsRemote sets offset = size on first run, so it starts at EOF and only reads new data
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
-			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
-				AddRow(logFileName, int32(len(logContent)), time.Now()))
+		// Phase 4: log file discovery, now two queries rather than one.
+		// pgwatch asks for sizes so it can seed each file's offset to its
+		// current end -- existing content predates this process and is not
+		// ours to report -- and pgremote lists the directory itself.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(logContent))))
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(logContent))))
 
 		sourceConn := &sources.DbConn{
 			Source: sources.Source{
@@ -648,11 +653,12 @@ func TestLogParseRemote(t *testing.T) {
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
-		// No CSV files found initially - parseLogsRemote will keep retrying
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+		// The directory cannot be listed. The seeding query's failure is
+		// not fatal -- an unseeded file simply starts at zero -- but
+		// pgremote.Open's is, so ParseLogs returns instead of retrying.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
 			WillReturnError(assert.AnError)
-		// Expect it to retry
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
 			WillReturnError(assert.AnError)
 
 		sourceConn := &sources.DbConn{
@@ -714,10 +720,14 @@ incomplete line without proper fields
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
-		// Start at EOF (existing content won't be parsed initially)
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
-			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
-				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
+		// Start at EOF: the offset is seeded to the file's current size,
+		// so the existing content is not counted.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(malformedContent))))
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(malformedContent))))
 
 		sourceConn := &sources.DbConn{
 			Source: sources.Source{

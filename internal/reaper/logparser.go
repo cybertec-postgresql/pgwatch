@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
@@ -50,6 +51,18 @@ type LogParser struct {
 	eventCountsTotal map[string]int64 // for the whole instance
 	lastSendTime     time.Time
 	fileOffsets      map[string]uint64 // map of log file paths to last read offsets
+
+	// countsMu guards eventCounts, eventCountsTotal and lastSendTime.
+	//
+	// It is new with the pglogwatch engine: parsing now runs in its own
+	// goroutine while the send interval ticks in another, because a
+	// following reader blocks when the server is quiet and the interval
+	// has to elapse anyway. The pre-migration parsers were single
+	// goroutine loops and needed no lock.
+	countsMu sync.Mutex
+
+	// offsets records how far each log file has been read, in BYTES.
+	offsets *endSeededOffsets
 }
 
 type LogConfig struct {
@@ -110,7 +123,12 @@ func (lp *LogParser) ParseLogs() error {
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host, parsing logs locally")
 		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
-			return lp.parseLogsLocal()
+			lp.offsets = newEndSeededOffsets(lp.Directory, localFileSize)
+			rc, err := lp.openLocal()
+			if err != nil {
+				return err
+			}
+			return lp.parseStream(rc)
 		}
 		l.WithError(err).Error("Couldn't parse logs locally, lacking required privileges")
 	}
@@ -120,7 +138,12 @@ func (lp *LogParser) ParseLogs() error {
 		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
-	return lp.parseLogsRemote()
+	lp.offsets = newEndSeededOffsets(lp.Directory, remoteFileSizes(lp.ctx, lp))
+	rc, err := lp.openRemote()
+	if err != nil {
+		return err
+	}
+	return lp.parseStream(rc)
 }
 
 func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogConfig, err error) {
@@ -192,6 +215,15 @@ func (lp *LogParser) regexMatchesToMap(matches []string) map[string]string {
 
 // GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
 func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
+	lp.countsMu.Lock()
+	defer lp.countsMu.Unlock()
+	return lp.getMeasurementEnvelopeLocked()
+}
+
+// getMeasurementEnvelopeLocked is GetMeasurementEnvelope with countsMu already
+// held, which is how the send path reads the counts and zeroes them without
+// letting a record land in between.
+func (lp *LogParser) getMeasurementEnvelopeLocked() metrics.MeasurementEnvelope {
 	allSeverityCounts := metrics.NewMeasurement(time.Now().UnixNano())
 	for _, s := range pgSeverities {
 		parsedCount, ok := lp.eventCounts[s]
