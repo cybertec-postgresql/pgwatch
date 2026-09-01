@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Assumes local (on DB server) setup and CSVLOG output format",
+  "description": "Works with csvlog, jsonlog or stderr, in local or remote mode",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -27,7 +27,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Based on 'server_log_event_counts' metric. Assumes local (on DB server) setup and CSVLOG output format",
+      "description": "Based on 'server_log_event_counts' metric. Works with csvlog, jsonlog or stderr, in local or remote mode",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -179,7 +179,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "pgwatch-metrics"
       },
-      "description": "Based on 'server_log_event_counts' metric. Assumes local (on DB server) setup and CSVLOG output format",
+      "description": "Based on 'server_log_event_counts' metric. Works with csvlog, jsonlog or stderr, in local or remote mode",
       "fieldConfig": {
         "defaults": {
           "color": {
