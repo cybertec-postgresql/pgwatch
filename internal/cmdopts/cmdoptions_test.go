@@ -54,19 +54,19 @@ func TestNewCmdOptions(t *testing.T) {
 
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
-		name              string
-		sources           string
-		metrics           string
-		wantErr           bool
-		wantErrSubstring  string
-		wantSourcesAfter  string
-		wantMetricsAfter  string
+		name             string
+		sources          string
+		metrics          string
+		wantErr          bool
+		wantErrSubstring string
+		wantSourcesAfter string
+		wantMetricsAfter string
 	}{
 		{
-			name:     "both empty returns error",
-			sources:  "",
-			metrics:  "",
-			wantErr:  true,
+			name:             "both empty returns error",
+			sources:          "",
+			metrics:          "",
+			wantErr:          true,
 			wantErrSubstring: "both --sources and --metrics are empty",
 		},
 		{

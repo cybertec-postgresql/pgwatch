@@ -111,7 +111,6 @@ func (m *MockSourcesReaderWriter) WriteSources(srcs sources.Sources) error {
 	return m.WriteSourcesFunc(srcs)
 }
 
-
 // BlockingPool is a wedged PgxPoolIface used by fault-injection tests.
 //
 // It embeds db.PgxPoolIface as a nil interface so the type satisfies
@@ -148,6 +147,7 @@ func (BlockingPool) Exec(ctx context.Context, _ string, _ ...any) (pgconn.Comman
 	<-ctx.Done()
 	return pgconn.CommandTag{}, ctx.Err()
 }
+
 // first Query call returns ctx.Err().
 // SendBatch blocks until ctx.Done() and returns a BatchResults whose
 // first Query call returns ctx.Err().

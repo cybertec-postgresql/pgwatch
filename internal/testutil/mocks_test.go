@@ -337,8 +337,8 @@ func TestBlockingPool(t *testing.T) {
 		var dst any
 		assert.ErrorIs(t, br.QueryRow().Scan(&dst), context.Canceled)
 
-		assert.NoError(t, br.Err())                       // before Close
+		assert.NoError(t, br.Err()) // before Close
 		assert.NoError(t, br.Close())
-		assert.ErrorIs(t, br.Err(), context.Canceled)     // after Close
+		assert.ErrorIs(t, br.Err(), context.Canceled) // after Close
 	})
 }

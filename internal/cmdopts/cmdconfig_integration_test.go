@@ -77,8 +77,8 @@ func TestInitConfigReaders_SourcesOnlyDatabase(t *testing.T) {
 
 	opts := &Options{
 		Sources: sources.CmdOpts{
-			Sources:                    connStr,
-			Refresh:                    120,
+			Sources:                     connStr,
+			Refresh:                     120,
 			MaxParallelConnectionsPerDb: 1,
 		},
 	}

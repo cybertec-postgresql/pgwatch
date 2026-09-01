@@ -161,7 +161,6 @@ var notSupportedMetrics = map[string]struct{}{
 	"pgpool_stats":      {},
 }
 
-
 func (promw *PrometheusWriter) AddCacheEntry(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data
 	if _, ok := notSupportedMetrics[metric]; ok && msgArr.SourceKind != "prometheus" {
 		return // not supported for DB-sourced metrics

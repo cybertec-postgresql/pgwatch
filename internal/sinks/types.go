@@ -6,9 +6,9 @@ type SyncOp int32
 
 const (
 	// InvalidOp represents an invalid or unrecognized operation
-	InvalidOp SyncOp = iota // 0 
+	InvalidOp SyncOp = iota // 0
 	// AddOp represents adding a new metric
-	AddOp  // 1
+	AddOp // 1
 	// DeleteOp represents deleting an existing metric or entire source
 	DeleteOp // 2
 	// DefineOp represents defining metric definitions
