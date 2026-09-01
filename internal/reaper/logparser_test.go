@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sync"
 	"testing"
 	"time"
@@ -57,7 +56,6 @@ func TestNewLogParser(t *testing.T) {
 		assert.Equal(t, "en", lp.ServerMessagesLang)
 		assert.Equal(t, false, lp.TruncateOnRotation)
 		assert.Equal(t, 60*time.Second, lp.Interval)
-		assert.NotNil(t, lp.LogsMatchRegex)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -324,30 +322,6 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 	assert.Equal(t, int64(0), measurement["debug_total"])
 }
 
-func TestSeverityToEnglish(t *testing.T) {
-	tests := []struct {
-		serverLang    string
-		errorSeverity string
-		expected      string
-	}{
-		{"en", "ERROR", "ERROR"},
-		{"de", "FEHLER", "ERROR"},
-		{"fr", "ERREUR", "ERROR"},
-		{"de", "WARNUNG", "WARNING"},
-		{"ru", "ОШИБКА", "ERROR"},
-		{"zh", "错误", "ERROR"},
-		{"unknown", "ERROR", "ERROR"},                  // Unknown language, return as-is
-		{"de", "UNKNOWN_SEVERITY", "UNKNOWN_SEVERITY"}, // Unknown severity in known language
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.serverLang+"_"+tt.errorSeverity, func(t *testing.T) {
-			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestZeroEventCounts(t *testing.T) {
 	eventCounts := map[string]int64{
 		"ERROR":   5,
@@ -360,94 +334,6 @@ func TestZeroEventCounts(t *testing.T) {
 	// Check that all pgSeverities are zeroed
 	for _, severity := range pgSeverities {
 		assert.Equal(t, int64(0), eventCounts[severity])
-	}
-}
-
-func TestRegexMatchesToMap(t *testing.T) {
-	t.Run("successful match", func(t *testing.T) {
-		lp := &LogParser{
-			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
-		}
-		matches := []string{"ERROR: Something went wrong", "ERROR", "Something went wrong"}
-
-		result := lp.regexMatchesToMap(matches)
-		expected := map[string]string{
-			"severity": "ERROR",
-			"message":  "Something went wrong",
-		}
-
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("no matches", func(t *testing.T) {
-		lp := &LogParser{
-			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
-		}
-		matches := []string{}
-
-		result := lp.regexMatchesToMap(matches)
-		assert.Empty(t, result)
-	})
-
-	t.Run("nil regex", func(t *testing.T) {
-		lp := &LogParser{}
-		matches := []string{"test"}
-
-		result := lp.regexMatchesToMap(matches)
-		assert.Empty(t, result)
-	})
-}
-
-func TestCSVLogRegex(t *testing.T) {
-	// Test the default CSV log regex with sample log lines
-	lp := &LogParser{
-		LogsMatchRegex: regexp.MustCompile(csvLogDefaultRegEx),
-	}
-
-	testLines := []struct {
-		line     string
-		expected map[string]string
-	}{
-		{
-			line: `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
-			expected: map[string]string{
-				"log_time":         "2023-12-01 10:30:45.123 UTC",
-				"user_name":        "postgres",
-				"database_name":    "testdb",
-				"process_id":       "12345",
-				"connection_from":  "127.0.0.1:54321",
-				"session_id":       "session123",
-				"session_line_num": "1",
-				"command_tag":      "SELECT",
-				"error_severity":   "ERROR",
-			},
-		},
-		{
-			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
-			expected: map[string]string{
-				"log_time":         "2023-12-01 10:30:45.123 UTC",
-				"user_name":        "postgres",
-				"database_name":    "testdb",
-				"process_id":       "12345",
-				"connection_from":  "127.0.0.1:54321",
-				"session_id":       "session123",
-				"session_line_num": "1",
-				"command_tag":      "SELECT",
-				"error_severity":   "WARNING",
-			},
-		},
-	}
-
-	for i, tt := range testLines {
-		t.Run(string(rune('A'+i)), func(t *testing.T) {
-			matches := lp.LogsMatchRegex.FindStringSubmatch(tt.line)
-			assert.NotEmpty(t, matches, "regex should match the log line")
-
-			result := lp.regexMatchesToMap(matches)
-			for key, expected := range tt.expected {
-				assert.Equal(t, expected, result[key], "mismatch for key %s", key)
-			}
-		})
 	}
 }
 
@@ -516,100 +402,6 @@ func TestLogParseLocal(t *testing.T) {
 	_, hasError := data["error"]
 	_, hasWarning := data["warning"]
 	assert.True(t, hasError && hasWarning, "Should have at least error and warning")
-}
-
-func TestGetFileWithLatestTimestamp(t *testing.T) {
-	// Create temporary test files
-	tempDir := t.TempDir()
-
-	t.Run("single file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "test1.log")
-		err := os.WriteFile(file1, []byte("test"), 0644)
-		require.NoError(t, err)
-
-		latest, err := getFileWithLatestTimestamp([]string{file1})
-		assert.NoError(t, err)
-		assert.Equal(t, file1, latest)
-	})
-
-	t.Run("multiple files with different timestamps", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "old.log")
-		file2 := filepath.Join(tempDir, "new.log")
-
-		// Create first file
-		err := os.WriteFile(file1, []byte("old"), 0644)
-		require.NoError(t, err)
-
-		// Wait to ensure different timestamps
-		time.Sleep(10 * time.Millisecond)
-
-		// Create second file (newer)
-		err = os.WriteFile(file2, []byte("new"), 0644)
-		require.NoError(t, err)
-
-		latest, err := getFileWithLatestTimestamp([]string{file1, file2})
-		assert.NoError(t, err)
-		assert.Equal(t, file2, latest)
-	})
-
-	t.Run("empty file list", func(t *testing.T) {
-		latest, err := getFileWithLatestTimestamp([]string{})
-		assert.NoError(t, err)
-		assert.Equal(t, "", latest)
-	})
-
-	t.Run("non-existent file", func(t *testing.T) {
-		nonExistent := filepath.Join(tempDir, "nonexistent.log")
-		latest, err := getFileWithLatestTimestamp([]string{nonExistent})
-		assert.Error(t, err)
-		assert.Equal(t, "", latest)
-	})
-}
-
-func TestGetFileWithNextModTimestamp(t *testing.T) {
-	tempDir := t.TempDir()
-
-	t.Run("finds next file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "first.log")
-		file2 := filepath.Join(tempDir, "second.log")
-		file3 := filepath.Join(tempDir, "third.log")
-
-		// Create files with increasing timestamps
-		err := os.WriteFile(file1, []byte("first"), 0644)
-		require.NoError(t, err)
-
-		time.Sleep(10 * time.Millisecond)
-		err = os.WriteFile(file2, []byte("second"), 0644)
-		require.NoError(t, err)
-
-		time.Sleep(10 * time.Millisecond)
-		err = os.WriteFile(file3, []byte("third"), 0644)
-		require.NoError(t, err)
-
-		globPattern := filepath.Join(tempDir, "*.log")
-		next, err := getFileWithNextModTimestamp(globPattern, file1)
-		assert.NoError(t, err)
-		assert.Equal(t, file2, next)
-	})
-
-	t.Run("no next file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "only.log")
-		err := os.WriteFile(file1, []byte("only"), 0644)
-		require.NoError(t, err)
-
-		globPattern := filepath.Join(tempDir, "*.log")
-		next, err := getFileWithNextModTimestamp(globPattern, file1)
-		assert.NoError(t, err)
-		assert.Equal(t, "", next)
-	})
-
-	t.Run("invalid glob pattern", func(t *testing.T) {
-		invalidGlob := "["
-		file1 := filepath.Join(tempDir, "test.log")
-		next, err := getFileWithNextModTimestamp(invalidGlob, file1)
-		assert.Error(t, err)
-		assert.Equal(t, "", next)
-	})
 }
 
 func TestLogParseRemote(t *testing.T) {
@@ -908,14 +700,12 @@ func TestRace_LogParserRealDbname(t *testing.T) {
 	lp := &LogParser{
 		LogConfig:        &LogConfig{},
 		ctx:              t.Context(),
-		LogsMatchRegex:   regexp.MustCompile(csvLogDefaultRegEx),
 		SourceConn:       md,
 		realDbname:       "initial",
 		Interval:         time.Second,
 		StoreCh:          make(chan metrics.MeasurementEnvelope, 1),
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
-		fileOffsets:      make(map[string]uint64),
 	}
 
 	const iterations = 200

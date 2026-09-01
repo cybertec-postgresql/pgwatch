@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -20,29 +19,33 @@ import (
 
 // Constants and types
 var pgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
-var pgSeveritiesLocale = map[string]map[string]string{
-	"C.": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "WARNING": "WARNING", "ERROR": "ERROR", "FATAL": "FATAL", "PANIC": "PANIC"},
-	"de": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "HINWEIS": "NOTICE", "WARNUNG": "WARNING", "FEHLER": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
-	"fr": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "ATTENTION": "WARNING", "ERREUR": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
-	"it": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTIFICA": "NOTICE", "ATTENZIONE": "WARNING", "ERRORE": "ERROR", "FATALE": "FATAL", "PANICO": "PANIC"},
-	"ko": {"디버그": "DEBUG", "로그": "LOG", "정보": "INFO", "알림": "NOTICE", "경고": "WARNING", "오류": "ERROR", "치명적오류": "FATAL", "손상": "PANIC"},
-	"pl": {"DEBUG": "DEBUG", "DZIENNIK": "LOG", "INFORMACJA": "INFO", "UWAGA": "NOTICE", "OSTRZEŻENIE": "WARNING", "BŁĄD": "ERROR", "KATASTROFALNY": "FATAL", "PANIKA": "PANIC"},
-	"ru": {"ОТЛАДКА": "DEBUG", "СООБЩЕНИЕ": "LOG", "ИНФОРМАЦИЯ": "INFO", "ЗАМЕЧАНИЕ": "NOTICE", "ПРЕДУПРЕЖДЕНИЕ": "WARNING", "ОШИБКА": "ERROR", "ВАЖНО": "FATAL", "ПАНИКА": "PANIC"},
-	"sv": {"DEBUG": "DEBUG", "LOGG": "LOG", "INFO": "INFO", "NOTIS": "NOTICE", "VARNING": "WARNING", "FEL": "ERROR", "FATALT": "FATAL", "PANIK": "PANIC"},
-	"tr": {"DEBUG": "DEBUG", "LOG": "LOG", "BİLGİ": "INFO", "NOT": "NOTICE", "UYARI": "WARNING", "HATA": "ERROR", "ÖLÜMCÜL (FATAL)": "FATAL", "KRİTİK": "PANIC"},
-	"zh": {"调试": "DEBUG", "日志": "LOG", "信息": "INFO", "注意": "NOTICE", "警告": "WARNING", "错误": "ERROR", "致命错误": "FATAL", "比致命错误还过分的错误": "PANIC"},
+
+// supportedMessageLangs is the set of lc_messages prefixes whose severities
+// can be normalised to English.
+//
+// This used to be the translation tables themselves -- eight severities in ten
+// languages, spelled out here. pglogwatch carries them now, and keeping a
+// second copy would mean two lists to update and no way to notice they had
+// drifted apart. Only the KEYS were ever read outside severityToEnglish, to
+// decide whether a language is known.
+//
+// "C." is in the set and is not in pglogwatch's tables, deliberately: the C
+// locale writes English severities, so passing it through unchanged -- which
+// is what pglogwatch does with a language it does not know -- is correct.
+var supportedMessageLangs = map[string]bool{
+	"C.": true, "de": true, "fr": true, "it": true, "ko": true,
+	"pl": true, "ru": true, "sv": true, "tr": true, "zh": true,
 }
 
-const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
-const csvLogDefaultGlobSuffix = "*.csv"
-
+// maxChunkSize is how much pg_read_file fetches per round trip, and
+// maxTrackedFiles bounds the offset store. Both keep their pre-migration
+// values so the remote read pattern and the memory ceiling are unchanged.
 const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
 const maxTrackedFiles = 2500
 
 type LogParser struct {
 	*LogConfig
 	ctx              context.Context
-	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.DbConn
 	realDbname       string // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
 	Interval         time.Duration
@@ -50,7 +53,6 @@ type LogParser struct {
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance
 	lastSendTime     time.Time
-	fileOffsets      map[string]uint64 // map of log file paths to last read offsets
 
 	// countsMu guards eventCounts, eventCountsTotal and lastSendTime.
 	//
@@ -100,10 +102,6 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
 
-	logsRegex := regexp.MustCompile(csvLogDefaultRegEx)
-
-	logger.Debugf("Using %s as log parsing regex", logsRegex)
-
 	var cfg *LogConfig
 	if cfg, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
 		return nil, fmt.Errorf("could not determine Postgres logs settings: %w", err)
@@ -129,7 +127,6 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 	mdb.RUnlock()
 	return &LogParser{
 		ctx:              ctx,
-		LogsMatchRegex:   logsRegex,
 		SourceConn:       mdb,
 		realDbname:       realDbname,
 		Interval:         mdb.GetMetricInterval(specialMetricServerLogEventCounts),
@@ -137,7 +134,6 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 		LogConfig:        cfg,
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
-		fileOffsets:      make(map[string]uint64),
 	}, nil
 }
 
@@ -188,7 +184,7 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogCon
 	var res pgx.Rows
 	if res, err = conn.Query(ctx, sql); err == nil {
 		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[LogConfig]); err == nil {
-			if _, ok := pgSeveritiesLocale[cfg.ServerMessagesLang]; !ok {
+			if !supportedMessageLangs[cfg.ServerMessagesLang] {
 				cfg.ServerMessagesLang = "en"
 			}
 			return cfg, nil
@@ -215,31 +211,6 @@ func checkHasLocalPrivileges(logsDirPath string) error {
 		return err
 	}
 	return nil
-}
-
-func severityToEnglish(serverLang, errorSeverity string) string {
-	if serverLang == "en" {
-		return errorSeverity
-	}
-	severityMap := pgSeveritiesLocale[serverLang]
-	severityEn, ok := severityMap[errorSeverity]
-	if !ok {
-		return errorSeverity
-	}
-	return severityEn
-}
-
-func (lp *LogParser) regexMatchesToMap(matches []string) map[string]string {
-	result := make(map[string]string)
-	if len(matches) == 0 || lp.LogsMatchRegex == nil {
-		return result
-	}
-	for i, name := range lp.LogsMatchRegex.SubexpNames() {
-		if i != 0 && name != "" {
-			result[name] = matches[i]
-		}
-	}
-	return result
 }
 
 // GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
