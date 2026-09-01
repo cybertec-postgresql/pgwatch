@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pglogwatch"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
@@ -18,6 +19,12 @@ import (
 )
 
 var expectedSettingsQuery = `select current_setting`
+
+// defaultLinePrefix is PostgreSQL's own default log_line_prefix.
+//
+// It only affects stderr parsing, but tryDetermineLogSettings reads it for
+// every destination, so every mocked settings row has to carry it.
+const defaultLinePrefix = `%m [%p] `
 
 func TestNewLogParser(t *testing.T) {
 	tempDir := t.TempDir()
@@ -37,8 +44,8 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 
@@ -64,8 +71,8 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("unknown language defaults to en", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "zz"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "zz", defaultLinePrefix))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
@@ -76,8 +83,8 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("relative log directory", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, true, "/data/pg_log", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
@@ -90,22 +97,55 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("logging_collector disabled", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(false, true, true, "/data/pg_log", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(false, true, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.Equal(t, err.Error(), "logging_collector is not enabled on the db server")
 		assert.Nil(t, lp)
 	})
 
-	t.Run("csvlog not in log_destination", func(t *testing.T) {
+	// stderr is accepted, where it used to be a hard error.
+	//
+	// This subtest asserted that exact error until the migration. stderr is
+	// PostgreSQL's DEFAULT log_destination, so what it really documented is
+	// that pgwatch's log metric did not work on an unconfigured server --
+	// which is the gap this phase closes.
+	t.Run("stderr destination is accepted", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, false, true, "/data/pg_log", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, false, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
 		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-		assert.Equal(t, err.Error(), "log_destination must contain 'csvlog' for log parsing to work")
-		assert.Nil(t, lp)
+		require.NoError(t, err)
+		require.NotNil(t, lp)
+		assert.Equal(t, pglogwatch.FormatStderr, lp.parserFormat())
+		assert.Equal(t, defaultLinePrefix, lp.LinePrefix)
+	})
+
+	t.Run("jsonlog destination is accepted", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, false, true, true, "/data/pg_log", "de", defaultLinePrefix))
+
+		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		require.NoError(t, err)
+		require.NotNil(t, lp)
+		assert.Equal(t, pglogwatch.FormatJSON, lp.parserFormat())
+	})
+
+	// log_destination is a list, and "stderr,csvlog" is a common setting.
+	// csvlog has to win: a server configured for both must keep producing
+	// the counts it produced before the migration.
+	t.Run("csvlog wins when both are configured", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, true, true, "/data/pg_log", "de", defaultLinePrefix))
+
+		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		require.NoError(t, err)
+		assert.Equal(t, pglogwatch.FormatCSV, lp.parserFormat())
+		assert.Equal(t, "*.csv", lp.remoteGlob())
 	})
 }
 
@@ -116,8 +156,8 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, "/var/log/postgresql", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, "/var/log/postgresql", "de", defaultLinePrefix))
 
 		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
@@ -133,8 +173,8 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, "/data/log", "xx"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, "/data/log", "xx", defaultLinePrefix))
 
 		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
@@ -170,8 +210,8 @@ func TestCheckHasPrivileges(t *testing.T) {
 			defer mock.Close()
 
 			mock.ExpectQuery(expectedSettingsQuery).
-				WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-					AddRow(true, true, false, tempDir, "en"))
+				WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+					AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 			// Mock IsClientOnSameHost to return false (remote)
 			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
@@ -410,8 +450,8 @@ func TestLogParseLocal(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(expectedSettingsQuery).
-		WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-			AddRow(true, true, false, tempDir, "en"))
+		WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+			AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
 		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
@@ -574,8 +614,8 @@ func TestLogParseRemote(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 		// Phase 2: Mode detection - returns false to trigger remote mode
 		mock.ExpectQuery(`SELECT COALESCE`).
@@ -641,8 +681,8 @@ func TestLogParseRemote(t *testing.T) {
 
 		// Setup mocks for initialization
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 
@@ -710,8 +750,8 @@ incomplete line without proper fields
 
 		// Setup all required mocks
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
@@ -772,8 +812,8 @@ incomplete line without proper fields
 
 		// Setup mocks - privilege check passes initially
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).

@@ -99,6 +99,11 @@ func (lp *LogParser) consume(r io.Reader) error {
 		Format:       lp.parserFormat(),
 		MessagesLang: lp.ServerMessagesLang,
 
+		// Only read for stderr, and empty would mean "detect it from
+		// the log". Passing the server's own setting is better than a
+		// guess from a sample when the server is right there to ask.
+		LinePrefix: lp.LinePrefix,
+
 		// pgwatch counts severities and nothing else, so a message it
 		// cannot read is not worth a log line per occurrence -- a
 		// malformed line is normal at the start of a rotated file and
@@ -162,8 +167,21 @@ func (lp *LogParser) sendCounts() {
 }
 
 // parserFormat maps the resolved log_destination to a parser format.
+//
+// log_destination is a LIST -- "stderr,csvlog" is common -- so this is a
+// precedence, not a lookup. csvlog wins because it is what pgwatch has always
+// read: a server configured for both keeps producing exactly the counts it
+// produced before the migration, which is the whole point. jsonlog comes
+// next as the other structured format, and stderr is what is left.
 func (lp *LogParser) parserFormat() pglogwatch.Format {
-	return pglogwatch.FormatCSV
+	switch {
+	case lp.CSVDestination:
+		return pglogwatch.FormatCSV
+	case lp.JSONDestination:
+		return pglogwatch.FormatJSON
+	default:
+		return pglogwatch.FormatStderr
+	}
 }
 
 // openLocal presents the log directory as one stream.
@@ -189,8 +207,20 @@ func (lp *LogParser) openRemote() (io.ReadCloser, error) {
 	})
 }
 
+// remoteGlob selects the files the chosen destination writes.
+//
+// It matters more remotely than locally: pg_ls_logdir lists every file in the
+// directory, and a server writing both csvlog and stderr has two complete
+// copies of its log there. Reading both would double every count.
 func (lp *LogParser) remoteGlob() string {
-	return csvLogDefaultGlobSuffix
+	switch {
+	case lp.CSVDestination:
+		return "*.csv"
+	case lp.JSONDestination:
+		return "*.json"
+	default:
+		return "*.log"
+	}
 }
 
 // endSeededOffsets starts every file it has not seen at that file's current

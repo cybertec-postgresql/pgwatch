@@ -65,12 +65,34 @@ type LogParser struct {
 	offsets *endSeededOffsets
 }
 
+// LogConfig is the server's logging configuration, as resolved from its GUCs.
+//
+// The field ORDER is load-bearing: pgx.RowToAddrOfStructByPos maps columns to
+// fields by position, so a field added here must be matched by a column added
+// at the same position in tryDetermineLogSettings' query.
 type LogConfig struct {
-	CollectorEnabled   bool
-	CSVDestination     bool
+	CollectorEnabled bool
+
+	// CSVDestination and JSONDestination report whether log_destination
+	// contains csvlog and jsonlog. Neither being set means stderr, which
+	// is PostgreSQL's default and which pgwatch could not read at all
+	// before this migration.
+	CSVDestination  bool
+	JSONDestination bool
+
 	TruncateOnRotation bool
 	Directory          string
 	ServerMessagesLang string
+
+	// LinePrefix is log_line_prefix, and matters only for stderr: it is
+	// what tells the parser where the timestamp, user and database sit in
+	// a line that has no columns.
+	//
+	// pglogwatch can detect a prefix from the log itself, but asking the
+	// server is better where the server is right there to ask -- detection
+	// has to guess from a sample, and a log whose first lines are unusual
+	// can be guessed wrong.
+	LinePrefix string
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
@@ -89,10 +111,6 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 
 	if !cfg.CollectorEnabled {
 		return nil, errors.New("logging_collector is not enabled on the db server")
-	}
-
-	if !cfg.CSVDestination {
-		return nil, errors.New("log_destination must contain 'csvlog' for log parsing to work")
 	}
 
 	logger.Debugf("Considering log files in folder: %s", cfg.Directory)
@@ -150,12 +168,14 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogCon
 	sql := `select 
 	current_setting('logging_collector') = 'on' as is_enabled,
 	strpos(current_setting('log_destination'), 'csvlog') > 0 as csvlog_dest,
+	strpos(current_setting('log_destination'), 'jsonlog') > 0 as jsonlog_dest,
 	current_setting('log_truncate_on_rotation') = 'on' as log_trunc,
 	case 
 		when current_setting('log_directory') ~ '^(\w:)?\/.+' then current_setting('log_directory') 
 		else current_setting('data_directory') || '/' || current_setting('log_directory') 
 	end as log_dir,
-	current_setting('lc_messages')::varchar(2) as lc_messages`
+	current_setting('lc_messages')::varchar(2) as lc_messages,
+	current_setting('log_line_prefix') as line_prefix`
 	var res pgx.Rows
 	if res, err = conn.Query(ctx, sql); err == nil {
 		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[LogConfig]); err == nil {
