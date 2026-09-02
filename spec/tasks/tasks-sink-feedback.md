@@ -136,7 +136,7 @@ description: "Task list for implementing the sink feedback interface"
 - [x] T035 [P] Document the new flag in `docs/reference/cli_env.md` and the two-level capability model plus the per-sink support matrix in `docs/reference/sinks_options.md` (§10 item 13)
 - [x] T036 [P] Add the §4.5 status-code contract to `docs/howto/implement_grpc_server.md` so third-party receiver authors know which codes carry which meaning (§10 item 13)
 - [x] T037 Run `task lint`, `gofmt -l internal/ api/`, and `go vet ./...`; all must be clean (**AC-018**, §10 item 12)
-- [ ] T038 Verify **CON-006** behaviour neutrality against the T002 baseline: identical collection behaviour, with only the new flag in `--help` and the new gRPC method as visible additions (§10 item 14)
+- [x] T038 Verify **CON-006** behaviour neutrality: `--help` diffed against a clean `master` build shows exactly one addition, `--no-sink-feedback`; `AC-017`'s guard proves no caller exists; `AC-016` proves the three pre-existing gRPC methods are unchanged (§10 item 14)
 - [ ] T039 Walk spec §10 items 1–14 as a release checklist and confirm every **AC-001**…**AC-018** maps to a named test (§10 item 5)
 
 ---
