@@ -130,13 +130,13 @@ layout.
 **Postgres sink**
 
 - **PGS-001**: `PostgresWriter` MUST implement `Feedbacker`.
-- **PGS-002**: `PostgresWriter.CanFeedback` MUST return `true` only when the sink's in-memory metric map (`partitionMapMetric`, guarded by `PostgresWriter.mu`) contains an entry for the metric's storage name, indicating the metric table is known to exist. It MUST return `false` for an empty `sourceName` or an empty `metricName`.
+- **PGS-002**: `PostgresWriter.CanFeedback` MUST return `true` for any non-empty pair while feedback is enabled, and `false` otherwise. It MUST NOT consult `partitionMapMetric` as a table-existence check: that map is populated only by the flush path (`EnsureMetricTimePartsExist`), so it is empty at process start and would report `false` for every metric — precisely when a resuming collector asks. Table existence is resolved authoritatively by `LastMeasurement` via **PGS-007**, at the cost of at most one cheap failed query per collector start-up.
 - **PGS-003**: `PostgresWriter.LastMeasurement` MUST execute the bounded query in §4.4 against `sinkDb`, MUST quote the metric table identifier, and MUST pass `sourceName` as a bind parameter. String concatenation of `sourceName` into SQL is prohibited.
 - **PGS-004**: `PostgresWriter.LastMeasurement` MUST bound the scan by the configured retention interval so the query cannot degrade into a full scan of all partitions.
 - **PGS-005**: `PostgresWriter.LastMeasurement` MUST convert the returned `timestamptz` to `epoch_ns` (`UnixNano`).
 - **PGS-006**: A `SELECT` returning zero rows MUST yield `ErrNoFeedbackData`, not a zero epoch with a `nil` error.
 - **PGS-007**: A missing metric table (`SQLSTATE 42P01`, undefined_table) MUST be mapped to `ErrFeedbackUnsupported`, not propagated as a raw error.
-- **PGS-008**: `LastMeasurement` MUST NOT acquire `PostgresWriter.mu` for the duration of the SQL round-trip. The mutex serialises partition DDL; holding it across a network call would stall `SyncMetric`.
+- **PGS-008**: Neither `CanFeedback` nor `LastMeasurement` may acquire `PostgresWriter.mu`. The mutex serialises partition DDL; holding it across a network call would stall `SyncMetric`. Under **PGS-002** neither method needs it.
 
 **Prometheus and JSON sinks**
 
@@ -383,7 +383,7 @@ is to pass `opts` to `NewRPCWriter` alongside the connection string, mirroring
 - **AC-001**: Given a sink that does not implement `Feedbacker`, When the §4.2 reference pattern runs against it, Then no feedback call is attempted and the caller's default path is taken.
 - **AC-002**: Given a `PostgresWriter` holding rows for source `S` and metric `M` with newest `time` = `T`, When `LastMeasurement(ctx, "S", "M")` is called, Then it returns `T.UnixNano()` and a `nil` error.
 - **AC-003**: Given a `PostgresWriter` whose metric table exists but holds no rows for source `S`, When `LastMeasurement` is called for `S`, Then it returns `(0, ErrNoFeedbackData)`.
-- **AC-004**: Given a `PostgresWriter` whose metric table does not exist, When `LastMeasurement` is called, Then it returns `(0, ErrFeedbackUnsupported)` and nothing is logged at `Error` level.
+- **AC-004**: Given a `PostgresWriter` whose metric table does not exist, When `LastMeasurement` is called, Then it returns `(0, ErrFeedbackUnsupported)` and nothing is logged at `Error` level, even though `CanFeedback` returned `true` (**REQ-006**).
 - **AC-005**: Given a `MultiWriter` over a capable writer reporting `T2` and another reporting `T1` with `T1 < T2`, When `LastMeasurement` is called, Then it returns `T1`.
 - **AC-006**: Given a `MultiWriter` over a `PostgresWriter` reporting `T2` and a `JSONWriter`, When `LastMeasurement` is called, Then it returns `T2` — the non-capable writer does not suppress the answer.
 - **AC-007**: Given a `MultiWriter` where one capable writer returns `ErrNoFeedbackData`, When `LastMeasurement` is called, Then it returns `(0, ErrNoFeedbackData)` regardless of the other writers' epochs.
@@ -393,7 +393,7 @@ is to pass `opts` to `NewRPCWriter` alongside the connection string, mirroring
 - **AC-011**: Given feedback is disabled by config, When `CanFeedback` is called on any sink for any pair, Then it returns `false`, and `LastMeasurement` returns `ErrFeedbackUnsupported` with no query reaching the backend (**CFG-002**).
 - **AC-012**: Given a `LastMeasurement` call whose context is cancelled mid-flight, When the sink is a `PostgresWriter`, Then the call returns a context error within 100 ms and leaves no leaked connection or goroutine.
 - **AC-013**: Given a `PostgresWriter` with measurements still buffered in `input` and not yet flushed, When `LastMeasurement` is called, Then the returned epoch does not include those buffered measurements (**REQ-011**).
-- **AC-014**: Given concurrent `LastMeasurement` and `SyncMetric` calls on the same `PostgresWriter`, When both run under `-race`, Then no data race is reported and neither blocks the other for the duration of a SQL round-trip (**PGS-008**).
+- **AC-014**: Given concurrent `LastMeasurement` and `SyncMetric` calls on the same `PostgresWriter`, When both run under `-race`, Then no data race is reported and neither blocks the other (**PGS-008**).
 - **AC-015**: Given a `LastMeasurement` returning `err == nil`, When the epoch is inspected, Then it is strictly greater than zero (**REQ-013**).
 - **AC-016**: Given an existing gRPC receiver built against the pre-change `pgwatch.proto`, When pgwatch writes measurements to it, Then `UpdateMeasurements`, `SyncMetric`, and `DefineMetrics` behave exactly as before.
 - **AC-017**: Given the full change set, When `grep -rn "Feedbacker\|LastMeasurement\|CanFeedback" --include=*.go` is run over the repository, Then every non-test hit is inside `internal/sinks` (**CON-006**).
@@ -562,18 +562,15 @@ specification; each needs its own:
 ```go
 var _ Feedbacker = (*PostgresWriter)(nil)
 
+// PGS-002: optimistic and lock-free. partitionMapMetric is populated only by
+// the flush path, so it is empty at process start; LastMeasurement resolves
+// table existence authoritatively via PGS-007.
 func (pgw *PostgresWriter) CanFeedback(sourceName, metricName string) bool {
-    if !pgw.opts.FeedbackEnabled() || sourceName == "" || metricName == "" { // CFG-002
-        return false
-    }
-    pgw.mu.Lock()
-    defer pgw.mu.Unlock()
-    _, ok := pgw.partitionMapMetric[metricName]
-    return ok
+    return pgw.opts.FeedbackEnabled() && sourceName != "" && metricName != "" // CFG-002
 }
 
 func (pgw *PostgresWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
-    if !pgw.CanFeedback(sourceName, metricName) { // PGS-008: mutex released before the round-trip
+    if !pgw.CanFeedback(sourceName, metricName) {
         return 0, ErrFeedbackUnsupported
     }
     ctx, cancel := context.WithTimeout(ctx, feedbackTimeout) // CON-002
@@ -690,7 +687,7 @@ func (rw *RPCWriter) LastMeasurement(ctx context.Context, sourceName, metricName
 
 | # | Situation | Required behaviour |
 |---|---|---|
-| E-01 | `CanFeedback` called for a metric whose table was never created | `false`; no query issued |
+| E-01 | `CanFeedback` called for a metric whose table was never created | `true` (optimistic); `LastMeasurement` then returns `ErrFeedbackUnsupported` on `42P01` |
 | E-02 | Metric table exists but the source was never written to it | `CanFeedback` → `true`; `LastMeasurement` → `ErrNoFeedbackData` |
 | E-03 | Retention deleted every row for the pair | `ErrNoFeedbackData`, not a stale epoch from outside the retention window |
 | E-04 | Sink backend clock is ahead of the pgwatch host | The sink returns the stored epoch verbatim; rejecting future epochs is the caller's duty (**CAL-004**), not the sink's |
@@ -699,7 +696,7 @@ func (rw *RPCWriter) LastMeasurement(ctx context.Context, sourceName, metricName
 | E-07 | `MultiWriter` contains two Postgres sinks pointed at the same database | Both answer; minimum is their common value; no special handling |
 | E-08 | gRPC receiver implements `GetLastMeasurement` but is temporarily unavailable | Transport error returned; capability NOT cached off, so a later call retries (**AC-009**) |
 | E-09 | gRPC receiver returns `EpochNs = 0` with status `OK` | Normalised to `ErrNoFeedbackData` (**RPC-007**) |
-| E-10 | `SyncMetric` is creating a partition while `LastMeasurement` runs | Both proceed; `LastMeasurement` must not hold `mu` across its round-trip (**PGS-008**, **AC-014**) |
+| E-10 | `SyncMetric` is creating a partition while `LastMeasurement` runs | Both proceed; neither feedback method takes `mu` (**PGS-008**, **AC-014**) |
 | E-11 | Caller passes a definition name where a storage name differs | The sink answers about the table it was asked for; correctness is the caller's obligation (**CAL-006**, **DAT-002**) |
 | E-12 | Metric name contains a double quote or other identifier-hostile character | `pgx.Identifier.Sanitize()` quotes it correctly; no injection and no error (**SEC-001**) |
 | E-13 | Caller passes an already-cancelled context | Return the context error promptly; do not issue a backend query (**REQ-008**) |
