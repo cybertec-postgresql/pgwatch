@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 
 func TestCACertParamValidation(t *testing.T) {
 	a := assert.New(t)
-	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
+	_, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	err = os.WriteFile("badca.crt", []byte(""), 0644)
@@ -50,7 +50,7 @@ func TestCACertParamValidation(t *testing.T) {
 	}
 
 	for param, errMsg := range BadRPCParams {
-		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", testutil.TLSServerAddress, param))
+		_, err = sinks.NewRPCWriter(ctx, fmt.Sprintf("grpc://%s%s", testutil.TLSServerAddress, param), &sinks.CmdOpts{})
 		a.ErrorContains(err, errMsg)
 	}
 }
@@ -58,7 +58,7 @@ func TestCACertParamValidation(t *testing.T) {
 func TestRPCTLSWriter(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.TLSConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	// no error for valid messages
@@ -73,7 +73,7 @@ func TestRPCTLSWriter(t *testing.T) {
 func TestRPCWrite(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	// no error for valid messages
@@ -95,7 +95,7 @@ func TestRPCWrite(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 	cancel()
 	err = rw.Write(msgs)
@@ -105,7 +105,7 @@ func TestRPCWrite(t *testing.T) {
 func TestRPCSyncMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	// no error for valid Sync requests
@@ -118,7 +118,7 @@ func TestRPCSyncMetric(t *testing.T) {
 
 	// error for cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 	cancel()
 	err = rw.SyncMetric("Test-DB", "DB-Metric", sinks.AddOp)
@@ -128,7 +128,7 @@ func TestRPCSyncMetric(t *testing.T) {
 func TestRPCDefineMetric(t *testing.T) {
 	a := assert.New(t)
 
-	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	// Test that RPCWriter implements MetricsDefiner interface
@@ -170,7 +170,7 @@ func TestRPCDefineMetric(t *testing.T) {
 
 	// Test with cancelled context
 	ctx, cancel := context.WithCancel(ctx)
-	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr)
+	rw, err = sinks.NewRPCWriter(ctx, testutil.PlainConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 	cancel()
 
@@ -184,7 +184,7 @@ func TestAuthCredsSending(t *testing.T) {
 	a := assert.New(t)
 
 	unauthenticatedConnStr := "grpc://notpgwatch:notpgwatch@localhost:6060"
-	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr)
+	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 
 	err = rw.Write(metrics.MeasurementEnvelope{})
