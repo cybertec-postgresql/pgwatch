@@ -772,3 +772,10 @@ func registeredMigrationsCount() int {
 func (pgw *PostgresWriter) CanFeedback(sourceName, metricName string) bool {
 	return pgw.opts.FeedbackEnabled() && sourceName > "" && metricName > ""
 }
+
+// isUndefinedTable reports whether err is the Postgres undefined_table error,
+// i.e. the metric has never been written to this sink.
+func isUndefinedTable(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.SQLState() == "42P01"
+}
