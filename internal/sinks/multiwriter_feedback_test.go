@@ -1,6 +1,7 @@
 package sinks
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -126,4 +127,36 @@ func TestMultiWriterCanFeedback(t *testing.T) {
 		assert.False(t, mw.CanFeedback("", "db_stats"))
 		assert.False(t, mw.CanFeedback("prod-db", ""))
 	})
+}
+
+// TestMultiWriterLastMeasurementPassesContext pins REQ-028: the caller's
+// context reaches every contained writer unchanged, and writers are queried
+// sequentially rather than fanned out.
+func TestMultiWriterLastMeasurementPassesContext(t *testing.T) {
+	first := &fakeFeedbacker{canFeedback: true, epoch: 2000}
+	second := &fakeFeedbacker{canFeedback: true, epoch: 1000}
+	plain := &plainWriter{}
+
+	type key struct{}
+	callerCtx := context.WithValue(ctx, key{}, "marker")
+
+	epoch, err := newMulti(first, plain, second).LastMeasurement(callerCtx, "prod-db", "db_stats")
+	require.NoError(t, err)
+	assert.Equal(t, int64(1000), epoch)
+
+	for name, w := range map[string]*fakeFeedbacker{"first": first, "second": second} {
+		assert.Equal(t, int64(1), w.lastMeasCalls.Load(), "%s queried exactly once", name)
+		assert.Same(t, callerCtx, w.gotCtx.Load(), "%s got the caller's context unchanged", name)
+	}
+}
+
+// TestMultiWriterShortCircuitStopsEarly pins that ErrNoFeedbackData aborts the
+// sweep instead of querying the remaining writers.
+func TestMultiWriterShortCircuitStopsEarly(t *testing.T) {
+	empty := &fakeFeedbacker{canFeedback: true, err: ErrNoFeedbackData}
+	later := &fakeFeedbacker{canFeedback: true, epoch: 1000}
+
+	_, err := newMulti(empty, later).LastMeasurement(ctx, "prod-db", "db_stats")
+	assert.ErrorIs(t, err, ErrNoFeedbackData)
+	assert.Zero(t, later.lastMeasCalls.Load(), "writers after the empty one must not be queried")
 }
