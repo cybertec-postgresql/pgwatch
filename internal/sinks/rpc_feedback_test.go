@@ -3,6 +3,7 @@ package sinks_test
 import (
 	"context"
 	"net"
+	"sync"
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
@@ -167,4 +168,24 @@ func TestRPCLegacyReceiverLatchesOff(t *testing.T) {
 
 	_, err = rw.LastMeasurement(ctx, "other-db", "other_metric")
 	assert.ErrorIs(t, err, sinks.ErrFeedbackUnsupported)
+}
+
+// TestRPCFeedbackRace hammers the latched capability flag from several
+// goroutines. Run under -race.
+func TestRPCFeedbackRace(t *testing.T) {
+	rw, err := sinks.NewRPCWriter(ctx, startReceiver(t, &legacyReceiver{}), &sinks.CmdOpts{})
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Go(func() {
+			for range 25 {
+				_, _ = rw.LastMeasurement(ctx, "prod-db", "db_stats")
+				rw.CanFeedback("prod-db", "db_stats")
+			}
+		})
+	}
+	wg.Wait()
+
+	assert.False(t, rw.CanFeedback("prod-db", "db_stats"), "the latch must settle off")
 }
