@@ -5,8 +5,10 @@ import (
 	"net"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/sinks"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -188,4 +190,37 @@ func TestRPCFeedbackRace(t *testing.T) {
 	wg.Wait()
 
 	assert.False(t, rw.CanFeedback("prod-db", "db_stats"), "the latch must settle off")
+}
+
+// TestRPCLegacyReceiverUnchanged pins AC-016: the .proto change is additive,
+// so a receiver that predates GetLastMeasurement keeps serving the three
+// original methods exactly as before.
+func TestRPCLegacyReceiverUnchanged(t *testing.T) {
+	rw, err := sinks.NewRPCWriter(ctx, startReceiver(t, &legacyReceiver{}), &sinks.CmdOpts{})
+	require.NoError(t, err)
+
+	t.Run("UpdateMeasurements", func(t *testing.T) {
+		assert.NoError(t, rw.Write(metrics.MeasurementEnvelope{
+			DBName:     "Db",
+			MetricName: "db_stats",
+			Data: metrics.Measurements{metrics.Measurement{
+				metrics.EpochColumnName: time.Now().UnixNano(),
+				"numbackends":           int64(3),
+			}},
+		}))
+		assert.Error(t, rw.Write(metrics.MeasurementEnvelope{DBName: "wrong", MetricName: "db_stats",
+			Data: metrics.Measurements{metrics.Measurement{metrics.EpochColumnName: int64(1)}}}),
+			"the legacy receiver still rejects an unknown DBName")
+	})
+
+	t.Run("SyncMetric", func(t *testing.T) {
+		assert.NoError(t, rw.SyncMetric("Db", "db_stats", sinks.AddOp))
+		assert.Error(t, rw.SyncMetric("Db", "db_stats", sinks.InvalidOp))
+	})
+
+	t.Run("DefineMetrics", func(t *testing.T) {
+		assert.NoError(t, rw.DefineMetrics(&metrics.Metrics{
+			MetricDefs: metrics.MetricDefs{"db_stats": metrics.Metric{Description: "test"}},
+		}))
+	})
 }
