@@ -198,12 +198,21 @@ func (lp *LogParser) openLocal() (io.ReadCloser, error) {
 }
 
 // openRemote presents pg_read_file as one stream.
+//
+// Follow and PollInterval mirror openLocal, and for the same reason: without
+// them the reader ends at the last byte the server had written when it opened,
+// consume returns, parseStream sends one measurement and returns, and
+// runLogParser treats that clean return as success and never calls again. Log
+// parsing would report once per pgwatch start and then go silent, while every
+// other metric kept flowing -- a failure with no error to notice it by.
 func (lp *LogParser) openRemote() (io.ReadCloser, error) {
 	return pgremote.Open(lp.ctx, lp.SourceConn.Conn, pgremote.Config{
-		Dir:       lp.Directory,
-		Glob:      lp.remoteGlob(),
-		ChunkSize: int64(maxChunkSize),
-		Offsets:   lp.offsets,
+		Dir:          lp.Directory,
+		Glob:         lp.remoteGlob(),
+		ChunkSize:    int64(maxChunkSize),
+		Follow:       true,
+		PollInterval: lp.Interval,
+		Offsets:      lp.offsets,
 	})
 }
 

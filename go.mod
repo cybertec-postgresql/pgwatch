@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/cybertec-postgresql/pglogwatch v1.0.0
-	github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.0
+	github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.1
 	github.com/cybertec-postgresql/pgx-migrator v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
