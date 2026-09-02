@@ -84,7 +84,7 @@ description: "Task list for implementing the sink feedback interface"
 
 ### Tests for US2
 
-- [ ] T017 [P] [US2] Table-driven test in `internal/sinks/multiwriter_test.go` covering all seven rows of spec §4.3, built with `AddWriter` rather than `NewSinkWriter` (which unwraps the single-sink case): no capable writers → `ErrFeedbackUnsupported` (**REQ-026**); all unsupported → `ErrFeedbackUnsupported`; two epochs → minimum (**AC-005**); mixed capable + non-`Feedbacker` → capable answer survives (**AC-006**, **REQ-027**); one `ErrNoFeedbackData` → short-circuit regardless of other epochs (**AC-007**, **REQ-024**); one transport error → joined error, no partial minimum (**REQ-025**); feedback disabled → `ErrFeedbackUnsupported`
+- [x] T017 [P] [US2] Table-driven test in `internal/sinks/multiwriter_test.go` covering all seven rows of spec §4.3, built with `AddWriter` rather than `NewSinkWriter` (which unwraps the single-sink case): no capable writers → `ErrFeedbackUnsupported` (**REQ-026**); all unsupported → `ErrFeedbackUnsupported`; two epochs → minimum (**AC-005**); mixed capable + non-`Feedbacker` → capable answer survives (**AC-006**, **REQ-027**); one `ErrNoFeedbackData` → short-circuit regardless of other epochs (**AC-007**, **REQ-024**); one transport error → joined error, no partial minimum (**REQ-025**); feedback disabled → `ErrFeedbackUnsupported`
 - [ ] T018 [P] [US2] Test that `MultiWriter.CanFeedback` is true iff at least one contained writer is capable for the pair (**REQ-021**)
 - [ ] T019 [P] [US2] Test that the caller's `ctx` reaches each contained writer unchanged and that writers are queried sequentially (**REQ-028**), asserted via `fakeFeedbacker` call ordering
 
