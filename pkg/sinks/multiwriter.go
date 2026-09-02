@@ -22,6 +22,8 @@ type MetricsDefiner interface {
 	DefineMetrics(metrics *metrics.Metrics) error
 }
 
+var _ Feedbacker = (*MultiWriter)(nil)
+
 // MultiWriter ensures the simultaneous storage of data in several storages.
 type MultiWriter struct {
 	writers []Writer
