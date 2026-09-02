@@ -24,8 +24,8 @@ description: "Task list for implementing the sink feedback interface"
 
 **Purpose**: Toolchain and a known-good baseline to measure behaviour neutrality against
 
-- [ ] T001 Run `task tools` to install `protoc-gen-go` and `protoc-gen-go-grpc`, then confirm `protoc --version` succeeds — required by US3 (**PLT-002**)
-- [ ] T002 Capture the baseline: `go test ./internal/sinks/...` green, and record current `pgwatch --help` output for the **CON-006** behaviour-neutrality comparison in T038
+- [x] T001 Run `task tools` to install `protoc-gen-go` and `protoc-gen-go-grpc`, then confirm `protoc --version` succeeds — required by US3 (**PLT-002**)
+- [x] T002 Capture the baseline: `go test ./internal/sinks/...` green, and record current `pgwatch --help` output for the **CON-006** behaviour-neutrality comparison in T038
 
 ---
 
@@ -35,7 +35,7 @@ description: "Task list for implementing the sink feedback interface"
 
 **⚠️ CRITICAL**: No increment work can begin until this phase is complete
 
-- [ ] T003 Create `internal/sinks/feedback.go` with the `Feedbacker` interface and the `ErrFeedbackUnsupported` / `ErrNoFeedbackData` sentinels, copied verbatim from spec §4.1 including doc comments (**REQ-001**, **REQ-003**, **REQ-005**, **REQ-006**, **REQ-007**, **REQ-013**)
+- [x] T003 Create `internal/sinks/feedback.go` with the `Feedbacker` interface and the `ErrFeedbackUnsupported` / `ErrNoFeedbackData` sentinels, copied verbatim from spec §4.1 including doc comments (**REQ-001**, **REQ-003**, **REQ-005**, **REQ-006**, **REQ-007**, **REQ-013**)
 - [ ] T004 Add `Feedback bool` to `sinks.CmdOpts` in `internal/sinks/cmdopts.go` with `long`/`mapstructure`/`description`/`env` tags (**CFG-001**, **CFG-003**). ⚠️ **Decision required first** — see [Open Decisions](#open-decisions): `go-flags` makes a bare `default:"true"` bool impossible to disable, so pick the value-flag or `--no-sink-feedback` form before writing the tag
 - [ ] T005 [P] Add the `fakeFeedbacker` test double to `internal/sinks/feedback_test.go`: scriptable `CanFeedback` result, epoch, error, and per-method call counters (§6 Mocks). It drives every row of the §4.3 table without needing four real sinks
 - [ ] T006 [P] Add negative capability guards to `internal/sinks/feedback_test.go` asserting `PrometheusWriter` and `JSONWriter` do **not** satisfy `Feedbacker`, and that both still satisfy `Writer` (**PRM-001**, **JSN-001**, **AC-010**)
