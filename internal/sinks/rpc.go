@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
@@ -32,6 +33,10 @@ type RPCWriter struct {
 	conn   *grpc.ClientConn
 	client pb.ReceiverClient
 	opts   *CmdOpts
+
+	// unsupported latches once the remote server answers Unimplemented, so a
+	// server that does not do feedback costs exactly one round-trip ever.
+	unsupported atomic.Bool
 }
 
 // convertSyncOp converts sinks.SyncOp to pb.SyncOp
@@ -228,4 +233,10 @@ func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error)
 		RootCAs: certPool,
 	}
 	return credentials.NewTLS(tlsClientConfig), nil
+}
+
+// CanFeedback reports whether a feedback query is worth attempting. It is
+// optimistic until the remote server proves it does not implement the method.
+func (rw *RPCWriter) CanFeedback(sourceName, metricName string) bool {
+	return rw.opts.FeedbackEnabled() && sourceName > "" && metricName > "" && !rw.unsupported.Load()
 }
