@@ -763,3 +763,12 @@ func registeredMigrationsCount() int {
 	}
 	return m.Count()
 }
+
+// CanFeedback reports whether LastMeasurement can be attempted for the pair.
+// It is optimistic and lock-free by design: partitionMapMetric is populated
+// only by the flush path, so it is empty at process start — exactly when a
+// resuming collector asks. Whether the metric table actually exists is
+// resolved authoritatively by LastMeasurement.
+func (pgw *PostgresWriter) CanFeedback(sourceName, metricName string) bool {
+	return pgw.opts.FeedbackEnabled() && sourceName > "" && metricName > ""
+}

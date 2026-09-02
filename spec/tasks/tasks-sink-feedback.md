@@ -57,7 +57,7 @@ description: "Task list for implementing the sink feedback interface"
 
 > Write these first and confirm they fail before implementing T012–T016.
 
-- [ ] T008 [P] [US1] `pgxmock` unit tests for `CanFeedback` in `internal/sinks/postgres_feedback_test.go`: metric present in `partitionMapMetric` → true; metric absent → false; empty `sourceName` → false; empty `metricName` → false (**PGS-002**)
+- [ ] T008 [P] [US1] `pgxmock` unit tests for `CanFeedback` in `internal/sinks/postgres_feedback_test.go`: non-empty pair → true; empty `sourceName` → false; empty `metricName` → false; feedback disabled → false; no lock taken (**PGS-002**, **PGS-008**)
 - [ ] T009 [P] [US1] `pgxmock` unit tests for `LastMeasurement` in the same file, covering: row returned → `epoch = time.UnixNano()` (**AC-002**); `pgx.ErrNoRows` → `ErrNoFeedbackData` (**AC-003**); `SQLSTATE 42P01` → `ErrFeedbackUnsupported` and nothing logged at `Error` (**AC-004**); already-cancelled context → context error with no query issued (**E-13**); `err == nil` implies epoch > 0 (**AC-015**); feedback disabled → `ErrFeedbackUnsupported` with zero `pgxmock` expectations consumed (**AC-011**)
 - [ ] T010 [P] [US1] Assert the generated SQL passes `sourceName` as a bind parameter and interpolates only the sanitised identifier; include a metric name containing a double quote (**SEC-001**, **E-12**)
 - [ ] T011 [US1] Integration test in `internal/sinks/postgres_feedback_integration_test.go` using `testutil.SetupPostgresContainer()`, following the `internal/reaper/database_integration_test.go` convention: real table via the sink's own `SyncMetric`/`AddOp` path, dropped in `t.Cleanup`. Cover the live epoch round-trip (**AC-002**), buffered-but-unflushed measurements excluded (**AC-013**, **REQ-011**), and a ≥ 30-partition table answering in under 100 ms (**PGS-004**, §6 Performance)
@@ -65,8 +65,8 @@ description: "Task list for implementing the sink feedback interface"
 
 ### Implementation for US1
 
-- [ ] T013 [US1] Implement `PostgresWriter.CanFeedback` in `internal/sinks/postgres.go`: gate on `pgw.opts.FeedbackEnabled()`, reject empty names, then check `partitionMapMetric` under `pgw.mu` (**PGS-002**, **CFG-002**, **REQ-004**)
-- [ ] T014 [US1] Implement `PostgresWriter.LastMeasurement` in `internal/sinks/postgres.go` per the §9.1 sketch — release `pgw.mu` before the round-trip (**PGS-008**), build the §4.4 query with `pgx.Identifier{...}.Sanitize()` and bind parameters (**PGS-003**, **SEC-001**), bound by `pgw.opts.RetentionInterval` (**PGS-004**, **DAT-003**), convert via `UnixNano` (**PGS-005**), apply the 5 s default deadline (**CON-002**)
+- [x] T013 [US1] Implement `PostgresWriter.CanFeedback` in `internal/sinks/postgres.go`: gate on `pgw.opts.FeedbackEnabled()` and reject empty names; optimistic and lock-free, since `partitionMapMetric` is empty at process start (**PGS-002**, **PGS-008**, **CFG-002**, **REQ-004**)
+- [ ] T014 [US1] Implement `PostgresWriter.LastMeasurement` in `internal/sinks/postgres.go` per the §9.1 sketch — build the §4.4 query with `pgx.Identifier{...}.Sanitize()` and bind parameters (**PGS-003**, **SEC-001**), bound by `pgw.opts.RetentionInterval` (**PGS-004**, **DAT-003**), convert via `UnixNano` (**PGS-005**), apply the 5 s default deadline (**CON-002**)
 - [ ] T015 [US1] Add the `isUndefinedTable` helper mapping `SQLSTATE 42P01` to `ErrFeedbackUnsupported` in `internal/sinks/postgres.go` (**PGS-007**)
 - [ ] T016 [US1] Add `var _ Feedbacker = (*PostgresWriter)(nil)` (**GUD-003**) and query logging: `Debug` on success, no higher than `Info` for expected `ErrFeedbackUnsupported` / `ErrNoFeedbackData` (**SEC-004**)
 
