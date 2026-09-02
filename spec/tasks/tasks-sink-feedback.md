@@ -137,7 +137,7 @@ description: "Task list for implementing the sink feedback interface"
 - [x] T036 [P] Add the §4.5 status-code contract to `docs/howto/implement_grpc_server.md` so third-party receiver authors know which codes carry which meaning (§10 item 13)
 - [x] T037 Run `task lint`, `gofmt -l internal/ api/`, and `go vet ./...`; all must be clean (**AC-018**, §10 item 12)
 - [x] T038 Verify **CON-006** behaviour neutrality: `--help` diffed against a clean `master` build shows exactly one addition, `--no-sink-feedback`; `AC-017`'s guard proves no caller exists; `AC-016` proves the three pre-existing gRPC methods are unchanged (§10 item 14)
-- [ ] T039 Walk spec §10 items 1–14 as a release checklist and confirm every **AC-001**…**AC-018** maps to a named test (§10 item 5)
+- [x] T039 Walk spec §10 items 1–14 as a release checklist and confirm every **AC-001**…**AC-018** maps to a named test (§10 item 5) — see [Acceptance Criteria Traceability](#acceptance-criteria-traceability)
 
 ---
 
@@ -232,3 +232,50 @@ Each increment leaves the tree green and adds no runtime behaviour.
 - Commit after each task or logical group
 - Stop at any checkpoint to validate an increment independently
 - `task test` spins up Postgres/etcd testcontainers, so Docker must be running for T011
+
+---
+
+## Acceptance Criteria Traceability
+
+Every acceptance criterion in spec §5 and its covering test. All pass under
+`go test ./internal/sinks/ -race`.
+
+| AC | Covering test |
+|---|---|
+| AC-001 | `TestFeedbackNotImplemented`; `TestMultiWriterLastMeasurement/no_writer_implements_Feedbacker` |
+| AC-002 | `TestPostgresLastMeasurement/returns_newest_epoch`; `TestPostgresFeedbackIntegration/reports_the_newest_stored_epoch` |
+| AC-003 | `TestPostgresLastMeasurement/no_rows`; `TestPostgresFeedbackIntegration/known_metric_without_rows_reports_no_data` |
+| AC-004 | `TestPostgresLastMeasurement/undefined_table`; `TestPostgresFeedbackIntegration/unwritten_metric_reports_unsupported` |
+| AC-005 | `TestMultiWriterLastMeasurement/minimum_across_capable_writers` |
+| AC-006 | `TestMultiWriterLastMeasurement/non-Feedbacker_writer_does_not_veto` |
+| AC-007 | `TestMultiWriterLastMeasurement/empty_writer_short-circuits`; `TestMultiWriterShortCircuitStopsEarly` |
+| AC-008 | `TestRPCLegacyReceiverLatchesOff`; `TestRPCLastMeasurementStatusMapping/unimplemented` |
+| AC-009 | `TestRPCTransientErrorKeepsCapability` |
+| AC-010 | `TestFeedbackNotImplemented` |
+| AC-011 | `TestPostgresLastMeasurement/feedback_disabled_issues_no_query`; `TestRPCCanFeedback` |
+| AC-012 | `TestPostgresLastMeasurement/cancelled_context_issues_no_query` |
+| AC-013 | `TestPostgresFeedbackIntegration` — `writeAndFlush` waits for the async poll loop to persist |
+| AC-014 | `TestPostgresFeedbackRace` |
+| AC-015 | `TestPostgresLastMeasurement/returns_newest_epoch`; `TestRPCLastMeasurementStatusMapping/ok_with_{zero,negative}_epoch` |
+| AC-016 | `TestRPCLegacyReceiverUnchanged` |
+| AC-017 | `TestFeedbackStaysUnwired` (verified to fire against a planted violation) |
+| AC-018 | T037: `gofmt`, `go vet`, `golangci-lint run` all clean |
+
+### Spec §10 validation checklist
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Interface and sentinels match §4.1 | ✅ `internal/sinks/feedback.go` |
+| 2 | `sinks.Writer` unchanged | ✅ no diff to its method set |
+| 3 | Postgres/RPC/MultiWriter satisfy `Feedbacker`; Prometheus/JSON do not | ✅ three `var _ Feedbacker` assertions + `TestFeedbackNotImplemented` |
+| 4 | Every §4.3 and §4.5 table row tested | ✅ `TestMultiWriterLastMeasurement`, `TestRPCLastMeasurementStatusMapping` |
+| 5 | Every AC has a test | ✅ table above |
+| 6 | Proto diff additive only | ✅ no removed lines; existing field numbers untouched |
+| 7 | Pre-change receiver interoperates | ✅ `TestRPCLegacyReceiverUnchanged` |
+| 8 | Feedback API unused outside `internal/sinks` | ✅ `TestFeedbackStaysUnwired` |
+| 9 | No feedback call on a per-measurement path | ✅ zero hits in `PostgresWriter.poll` / `flush` |
+| 10 | Bind parameters; only the identifier interpolated | ✅ `TestPostgresLastMeasurementSQLSafety` |
+| 11 | `go test -race ./internal/sinks/...` passes | ✅ |
+| 12 | `gofmt` / `go vet` clean | ✅ plus `golangci-lint`: 0 issues |
+| 13 | Docs describe the flag, model, matrix, status codes | ✅ `cli_env.md`, `sinks_options.md`, `implement_grpc_server.md` |
+| 14 | Behaviour-neutral | ✅ `--help` diff vs `master` shows only `--no-sink-feedback` |
