@@ -3,6 +3,8 @@ module github.com/cybertec-postgresql/pgwatch/v6
 go 1.26.0
 
 require (
+	github.com/cybertec-postgresql/pglogwatch v1.0.0
+	github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.0
 	github.com/cybertec-postgresql/pgx-migrator v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
@@ -44,8 +46,6 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
-	github.com/cybertec-postgresql/pglogwatch v0.0.0
-	github.com/cybertec-postgresql/pglogwatch/pgremote v0.0.0
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.8.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -98,13 +98,3 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260622175928-b703f567277d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260622175928-b703f567277d // indirect
 )
-
-// pglogwatch is not published yet. It lives in its own repository and its API
-// is frozen at v1.0; until that release exists there is no version to require,
-// so both modules are resolved from the working tree beside this one.
-//
-// These two lines are the whole migration's temporary part. When pglogwatch
-// tags v1.0, delete them and pin the version -- nothing else here changes.
-replace github.com/cybertec-postgresql/pglogwatch => ../pglogwatch
-
-replace github.com/cybertec-postgresql/pglogwatch/pgremote => ../pglogwatch/pgremote
