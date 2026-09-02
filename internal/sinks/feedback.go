@@ -45,3 +45,13 @@ type Feedbacker interface {
 	// non-nil, and strictly positive whenever err is nil.
 	LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error)
 }
+
+// withFeedbackDeadline bounds a feedback query at feedbackTimeout when the
+// caller supplied no deadline of its own. A caller-supplied deadline is left
+// alone, whether it is tighter or looser.
+func withFeedbackDeadline(ctx context.Context) (context.Context, context.CancelFunc) {
+	if _, ok := ctx.Deadline(); ok {
+		return ctx, func() {}
+	}
+	return context.WithTimeout(ctx, feedbackTimeout)
+}
