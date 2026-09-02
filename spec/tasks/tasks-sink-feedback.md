@@ -118,7 +118,7 @@ description: "Task list for implementing the sink feedback interface"
 - [x] T027 [P] [US3] `bufconn` tests in `internal/sinks/rpc_test.go` covering all five rows of §4.5: `OK` + positive epoch; `OK` + `EpochNs <= 0` → `ErrNoFeedbackData` (**RPC-007**, **E-09**); `codes.Unimplemented` → `ErrFeedbackUnsupported` and `CanFeedback` false thereafter with **zero** further round-trips (**AC-008**, **RPC-003**); `codes.NotFound` → `ErrNoFeedbackData` (**RPC-005**); `codes.Unavailable` → transport error with `CanFeedback` still true (**AC-009**, **E-08**)
 - [x] T028 [P] [US3] Test the `Unimplemented` path against a receiver that omits `GetLastMeasurement` entirely, so the status comes from gRPC itself rather than the double — `testutil.Receiver` embeds `pb.UnimplementedReceiverServer`, so this case works before T026 lands
 - [x] T029 [P] [US3] Race test: concurrent `LastMeasurement` calls exercising the cached-capability flag under `-race` (**RPC-008**)
-- [ ] T030 [P] [US3] Backward-compatibility test: a receiver built against the pre-change service still handles `UpdateMeasurements`, `SyncMetric`, and `DefineMetrics` unchanged (**AC-016**)
+- [x] T030 [P] [US3] Backward-compatibility test: a receiver built against the pre-change service still handles `UpdateMeasurements`, `SyncMetric`, and `DefineMetrics` unchanged (**AC-016**)
 
 ### Implementation for US3
 
