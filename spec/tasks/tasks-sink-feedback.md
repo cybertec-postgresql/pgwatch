@@ -92,7 +92,7 @@ description: "Task list for implementing the sink feedback interface"
 
 - [x] T020 [US2] Implement `MultiWriter.CanFeedback` in `internal/sinks/multiwriter.go` (**REQ-020**, **REQ-021**)
 - [x] T021 [US2] Implement `MultiWriter.LastMeasurement` per the §9.2 sketch: skip non-`Feedbacker` writers, skip `ErrFeedbackUnsupported`, short-circuit on `ErrNoFeedbackData`, `errors.Join` other errors, return the minimum (**REQ-022**…**REQ-028**, **PAT-002**)
-- [ ] T022 [US2] Add `var _ Feedbacker = (*MultiWriter)(nil)` (**GUD-003**)
+- [x] T022 [US2] Add `var _ Feedbacker = (*MultiWriter)(nil)` (**GUD-003**)
 
 **Checkpoint**: US1 and US2 both work; a Postgres + jsonfile deployment answers correctly
 
