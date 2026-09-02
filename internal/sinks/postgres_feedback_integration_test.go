@@ -1,6 +1,7 @@
 package sinks
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -106,4 +107,57 @@ func TestPostgresFeedbackIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Less(t, time.Since(start), 100*time.Millisecond)
 	})
+}
+
+// TestPostgresFeedbackRace pins PGS-008: neither feedback method takes
+// PostgresWriter.mu, so a feedback query cannot stall the partition DDL that
+// SyncMetric serialises. Run under -race.
+func TestPostgresFeedbackRace(t *testing.T) {
+	pgw := setupFeedbackSink(t)
+	const source = "race-src"
+	require.NoError(t, pgw.SyncMetric(source, feedbackMetric, AddOp))
+
+	var wg sync.WaitGroup
+	done := make(chan struct{})
+
+	wg.Go(func() {
+		for i := 0; ; i++ {
+			select {
+			case <-done:
+				return
+			default:
+				_ = pgw.SyncMetric(source, feedbackMetric, AddOp)
+				_ = pgw.Write(metrics.MeasurementEnvelope{
+					DBName:     source,
+					MetricName: feedbackMetric,
+					Data: metrics.Measurements{metrics.Measurement{
+						metrics.EpochColumnName: time.Now().UnixNano(),
+						"numbackends":           int64(i),
+					}},
+				})
+			}
+		}
+	})
+
+	wg.Go(func() {
+		for range 200 {
+			pgw.CanFeedback(source, feedbackMetric)
+		}
+	})
+
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		for range 20 {
+			_, _ = pgw.LastMeasurement(ctx, source, feedbackMetric)
+		}
+	}()
+
+	select {
+	case <-finished:
+	case <-time.After(60 * time.Second):
+		t.Fatal("feedback queries stalled behind the writer")
+	}
+	close(done)
+	wg.Wait()
 }
