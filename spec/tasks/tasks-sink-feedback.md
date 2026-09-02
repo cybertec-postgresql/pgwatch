@@ -110,7 +110,7 @@ description: "Task list for implementing the sink feedback interface"
 
 - [x] T023 [US3] Add `GetLastMeasurement`, `FeedbackReq`, and `FeedbackReply` to `api/pb/pgwatch.proto` exactly as in spec §4.5 — additive only, no renumbering of existing fields (**CON-004**)
 - [x] T024 [US3] Regenerate stubs with `task proto` and confirm `UnimplementedReceiverServer` gained the `GetLastMeasurement` fallback (**PLT-002**). The `*.pb.go` files are gitignored (`.gitignore:16`) and generated at build time, so there is nothing to commit
-- [ ] T025 [US3] Pass `*CmdOpts` into `NewRPCWriter` in `internal/sinks/rpc.go` (mirroring `NewPostgresWriter`) so the sink can honour the kill switch; update the call site in `internal/sinks/multiwriter.go` and every constructor call in `internal/sinks/rpc_test.go` (§4.6)
+- [x] T025 [US3] Pass `*CmdOpts` into `NewRPCWriter` in `internal/sinks/rpc.go` (mirroring `NewPostgresWriter`) so the sink can honour the kill switch; update the call site in `internal/sinks/multiwriter.go` and every constructor call in `internal/sinks/rpc_test.go` (§4.6)
 
 ### Tests for US3
 

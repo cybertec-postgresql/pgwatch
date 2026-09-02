@@ -49,7 +49,7 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, target)
 		case "rpc", "grpc":
-			w, err = NewRPCWriter(ctx, sinkConnStr)
+			w, err = NewRPCWriter(ctx, sinkConnStr, opts)
 		default:
 			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, sinkConnStr)
 		}

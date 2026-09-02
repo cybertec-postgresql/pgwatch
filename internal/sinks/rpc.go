@@ -31,6 +31,7 @@ type RPCWriter struct {
 	ctx    context.Context
 	conn   *grpc.ClientConn
 	client pb.ReceiverClient
+	opts   *CmdOpts
 }
 
 // convertSyncOp converts sinks.SyncOp to pb.SyncOp
@@ -47,7 +48,7 @@ func convertSyncOp(op SyncOp) pb.SyncOp {
 	}
 }
 
-func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
+func NewRPCWriter(ctx context.Context, connStr string, opts *CmdOpts) (*RPCWriter, error) {
 	uri, err := url.Parse(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing gRPC URI: %s", err)
@@ -89,6 +90,7 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 		ctx:    newCtx,
 		conn:   conn,
 		client: client,
+		opts:   opts,
 	}
 
 	if err = rw.Ping(); err != nil {
