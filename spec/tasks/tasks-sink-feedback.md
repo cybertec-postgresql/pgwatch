@@ -37,7 +37,7 @@ description: "Task list for implementing the sink feedback interface"
 
 - [x] T003 Create `internal/sinks/feedback.go` with the `Feedbacker` interface and the `ErrFeedbackUnsupported` / `ErrNoFeedbackData` sentinels, copied verbatim from spec §4.1 including doc comments (**REQ-001**, **REQ-003**, **REQ-005**, **REQ-006**, **REQ-007**, **REQ-013**)
 - [x] T004 Add `NoFeedback bool` to `sinks.CmdOpts` in `internal/sinks/cmdopts.go` plus a `FeedbackEnabled()` accessor (**CFG-001**, **CFG-003**); see D-01 for why the flag is negated
-- [ ] T005 [P] Add the `fakeFeedbacker` test double to `internal/sinks/feedback_test.go`: scriptable `CanFeedback` result, epoch, error, and per-method call counters (§6 Mocks). It drives every row of the §4.3 table without needing four real sinks
+- [x] T005 [P] Add the `fakeFeedbacker` test double to `internal/sinks/feedback_test.go`: scriptable `CanFeedback` result, epoch, error, and per-method call counters (§6 Mocks). It drives every row of the §4.3 table without needing four real sinks
 - [ ] T006 [P] Add negative capability guards to `internal/sinks/feedback_test.go` asserting `PrometheusWriter` and `JSONWriter` do **not** satisfy `Feedbacker`, and that both still satisfy `Writer` (**PRM-001**, **JSN-001**, **AC-010**)
 - [ ] T007 [P] Add the scope guard enforcing **AC-017**: a test (or CI step) that greps `Feedbacker|LastMeasurement|CanFeedback` across `--include=*.go` and fails if any non-test hit falls outside `internal/sinks`
 
