@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+var _ Feedbacker = (*RPCWriter)(nil)
+
 // RPCWriter sends metric measurements to a remote server using gRPC.
 // Remote servers should make use of the .proto file under api/pb/ to integrate with it.
 // It's up to the implementer to define the behavior of the server.

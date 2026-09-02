@@ -124,7 +124,7 @@ description: "Task list for implementing the sink feedback interface"
 
 - [x] T031 [US3] Add the atomic `unsupported` flag to `RPCWriter` and implement `CanFeedback`: gate on `opts.FeedbackEnabled()`, reject empty names, return optimistic true until the flag is set (**RPC-004**, **RPC-008**, **CFG-002**)
 - [x] T032 [US3] Implement `RPCWriter.LastMeasurement` per the §9.3 sketch: parent the call on `rw.ctx` so credential metadata is carried (**RPC-009**, **SEC-002**), derive the deadline from the caller's context with the 5 s default (**RPC-006**, **CON-002**), map every status per §4.5, set `unsupported` only on `Unimplemented` (**RPC-002**, **RPC-003**, **RPC-005**, **RPC-007**)
-- [ ] T033 [US3] Add `var _ Feedbacker = (*RPCWriter)(nil)` (**GUD-003**)
+- [x] T033 [US3] Add `var _ Feedbacker = (*RPCWriter)(nil)` (**GUD-003**)
 
 **Checkpoint**: All three sink increments are independently functional
 
