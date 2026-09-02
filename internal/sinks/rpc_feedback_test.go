@@ -147,3 +147,24 @@ func TestRPCCanFeedback(t *testing.T) {
 	assert.ErrorIs(t, err, sinks.ErrFeedbackUnsupported)
 	assert.Zero(t, epoch)
 }
+
+// TestRPCLegacyReceiverLatchesOff pins RPC-003 against a receiver that never
+// heard of GetLastMeasurement: gRPC itself answers Unimplemented, the sink
+// maps that to ErrFeedbackUnsupported, and it never asks again.
+func TestRPCLegacyReceiverLatchesOff(t *testing.T) {
+	recv := &legacyReceiver{}
+	rw, err := sinks.NewRPCWriter(ctx, startReceiver(t, recv), &sinks.CmdOpts{})
+	require.NoError(t, err)
+	require.True(t, rw.CanFeedback("prod-db", "db_stats"), "optimistic before the first probe")
+
+	epoch, err := rw.LastMeasurement(ctx, "prod-db", "db_stats")
+	assert.ErrorIs(t, err, sinks.ErrFeedbackUnsupported)
+	assert.Zero(t, epoch)
+
+	// The capability is latched off for every pair, without a round-trip.
+	assert.False(t, rw.CanFeedback("prod-db", "db_stats"))
+	assert.False(t, rw.CanFeedback("other-db", "other_metric"))
+
+	_, err = rw.LastMeasurement(ctx, "other-db", "other_metric")
+	assert.ErrorIs(t, err, sinks.ErrFeedbackUnsupported)
+}
