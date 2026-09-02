@@ -11,4 +11,12 @@ type CmdOpts struct {
 	MaintenanceInterval   string        `long:"maintenance-interval" mapstructure:"maintenance-interval" description:"Run pgwatch maintenance tasks on sinks with this interval e.g., deleting old metrics; Set to zero to disable. Must be a valid PostgreSQL interval." default:"12 hours" env:"PW_MAINTENANCE_INTERVAL"`
 	RealDbnameField       string        `long:"real-dbname-field" mapstructure:"real-dbname-field" description:"Tag key for real database name" env:"PW_REAL_DBNAME_FIELD" default:"real_dbname"`
 	SystemIdentifierField string        `long:"system-identifier-field" mapstructure:"system-identifier-field" description:"Tag key for system identifier value" env:"PW_SYSTEM_IDENTIFIER_FIELD" default:"sys_id"`
+	NoFeedback            bool          `long:"no-sink-feedback" mapstructure:"no-sink-feedback" description:"Disable sink feedback, i.e. reporting the last stored measurement epoch to collectors that can resume from it" env:"PW_NO_SINK_FEEDBACK"`
+}
+
+// FeedbackEnabled reports whether sinks may answer feedback queries. Feedback
+// is on by default; go-flags booleans always default to false and can only be
+// turned on, hence the negated NoFeedback flag.
+func (c *CmdOpts) FeedbackEnabled() bool {
+	return c != nil && !c.NoFeedback
 }

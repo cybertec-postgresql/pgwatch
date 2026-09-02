@@ -157,8 +157,8 @@ layout.
 
 ### 3.4 Configuration
 
-- **CFG-001**: `sinks.CmdOpts` MUST gain a boolean field `Feedback` bound to `--sink-feedback` / `PW_SINK_FEEDBACK`. The effective default MUST be `true`.
-- **CFG-002**: When `Feedback` is `false`, `CanFeedback` MUST return `false` on every sink for every pair, and `LastMeasurement` MUST return `ErrFeedbackUnsupported` without performing I/O. Disabling the switch MUST be sufficient to guarantee no feedback query ever reaches a sink backend.
+- **CFG-001**: `sinks.CmdOpts` MUST gain a boolean field `NoFeedback` bound to `--no-sink-feedback` / `PW_NO_SINK_FEEDBACK`, plus a `FeedbackEnabled()` accessor. The effective default MUST be feedback *enabled*; see §4.6 for why the flag is negated.
+- **CFG-002**: When feedback is disabled (`FeedbackEnabled()` is `false`), `CanFeedback` MUST return `false` on every sink for every pair, and `LastMeasurement` MUST return `ErrFeedbackUnsupported` without performing I/O. Disabling the switch MUST be sufficient to guarantee no feedback query ever reaches a sink backend.
 - **CFG-003**: The flag MUST follow the existing `CmdOpts` struct-tag conventions (`long`, `mapstructure`, `description`, `env`). See the note in §4.6 on default-`true` booleans under `go-flags`.
 - **CFG-004**: No rewind, horizon, or replay-bound configuration is introduced by this specification. Such policy belongs to the consumer and MUST NOT be added to `sinks.CmdOpts` here.
 
@@ -284,7 +284,7 @@ func lastStoredEpoch(ctx context.Context, w sinks.Writer, source, metric string)
 | One capable writer returns `ErrNoFeedbackData` | `true` | `(0, ErrNoFeedbackData)` |
 | One capable writer returns a transport/SQL error | `true` | `(0, joined error)` |
 | Single capable writer returns `T1` | `true` | `(T1, nil)` |
-| `Feedback` config is `false` | `false` | `(0, ErrFeedbackUnsupported)` |
+| feedback disabled by config | `false` | `(0, ErrFeedbackUnsupported)` |
 
 Note: `NewSinkWriter` unwraps a single-sink `MultiWriter` and returns the sink directly
 (`internal/sinks/multiwriter.go:60`), so the single-sink case exercises the sink's own
@@ -355,15 +355,20 @@ gRPC sink documentation so third-party servers know which codes carry which mean
 ```go
 type CmdOpts struct {
     // ... existing fields unchanged ...
-    Feedback bool `long:"sink-feedback" mapstructure:"sink-feedback" description:"Allow sinks to report the last stored measurement epoch to collectors that can resume from it" env:"PW_SINK_FEEDBACK"`
+    NoFeedback bool `long:"no-sink-feedback" mapstructure:"no-sink-feedback" description:"Disable sink feedback, i.e. reporting the last stored measurement epoch to collectors that can resume from it" env:"PW_NO_SINK_FEEDBACK"`
 }
+
+// FeedbackEnabled reports whether sinks may answer feedback queries.
+func (c *CmdOpts) FeedbackEnabled() bool { return c != nil && !c.NoFeedback }
 ```
 
-Note on the boolean default: `go-flags` treats a bare `--sink-feedback` as `true`, so a
-`default:"true"` tag alone would make the flag impossible to turn off from the command line.
-Implement **CFG-001**'s default the way the codebase already handles default-on booleans —
-either a value-taking flag or a matching `--no-sink-feedback` negation — and keep the effective
-default `true`. Whichever form is chosen MUST be reflected in `docs/`.
+Note on the negated flag: `go-flags` rejects `default:` on a boolean outright — *"boolean flag
+may not have default values, they always default to `false' and can only be turned on"* — so a
+default-on `--sink-feedback` is not expressible. The flag is therefore a default-off negation,
+which also matches every existing boolean flag in the codebase (`--create-helpers`,
+`--direct-os-stats`, `--log-file-rotate`). Sinks MUST test the capability through
+`FeedbackEnabled()` rather than reading `NoFeedback` directly, so the double negative stays out
+of the call sites.
 
 Sinks read this value from the `*CmdOpts` they already hold (`PostgresWriter.opts`). Sinks that
 are constructed without `CmdOpts` — `RPCWriter`, built by `NewRPCWriter(ctx, connStr)` — MUST be
@@ -385,7 +390,7 @@ is to pass `opts` to `NewRPCWriter` alongside the connection string, mirroring
 - **AC-008**: Given an RPC sink whose remote server returns `codes.Unimplemented`, When `LastMeasurement` is called, Then it returns `ErrFeedbackUnsupported`, and every subsequent `CanFeedback` returns `false` without a network round-trip.
 - **AC-009**: Given an RPC sink whose remote server returns `codes.Unavailable`, When `LastMeasurement` is called, Then it returns the transport error and a subsequent `CanFeedback` still returns `true` (**RPC-008**).
 - **AC-010**: Given `PrometheusWriter` or `JSONWriter`, When asserted to `sinks.Feedbacker`, Then the assertion fails.
-- **AC-011**: Given `Feedback` is `false`, When `CanFeedback` is called on any sink for any pair, Then it returns `false`, and `LastMeasurement` returns `ErrFeedbackUnsupported` with no query reaching the backend (**CFG-002**).
+- **AC-011**: Given feedback is disabled by config, When `CanFeedback` is called on any sink for any pair, Then it returns `false`, and `LastMeasurement` returns `ErrFeedbackUnsupported` with no query reaching the backend (**CFG-002**).
 - **AC-012**: Given a `LastMeasurement` call whose context is cancelled mid-flight, When the sink is a `PostgresWriter`, Then the call returns a context error within 100 ms and leaves no leaked connection or goroutine.
 - **AC-013**: Given a `PostgresWriter` with measurements still buffered in `input` and not yet flushed, When `LastMeasurement` is called, Then the returned epoch does not include those buffered measurements (**REQ-011**).
 - **AC-014**: Given concurrent `LastMeasurement` and `SyncMetric` calls on the same `PostgresWriter`, When both run under `-race`, Then no data race is reported and neither blocks the other for the duration of a SQL round-trip (**PGS-008**).
@@ -558,7 +563,7 @@ specification; each needs its own:
 var _ Feedbacker = (*PostgresWriter)(nil)
 
 func (pgw *PostgresWriter) CanFeedback(sourceName, metricName string) bool {
-    if !pgw.opts.Feedback || sourceName == "" || metricName == "" { // CFG-002
+    if !pgw.opts.FeedbackEnabled() || sourceName == "" || metricName == "" { // CFG-002
         return false
     }
     pgw.mu.Lock()
@@ -647,7 +652,7 @@ var _ Feedbacker = (*RPCWriter)(nil)
 
 // unsupported is set once the remote server answers Unimplemented. RPC-003, RPC-008.
 func (rw *RPCWriter) CanFeedback(sourceName, metricName string) bool {
-    if !rw.opts.Feedback || sourceName == "" || metricName == "" { // CFG-002
+    if !rw.opts.FeedbackEnabled() || sourceName == "" || metricName == "" { // CFG-002
         return false
     }
     return !rw.unsupported.Load() // RPC-004: optimistic until proven otherwise
