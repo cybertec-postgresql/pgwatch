@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -133,4 +134,43 @@ func (mw *MultiWriter) CanFeedback(sourceName, metricName string) bool {
 		}
 	}
 	return false
+}
+
+// LastMeasurement returns the oldest epoch reported by any feedback-capable
+// writer. The minimum is deliberate: a consumer resuming from the maximum
+// would leave the laggard sink permanently short, whereas resuming from the
+// minimum only duplicates measurements the leading sink already has.
+// A writer holding nothing at all is the extreme case of lagging, so it
+// short-circuits the whole aggregate to ErrNoFeedbackData.
+func (mw *MultiWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
+	var (
+		oldest  int64 = math.MaxInt64
+		answers int
+		errs    error
+	)
+	for _, w := range mw.writers {
+		fb, ok := w.(Feedbacker)
+		if !ok {
+			continue // a sink that cannot answer does not get to veto the ones that can
+		}
+		epoch, err := fb.LastMeasurement(ctx, sourceName, metricName)
+		switch {
+		case errors.Is(err, ErrFeedbackUnsupported):
+			continue
+		case errors.Is(err, ErrNoFeedbackData):
+			return 0, ErrNoFeedbackData
+		case err != nil:
+			errs = errors.Join(errs, err)
+		default:
+			answers++
+			oldest = min(oldest, epoch)
+		}
+	}
+	if errs != nil {
+		return 0, errs
+	}
+	if answers == 0 {
+		return 0, ErrFeedbackUnsupported
+	}
+	return oldest, nil
 }
