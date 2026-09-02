@@ -133,7 +133,7 @@ description: "Task list for implementing the sink feedback interface"
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [x] T034 [P] Extend `internal/sinks/doc.go` to mention the optional feedback capability and which sinks provide it (§11)
-- [ ] T035 [P] Document the new flag in `docs/reference/cli_env.md` and the two-level capability model plus the per-sink support matrix in `docs/reference/sinks_options.md` (§10 item 13)
+- [x] T035 [P] Document the new flag in `docs/reference/cli_env.md` and the two-level capability model plus the per-sink support matrix in `docs/reference/sinks_options.md` (§10 item 13)
 - [ ] T036 [P] Add the §4.5 status-code contract to `docs/howto/implement_grpc_server.md` so third-party receiver authors know which codes carry which meaning (§10 item 13)
 - [ ] T037 Run `task lint`, `gofmt -l internal/ api/`, and `go vet ./...`; all must be clean (**AC-018**, §10 item 12)
 - [ ] T038 Verify **CON-006** behaviour neutrality against the T002 baseline: identical collection behaviour, with only the new flag in `--help` and the new gRPC method as visible additions (§10 item 14)
