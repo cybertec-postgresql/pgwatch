@@ -779,3 +779,39 @@ func isUndefinedTable(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.SQLState() == "42P01"
 }
+
+// LastMeasurement returns the epoch_ns of the newest measurement stored for
+// the pair. The scan is bounded by the configured retention interval so it
+// cannot degrade into a full scan of every partition.
+func (pgw *PostgresWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
+	if !pgw.CanFeedback(sourceName, metricName) {
+		return 0, ErrFeedbackUnsupported
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	ctx, cancel := withFeedbackDeadline(ctx)
+	defer cancel()
+
+	l := log.GetLogger(pgw.ctx).WithField("source", sourceName).WithField("metric", metricName)
+	sql := `SELECT time FROM public.` + pgx.Identifier{metricName}.Sanitize() +
+		` WHERE dbname = $1 AND time > now() - $2::interval ORDER BY time DESC LIMIT 1`
+
+	var ts time.Time
+	switch err := pgw.sinkDb.QueryRow(ctx, sql, sourceName, pgw.opts.RetentionInterval).Scan(&ts); {
+	case errors.Is(err, pgx.ErrNoRows):
+		l.Info("no measurements stored for feedback query")
+		return 0, ErrNoFeedbackData
+	case isUndefinedTable(err):
+		l.Info("metric table does not exist, feedback unavailable")
+		return 0, ErrFeedbackUnsupported
+	case err != nil:
+		return 0, err
+	}
+	epoch := ts.UnixNano()
+	if epoch <= 0 {
+		return 0, ErrNoFeedbackData
+	}
+	l.WithField("epoch", epoch).Debug("last stored measurement reported")
+	return epoch, nil
+}
