@@ -108,7 +108,7 @@ description: "Task list for implementing the sink feedback interface"
 
 ### Wire and plumbing for US3
 
-- [ ] T023 [US3] Add `GetLastMeasurement`, `FeedbackReq`, and `FeedbackReply` to `api/pb/pgwatch.proto` exactly as in spec §4.5 — additive only, no renumbering of existing fields (**CON-004**)
+- [x] T023 [US3] Add `GetLastMeasurement`, `FeedbackReq`, and `FeedbackReply` to `api/pb/pgwatch.proto` exactly as in spec §4.5 — additive only, no renumbering of existing fields (**CON-004**)
 - [ ] T024 [US3] Regenerate stubs with `task proto`; commit `api/pb/pgwatch.pb.go` and `api/pb/pgwatch_grpc.pb.go` (**PLT-002**)
 - [ ] T025 [US3] Pass `*CmdOpts` into `NewRPCWriter` in `internal/sinks/rpc.go` (mirroring `NewPostgresWriter`) so the sink can honour the kill switch; update the call site in `internal/sinks/multiwriter.go` and every constructor call in `internal/sinks/rpc_test.go` (§4.6)
 
