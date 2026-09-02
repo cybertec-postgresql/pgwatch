@@ -67,7 +67,7 @@ description: "Task list for implementing the sink feedback interface"
 
 - [x] T013 [US1] Implement `PostgresWriter.CanFeedback` in `internal/sinks/postgres.go`: gate on `pgw.opts.FeedbackEnabled()` and reject empty names; optimistic and lock-free, since `partitionMapMetric` is empty at process start (**PGS-002**, **PGS-008**, **CFG-002**, **REQ-004**)
 - [ ] T014 [US1] Implement `PostgresWriter.LastMeasurement` in `internal/sinks/postgres.go` per the §9.1 sketch — build the §4.4 query with `pgx.Identifier{...}.Sanitize()` and bind parameters (**PGS-003**, **SEC-001**), bound by `pgw.opts.RetentionInterval` (**PGS-004**, **DAT-003**), convert via `UnixNano` (**PGS-005**), apply the 5 s default deadline (**CON-002**)
-- [ ] T015 [US1] Add the `isUndefinedTable` helper mapping `SQLSTATE 42P01` to `ErrFeedbackUnsupported` in `internal/sinks/postgres.go` (**PGS-007**)
+- [x] T015 [US1] Add the `isUndefinedTable` helper mapping `SQLSTATE 42P01` to `ErrFeedbackUnsupported` in `internal/sinks/postgres.go` (**PGS-007**)
 - [ ] T016 [US1] Add `var _ Feedbacker = (*PostgresWriter)(nil)` (**GUD-003**) and query logging: `Debug` on success, no higher than `Info` for expected `ErrFeedbackUnsupported` / `ErrNoFeedbackData` (**SEC-004**)
 
 **Checkpoint**: Postgres sink feedback is fully functional and testable on its own
