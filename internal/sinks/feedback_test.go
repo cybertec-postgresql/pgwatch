@@ -3,8 +3,10 @@ package sinks
 import (
 	"context"
 	"sync/atomic"
+	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
+	"github.com/stretchr/testify/assert"
 )
 
 // fakeFeedbacker is a scriptable Writer + Feedbacker double. It lets the
@@ -70,3 +72,21 @@ func (p *plainWriter) Write(metrics.MeasurementEnvelope) error {
 }
 
 func (p *plainWriter) SyncMetric(_, _ string, _ SyncOp) error { return nil }
+
+// TestFeedbackNotImplemented pins the deliberate non-implementations. The
+// Prometheus sink only knows what pgwatch offered, not what a scraper stored,
+// and the JSON sink would have to scan rotated, compressed files to answer;
+// see spec/design-sink-feedback.md §7.3 and §7.4. Both must nevertheless stay
+// usable as sinks.
+func TestFeedbackNotImplemented(t *testing.T) {
+	// The map type asserts Writer conformance at compile time.
+	for name, w := range map[string]Writer{
+		"prometheus": (*PrometheusWriter)(nil),
+		"jsonfile":   (*JSONWriter)(nil),
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, ok := w.(Feedbacker)
+			assert.False(t, ok, "%s sink must not implement Feedbacker", name)
+		})
+	}
+}
