@@ -240,3 +240,46 @@ func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error)
 func (rw *RPCWriter) CanFeedback(sourceName, metricName string) bool {
 	return rw.opts.FeedbackEnabled() && sourceName > "" && metricName > "" && !rw.unsupported.Load()
 }
+
+// LastMeasurement asks the remote server for the newest measurement it holds
+// for the pair. The caller's context drives cancellation; the credential
+// metadata is carried over from the writer's own context.
+func (rw *RPCWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
+	if !rw.CanFeedback(sourceName, metricName) {
+		return 0, ErrFeedbackUnsupported
+	}
+	if err := rw.ctx.Err(); err != nil {
+		return 0, err
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	if md, ok := metadata.FromOutgoingContext(rw.ctx); ok {
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+	ctx, cancel := withFeedbackDeadline(ctx)
+	defer cancel()
+
+	l := log.GetLogger(rw.ctx).WithField("source", sourceName).WithField("metric", metricName)
+	reply, err := rw.client.GetLastMeasurement(ctx, &pb.FeedbackReq{
+		DBName:     sourceName,
+		MetricName: metricName,
+	})
+	if err != nil {
+		switch status.Code(err) {
+		case codes.Unimplemented:
+			rw.unsupported.Store(true)
+			l.Info("remote server does not implement feedback, not asking again")
+			return 0, ErrFeedbackUnsupported
+		case codes.NotFound:
+			l.Info("remote server holds no measurements for feedback query")
+			return 0, ErrNoFeedbackData
+		}
+		return 0, err
+	}
+	if reply.GetEpochNs() <= 0 {
+		return 0, ErrNoFeedbackData
+	}
+	l.WithField("epoch", reply.GetEpochNs()).Debug("last stored measurement reported")
+	return reply.GetEpochNs(), nil
+}
