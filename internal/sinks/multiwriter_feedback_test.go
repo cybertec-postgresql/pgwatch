@@ -99,3 +99,31 @@ func TestMultiWriterLastMeasurement(t *testing.T) {
 		})
 	}
 }
+
+func TestMultiWriterCanFeedback(t *testing.T) {
+	capable := func() *fakeFeedbacker { return &fakeFeedbacker{canFeedback: true} }
+	incapable := func() *fakeFeedbacker { return &fakeFeedbacker{canFeedback: false} }
+
+	for _, tc := range []struct {
+		name    string
+		writers []Writer
+		want    bool
+	}{
+		{"no writers", nil, false},
+		{"only plain writers", []Writer{&plainWriter{}, &plainWriter{}}, false},
+		{"only incapable feedbackers", []Writer{incapable(), incapable()}, false},
+		{"one capable among plain", []Writer{&plainWriter{}, capable()}, true},
+		{"one capable among incapable", []Writer{incapable(), capable()}, true},
+		{"all capable", []Writer{capable(), capable()}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, newMulti(tc.writers...).CanFeedback("prod-db", "db_stats"))
+		})
+	}
+
+	t.Run("empty pair is never capable", func(t *testing.T) {
+		mw := newMulti(capable())
+		assert.False(t, mw.CanFeedback("", "db_stats"))
+		assert.False(t, mw.CanFeedback("prod-db", ""))
+	})
+}
