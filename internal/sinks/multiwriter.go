@@ -123,3 +123,14 @@ func (mw *MultiWriter) NeedsMigration() (bool, error) {
 	}
 	return false, nil
 }
+
+// CanFeedback reports whether at least one contained writer can answer for
+// the pair. Writers that do not implement Feedbacker are simply skipped.
+func (mw *MultiWriter) CanFeedback(sourceName, metricName string) bool {
+	for _, w := range mw.writers {
+		if fb, ok := w.(Feedbacker); ok && fb.CanFeedback(sourceName, metricName) {
+			return true
+		}
+	}
+	return false
+}
