@@ -36,7 +36,7 @@ description: "Task list for implementing the sink feedback interface"
 **⚠️ CRITICAL**: No increment work can begin until this phase is complete
 
 - [x] T003 Create `internal/sinks/feedback.go` with the `Feedbacker` interface and the `ErrFeedbackUnsupported` / `ErrNoFeedbackData` sentinels, copied verbatim from spec §4.1 including doc comments (**REQ-001**, **REQ-003**, **REQ-005**, **REQ-006**, **REQ-007**, **REQ-013**)
-- [ ] T004 Add `Feedback bool` to `sinks.CmdOpts` in `internal/sinks/cmdopts.go` with `long`/`mapstructure`/`description`/`env` tags (**CFG-001**, **CFG-003**). ⚠️ **Decision required first** — see [Open Decisions](#open-decisions): `go-flags` makes a bare `default:"true"` bool impossible to disable, so pick the value-flag or `--no-sink-feedback` form before writing the tag
+- [x] T004 Add `NoFeedback bool` to `sinks.CmdOpts` in `internal/sinks/cmdopts.go` plus a `FeedbackEnabled()` accessor (**CFG-001**, **CFG-003**); see D-01 for why the flag is negated
 - [ ] T005 [P] Add the `fakeFeedbacker` test double to `internal/sinks/feedback_test.go`: scriptable `CanFeedback` result, epoch, error, and per-method call counters (§6 Mocks). It drives every row of the §4.3 table without needing four real sinks
 - [ ] T006 [P] Add negative capability guards to `internal/sinks/feedback_test.go` asserting `PrometheusWriter` and `JSONWriter` do **not** satisfy `Feedbacker`, and that both still satisfy `Writer` (**PRM-001**, **JSN-001**, **AC-010**)
 - [ ] T007 [P] Add the scope guard enforcing **AC-017**: a test (or CI step) that greps `Feedbacker|LastMeasurement|CanFeedback` across `--include=*.go` and fails if any non-test hit falls outside `internal/sinks`
@@ -58,14 +58,14 @@ description: "Task list for implementing the sink feedback interface"
 > Write these first and confirm they fail before implementing T012–T016.
 
 - [ ] T008 [P] [US1] `pgxmock` unit tests for `CanFeedback` in `internal/sinks/postgres_feedback_test.go`: metric present in `partitionMapMetric` → true; metric absent → false; empty `sourceName` → false; empty `metricName` → false (**PGS-002**)
-- [ ] T009 [P] [US1] `pgxmock` unit tests for `LastMeasurement` in the same file, covering: row returned → `epoch = time.UnixNano()` (**AC-002**); `pgx.ErrNoRows` → `ErrNoFeedbackData` (**AC-003**); `SQLSTATE 42P01` → `ErrFeedbackUnsupported` and nothing logged at `Error` (**AC-004**); already-cancelled context → context error with no query issued (**E-13**); `err == nil` implies epoch > 0 (**AC-015**); `Feedback == false` → `ErrFeedbackUnsupported` with zero `pgxmock` expectations consumed (**AC-011**)
+- [ ] T009 [P] [US1] `pgxmock` unit tests for `LastMeasurement` in the same file, covering: row returned → `epoch = time.UnixNano()` (**AC-002**); `pgx.ErrNoRows` → `ErrNoFeedbackData` (**AC-003**); `SQLSTATE 42P01` → `ErrFeedbackUnsupported` and nothing logged at `Error` (**AC-004**); already-cancelled context → context error with no query issued (**E-13**); `err == nil` implies epoch > 0 (**AC-015**); feedback disabled → `ErrFeedbackUnsupported` with zero `pgxmock` expectations consumed (**AC-011**)
 - [ ] T010 [P] [US1] Assert the generated SQL passes `sourceName` as a bind parameter and interpolates only the sanitised identifier; include a metric name containing a double quote (**SEC-001**, **E-12**)
 - [ ] T011 [US1] Integration test in `internal/sinks/postgres_feedback_integration_test.go` using `testutil.SetupPostgresContainer()`, following the `internal/reaper/database_integration_test.go` convention: real table via the sink's own `SyncMetric`/`AddOp` path, dropped in `t.Cleanup`. Cover the live epoch round-trip (**AC-002**), buffered-but-unflushed measurements excluded (**AC-013**, **REQ-011**), and a ≥ 30-partition table answering in under 100 ms (**PGS-004**, §6 Performance)
 - [ ] T012 [US1] Race test in `internal/sinks/postgres_feedback_test.go` (pattern: `internal/sinks/prometheus_race_test.go`) running `CanFeedback` + `LastMeasurement` + `Write` + `SyncMetric` concurrently under `-race`; assert no race and that `LastMeasurement` does not block `SyncMetric` for the round-trip duration (**PGS-008**, **AC-014**, **E-10**)
 
 ### Implementation for US1
 
-- [ ] T013 [US1] Implement `PostgresWriter.CanFeedback` in `internal/sinks/postgres.go`: gate on `pgw.opts.Feedback`, reject empty names, then check `partitionMapMetric` under `pgw.mu` (**PGS-002**, **CFG-002**, **REQ-004**)
+- [ ] T013 [US1] Implement `PostgresWriter.CanFeedback` in `internal/sinks/postgres.go`: gate on `pgw.opts.FeedbackEnabled()`, reject empty names, then check `partitionMapMetric` under `pgw.mu` (**PGS-002**, **CFG-002**, **REQ-004**)
 - [ ] T014 [US1] Implement `PostgresWriter.LastMeasurement` in `internal/sinks/postgres.go` per the §9.1 sketch — release `pgw.mu` before the round-trip (**PGS-008**), build the §4.4 query with `pgx.Identifier{...}.Sanitize()` and bind parameters (**PGS-003**, **SEC-001**), bound by `pgw.opts.RetentionInterval` (**PGS-004**, **DAT-003**), convert via `UnixNano` (**PGS-005**), apply the 5 s default deadline (**CON-002**)
 - [ ] T015 [US1] Add the `isUndefinedTable` helper mapping `SQLSTATE 42P01` to `ErrFeedbackUnsupported` in `internal/sinks/postgres.go` (**PGS-007**)
 - [ ] T016 [US1] Add `var _ Feedbacker = (*PostgresWriter)(nil)` (**GUD-003**) and query logging: `Debug` on success, no higher than `Info` for expected `ErrFeedbackUnsupported` / `ErrNoFeedbackData` (**SEC-004**)
@@ -84,7 +84,7 @@ description: "Task list for implementing the sink feedback interface"
 
 ### Tests for US2
 
-- [ ] T017 [P] [US2] Table-driven test in `internal/sinks/multiwriter_test.go` covering all seven rows of spec §4.3, built with `AddWriter` rather than `NewSinkWriter` (which unwraps the single-sink case): no capable writers → `ErrFeedbackUnsupported` (**REQ-026**); all unsupported → `ErrFeedbackUnsupported`; two epochs → minimum (**AC-005**); mixed capable + non-`Feedbacker` → capable answer survives (**AC-006**, **REQ-027**); one `ErrNoFeedbackData` → short-circuit regardless of other epochs (**AC-007**, **REQ-024**); one transport error → joined error, no partial minimum (**REQ-025**); `Feedback == false` → `ErrFeedbackUnsupported`
+- [ ] T017 [P] [US2] Table-driven test in `internal/sinks/multiwriter_test.go` covering all seven rows of spec §4.3, built with `AddWriter` rather than `NewSinkWriter` (which unwraps the single-sink case): no capable writers → `ErrFeedbackUnsupported` (**REQ-026**); all unsupported → `ErrFeedbackUnsupported`; two epochs → minimum (**AC-005**); mixed capable + non-`Feedbacker` → capable answer survives (**AC-006**, **REQ-027**); one `ErrNoFeedbackData` → short-circuit regardless of other epochs (**AC-007**, **REQ-024**); one transport error → joined error, no partial minimum (**REQ-025**); feedback disabled → `ErrFeedbackUnsupported`
 - [ ] T018 [P] [US2] Test that `MultiWriter.CanFeedback` is true iff at least one contained writer is capable for the pair (**REQ-021**)
 - [ ] T019 [P] [US2] Test that the caller's `ctx` reaches each contained writer unchanged and that writers are queried sequentially (**REQ-028**), asserted via `fakeFeedbacker` call ordering
 
@@ -122,7 +122,7 @@ description: "Task list for implementing the sink feedback interface"
 
 ### Implementation for US3
 
-- [ ] T031 [US3] Add the atomic `unsupported` flag to `RPCWriter` and implement `CanFeedback`: gate on `opts.Feedback`, reject empty names, return optimistic true until the flag is set (**RPC-004**, **RPC-008**, **CFG-002**)
+- [ ] T031 [US3] Add the atomic `unsupported` flag to `RPCWriter` and implement `CanFeedback`: gate on `opts.FeedbackEnabled()`, reject empty names, return optimistic true until the flag is set (**RPC-004**, **RPC-008**, **CFG-002**)
 - [ ] T032 [US3] Implement `RPCWriter.LastMeasurement` per the §9.3 sketch: parent the call on `rw.ctx` so credential metadata is carried (**RPC-009**, **SEC-002**), derive the deadline from the caller's context with the 5 s default (**RPC-006**, **CON-002**), map every status per §4.5, set `unsupported` only on `Unimplemented` (**RPC-002**, **RPC-003**, **RPC-005**, **RPC-007**)
 - [ ] T033 [US3] Add `var _ Feedbacker = (*RPCWriter)(nil)` (**GUD-003**)
 
@@ -147,7 +147,7 @@ Resolve before T004; each blocks a specific task.
 
 | # | Decision | Blocks | Options |
 |---|---|---|---|
-| D-01 | How to express a default-`true` bool under `go-flags` — a bare `--sink-feedback` with `default:"true"` can never be turned off | T004, T035 | (a) value-taking flag `--sink-feedback=false`; (b) paired `--no-sink-feedback` negation. Whichever is chosen must be reflected in the docs task |
+| D-01 | ✅ **Resolved**: how to express a default-`true` bool under `go-flags` | T004, T035 | `go-flags` rejects `default:` on a bool outright (*"boolean flag may not have default values, they always default to `false' and can only be turned on"*), so the value-flag option does not exist. Implemented as the negation `--no-sink-feedback` / `PW_NO_SINK_FEEDBACK` plus a `FeedbackEnabled()` accessor, matching every other bool flag in the codebase |
 | D-02 | Whether `NewRPCWriter` takes `*CmdOpts` (spec §4.6 recommendation) or reads a package-level switch | T025 | Passing `opts` mirrors `NewPostgresWriter` and keeps the sink self-contained; it costs one signature change plus test call-site updates |
 
 ---
