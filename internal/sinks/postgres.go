@@ -79,6 +79,8 @@ type PostgresWriter struct {
 // make sure *dbMetricReaderWriter implements the Migrator interface
 var _ db.Migrator = (*PostgresWriter)(nil)
 
+var _ Feedbacker = (*PostgresWriter)(nil)
+
 func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
 	var conn db.PgxPoolIface
 	if conn, err = db.New(ctx, connstr); err != nil {
