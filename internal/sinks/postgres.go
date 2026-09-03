@@ -778,8 +778,8 @@ func (pgw *PostgresWriter) CanFeedback(sourceName, metricName string) bool {
 // isUndefinedTable reports whether err is the Postgres undefined_table error,
 // i.e. the metric has never been written to this sink.
 func isUndefinedTable(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.SQLState() == "42P01"
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	return ok && pgErr.SQLState() == "42P01"
 }
 
 // LastMeasurement returns the epoch_ns of the newest measurement stored for
