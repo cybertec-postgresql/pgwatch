@@ -2,190 +2,190 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://pgwat.ch/devel/index.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/advanced_features.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/components.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/installation_options.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/metrics_and_presets.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/observability_stack.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/operating_in_production.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/os_helpers.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/security.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/concept/web_ui.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/developer/CODE_OF_CONDUCT.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/developer/LICENSE.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/developer/contributing.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/gallery/dashboards.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/gallery/webui.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/add_custom_metric.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/config_db_bootstrap.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/dashboarding_alerting.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/deploy_to_kubernetes.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/enable_log_parsing.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/enable_prometheus_scrape.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/harden_docker_deployment.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/implement_grpc_server.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/metrics_db_bootstrap.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/migrate_v2_to_v3.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/monitor_patroni_cluster.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/monitor_pgbouncer.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/monitor_prometheus_exporter.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/reverse_proxy.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/set_up_alerting.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/howto/yaml_configuration.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/cli_env.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/docker_images.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/docker_variables.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/managed_postgres_support.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/metric_definitions.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/ports.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/prometheus_source.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/rest.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/sinks_options.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/sizing_recommendations.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/reference/source_types.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/tutorial/custom_installation.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/tutorial/docker_installation.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/tutorial/preparing_databases.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/tutorial/quickstart.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/devel/tutorial/upgrading.html</loc>
-         <lastmod>2026-09-02</lastmod>
+         <lastmod>2026-09-03</lastmod>
     </url>
 </urlset>
