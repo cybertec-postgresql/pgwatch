@@ -40,5 +40,6 @@ debug
 .task/
 
 # Local harness / runtime files
+.claude
 WATCHDOG.yml
 
