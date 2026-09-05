@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
@@ -23,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+var _ Feedbacker = (*RPCWriter)(nil)
+
 // RPCWriter sends metric measurements to a remote server using gRPC.
 // Remote servers should make use of the .proto file under api/pb/ to integrate with it.
 // It's up to the implementer to define the behavior of the server.
@@ -31,6 +34,11 @@ type RPCWriter struct {
 	ctx    context.Context
 	conn   *grpc.ClientConn
 	client pb.ReceiverClient
+	opts   *CmdOpts
+
+	// unsupported latches once the remote server answers Unimplemented, so a
+	// server that does not do feedback costs exactly one round-trip ever.
+	unsupported atomic.Bool
 }
 
 // convertSyncOp converts sinks.SyncOp to pb.SyncOp
@@ -47,7 +55,7 @@ func convertSyncOp(op SyncOp) pb.SyncOp {
 	}
 }
 
-func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
+func NewRPCWriter(ctx context.Context, connStr string, opts *CmdOpts) (*RPCWriter, error) {
 	uri, err := url.Parse(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing gRPC URI: %s", err)
@@ -89,6 +97,7 @@ func NewRPCWriter(ctx context.Context, connStr string) (*RPCWriter, error) {
 		ctx:    newCtx,
 		conn:   conn,
 		client: client,
+		opts:   opts,
 	}
 
 	if err = rw.Ping(); err != nil {
@@ -226,4 +235,53 @@ func LoadTLSCredentials(CAFile string) (credentials.TransportCredentials, error)
 		RootCAs: certPool,
 	}
 	return credentials.NewTLS(tlsClientConfig), nil
+}
+
+// CanFeedback reports whether a feedback query is worth attempting. It is
+// optimistic until the remote server proves it does not implement the method.
+func (rw *RPCWriter) CanFeedback(sourceName, metricName string) bool {
+	return rw.opts.FeedbackEnabled() && sourceName > "" && metricName > "" && !rw.unsupported.Load()
+}
+
+// LastMeasurement asks the remote server for the newest measurement it holds
+// for the pair. The caller's context drives cancellation; the credential
+// metadata is carried over from the writer's own context.
+func (rw *RPCWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
+	if !rw.CanFeedback(sourceName, metricName) {
+		return 0, ErrFeedbackUnsupported
+	}
+	if err := rw.ctx.Err(); err != nil {
+		return 0, err
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	if md, ok := metadata.FromOutgoingContext(rw.ctx); ok {
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+	ctx, cancel := withFeedbackDeadline(ctx)
+	defer cancel()
+
+	l := log.GetLogger(rw.ctx).WithField("source", sourceName).WithField("metric", metricName)
+	reply, err := rw.client.GetLastMeasurement(ctx, &pb.FeedbackReq{
+		DBName:     sourceName,
+		MetricName: metricName,
+	})
+	if err != nil {
+		switch status.Code(err) {
+		case codes.Unimplemented:
+			rw.unsupported.Store(true)
+			l.Info("remote server does not implement feedback, not asking again")
+			return 0, ErrFeedbackUnsupported
+		case codes.NotFound:
+			l.Info("remote server holds no measurements for feedback query")
+			return 0, ErrNoFeedbackData
+		}
+		return 0, err
+	}
+	if reply.GetEpochNs() <= 0 {
+		return 0, ErrNoFeedbackData
+	}
+	l.WithField("epoch", reply.GetEpochNs()).Debug("last stored measurement reported")
+	return reply.GetEpochNs(), nil
 }

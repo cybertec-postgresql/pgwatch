@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -20,6 +21,8 @@ type Writer interface {
 type MetricsDefiner interface {
 	DefineMetrics(metrics *metrics.Metrics) error
 }
+
+var _ Feedbacker = (*MultiWriter)(nil)
 
 // MultiWriter ensures the simultaneous storage of data in several storages.
 type MultiWriter struct {
@@ -46,7 +49,7 @@ func NewSinkWriter(ctx context.Context, opts *CmdOpts) (w Writer, err error) {
 		case "prometheus":
 			w, err = NewPrometheusWriter(ctx, target)
 		case "rpc", "grpc":
-			w, err = NewRPCWriter(ctx, sinkConnStr)
+			w, err = NewRPCWriter(ctx, sinkConnStr, opts)
 		default:
 			return nil, fmt.Errorf("unknown schema %s in sink URI %s", scheme, sinkConnStr)
 		}
@@ -122,4 +125,54 @@ func (mw *MultiWriter) NeedsMigration() (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// CanFeedback reports whether at least one contained writer can answer for
+// the pair. Writers that do not implement Feedbacker are simply skipped.
+func (mw *MultiWriter) CanFeedback(sourceName, metricName string) bool {
+	for _, w := range mw.writers {
+		if fb, ok := w.(Feedbacker); ok && fb.CanFeedback(sourceName, metricName) {
+			return true
+		}
+	}
+	return false
+}
+
+// LastMeasurement returns the oldest epoch reported by any feedback-capable
+// writer. The minimum is deliberate: a consumer resuming from the maximum
+// would leave the laggard sink permanently short, whereas resuming from the
+// minimum only duplicates measurements the leading sink already has.
+// A writer holding nothing at all is the extreme case of lagging, so it
+// short-circuits the whole aggregate to ErrNoFeedbackData.
+func (mw *MultiWriter) LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error) {
+	var (
+		oldest  int64 = math.MaxInt64
+		answers int
+		errs    error
+	)
+	for _, w := range mw.writers {
+		fb, ok := w.(Feedbacker)
+		if !ok {
+			continue // a sink that cannot answer does not get to veto the ones that can
+		}
+		epoch, err := fb.LastMeasurement(ctx, sourceName, metricName)
+		switch {
+		case errors.Is(err, ErrFeedbackUnsupported):
+			continue
+		case errors.Is(err, ErrNoFeedbackData):
+			return 0, ErrNoFeedbackData
+		case err != nil:
+			errs = errors.Join(errs, err)
+		default:
+			answers++
+			oldest = min(oldest, epoch)
+		}
+	}
+	if errs != nil {
+		return 0, errs
+	}
+	if answers == 0 {
+		return 0, ErrFeedbackUnsupported
+	}
+	return oldest, nil
 }

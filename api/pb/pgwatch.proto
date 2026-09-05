@@ -7,6 +7,7 @@ service Receiver {
     rpc UpdateMeasurements(MeasurementEnvelope) returns (Reply);
     rpc SyncMetric(SyncReq) returns (Reply);
     rpc DefineMetrics(google.protobuf.Struct) returns (Reply);
+    rpc GetLastMeasurement(FeedbackReq) returns (FeedbackReply);
 }
 
 message Reply {
@@ -18,6 +19,20 @@ message MeasurementEnvelope {
     string MetricName = 2;
     map<string, string> CustomTags = 3;
     repeated google.protobuf.Struct Data = 4;
+}
+
+// FeedbackReq asks the server what it already holds for one source/metric pair.
+message FeedbackReq {
+    string DBName = 1;
+    string MetricName = 2;
+}
+
+// FeedbackReply carries the Unix nanosecond timestamp of the newest measurement
+// the server durably holds for the pair. Servers that hold nothing for it must
+// answer with status NOT_FOUND rather than 0; servers that do not implement
+// feedback at all simply leave the method unimplemented.
+message FeedbackReply {
+    int64 EpochNs = 1;
 }
 
 message SyncReq {
