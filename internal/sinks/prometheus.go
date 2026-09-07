@@ -318,6 +318,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 		for i, k := range labelKeys {
 			labelValues[i] = labels[k]
 		}
+		joinedLabelValues := strings.Join(labelValues, "_")
 
 		for field, value := range fields {
 			var fqName string
@@ -346,7 +347,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			}
 
 			// skip if this exact identity was already emitted in this scrape
-			identity := fqName + "_" + strings.Join(labelValues, "_")
+			identity := fqName + "_" + joinedLabelValues
 			if _, dup := seen[identity]; dup {
 				promw.logger.
 					WithField("metric", msg.MetricName).
