@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/model"
 )
 
 type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope // [dbUnique][metric]lastly_fetched_data
@@ -274,13 +274,30 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 
 	seen := make(map[string]any)
 
+	// fqName and the value type depend only on the field name, and a Desc
+	// only on (fqName, help, label keys); both are therefore memoized per
+	// envelope instead of being rebuilt for every row.
+	type fieldMeta struct {
+		fqName    string
+		valueType prometheus.ValueType
+	}
+	metaByField := make(map[string]fieldMeta)
+	type descKey struct {
+		fqName    string
+		labelKeys string
+	}
+	descs := make(map[descKey]*prometheus.Desc)
+	fqNamePrefix := promw.Namespace + "_" + msg.MetricName + "_"
+
 	for _, measurement := range msg.Data {
-		labels := make(map[string]string)
-		fields := make(map[string]float64)
+		var labels map[string]string
 		if msg.CustomTags != nil {
 			labels = maps.Clone(msg.CustomTags)
+		} else {
+			labels = make(map[string]string)
 		}
 		labels["dbname"] = msg.DBName
+		fields := make(map[string]float64)
 
 		// Prom-sourced measurements each carry their own timestamp.
 		rowEpochTime := baseEpochTime
@@ -299,16 +316,27 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 
 			if tag, found := strings.CutPrefix(k, metrics.TagPrefix); found {
 				labels[tag] = fmt.Sprintf("%v", v)
-			} else {
-				switch t := v.(type) {
-				case int, int32, int64, float32, float64:
-					fields[k], _ = strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
-				case bool:
-					fields[k] = map[bool]float64{true: 1, false: 0}[t]
-				default:
-					promw.logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
-					continue
+				continue
+			}
+			switch t := v.(type) {
+			case int:
+				fields[k] = float64(t)
+			case int32:
+				fields[k] = float64(t)
+			case int64:
+				fields[k] = float64(t)
+			case float32:
+				fields[k] = float64(t)
+			case float64:
+				fields[k] = t
+			case bool:
+				if t {
+					fields[k] = 1
+				} else {
+					fields[k] = 0
 				}
+			default:
+				promw.logger.Debugf("skipping scraping column %s of [%s:%s], unsupported datatype: %v", k, msg.DBName, msg.MetricName, t)
 			}
 		}
 
@@ -319,35 +347,37 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			labelValues[i] = labels[k]
 		}
 		joinedLabelValues := strings.Join(labelValues, "_")
+		// model.SeparatorByte cannot occur in label names.
+		joinedLabelKeys := strings.Join(labelKeys, string(model.SeparatorByte))
 
 		for field, value := range fields {
-			var fqName string
-			var fieldPromDataType prometheus.ValueType
-
-			if isPromSource {
-				// Prom→prom proxy path: ScrapeAll stores exactly one value
-				// column per family, named after the family itself. Skip any
-				// other numeric column that may appear unexpectedly.
-				if field != msg.MetricName {
-					continue
-				}
-				fqName = field
-				fieldPromDataType = prometheus.UntypedValue
-			} else {
-				fieldPromDataType = prometheus.CounterValue
-				if msg.MetricName == promInstanceUpStateMetric ||
-					len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
-					fieldPromDataType = prometheus.GaugeValue
-				}
-				if msg.MetricName == promInstanceUpStateMetric {
-					fqName = fmt.Sprintf("%s_%s", promw.Namespace, msg.MetricName)
+			meta, ok := metaByField[field]
+			if !ok {
+				if isPromSource {
+					// Prom→prom proxy path: ScrapeAll stores exactly one value
+					// column per family, named after the family itself. Skip any
+					// other numeric column that may appear unexpectedly.
+					if field != msg.MetricName {
+						continue
+					}
+					meta = fieldMeta{fqName: field, valueType: prometheus.UntypedValue}
 				} else {
-					fqName = fmt.Sprintf("%s_%s_%s", promw.Namespace, msg.MetricName, field)
+					meta.valueType = prometheus.CounterValue
+					if msg.MetricName == promInstanceUpStateMetric ||
+						len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
+						meta.valueType = prometheus.GaugeValue
+					}
+					if msg.MetricName == promInstanceUpStateMetric {
+						meta.fqName = promw.Namespace + "_" + msg.MetricName
+					} else {
+						meta.fqName = fqNamePrefix + field
+					}
 				}
+				metaByField[field] = meta
 			}
 
 			// skip if this exact identity was already emitted in this scrape
-			identity := fqName + "_" + joinedLabelValues
+			identity := meta.fqName + "_" + joinedLabelValues
 			if _, dup := seen[identity]; dup {
 				promw.logger.
 					WithField("metric", msg.MetricName).
@@ -357,10 +387,15 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			}
 			seen[identity] = struct{}{}
 
-			desc := prometheus.NewDesc(fqName, msg.MetricName, labelKeys, nil)
-			m, err := prometheus.NewConstMetric(desc, fieldPromDataType, value, labelValues...)
+			dk := descKey{meta.fqName, joinedLabelKeys}
+			desc, ok := descs[dk]
+			if !ok {
+				desc = prometheus.NewDesc(meta.fqName, msg.MetricName, labelKeys, nil)
+				descs[dk] = desc
+			}
+			m, err := prometheus.NewConstMetric(desc, meta.valueType, value, labelValues...)
 			if err != nil {
-				promw.logger.Warningf("skipping metric %s of [%s:%s]: %v", fqName, msg.DBName, msg.MetricName, err)
+				promw.logger.Warningf("skipping metric %s of [%s:%s]: %v", meta.fqName, msg.DBName, msg.MetricName, err)
 				errorCount++
 				continue
 			}
