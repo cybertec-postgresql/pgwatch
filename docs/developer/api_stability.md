@@ -12,6 +12,7 @@ pgwatch is an application first, but its engine is importable. Everything under
 
 | Package | Purpose |
 |---|---|
+| `pkg/app` | the bootstrap wiring the whole application together |
 | `pkg/cmdopts` | command-line options, config readers, schema constants |
 | `pkg/db` | database helpers shared by the engine |
 | `pkg/log` | logging setup and context plumbing |

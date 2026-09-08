@@ -154,14 +154,14 @@ collector and returns the documented exit codes.
 
 ### Tests for User Story 4
 
-- [ ] T041 [P] [US4] Test that `Run` returns the same exit codes as today for each failure path: `ExitCodeOK`, `ExitCodeConfigError`, `ExitCodeUpgradeError`, `ExitCodeWebUIError`, `ExitCodeUserCancel`, `ExitCodeFatalError` — §4.3
+- [x] T041 [P] [US4] Test that `Run` returns the same exit codes as today for each failure path: `ExitCodeOK`, `ExitCodeConfigError`, `ExitCodeUpgradeError`, `ExitCodeWebUIError`, `ExitCodeUserCancel`, `ExitCodeFatalError` — §4.3
 
 ### Implementation for User Story 4
 
-- [ ] T042 [US4] Create `pkg/app` with `App`, `Option`, `New(ctx, opts, ...Option)`, `Run(ctx) int`, `Options()`, `Logger()`, `Ready()` per §4.3, wrapping `cmd/pgwatch/main.go:59-113` — REQ-016
-- [ ] T043 [US4] Move signal handling (`setupCloseHandler`), panic recovery and exit-code mapping from `cmd/pgwatch/main.go:20-55` into `pkg/app` — GUD-002
-- [ ] T044 [US4] Add `app.WithUI(ui.Provider)` and `app.WithRoutes(...)`, forwarded to `webserver.Init` — REQ-016
-- [ ] T045 [US4] Reduce `cmd/pgwatch/main.go` to the §4.6 sketch, keeping `printVersion` and subcommand handling in `cmd/pgwatch`
+- [x] T042 [US4] Create `pkg/app` with `App`, `Option`, `New(ctx, opts, ...Option)`, `Run(ctx) int`, `Options()`, `Logger()`, `Ready()` per §4.3, wrapping `cmd/pgwatch/main.go:59-113` — REQ-016
+- [x] T043 [US4] Move signal handling (`setupCloseHandler`), panic recovery and exit-code mapping from `cmd/pgwatch/main.go:20-55` into `pkg/app` — GUD-002
+- [x] T044 [US4] Add `app.WithUI(ui.Provider)` and `app.WithRoutes(...)`, forwarded to `webserver.Init` — REQ-016
+- [x] T045 [US4] Reduce `cmd/pgwatch/main.go` to the §4.6 sketch, keeping `printVersion` and subcommand handling in `cmd/pgwatch`
 
 **Checkpoint**: the binary and any embedder share one wiring sequence
 
