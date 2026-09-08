@@ -46,27 +46,91 @@ func (ready *ReadyBool) Ready() bool {
 
 func TestWebDisableOpt(t *testing.T) {
 	var ready ReadyBool
-	restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebDisable: "all"}, nil, nil, &ready)
-	assert.Nil(t, restsrv, "no webserver should be started")
-	assert.NoError(t, err)
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079", WebDisable: "ui"}, nil, nil, &ready)
+	t.Run("all: no server at all", func(t *testing.T) {
+		restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebDisable: "all"}, nil, nil, &ready)
+		assert.Nil(t, restsrv, "no webserver should be started")
+		assert.NoError(t, err)
+	})
+
+	t.Run("ui: rest api served, no provider needed", func(t *testing.T) {
+		restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079", WebDisable: "ui"}, nil, nil, &ready)
+		assert.NotNil(t, restsrv)
+		assert.NoError(t, err, "the UI provider must not be required when the UI is disabled")
+		r, err := http.Get("http://localhost:8079/")
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, r.StatusCode, "no webui should be served")
+		r, err = http.Get("http://localhost:8079/liveness")
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, r.StatusCode, "rest api should be served though")
+	})
+
+	t.Run("listen error is reported", func(t *testing.T) {
+		restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready, withUI())
+		assert.Nil(t, restsrv)
+		assert.Error(t, err, "port should be in use")
+	})
+
+	t.Run("ui enabled without a provider fails", func(t *testing.T) {
+		restsrv, err := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8078"}, nil, nil, &ready)
+		assert.Nil(t, restsrv)
+		assert.Error(t, err, "a UI-enabled server without a provider should not start")
+	})
+}
+
+// wildcardProvider is an embedder-style provider: it claims every client-side
+// route and contributes its own index.html template data.
+type wildcardProvider struct{}
+
+func (wildcardProvider) FS() fs.FS {
+	return fstest.MapFS{
+		"index.html":    &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html><body>base=[{{.BasePath}}] foo=[{{.Foo}}]</body></html>`)},
+		"static/app.js": &fstest.MapFile{Data: []byte(`console.log("app")`)},
+	}
+}
+
+func (wildcardProvider) SPARoutes() []string { return []string{"*"} }
+
+func (wildcardProvider) IndexData() map[string]any {
+	return map[string]any{"Foo": "bar", "BasePath": "hijacked"}
+}
+
+func TestProviderDrivenUI(t *testing.T) {
+	host := "http://localhost:8083"
+	restsrv, err := webserver.Init(context.Background(),
+		webserver.CmdOpts{WebAddr: "localhost:8083", WebBasePath: "pgwatch"},
+		nil, nil, nil, webserver.WithUI(ui.Provider(wildcardProvider{})))
+	assert.NoError(t, err)
 	assert.NotNil(t, restsrv)
-	assert.NoError(t, err)
-	r, err := http.Get("http://localhost:8079/")
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusNotFound, r.StatusCode, "no webui should be served")
-	r, err = http.Get("http://localhost:8079/liveness")
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, r.StatusCode, "rest api should be served though")
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready, withUI())
-	assert.Nil(t, restsrv)
-	assert.Error(t, err, "port should be in use")
+	get := func(path string) *httptest.ResponseRecorder {
+		rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, host+path, nil)
+		assert.NoError(t, err)
+		restsrv.Handler.ServeHTTP(rr, req)
+		return rr
+	}
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8078"}, nil, nil, &ready)
-	assert.Nil(t, restsrv)
-	assert.Error(t, err, "a UI-enabled server without a provider should not start")
+	t.Run("index data is rendered, BasePath comes from the server", func(t *testing.T) {
+		rr := get("/pgwatch/")
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), "foo=[bar]")
+		assert.Contains(t, rr.Body.String(), "base=[pgwatch]")
+		assert.NotContains(t, rr.Body.String(), "hijacked")
+	})
+
+	t.Run("wildcard answers an unknown route with index.html", func(t *testing.T) {
+		rr := get("/pgwatch/an/embedder/route")
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "text/html; charset=utf-8", rr.Header().Get("Content-Type"))
+		assert.Contains(t, rr.Body.String(), "foo=[bar]")
+	})
+
+	t.Run("assets are still served from the provider FS", func(t *testing.T) {
+		rr := get("/pgwatch/static/app.js")
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), `console.log("app")`)
+	})
 }
 
 func TestHealth(t *testing.T) {

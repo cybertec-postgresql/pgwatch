@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
 	"github.com/sirupsen/logrus"
@@ -25,16 +26,21 @@ func (m mockFS) Open(name string) (fs.File, error) {
 
 // mockProvider serves a caller-supplied file system as the web UI.
 type mockProvider struct {
-	fsys fs.FS
+	fsys   fs.FS
+	routes []string
+	data   map[string]any
 }
 
 func (p mockProvider) FS() fs.FS { return p.fsys }
 
 func (p mockProvider) SPARoutes() []string {
-	return []string{"/", "/sources", "/metrics", "/presets", "/logs"}
+	if p.routes == nil {
+		return []string{"/", "/sources", "/metrics", "/presets", "/logs"}
+	}
+	return p.routes
 }
 
-func (p mockProvider) IndexData() map[string]any { return nil }
+func (p mockProvider) IndexData() map[string]any { return p.data }
 
 func TestServer_handleStatic(t *testing.T) {
 	tempFile := path.Join(t.TempDir(), "file.ext")
@@ -152,5 +158,96 @@ func TestServer_handleTestConnect(t *testing.T) {
 		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 		body, _ := io.ReadAll(resp.Body)
 		assert.Equal(t, "Method Not Allowed\n", string(body))
+	})
+}
+
+func TestServer_isSPARoute(t *testing.T) {
+	tests := []struct {
+		name   string
+		routes []string
+		path   string
+		want   bool
+	}{
+		{"default route set, root", nil, "/", true},
+		{"default route set, known route", nil, "/metrics", true},
+		{"default route set, unknown route", nil, "/unknown", false},
+		{"default route set, asset", nil, "/static/app.js", false},
+		{"provider route set, listed", []string{"/dash"}, "/dash", true},
+		{"provider route set, not listed", []string{"/dash"}, "/sources", false},
+		{"empty route set serves nothing as index", []string{}, "/", false},
+		{"wildcard, root", []string{"*"}, "/", true},
+		{"wildcard, arbitrary path", []string{"*"}, "/anything/deep", true},
+		{"wildcard, path with extension", []string{"*"}, "/static/app.js", false},
+		{"wildcard, dot in a non-final segment", []string{"*"}, "/v1.2/page", true},
+		{"literal star among others is not a wildcard", []string{"*", "/dash"}, "/anything", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &WebUIServer{uiProvider: mockProvider{routes: tt.routes}}
+			assert.Equal(t, tt.want, s.isSPARoute(tt.path))
+		})
+	}
+}
+
+func TestServer_handleStatic_wildcardRoutes(t *testing.T) {
+	indexHTML := []byte(`<!DOCTYPE html><html><body>index</body></html>`)
+	ts := &WebUIServer{
+		Logger:     logrus.StandardLogger(),
+		indexHTML:  indexHTML,
+		uiProvider: mockProvider{fsys: mockFS{OpenFunc: func(string) (fs.File, error) { return nil, fs.ErrNotExist }}, routes: []string{"*"}},
+	}
+
+	t.Run("extension-less path serves index.html", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/whatever/the/embedder/wants", nil)
+		w := httptest.NewRecorder()
+		ts.handleStatic(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+		body, _ := io.ReadAll(resp.Body)
+		assert.Equal(t, string(indexHTML), string(body))
+	})
+
+	t.Run("path with extension is looked up as a file", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/static/missing.js", nil)
+		w := httptest.NewRecorder()
+		ts.handleStatic(w, r)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+}
+
+func TestServer_prepareIndexHTML(t *testing.T) {
+	indexFS := fstest.MapFS{
+		"index.html": &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html><body>base={{.BasePath}} foo={{.Foo}}</body></html>`)},
+	}
+
+	t.Run("provider data is merged", func(t *testing.T) {
+		s := &WebUIServer{
+			CmdOpts:    CmdOpts{WebBasePath: "pgwatch"},
+			uiProvider: mockProvider{fsys: indexFS, data: map[string]any{"Foo": "bar"}},
+		}
+		assert.NoError(t, s.prepareIndexHTML())
+		assert.Contains(t, string(s.indexHTML), "base=pgwatch")
+		assert.Contains(t, string(s.indexHTML), "foo=bar")
+	})
+
+	t.Run("provider cannot override BasePath", func(t *testing.T) {
+		s := &WebUIServer{
+			CmdOpts:    CmdOpts{WebBasePath: "pgwatch"},
+			uiProvider: mockProvider{fsys: indexFS, data: map[string]any{"BasePath": "hijacked", "Foo": "bar"}},
+		}
+		assert.NoError(t, s.prepareIndexHTML())
+		assert.Contains(t, string(s.indexHTML), "base=pgwatch")
+		assert.NotContains(t, string(s.indexHTML), "hijacked")
+	})
+
+	t.Run("nil provider data is fine", func(t *testing.T) {
+		s := &WebUIServer{uiProvider: mockProvider{fsys: indexFS}}
+		assert.NoError(t, s.prepareIndexHTML())
+		assert.Contains(t, string(s.indexHTML), "base= foo=")
 	})
 }

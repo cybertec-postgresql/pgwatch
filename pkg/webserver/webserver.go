@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"maps"
 	"mime"
 	"net"
 	"net/http"
@@ -109,16 +110,30 @@ func (s *WebUIServer) prepareIndexHTML() error {
 		return err
 	}
 
+	// The provider's data comes first so that the server's own keys, notably
+	// BasePath, always win.
+	data := map[string]any{}
+	maps.Copy(data, s.uiProvider.IndexData())
+	data["BasePath"] = s.WebBasePath
+
 	var buf bytes.Buffer
-	data := map[string]string{
-		"BasePath": s.WebBasePath,
-	}
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return err
 	}
 
 	s.indexHTML = buf.Bytes()
 	return nil
+}
+
+// isSPARoute reports whether path is a client-side route of the UI and must
+// therefore be answered with index.html. The provider owns the route set; a
+// single "*" entry means every path that does not look like a file.
+func (s *WebUIServer) isSPARoute(path string) bool {
+	routes := s.uiProvider.SPARoutes()
+	if len(routes) == 1 && routes[0] == "*" {
+		return filepath.Ext(path) == ""
+	}
+	return slices.Contains(routes, path)
 }
 
 func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
@@ -130,8 +145,7 @@ func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	// Strip base path if present
 	path := strings.TrimPrefix(r.URL.Path, strings.TrimSuffix(s.basePath, "/"))
 
-	routes := []string{"/", "/sources", "/metrics", "/presets", "/logs"}
-	if slices.Contains(routes, path) { // is index.html
+	if s.isSPARoute(path) { // is index.html
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(s.indexHTML)))
 		_, _ = w.Write(s.indexHTML)

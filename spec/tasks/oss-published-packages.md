@@ -104,15 +104,15 @@ answered with `index.html` and its data rendered, while `BasePath` still comes f
 
 ### Tests for User Story 2
 
-- [ ] T028 [P] [US2] Table-driven test in `pkg/webserver` for `SPARoutes()` fallback, including the `"*"` wildcard (any extension-less path → `index.html`) — REQ-008, §6
-- [ ] T029 [P] [US2] Test that `IndexData()` is merged into the template data and that a provider key named `BasePath` does not override the server's value — REQ-007, §6
-- [ ] T030 [P] [US2] Test `--web-disable=ui` (REST API served, no provider needed) and `--web-disable=all` (`Init` returns `nil, nil`) — CON-002, AC-006
+- [x] T028 [P] [US2] Table-driven test in `pkg/webserver` for `SPARoutes()` fallback, including the `"*"` wildcard (any extension-less path → `index.html`) — REQ-008, §6
+- [x] T029 [P] [US2] Test that `IndexData()` is merged into the template data and that a provider key named `BasePath` does not override the server's value — REQ-007, §6
+- [x] T030 [P] [US2] Test `--web-disable=ui` (REST API served, no provider needed) and `--web-disable=all` (`Init` returns `nil, nil`) — CON-002, AC-006
 
 ### Implementation for User Story 2
 
-- [ ] T031 [US2] Widen `prepareIndexHTML` template data to `map[string]any` and merge `Provider.IndexData()` into it, with `BasePath` written last — REQ-007
-- [ ] T032 [US2] Replace the hardcoded route slice in `handleStatic` (`webserver.go:133`) with `Provider.SPARoutes()`, treating a single `"*"` entry as "every path without a file extension" — REQ-008
-- [ ] T033 [US2] Ensure the `WebDisableUI` branch skips the provider entirely so `Init` succeeds with none configured — CON-002
+- [x] T031 [US2] Widen `prepareIndexHTML` template data to `map[string]any` and merge `Provider.IndexData()` into it, with `BasePath` written last — REQ-007
+- [x] T032 [US2] Replace the hardcoded route slice in `handleStatic` (`webserver.go:133`) with `Provider.SPARoutes()`, treating a single `"*"` entry as "every path without a file extension" — REQ-008
+- [x] T033 [US2] Ensure the `WebDisableUI` branch skips the provider entirely so `Init` succeeds with none configured — CON-002
 
 **Checkpoint**: US1 and US2 both work; the default provider reproduces today's UI behaviour exactly
 
