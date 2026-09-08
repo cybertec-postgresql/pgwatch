@@ -56,6 +56,26 @@ type Options struct {
 	OutputWriter io.Writer
 }
 
+// Extension lets an embedder add its own go-flags option groups and
+// subcommands to the parser before it parses os.Args. The pgwatch binary
+// registers none, so its --help output is unaffected.
+//
+// Experimental: this interface may change in a future minor release.
+type Extension interface {
+	// Register adds groups or commands to the parser before it parses os.Args.
+	Register(parser *flags.Parser, opts *Options) error
+}
+
+// ExtensionFunc adapts a plain function to the Extension interface.
+//
+// Experimental: this type may change in a future minor release.
+type ExtensionFunc func(parser *flags.Parser, opts *Options) error
+
+// Register implements Extension.
+func (f ExtensionFunc) Register(parser *flags.Parser, opts *Options) error {
+	return f(parser, opts)
+}
+
 func addCommands(parser *flags.Parser, opts *Options) {
 	_, _ = parser.AddCommand("metric", "Manage metrics", "", NewMetricCommand(opts))
 	_, _ = parser.AddCommand("source", "Manage sources", "", NewSourceCommand(opts))
@@ -67,12 +87,22 @@ func addCommands(parser *flags.Parser, opts *Options) {
 // Function prints help message only if options are incorrect. If subcommand is executed
 // but fails, function outputs the error message only, indicating that some argument
 // values might be incorrect, e.g. wrong file name, lack of privileges, etc.
-func New(writer io.Writer) (cmdOpts *Options, err error) {
+// Extensions, if any, are registered after the built-in subcommands and before
+// parsing, so they can contribute their own flag groups and subcommands.
+func New(writer io.Writer, exts ...Extension) (cmdOpts *Options, err error) {
 	cmdOpts = new(Options)
 	parser := flags.NewParser(cmdOpts, flags.HelpFlag)
 	parser.SubcommandsOptional = true // if not command specified, start monitoring
 	cmdOpts.OutputWriter = writer
 	addCommands(parser, cmdOpts)
+	for _, ext := range exts {
+		if ext == nil {
+			continue
+		}
+		if err = ext.Register(parser, cmdOpts); err != nil {
+			return cmdOpts, err
+		}
+	}
 	nonParsedArgs, err := parser.Parse() // parse and execute subcommand if any
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {

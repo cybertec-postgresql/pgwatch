@@ -177,12 +177,12 @@ collector and returns the documented exit codes.
 
 ### Tests for User Story 5
 
-- [ ] T046 [P] [US5] Test that an `Extension` adding a `go-flags` group and a subcommand is parsed, and that `New(out)` with no extension produces unchanged `--help` output — REQ-018, AC-002
+- [x] T046 [P] [US5] Test that an `Extension` adding a `go-flags` group and a subcommand is parsed, and that `New(out)` with no extension produces unchanged `--help` output — REQ-018, AC-002
 
 ### Implementation for User Story 5
 
-- [ ] T047 [US5] Add the `Extension` interface (`Register(parser *flags.Parser, opts *Options) error`) and change `New` to `New(out io.Writer, exts ...Extension)` in `pkg/cmdopts/cmdoptions.go:70-76`, calling `Register` after `addCommands` and before `parser.Parse()` — REQ-018, §4.5
-- [ ] T048 [US5] Verify every `cmdopts.New` caller (`cmd/pgwatch`, `pkg/app`, tests) compiles unchanged
+- [x] T047 [US5] Add the `Extension` interface (`Register(parser *flags.Parser, opts *Options) error`) and change `New` to `New(out io.Writer, exts ...Extension)` in `pkg/cmdopts/cmdoptions.go:70-76`, calling `Register` after `addCommands` and before `parser.Parse()` — REQ-018, §4.5
+- [x] T048 [US5] Verify every `cmdopts.New` caller (`cmd/pgwatch`, `pkg/app`, tests) compiles unchanged
 
 **Checkpoint**: all user stories independently functional
 
