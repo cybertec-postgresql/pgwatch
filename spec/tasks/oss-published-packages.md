@@ -34,9 +34,9 @@ since the spec has no user-story section.
 
 **Purpose**: metadata corrections and tooling needed by the relocation
 
-- [ ] T001 [P] Correct license metadata to `BSD-3-Clause`: `.goreleaser.yml:58` (`license: MIT Licence`) and `internal/webui/package.json:6` (`"license": "MIT"`) — REQ-017
-- [ ] T002 [P] Create `pkg/doc.go` declaring `pkg/*` as public API and pointing at the stability policy — REQ-001
-- [ ] T003 [P] Add a `rewrite-imports` target to `Taskfile.yml` that rewrites `github.com/cybertec-postgresql/pgwatch/v6/internal/<pkg>` → `.../pkg/<pkg>` across the tree (consumed by Phase 3)
+- [x] T001 [P] Correct license metadata to `BSD-3-Clause`: `.goreleaser.yml:58` (`license: MIT Licence`) and `internal/webui/package.json:6` (`"license": "MIT"`) — REQ-017
+- [x] T002 [P] Create `pkg/doc.go` declaring `pkg/*` as public API and pointing at the stability policy — REQ-001
+- [x] T003 [P] Add a `rewrite-imports` target to `Taskfile.yml` that rewrites `github.com/cybertec-postgresql/pgwatch/v6/internal/<pkg>` → `.../pkg/<pkg>` across the tree, backed by `tools/rewriteimports` (consumed by Phase 3; delete both once the relocation lands)
 
 ---
 

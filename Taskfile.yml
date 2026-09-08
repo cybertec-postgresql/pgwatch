@@ -101,6 +101,13 @@ tasks:
     cmds:
       - go mod tidy
 
+  rewrite-imports:
+    desc: |
+      Rewrite pgwatch import paths across the tree, e.g.
+      `task rewrite-imports -- internal/log pkg/log`. Pass -n to preview.
+    cmds:
+      - go run ./tools/rewriteimports {{.CLI_ARGS}}
+
   tools:
     desc: Install the Go-based dev tools (protoc plugins, golangci-lint, gopages, yq)
     cmds:

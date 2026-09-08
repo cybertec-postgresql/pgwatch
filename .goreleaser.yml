@@ -55,7 +55,7 @@ nfpms:
     maintainer: Pavlo Golub <open.an.issue@github.com>
     description: pgwatch metrics collector with metric definitions and sample YAML config
 
-    license: MIT Licence
+    license: BSD-3-Clause
 
     formats:
       - deb
