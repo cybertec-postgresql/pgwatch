@@ -3,11 +3,10 @@ package webserver
 import (
 	"bytes"
 	"context"
-	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
-	"io/fs"
 	"mime"
 	"net"
 	"net/http"
@@ -21,16 +20,8 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
 )
-
-//go:embed build
-var buildFS embed.FS
-
-var uiFS fs.FS
-
-func init() {
-	uiFS, _ = fs.Sub(buildFS, "build")
-}
 
 type Readier interface {
 	Ready() bool
@@ -43,12 +34,14 @@ type WebUIServer struct {
 	ctx                 context.Context
 	basePath            string // computed base path with slashes
 	indexHTML           []byte // pre-rendered index.html content
+	uiProvider          ui.Provider
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        Readier
 }
 
-func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter, rc Readier) (_ *WebUIServer, err error) {
+func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sources.ReaderWriter,
+	rc Readier, options ...Option) (_ *WebUIServer, err error) {
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
@@ -69,6 +62,10 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 		readyChecker:        rc,
 	}
 
+	for _, o := range options {
+		o(s)
+	}
+
 	s.basePath = "/" + opts.WebBasePath
 	if opts.WebBasePath != "" {
 		s.basePath += "/"
@@ -86,6 +83,9 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
 	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
 	if opts.WebDisable != WebDisableUI {
+		if s.uiProvider == nil {
+			return nil, errors.New("no web UI provider configured: pass webserver.WithUI() or disable the UI with --web-disable=ui")
+		}
 		if err = s.prepareIndexHTML(); err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 
 // prepareIndexHTML renders the index.html template once at startup
 func (s *WebUIServer) prepareIndexHTML() error {
-	tmpl, err := template.ParseFS(uiFS, "index.html")
+	tmpl, err := template.ParseFS(s.uiProvider.FS(), "index.html")
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	path = strings.TrimPrefix(path, "/")
-	file, err := uiFS.Open(path)
+	file, err := s.uiProvider.FS().Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			s.Println("file", path, "not found:", err)

@@ -47,14 +47,14 @@ done, `webserver` cannot be published (REQ-013) and no route/UI extension point 
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create `pkg/ui/ui.go` with the `Provider` interface — `FS() fs.FS`, `SPARoutes() []string`, `IndexData() map[string]any` — REQ-004, §4.1
-- [ ] T005 Redirect the Vite build output at the default provider: `internal/webui/vite.config.ts:48` `outDir: '../webserver/build'` → `'../webui/embed/build'`; update the artifact path in `.github/workflows/build.yml:95` and any `Taskfile.yml`/`docker/` reference to `internal/webserver/build` — REQ-006
-- [ ] T006 Create `internal/webui/embed/embed.go`: `//go:embed build`, `Provider() ui.Provider` with `FS: fs.Sub(buildFS, "build")`, `SPARoutes: "/", "/sources", "/metrics", "/presets", "/logs"`, `IndexData: nil` — REQ-006, §4.4
-- [ ] T007 Delete `//go:embed build`, `buildFS`, `uiFS` and `init()` from `internal/webserver/webserver.go:26-33`; add a `uiProvider ui.Provider` field to `WebUIServer` — REQ-005, REQ-013
-- [ ] T008 Add functional options to `webserver.Init` — `type Option func(*WebUIServer)`, variadic `options ...Option`, and `WithUI(p ui.Provider) Option`; `Init` MUST fail with a clear error when no provider is configured and `WebDisable != WebDisableUI` — REQ-005, §4.2
-- [ ] T009 Make `prepareIndexHTML` (`internal/webserver/webserver.go:105-120`) and `handleStatic` (`:122-165`) read from `s.uiProvider.FS()` instead of the package-level `uiFS` — REQ-005
-- [ ] T010 Pass `embed.Provider()` at the `webserver.Init` call in `cmd/pgwatch/main.go:104` — REQ-006
-- [ ] T011 Update `internal/webserver/webserver_test.go` and `server_test.go` to inject a fake provider (they currently depend on the package-level `uiFS`)
+- [x] T004 Create `pkg/ui/ui.go` with the `Provider` interface — `FS() fs.FS`, `SPARoutes() []string`, `IndexData() map[string]any` — REQ-004, §4.1
+- [x] T005 Redirect the Vite build output at the default provider: `internal/webui/vite.config.ts:48` `outDir: '../webserver/build'` → `'./embed/build'` (same directory, expressed relative to the Vite root so it also resolves correctly inside the Docker webui-builder stage); update the artifact path in `.github/workflows/build.yml:95` and any `Taskfile.yml`/`docker/` reference to `internal/webserver/build` — REQ-006
+- [x] T006 Create `internal/webui/embed/embed.go`: `//go:embed build`, `Provider() ui.Provider` with `FS: fs.Sub(buildFS, "build")`, `SPARoutes: "/", "/sources", "/metrics", "/presets", "/logs"`, `IndexData: nil` — REQ-006, §4.4
+- [x] T007 Delete `//go:embed build`, `buildFS`, `uiFS` and `init()` from `internal/webserver/webserver.go:26-33`; add a `uiProvider ui.Provider` field to `WebUIServer` — REQ-005, REQ-013
+- [x] T008 Add functional options to `webserver.Init` — `type Option func(*WebUIServer)`, variadic `options ...Option`, and `WithUI(p ui.Provider) Option`; `Init` MUST fail with a clear error when no provider is configured and `WebDisable != WebDisableUI` — REQ-005, §4.2
+- [x] T009 Make `prepareIndexHTML` (`internal/webserver/webserver.go:105-120`) and `handleStatic` (`:122-165`) read from `s.uiProvider.FS()` instead of the package-level `uiFS` — REQ-005
+- [x] T010 Pass `embed.Provider()` at the `webserver.Init` call in `cmd/pgwatch/main.go:104` — REQ-006
+- [x] T011 Update `internal/webserver/webserver_test.go` and `server_test.go` to inject a fake provider (they currently depend on the package-level `uiFS`)
 
 **Checkpoint**: binary behaviour unchanged; `webserver` no longer embeds React assets
 

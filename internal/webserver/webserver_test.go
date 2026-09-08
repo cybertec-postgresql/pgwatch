@@ -23,17 +23,26 @@ func (m mockFS) Open(name string) (fs.File, error) {
 	return m.OpenFunc(name)
 }
 
+// mockProvider serves a caller-supplied file system as the web UI.
+type mockProvider struct {
+	fsys fs.FS
+}
+
+func (p mockProvider) FS() fs.FS { return p.fsys }
+
+func (p mockProvider) SPARoutes() []string {
+	return []string{"/", "/sources", "/metrics", "/presets", "/logs"}
+}
+
+func (p mockProvider) IndexData() map[string]any { return nil }
+
 func TestServer_handleStatic(t *testing.T) {
 	tempFile := path.Join(t.TempDir(), "file.ext")
 	assert.NoError(t, os.WriteFile(tempFile, []byte(`{"foo": {"bar": 1}}`), 0644))
 
 	indexHTML := []byte(`<!DOCTYPE html><html><head><script>window.__PGWATCH_BASE_PATH__='';</script></head><body>{"foo": {"bar": 1}}</body></html>`)
 
-	// Save original uiFS and restore after test
-	origUIFS := uiFS
-	defer func() { uiFS = origUIFS }()
-
-	uiFS = mockFS{
+	uiFS := mockFS{
 		OpenFunc: func(name string) (fs.File, error) {
 			switch name {
 			case "index.html", "static/file.ext":
@@ -47,8 +56,9 @@ func TestServer_handleStatic(t *testing.T) {
 	}
 
 	ts := &WebUIServer{
-		Logger:    logrus.StandardLogger(),
-		indexHTML: indexHTML,
+		Logger:     logrus.StandardLogger(),
+		indexHTML:  indexHTML,
+		uiProvider: mockProvider{fsys: uiFS},
 	}
 
 	t.Run("not GET", func(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/reaper"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/webserver"
+	webui "github.com/cybertec-postgresql/pgwatch/v6/internal/webui/embed"
 )
 
 // setupCloseHandler creates a 'listener' on a new goroutine which will notify the
@@ -104,7 +105,7 @@ func main() {
 	reaper := reaper.NewReaper(mainCtx, opts)
 
 	if _, err = webserver.Init(mainCtx, opts.WebUI, opts.MetricsReaderWriter,
-		opts.SourcesReaderWriter, reaper); err != nil {
+		opts.SourcesReaderWriter, reaper, webserver.WithUI(webui.Provider())); err != nil {
 		exitCode.Store(cmdopts.ExitCodeWebUIError)
 		logger.Error("failed to initialize web UI: ", err)
 		return

@@ -48,7 +48,7 @@ tasks:
       - '**/*.go'
       - 'internal/**/*.sql'
       - 'internal/metrics/metrics.yaml'
-      - 'internal/webserver/build/**/*'
+      - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
     generates:
@@ -64,7 +64,7 @@ tasks:
       - '**/*.go'
       - 'internal/**/*.sql'
       - 'internal/metrics/metrics.yaml'
-      - 'internal/webserver/build/**/*'
+      - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
     generates:
@@ -122,7 +122,7 @@ tasks:
   # ------------------------------ WebUI ------------------------------
 
   ui:
-    desc: Install WebUI dependencies and build into internal/webserver/build
+    desc: Install WebUI dependencies and build into internal/webui/embed/build
     dir: internal/webui
     sources:
       - 'src/**/*'
@@ -304,7 +304,7 @@ tasks:
   clean:
     desc: Remove build artifacts (binary, coverage.out, webui build, goreleaser dist, mkdocs site, docs/godoc)
     cmds:
-      - cmd: rm -rf {{.BINARY}} coverage.out internal/webserver/build dist site docs/godoc
+      - cmd: rm -rf {{.BINARY}} coverage.out internal/webui/embed/build dist site docs/godoc
         platforms: [linux, darwin]
-      - cmd: powershell -NoProfile -Command "Get-Item -ErrorAction SilentlyContinue @('{{.BINARY}}','coverage.out','internal/webserver/build','dist','site','docs/godoc') | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
+      - cmd: powershell -NoProfile -Command "Get-Item -ErrorAction SilentlyContinue @('{{.BINARY}}','coverage.out','internal/webui/embed/build','dist','site','docs/godoc') | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
         platforms: [windows]

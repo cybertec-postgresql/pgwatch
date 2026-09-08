@@ -3,16 +3,35 @@ package webserver_test
 import (
 	"context"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
 	"github.com/stretchr/testify/assert"
 )
+
+// testProvider is a minimal ui.Provider standing in for the React UI.
+type testProvider struct{}
+
+func (testProvider) FS() fs.FS {
+	return fstest.MapFS{
+		"index.html": &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html><body>{{.BasePath}}</body></html>`)},
+	}
+}
+
+func (testProvider) SPARoutes() []string { return []string{"/"} }
+
+func (testProvider) IndexData() map[string]any { return nil }
+
+// withUI is the option every test that leaves the UI enabled must pass.
+func withUI() webserver.Option { return webserver.WithUI(ui.Provider(testProvider{})) }
 
 type Credentials struct {
 	User     string `json:"user"`
@@ -41,15 +60,19 @@ func TestWebDisableOpt(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, r.StatusCode, "rest api should be served though")
 
-	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready)
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8079"}, nil, nil, &ready, withUI())
 	assert.Nil(t, restsrv)
 	assert.Error(t, err, "port should be in use")
+
+	restsrv, err = webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "127.0.0.1:8078"}, nil, nil, &ready)
+	assert.Nil(t, restsrv)
+	assert.Error(t, err, "a UI-enabled server without a provider should not start")
 }
 
 func TestHealth(t *testing.T) {
 	var ready ReadyBool
 	ctx, cancel := context.WithCancel(context.Background())
-	restsrv, _ := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, nil, nil, &ready)
+	restsrv, _ := webserver.Init(ctx, webserver.CmdOpts{WebAddr: "127.0.0.1:8080"}, nil, nil, &ready, withUI())
 	assert.NotNil(t, restsrv)
 
 	r, err := http.Get("http://localhost:8080/liveness")
@@ -73,7 +96,7 @@ func TestHealth(t *testing.T) {
 
 func TestServerNoAuth(t *testing.T) {
 	host := "http://localhost:8081"
-	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8081"}, nil, nil, nil, withUI())
 	assert.NotNil(t, restsrv)
 	rr := httptest.NewRecorder()
 	// cors OPTIONS
@@ -113,7 +136,7 @@ func TestServerNoAuth(t *testing.T) {
 
 func TestGetToken(t *testing.T) {
 	host := "http://localhost:8082"
-	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, nil, nil, nil)
+	restsrv, _ := webserver.Init(context.Background(), webserver.CmdOpts{WebAddr: "localhost:8082"}, nil, nil, nil, withUI())
 	rr := httptest.NewRecorder()
 
 	credentials := Credentials{
