@@ -124,7 +124,9 @@ additional authenticated routes and run the collector, using only public API.
   expiry semantics with the REST API.
 - **REQ-011**: A second option `WithCORSOrigin(origin string)` MUST replace the hardcoded
   `http://localhost:4000` (`webserver.go:213`), and the same value MUST be settable through
-  `--web-cors-origin` / `PW_WEBCORSORIGIN` (default: current behaviour).
+  `--web-cors-origin` / `PW_WEBCORSORIGIN` (default: current behaviour). The flag is hidden from
+  `--help` (`hidden:"true"`): it serves developers and embedders, not operators, and keeping it out
+  of the help output keeps AC-002 a strict equality check.
 
 ### Module consumability
 

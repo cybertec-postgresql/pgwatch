@@ -37,3 +37,19 @@ func TestWebDisableOpt(t *testing.T) {
 	}
 
 }
+
+func TestWebCORSOriginOpt(t *testing.T) {
+	a := assert.New(t)
+
+	opts := new(CmdOpts)
+	os.Args = []string{0: "config_test"}
+	_, err := flags.NewParser(opts, flags.HelpFlag).Parse()
+	a.NoError(err)
+	a.Equal(DefaultCORSOrigin, opts.WebCORSOrigin, "the default CORS origin must not change")
+
+	opts = new(CmdOpts)
+	os.Args = []string{0: "config_test", "--web-cors-origin=https://example.test"}
+	_, err = flags.NewParser(opts, flags.HelpFlag).Parse()
+	a.NoError(err)
+	a.Equal("https://example.test", opts.WebCORSOrigin)
+}

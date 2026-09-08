@@ -179,6 +179,14 @@ It reads the configuration from the specified sources and metrics, then begins c
     Admin password.  
     ENV: `$PW_WEBPASSWORD`
 
+- `--web-cors-origin=`
+
+    Origin allowed by the CORS middleware (default: `http://localhost:4000`).
+    Advanced option for development and embedding setups, hidden from `--help`.  
+    ENV: `$PW_WEBCORSORIGIN`
+
+    Example: `--web-cors-origin=https://pgwatch.example.com`
+
 ### Help Options
 
 - `-h`, `--help`

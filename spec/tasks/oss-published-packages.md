@@ -128,18 +128,19 @@ one; `--web-cors-origin=https://example.test` is reflected in `Access-Control-Al
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] Test a hook-registered route wrapped by `auth`: 401 without a token, 200 with a valid JWT — REQ-010, §6
-- [ ] T035 [P] [US3] Test that hook routes are mounted under `basePath` and cannot shadow built-in routes (registering `source` from the hook leaves the built-in handler in place) — REQ-009
-- [ ] T036 [P] [US3] Test `WithCORSOrigin` and the `--web-cors-origin` flag, asserting the default is still `http://localhost:4000` — REQ-011
+- [x] T034 [P] [US3] Test a hook-registered route wrapped by `auth`: 401 without a token, 200 with a valid JWT — REQ-010, §6
+- [x] T035 [P] [US3] Test that hook routes are mounted under `basePath` and cannot shadow built-in routes (registering `source` from the hook leaves the built-in handler in place) — REQ-009
+- [x] T036 [P] [US3] Test `WithCORSOrigin` and the `--web-cors-origin` flag, asserting the default is still `http://localhost:4000` — REQ-011
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] Add `WithRoutes(fn func(mux *http.ServeMux, basePath string, auth func(http.HandlerFunc) http.Handler)) Option`, invoked after the built-in routes (`webserver.go:77-87`) and before `mux.HandleFunc(s.basePath, s.handleStatic)` — REQ-009, §4.2
-- [ ] T038 [US3] Pass `NewEnsureAuth` (`pkg/webserver/jwt.go:71`) as the hook's `auth` argument so embedder routes share login/token/expiry semantics — REQ-010
-- [ ] T039 [US3] Add `WithCORSOrigin(origin string) Option` and make `corsMiddleware` (`webserver.go:213`) use the configured origin instead of the hardcoded literal — REQ-011
-- [ ] T040 [US3] Add `--web-cors-origin` / `PW_WEBCORSORIGIN` to `pkg/webserver/cmdopts.go` with default `http://localhost:4000`, and wire it into `Init` — REQ-011
+- [x] T037 [US3] Add `WithRoutes(fn func(mux *http.ServeMux, basePath string, auth func(http.HandlerFunc) http.Handler)) Option`, invoked after the built-in routes (`webserver.go:77-87`) and before `mux.HandleFunc(s.basePath, s.handleStatic)` — REQ-009, §4.2
+- [x] T038 [US3] Pass `NewEnsureAuth` (`pkg/webserver/jwt.go:71`) as the hook's `auth` argument so embedder routes share login/token/expiry semantics — REQ-010
+- [x] T039 [US3] Add `WithCORSOrigin(origin string) Option` and make `corsMiddleware` (`webserver.go:213`) use the configured origin instead of the hardcoded literal — REQ-011
+- [x] T040 [US3] Add `--web-cors-origin` / `PW_WEBCORSORIGIN` to `pkg/webserver/cmdopts.go` with default `http://localhost:4000`, and wire it into `Init` — REQ-011
 
-**Checkpoint**: US1–US3 independently functional; `pgwatch --help` gains exactly one flag
+**Checkpoint**: US1–US3 independently functional; `pgwatch --help` is unchanged — `--web-cors-origin`
+is `hidden:"true"` (as `--direct-os-stats` already is), so AC-002 stays a strict equality check
 
 ---
 
@@ -196,7 +197,7 @@ collector and returns the documented exit codes.
   3. Commit a placeholder `build/index.html` so the binary compiles from the proxy but serves a stub UI. Compiles, but `pgwatch` from the proxy would start with no usable UI — worst of both.
   Recommendation: option 2, then extend the `consumability` job to assert the binary builds from a checkout.
 - [ ] T050 [P] Add a CI job that builds the example embedder against the module zip with `GOFLAGS=-mod=mod GOWORK=off` — AC-003, §6
-- [ ] T051 [P] Add a golden CI comparison of `pgwatch --help` and the REST endpoint list before/after the change — AC-002
+- [ ] T051 [P] Add a golden CI comparison of `pgwatch --help` and the REST endpoint list before/after the change — AC-002. Strict equality: no phase adds a visible flag
 - [ ] T052 [P] Write the embedding guide in `docs/developer/` (provider, route hook, `pkg/app`, `cmdopts` extensions) and add it to `mkdocs.yml` nav
 - [ ] T053 Run `task lint`, `go mod tidy`, `task test`; confirm AC-001 through AC-007 all hold
 

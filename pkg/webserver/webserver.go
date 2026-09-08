@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -36,6 +37,8 @@ type WebUIServer struct {
 	basePath            string // computed base path with slashes
 	indexHTML           []byte // pre-rendered index.html content
 	uiProvider          ui.Provider
+	corsOrigin          string
+	routes              func(mux *http.ServeMux, basePath string, auth func(http.HandlerFunc) http.Handler)
 	metricsReaderWriter metrics.ReaderWriter
 	sourcesReaderWriter sources.ReaderWriter
 	readyChecker        Readier
@@ -53,7 +56,6 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
-			Handler:        corsMiddleware(mux),
 		},
 		ctx:                 ctx,
 		Logger:              log.GetLogger(ctx),
@@ -66,6 +68,9 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	for _, o := range options {
 		o(s)
 	}
+
+	// WithCORSOrigin wins over the flag, which wins over the built-in default.
+	s.corsOrigin = cmp.Or(s.corsOrigin, opts.WebCORSOrigin, DefaultCORSOrigin)
 
 	s.basePath = "/" + opts.WebBasePath
 	if opts.WebBasePath != "" {
@@ -83,6 +88,15 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	mux.HandleFunc(s.basePath+"login", s.handleLogin)
 	mux.HandleFunc(s.basePath+"liveness", s.handleLiveness)
 	mux.HandleFunc(s.basePath+"readiness", s.handleReadiness)
+
+	// Extension routes are registered on their own mux so that a pattern
+	// clashing with a built-in one neither panics nor takes over.
+	var extMux *http.ServeMux
+	if s.routes != nil {
+		extMux = http.NewServeMux()
+		s.routes(extMux, s.basePath, func(h http.HandlerFunc) http.Handler { return NewEnsureAuth(h) })
+	}
+
 	if opts.WebDisable != WebDisableUI {
 		if s.uiProvider == nil {
 			return nil, errors.New("no web UI provider configured: pass webserver.WithUI() or disable the UI with --web-disable=ui")
@@ -92,6 +106,8 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 		}
 		mux.HandleFunc(s.basePath, s.handleStatic)
 	}
+
+	s.Handler = s.corsMiddleware(s.dispatcher(mux, extMux))
 
 	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
@@ -222,9 +238,30 @@ func (s *WebUIServer) handleTestConnect(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
+// dispatcher routes a request to the built-in mux, falling back to the
+// extension mux registered with WithRoutes. Built-in routes always win; the
+// extension mux is only consulted where the built-in mux has nothing to offer
+// but the catch-all static handler.
+func (s *WebUIServer) dispatcher(mux, extMux *http.ServeMux) http.Handler {
+	if extMux == nil {
+		return mux
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4000") //check internal/webui/.env
+		if h, pattern := mux.Handler(r); pattern != "" && pattern != s.basePath {
+			h.ServeHTTP(w, r)
+			return
+		}
+		if _, pattern := extMux.Handler(r); pattern != "" {
+			extMux.ServeHTTP(w, r)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+}
+
+func (s *WebUIServer) corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", s.corsOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token")
 		if r.Method == "OPTIONS" {
