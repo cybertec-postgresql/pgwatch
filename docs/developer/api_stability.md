@@ -27,6 +27,19 @@ Nothing else is public. In particular `internal/webui` (the React sources) and
 `internal/webui/embed` (the default UI provider) are internal on purpose: an
 embedder brings its own `ui.Provider` and never compiles the React assets.
 
+Every `pkg/*` package builds straight from the Go module proxy, so a scratch
+module needs nothing but a `go get`:
+
+```console
+$ go get github.com/cybertec-postgresql/pgwatch/v6@latest
+```
+
+The `pgwatch` binary is the exception: `cmd/pgwatch` embeds the React build
+output, which is generated at build time and not kept in git, so
+`go build github.com/cybertec-postgresql/pgwatch/v6/cmd/pgwatch@latest` does not
+work. Build the binary from a checkout (`task build`) or take it from a
+[release](https://github.com/cybertec-postgresql/pgwatch/releases).
+
 ## The promise
 
 Within a major version, the exported API of `pkg/*` follows the

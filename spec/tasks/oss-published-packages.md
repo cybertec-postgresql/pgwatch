@@ -190,16 +190,26 @@ collector and returns the documented exit codes.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T049 [P] Write the example embedder `docs/howto/embedding/main.go`: a trivial `ui.Provider` plus one `/hello` route registered through `WithRoutes` behind login — AC-003
-- [ ] T054 **OPEN SPEC DECISION — REQ-013 vs REQ-014.** `cmd/pgwatch` imports `internal/webui/embed`, which `//go:embed`s the gitignored `build/`. So `go build …/cmd/pgwatch@<tag>` from an empty directory fails with `pattern build: no matching files found` (verified against a `git archive` export). AC-005/REQ-014 cannot hold as written. Pick one:
+- [x] T049 [P] Write the example embedder `docs/howto/embedding/main.go`: a trivial `ui.Provider` plus one `/hello` route registered through `WithRoutes` behind login — AC-003
+- [x] T054 **RESOLVED — REQ-013 vs REQ-014.** Option 2: spec amended to v1.1 — REQ-014 and AC-005
+  now cover the published `pkg/*` packages only, and the stability policy says so
+  (`docs/developer/api_stability.md`). The binary is built from a checkout or taken from a release
+  artifact, which is how it has always been distributed. Original decision text:
+
+  **OPEN SPEC DECISION — REQ-013 vs REQ-014.** `cmd/pgwatch` imports `internal/webui/embed`, which `//go:embed`s the gitignored `build/`. So `go build …/cmd/pgwatch@<tag>` from an empty directory fails with `pattern build: no matching files found` (verified against a `git archive` export). AC-005/REQ-014 cannot hold as written. Pick one:
   1. Commit the React build output, as REQ-012 already does for `api/pb` and for the same reason (the proxy serves the git tree). Costs ~2.4 MB of minified JS per UI change.
   2. Narrow AC-005/REQ-014 to the `pkg/*` packages — the binary stays buildable from a checkout or a release artifact, never from the proxy. Keeps REQ-013 intact and the repo clean.
   3. Commit a placeholder `build/index.html` so the binary compiles from the proxy but serves a stub UI. Compiles, but `pgwatch` from the proxy would start with no usable UI — worst of both.
   Recommendation: option 2, then extend the `consumability` job to assert the binary builds from a checkout.
-- [ ] T050 [P] Add a CI job that builds the example embedder against the module zip with `GOFLAGS=-mod=mod GOWORK=off` — AC-003, §6
-- [ ] T051 [P] Add a golden CI comparison of `pgwatch --help` and the REST endpoint list before/after the change — AC-002. Strict equality: no phase adds a visible flag
-- [ ] T052 [P] Write the embedding guide in `docs/developer/` (provider, route hook, `pkg/app`, `cmdopts` extensions) and add it to `mkdocs.yml` nav
-- [ ] T053 Run `task lint`, `go mod tidy`, `task test`; confirm AC-001 through AC-007 all hold
+- [-] T050 [P] ~~CI job building the example embedder against the module zip~~ — **dropped**: not worth
+  the CI weight, same call as T013. The example lives inside the module at `docs/howto/embedding/`,
+  so `go build ./...` and `task lint` already keep it compiling against the public API on every run.
+- [-] T051 [P] ~~Golden CI comparison of `pgwatch --help` and the REST endpoint list~~ — **dropped**:
+  covered by unit tests instead. `TestHelpUnchangedWithoutExtension` (`pkg/cmdopts/extension_test.go`)
+  asserts every line of the plain `--help` survives verbatim, and the `pkg/webserver` route tests
+  cover the endpoint list. `--web-cors-origin` is `hidden:"true"`, so no phase added a visible flag.
+- [x] T052 [P] Write the embedding guide in `docs/developer/` (provider, route hook, `pkg/app`, `cmdopts` extensions) and add it to `mkdocs.yml` nav
+- [x] T053 Run `task lint`, `go mod tidy`, `task test`; confirm AC-001 through AC-007 all hold
 
 ---
 

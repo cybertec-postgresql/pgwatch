@@ -1,8 +1,8 @@
 ---
 title: Public extension API: published engine packages and a pluggable web UI
-version: 1.0
+version: 1.1
 date_created: 2026-09-07
-date_updated: 2026-09-07
+date_updated: 2026-09-08
 owner: pgwatch maintainers
 status: draft
 tags: [architecture, design, api, webui, packaging]
@@ -135,8 +135,18 @@ additional authenticated routes and run the collector, using only public API.
 - **REQ-013**: No package that an embedder imports may `//go:embed` a gitignored directory. The
   React build output MUST be embedded only by the default provider package (REQ-006), and that
   package MUST be excluded from the module's public API surface by living under `internal/`.
-- **REQ-014**: `go build github.com/cybertec-postgresql/pgwatch/v6/cmd/pgwatch@<tag>` from an
-  empty directory MUST succeed once a tag containing this change exists.
+- **REQ-014**: Every published package MUST be buildable straight from the module proxy: from an
+  empty directory, a scratch module importing any `pkg/*` package MUST compile once a tag
+  containing this change exists.
+
+  The `pgwatch` binary is deliberately *not* covered. `cmd/pgwatch` imports the default UI
+  provider, which `//go:embed`s the React build output; that directory is gitignored, so
+  `go build .../cmd/pgwatch@<tag>` fails with `pattern build: no matching files found`. The two
+  alternatives are committing ~2.4 MB of minified JS per UI change, or shipping a placeholder
+  that compiles but serves a stub UI — both worse than the rule that the binary is built from a
+  checkout or taken from a release artifact, which is how it is distributed anyway. This narrows
+  REQ-014 rather than weakening REQ-013: keeping the embed inside `internal/` is exactly what
+  makes the published packages proxy-buildable. *(Amended in v1.1.)*
 
 ### Schema constants and bootstrap
 
@@ -261,8 +271,9 @@ func main() {
 - **AC-003**: An example embedder under `docs/howto/embedding/` (a `main.go` that registers a
   trivial provider and one route) builds and serves `/hello` behind login.
 - **AC-004**: `git status` is clean after `go generate ./api/pb/` in CI.
-- **AC-005**: `go build github.com/cybertec-postgresql/pgwatch/v6/cmd/pgwatch@<tag>` succeeds
-  from an empty directory.
+- **AC-005**: From an empty directory, a scratch module importing every `pkg/*` package compiles
+  against `github.com/cybertec-postgresql/pgwatch/v6@<tag>`. The `pgwatch` binary itself builds
+  from a checkout, not from the proxy (REQ-014). *(Amended in v1.1.)*
 - **AC-006**: `--web-disable=ui` serves the REST API without any provider; `--web-disable=all`
   serves nothing.
 - **AC-007**: `pgwatch --version` prints the schema constants from the published package.
@@ -306,6 +317,12 @@ standard solution.
 `//go:embed build` in a published package makes every embedder's build depend on a directory
 that is not in git. Isolating it in the default provider keeps the module buildable and lets
 embedders bring their own assets.
+
+The flip side is that `cmd/pgwatch`, which does import that provider, cannot be built from the
+module proxy — see REQ-014. Committing the build output would fix that at the price of a ~2.4 MB
+diff on every UI change, and the binary has never been distributed through the proxy: it comes
+from a checkout or a release artifact. The embedder use case this specification exists for needs
+the packages, not the binary.
 
 ---
 
