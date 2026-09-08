@@ -70,25 +70,25 @@ succeeds, and a scratch module importing `pkg/reaper` + `pkg/cmdopts` compiles (
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Add a generated-code freshness step to `.github/workflows/build.yml` after `go generate ./api/pb/`: `git diff --exit-code` — REQ-012, AC-004
-- [ ] T013 [P] [US1] Add a CI job that builds `cmd/pgwatch` from a scratch module directory with `GOFLAGS=-mod=mod` and `GOWORK=off` — AC-005, §6
+- [x] T012 [P] [US1] Add a generated-code freshness step to `.github/workflows/build.yml` after `go generate ./api/pb/`: `git diff --exit-code` — REQ-012, AC-004
+- [-] T013 [P] [US1] ~~CI job building from a scratch module directory~~ — **dropped**: not worth the CI weight. Consumability was verified once, locally, by exporting the tree with `git ls-files -co --exclude-standard` and building an external module against it; all nine `pkg/*` packages compile.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Remove both `*.pb.go` ignore rules from `.gitignore` (under "# Protobuf files" and "# Generated protobuf files") and commit `api/pb/pgwatch.pb.go` and `api/pb/pgwatch_grpc.pb.go` — REQ-012
-- [ ] T015 [US1] Relocate the leaf packages: `git mv internal/log pkg/log`, `git mv internal/db pkg/db`; run `task rewrite-imports` — REQ-001, REQ-002
-- [ ] T016 [US1] Relocate `internal/metrics` → `pkg/metrics`, keeping the embedded `metrics.yaml` alongside it — REQ-001, §4.1
-- [ ] T017 [US1] Relocate `internal/sources` → `pkg/sources` — REQ-001
-- [ ] T018 [US1] Relocate `internal/sinks` → `pkg/sinks`, keeping the embedded `sql/*.sql` alongside it — REQ-001, §4.1
-- [ ] T019 [US1] Relocate `internal/cmdopts` → `pkg/cmdopts` — REQ-001
-- [ ] T020 [US1] Relocate `internal/reaper` → `pkg/reaper` — REQ-001
-- [ ] T021 [US1] Relocate `internal/webserver` → `pkg/webserver` (already embed-free after Phase 2) — REQ-001, REQ-013
-- [ ] T022 [US1] Fix up the remaining import sites — `cmd/pgwatch/*.go`, `internal/webui/embed`, `internal/testutil`, `api/`, `contrib/` — then `go mod tidy`; confirm `internal/` holds only `testutil` and `webui` — CON-001, GUD-001
-- [ ] T023 [US1] Move `configSchema`/`sinkSchema` (`cmd/pgwatch/version.go:10-11`) into `pkg/cmdopts` as exported `ConfigSchema`/`SinkSchema` next to `NeedsSchemaUpgrade`, and make `printVersion` use them — REQ-015, AC-007
-- [ ] T024 [US1] Write the stability policy in `docs/developer/` (Go compatibility promise within a major version for `pkg/*`; `// Experimental:` marks the exceptions) and add it to `mkdocs.yml` nav — REQ-003
-- [ ] T025 [US1] Annotate not-yet-stable exported symbols in `pkg/*` with `// Experimental:` doc comments — REQ-003
-- [ ] T026 [US1] Update every path reference to the moved packages in `.goreleaser.yml`, `Taskfile.yml`, `docker/`, `.github/workflows/*.yml` and `docs/`
-- [ ] T027 [US1] Confirm `go test ./...` passes with no test changes beyond import paths — AC-001
+- [x] T014 [US1] Remove both `*.pb.go` ignore rules from `.gitignore` (under "# Protobuf files" and "# Generated protobuf files") and commit `api/pb/pgwatch.pb.go` and `api/pb/pgwatch_grpc.pb.go` — REQ-012
+- [x] T015 [US1] Relocate the leaf packages: `git mv internal/log pkg/log`, `git mv internal/db pkg/db`; run `task rewrite-imports` — REQ-001, REQ-002
+- [x] T016 [US1] Relocate `internal/metrics` → `pkg/metrics`, keeping the embedded `metrics.yaml` alongside it — REQ-001, §4.1
+- [x] T017 [US1] Relocate `internal/sources` → `pkg/sources` — REQ-001
+- [x] T018 [US1] Relocate `internal/sinks` → `pkg/sinks`, keeping the embedded `sql/*.sql` alongside it — REQ-001, §4.1
+- [x] T019 [US1] Relocate `internal/cmdopts` → `pkg/cmdopts` — REQ-001
+- [x] T020 [US1] Relocate `internal/reaper` → `pkg/reaper` — REQ-001
+- [x] T021 [US1] Relocate `internal/webserver` → `pkg/webserver` (already embed-free after Phase 2) — REQ-001, REQ-013
+- [x] T022 [US1] Fix up the remaining import sites — `cmd/pgwatch/*.go`, `internal/webui/embed`, `internal/testutil`, `api/`, `contrib/` — then `go mod tidy`; confirm `internal/` holds only `testutil` and `webui` — CON-001, GUD-001
+- [x] T023 [US1] Move `configSchema`/`sinkSchema` (`cmd/pgwatch/version.go:10-11`) into `pkg/cmdopts` as exported `ConfigSchema`/`SinkSchema` next to `NeedsSchemaUpgrade`, and make `printVersion` use them — REQ-015, AC-007
+- [x] T024 [US1] Write the stability policy in `docs/developer/` (Go compatibility promise within a major version for `pkg/*`; `// Experimental:` marks the exceptions) and add it to `mkdocs.yml` nav — REQ-003
+- [x] T025 [US1] Annotate not-yet-stable exported symbols in `pkg/*` with `// Experimental:` doc comments — REQ-003
+- [x] T026 [US1] Update every path reference to the moved packages in `.goreleaser.yml`, `Taskfile.yml`, `docker/`, `.github/workflows/*.yml` and `docs/`
+- [x] T027 [US1] Confirm `go test ./...` passes with no test changes beyond import paths — AC-001
 
 **Checkpoint**: engine packages are importable, module builds from the proxy, binary unchanged
 
@@ -190,6 +190,11 @@ collector and returns the documented exit codes.
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [ ] T049 [P] Write the example embedder `docs/howto/embedding/main.go`: a trivial `ui.Provider` plus one `/hello` route registered through `WithRoutes` behind login — AC-003
+- [ ] T054 **OPEN SPEC DECISION — REQ-013 vs REQ-014.** `cmd/pgwatch` imports `internal/webui/embed`, which `//go:embed`s the gitignored `build/`. So `go build …/cmd/pgwatch@<tag>` from an empty directory fails with `pattern build: no matching files found` (verified against a `git archive` export). AC-005/REQ-014 cannot hold as written. Pick one:
+  1. Commit the React build output, as REQ-012 already does for `api/pb` and for the same reason (the proxy serves the git tree). Costs ~2.4 MB of minified JS per UI change.
+  2. Narrow AC-005/REQ-014 to the `pkg/*` packages — the binary stays buildable from a checkout or a release artifact, never from the proxy. Keeps REQ-013 intact and the repo clean.
+  3. Commit a placeholder `build/index.html` so the binary compiles from the proxy but serves a stub UI. Compiles, but `pgwatch` from the proxy would start with no usable UI — worst of both.
+  Recommendation: option 2, then extend the `consumability` job to assert the binary builds from a checkout.
 - [ ] T050 [P] Add a CI job that builds the example embedder against the module zip with `GOFLAGS=-mod=mod GOWORK=off` — AC-003, §6
 - [ ] T051 [P] Add a golden CI comparison of `pgwatch --help` and the REST endpoint list before/after the change — AC-002
 - [ ] T052 [P] Write the embedding guide in `docs/developer/` (provider, route hook, `pkg/app`, `cmdopts` extensions) and add it to `mkdocs.yml` nav

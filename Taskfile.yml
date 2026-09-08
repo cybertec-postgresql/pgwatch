@@ -46,8 +46,8 @@ tasks:
     method: timestamp
     sources:
       - '**/*.go'
-      - 'internal/**/*.sql'
-      - 'internal/metrics/metrics.yaml'
+      - 'pkg/**/*.sql'
+      - 'pkg/metrics/metrics.yaml'
       - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
@@ -62,8 +62,8 @@ tasks:
     method: timestamp
     sources:
       - '**/*.go'
-      - 'internal/**/*.sql'
-      - 'internal/metrics/metrics.yaml'
+      - 'pkg/**/*.sql'
+      - 'pkg/metrics/metrics.yaml'
       - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
@@ -73,7 +73,7 @@ tasks:
       - sh: docker info
         msg: The tests need a running Docker daemon (testcontainers).
     cmds:
-      - go test -failfast -v -timeout=300s -p 1 -coverprofile=coverage.out ./cmd/... ./internal/...
+      - go test -failfast -v -timeout=300s -p 1 -coverprofile=coverage.out ./cmd/... ./internal/... ./pkg/...
 
   cover:
     desc: Open the HTML coverage report (re-runs tests if coverage.out is missing or stale)

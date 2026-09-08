@@ -10,6 +10,9 @@ package ui
 import "io/fs"
 
 // Provider supplies the static assets and the client-side routing of a web UI.
+//
+// Experimental: this interface may gain methods in a minor release. Embed
+// nothing and implement all three methods explicitly.
 type Provider interface {
 	// FS returns the file system holding the UI's static assets. A file named
 	// index.html must exist at its root and is parsed as a Go html/template.

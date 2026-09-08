@@ -30,7 +30,7 @@ The gatherer picks up the new metric on its next refresh (default every 120 seco
 
 ## Option B — Add a metric in a YAML setup
 
-1. Edit the `metrics.yaml` file the gatherer was started with (`--metrics`). If you need a starting point, copy the [default metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) and edit it.
+1. Edit the `metrics.yaml` file the gatherer was started with (`--metrics`). If you need a starting point, copy the [default metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/pkg/metrics/metrics.yaml) and edit it.
 2. Add a new top-level entry following the schema in [Metric definitions](../reference/metric_definitions.md).
 3. Optionally add the new metric to an existing or new preset in the same file.
 4. Save the file. The gatherer reloads on its next refresh.

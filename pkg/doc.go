@@ -15,6 +15,6 @@
 //	pkg/app        the optional bootstrap wrapping the whole wiring sequence
 //
 // Anything under internal/ is private to pgwatch and may change without
-// notice. See docs/developer/ for the stability policy that governs the
-// packages listed above.
+// notice. See docs/developer/api_stability.md for the stability policy that
+// governs the packages listed above.
 package pkg

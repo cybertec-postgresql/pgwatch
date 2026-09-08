@@ -63,7 +63,7 @@ FROM alpine
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
-COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
+COPY pkg/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080

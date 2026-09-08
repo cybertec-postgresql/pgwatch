@@ -90,6 +90,14 @@ jobs:
         go generate ./api/pb/
         go build ./cmd/pgwatch
 
+    - name: Check generated protobuf is up to date
+      if: needs.changes.outputs.code == 'true'
+      run: |
+        if ! git diff --exit-code -- api/pb/; then
+          echo "::error::api/pb is stale. Run 'go generate ./api/pb/' and commit the result."
+          exit 1
+        fi
+
     - name: Upload webui as artifact
       if: needs.changes.outputs.code == 'true'
       uses: actions/upload-artifact@v7
@@ -131,7 +139,7 @@ jobs:
     - name: Test
       run: |
         go generate ./api/pb/
-        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./cmd/... ./internal/...
+        go test -failfast -v -timeout=300s -p 1 -coverprofile=profile.cov ./cmd/... ./internal/... ./pkg/...
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

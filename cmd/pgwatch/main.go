@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/reaper"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/webserver"
 	webui "github.com/cybertec-postgresql/pgwatch/v6/internal/webui/embed"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/reaper"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
 )
 
 // setupCloseHandler creates a 'listener' on a new goroutine which will notify the

@@ -1,14 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
+)
 
 // version output variables
 var (
-	commit       = "unknown"
-	version      = "unknown"
-	date         = "unknown"
-	configSchema = "00824"
-	sinkSchema   = "01529"
+	commit  = "unknown"
+	version = "unknown"
+	date    = "unknown"
 )
 
 func printVersion() {
@@ -20,5 +22,5 @@ Version info:
   Git Commit:    %s
   Built:         %s
 
-`, version, configSchema, sinkSchema, commit, date)
+`, version, cmdopts.ConfigSchema, cmdopts.SinkSchema, commit, date)
 }
