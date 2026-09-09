@@ -92,6 +92,14 @@ It reads the configuration from the specified sources and metrics, then begins c
     Sink-specific batching flush delay; may be ignored by some sinks (default: 950ms).  
     ENV: `$PW_BATCHING_DELAY`
 
+- `--no-sink-feedback`
+
+    Disable sink feedback, i.e. reporting the last stored measurement epoch to collectors that can resume from it.
+    Feedback is enabled by default.  
+    ENV: `$PW_NO_SINK_FEEDBACK`
+
+    See [Sinks Options & Parameters](sinks_options.md#feedback) for which sinks support it.
+
 - `--partition-interval=`
 
     Time range for PostgreSQL sink table partitions. Must be a valid PostgreSQL interval. (default: 1 day)  

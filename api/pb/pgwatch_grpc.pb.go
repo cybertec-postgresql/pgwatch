@@ -23,6 +23,7 @@ const (
 	Receiver_UpdateMeasurements_FullMethodName = "/Receiver/UpdateMeasurements"
 	Receiver_SyncMetric_FullMethodName         = "/Receiver/SyncMetric"
 	Receiver_DefineMetrics_FullMethodName      = "/Receiver/DefineMetrics"
+	Receiver_GetLastMeasurement_FullMethodName = "/Receiver/GetLastMeasurement"
 )
 
 // ReceiverClient is the client API for Receiver service.
@@ -32,6 +33,7 @@ type ReceiverClient interface {
 	UpdateMeasurements(ctx context.Context, in *MeasurementEnvelope, opts ...grpc.CallOption) (*Reply, error)
 	SyncMetric(ctx context.Context, in *SyncReq, opts ...grpc.CallOption) (*Reply, error)
 	DefineMetrics(ctx context.Context, in *structpb.Struct, opts ...grpc.CallOption) (*Reply, error)
+	GetLastMeasurement(ctx context.Context, in *FeedbackReq, opts ...grpc.CallOption) (*FeedbackReply, error)
 }
 
 type receiverClient struct {
@@ -72,6 +74,16 @@ func (c *receiverClient) DefineMetrics(ctx context.Context, in *structpb.Struct,
 	return out, nil
 }
 
+func (c *receiverClient) GetLastMeasurement(ctx context.Context, in *FeedbackReq, opts ...grpc.CallOption) (*FeedbackReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FeedbackReply)
+	err := c.cc.Invoke(ctx, Receiver_GetLastMeasurement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReceiverServer is the server API for Receiver service.
 // All implementations must embed UnimplementedReceiverServer
 // for forward compatibility.
@@ -79,6 +91,7 @@ type ReceiverServer interface {
 	UpdateMeasurements(context.Context, *MeasurementEnvelope) (*Reply, error)
 	SyncMetric(context.Context, *SyncReq) (*Reply, error)
 	DefineMetrics(context.Context, *structpb.Struct) (*Reply, error)
+	GetLastMeasurement(context.Context, *FeedbackReq) (*FeedbackReply, error)
 	mustEmbedUnimplementedReceiverServer()
 }
 
@@ -97,6 +110,9 @@ func (UnimplementedReceiverServer) SyncMetric(context.Context, *SyncReq) (*Reply
 }
 func (UnimplementedReceiverServer) DefineMetrics(context.Context, *structpb.Struct) (*Reply, error) {
 	return nil, status.Error(codes.Unimplemented, "method DefineMetrics not implemented")
+}
+func (UnimplementedReceiverServer) GetLastMeasurement(context.Context, *FeedbackReq) (*FeedbackReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLastMeasurement not implemented")
 }
 func (UnimplementedReceiverServer) mustEmbedUnimplementedReceiverServer() {}
 func (UnimplementedReceiverServer) testEmbeddedByValue()                  {}
@@ -173,6 +189,24 @@ func _Receiver_DefineMetrics_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Receiver_GetLastMeasurement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FeedbackReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReceiverServer).GetLastMeasurement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Receiver_GetLastMeasurement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReceiverServer).GetLastMeasurement(ctx, req.(*FeedbackReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Receiver_ServiceDesc is the grpc.ServiceDesc for Receiver service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +225,10 @@ var Receiver_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DefineMetrics",
 			Handler:    _Receiver_DefineMetrics_Handler,
+		},
+		{
+			MethodName: "GetLastMeasurement",
+			Handler:    _Receiver_GetLastMeasurement_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

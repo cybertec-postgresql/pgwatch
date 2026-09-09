@@ -189,6 +189,107 @@ func (x *MeasurementEnvelope) GetData() []*structpb.Struct {
 	return nil
 }
 
+// FeedbackReq asks the server what it already holds for one source/metric pair.
+type FeedbackReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DBName        string                 `protobuf:"bytes,1,opt,name=DBName,proto3" json:"DBName,omitempty"`
+	MetricName    string                 `protobuf:"bytes,2,opt,name=MetricName,proto3" json:"MetricName,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FeedbackReq) Reset() {
+	*x = FeedbackReq{}
+	mi := &file_pgwatch_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FeedbackReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FeedbackReq) ProtoMessage() {}
+
+func (x *FeedbackReq) ProtoReflect() protoreflect.Message {
+	mi := &file_pgwatch_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FeedbackReq.ProtoReflect.Descriptor instead.
+func (*FeedbackReq) Descriptor() ([]byte, []int) {
+	return file_pgwatch_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FeedbackReq) GetDBName() string {
+	if x != nil {
+		return x.DBName
+	}
+	return ""
+}
+
+func (x *FeedbackReq) GetMetricName() string {
+	if x != nil {
+		return x.MetricName
+	}
+	return ""
+}
+
+// FeedbackReply carries the Unix nanosecond timestamp of the newest measurement
+// the server durably holds for the pair. Servers that hold nothing for it must
+// answer with status NOT_FOUND rather than 0; servers that do not implement
+// feedback at all simply leave the method unimplemented.
+type FeedbackReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EpochNs       int64                  `protobuf:"varint,1,opt,name=EpochNs,proto3" json:"EpochNs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FeedbackReply) Reset() {
+	*x = FeedbackReply{}
+	mi := &file_pgwatch_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FeedbackReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FeedbackReply) ProtoMessage() {}
+
+func (x *FeedbackReply) ProtoReflect() protoreflect.Message {
+	mi := &file_pgwatch_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FeedbackReply.ProtoReflect.Descriptor instead.
+func (*FeedbackReply) Descriptor() ([]byte, []int) {
+	return file_pgwatch_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FeedbackReply) GetEpochNs() int64 {
+	if x != nil {
+		return x.EpochNs
+	}
+	return 0
+}
+
 type SyncReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DBName        string                 `protobuf:"bytes,1,opt,name=DBName,proto3" json:"DBName,omitempty"`
@@ -200,7 +301,7 @@ type SyncReq struct {
 
 func (x *SyncReq) Reset() {
 	*x = SyncReq{}
-	mi := &file_pgwatch_proto_msgTypes[2]
+	mi := &file_pgwatch_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +313,7 @@ func (x *SyncReq) String() string {
 func (*SyncReq) ProtoMessage() {}
 
 func (x *SyncReq) ProtoReflect() protoreflect.Message {
-	mi := &file_pgwatch_proto_msgTypes[2]
+	mi := &file_pgwatch_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +326,7 @@ func (x *SyncReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncReq.ProtoReflect.Descriptor instead.
 func (*SyncReq) Descriptor() ([]byte, []int) {
-	return file_pgwatch_proto_rawDescGZIP(), []int{2}
+	return file_pgwatch_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SyncReq) GetDBName() string {
@@ -267,7 +368,14 @@ const file_pgwatch_proto_rawDesc = "" +
 	"\x04Data\x18\x04 \x03(\v2\x17.google.protobuf.StructR\x04Data\x1a=\n" +
 	"\x0fCustomTagsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"h\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"E\n" +
+	"\vFeedbackReq\x12\x16\n" +
+	"\x06DBName\x18\x01 \x01(\tR\x06DBName\x12\x1e\n" +
+	"\n" +
+	"MetricName\x18\x02 \x01(\tR\n" +
+	"MetricName\")\n" +
+	"\rFeedbackReply\x12\x18\n" +
+	"\aEpochNs\x18\x01 \x01(\x03R\aEpochNs\"h\n" +
 	"\aSyncReq\x12\x16\n" +
 	"\x06DBName\x18\x01 \x01(\tR\x06DBName\x12\x1e\n" +
 	"\n" +
@@ -278,12 +386,13 @@ const file_pgwatch_proto_rawDesc = "" +
 	"\tInvalidOp\x10\x00\x12\t\n" +
 	"\x05AddOp\x10\x01\x12\f\n" +
 	"\bDeleteOp\x10\x02\x12\f\n" +
-	"\bDefineOp\x10\x032\x90\x01\n" +
+	"\bDefineOp\x10\x032\xc4\x01\n" +
 	"\bReceiver\x122\n" +
 	"\x12UpdateMeasurements\x12\x14.MeasurementEnvelope\x1a\x06.Reply\x12\x1e\n" +
 	"\n" +
 	"SyncMetric\x12\b.SyncReq\x1a\x06.Reply\x120\n" +
-	"\rDefineMetrics\x12\x17.google.protobuf.Struct\x1a\x06.ReplyB\x06Z\x04.;pbb\x06proto3"
+	"\rDefineMetrics\x12\x17.google.protobuf.Struct\x1a\x06.Reply\x122\n" +
+	"\x12GetLastMeasurement\x12\f.FeedbackReq\x1a\x0e.FeedbackReplyB\x06Z\x04.;pbb\x06proto3"
 
 var (
 	file_pgwatch_proto_rawDescOnce sync.Once
@@ -298,27 +407,31 @@ func file_pgwatch_proto_rawDescGZIP() []byte {
 }
 
 var file_pgwatch_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_pgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_pgwatch_proto_goTypes = []any{
 	(SyncOp)(0),                 // 0: SyncOp
 	(*Reply)(nil),               // 1: Reply
 	(*MeasurementEnvelope)(nil), // 2: MeasurementEnvelope
-	(*SyncReq)(nil),             // 3: SyncReq
-	nil,                         // 4: MeasurementEnvelope.CustomTagsEntry
-	(*structpb.Struct)(nil),     // 5: google.protobuf.Struct
+	(*FeedbackReq)(nil),         // 3: FeedbackReq
+	(*FeedbackReply)(nil),       // 4: FeedbackReply
+	(*SyncReq)(nil),             // 5: SyncReq
+	nil,                         // 6: MeasurementEnvelope.CustomTagsEntry
+	(*structpb.Struct)(nil),     // 7: google.protobuf.Struct
 }
 var file_pgwatch_proto_depIdxs = []int32{
-	4, // 0: MeasurementEnvelope.CustomTags:type_name -> MeasurementEnvelope.CustomTagsEntry
-	5, // 1: MeasurementEnvelope.Data:type_name -> google.protobuf.Struct
+	6, // 0: MeasurementEnvelope.CustomTags:type_name -> MeasurementEnvelope.CustomTagsEntry
+	7, // 1: MeasurementEnvelope.Data:type_name -> google.protobuf.Struct
 	0, // 2: SyncReq.Operation:type_name -> SyncOp
 	2, // 3: Receiver.UpdateMeasurements:input_type -> MeasurementEnvelope
-	3, // 4: Receiver.SyncMetric:input_type -> SyncReq
-	5, // 5: Receiver.DefineMetrics:input_type -> google.protobuf.Struct
-	1, // 6: Receiver.UpdateMeasurements:output_type -> Reply
-	1, // 7: Receiver.SyncMetric:output_type -> Reply
-	1, // 8: Receiver.DefineMetrics:output_type -> Reply
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
+	5, // 4: Receiver.SyncMetric:input_type -> SyncReq
+	7, // 5: Receiver.DefineMetrics:input_type -> google.protobuf.Struct
+	3, // 6: Receiver.GetLastMeasurement:input_type -> FeedbackReq
+	1, // 7: Receiver.UpdateMeasurements:output_type -> Reply
+	1, // 8: Receiver.SyncMetric:output_type -> Reply
+	1, // 9: Receiver.DefineMetrics:output_type -> Reply
+	4, // 10: Receiver.GetLastMeasurement:output_type -> FeedbackReply
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -335,7 +448,7 @@ func file_pgwatch_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pgwatch_proto_rawDesc), len(file_pgwatch_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
