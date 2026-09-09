@@ -269,11 +269,11 @@ Task: "--web-disable=ui and --web-disable=all test in pkg/webserver/server_test.
 ### Incremental Delivery
 
 1. Setup + Foundational → the React embed lives behind a provider
-2. + US1 → engine importable from the module proxy (MVP)
-3. + US2 → embedders control SPA routes and index data
-4. + US3 → embedders add authenticated routes and set the CORS origin
-5. + US4 → embedders reuse the whole bootstrap
-6. + US5 → embedders add their own flags and subcommands
+2. - US1 → engine importable from the module proxy (MVP)
+3. - US2 → embedders control SPA routes and index data
+4. - US3 → embedders add authenticated routes and set the CORS origin
+5. - US4 → embedders reuse the whole bootstrap
+6. - US5 → embedders add their own flags and subcommands
 
 Every increment leaves `pgwatch` behaviour untouched (AC-002).
 
