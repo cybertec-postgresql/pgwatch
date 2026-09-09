@@ -46,9 +46,9 @@ tasks:
     method: timestamp
     sources:
       - '**/*.go'
-      - 'internal/**/*.sql'
-      - 'internal/metrics/metrics.yaml'
-      - 'internal/webserver/build/**/*'
+      - 'pkg/**/*.sql'
+      - 'pkg/metrics/metrics.yaml'
+      - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
     generates:
@@ -62,9 +62,9 @@ tasks:
     method: timestamp
     sources:
       - '**/*.go'
-      - 'internal/**/*.sql'
-      - 'internal/metrics/metrics.yaml'
-      - 'internal/webserver/build/**/*'
+      - 'pkg/**/*.sql'
+      - 'pkg/metrics/metrics.yaml'
+      - 'internal/webui/embed/build/**/*'
     exclude:
       - 'internal/webui/node_modules/**/*'
     generates:
@@ -73,7 +73,7 @@ tasks:
       - sh: docker info
         msg: The tests need a running Docker daemon (testcontainers).
     cmds:
-      - go test -failfast -v -timeout=300s -p 1 -coverprofile=coverage.out ./cmd/... ./internal/...
+      - go test -failfast -v -timeout=300s -p 1 -coverprofile=coverage.out ./cmd/... ./internal/... ./pkg/...
 
   cover:
     desc: Open the HTML coverage report (re-runs tests if coverage.out is missing or stale)
@@ -101,11 +101,21 @@ tasks:
     cmds:
       - go mod tidy
 
+  rewrite-imports:
+    desc: |
+      Rewrite pgwatch import paths across the tree, e.g.
+      `task rewrite-imports -- internal/log pkg/log`. Pass -n to preview.
+    cmds:
+      - go run ./tools/rewriteimports {{.CLI_ARGS}}
+
   tools:
     desc: Install the Go-based dev tools (protoc plugins, golangci-lint, gopages, yq)
     cmds:
-      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      # The protoc plugins are pinned: their output is committed under api/pb/
+      # and CI checks it is up to date. Keep in sync with
+      # .github/actions/setup-protobuf/action.yml.
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
       - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
       - go install github.com/johnstarich/go/gopages@v0.1.29
       - go install github.com/mikefarah/yq/v4@latest
@@ -115,7 +125,7 @@ tasks:
   # ------------------------------ WebUI ------------------------------
 
   ui:
-    desc: Install WebUI dependencies and build into internal/webserver/build
+    desc: Install WebUI dependencies and build into internal/webui/embed/build
     dir: internal/webui
     sources:
       - 'src/**/*'
@@ -297,7 +307,7 @@ tasks:
   clean:
     desc: Remove build artifacts (binary, coverage.out, webui build, goreleaser dist, mkdocs site, docs/godoc)
     cmds:
-      - cmd: rm -rf {{.BINARY}} coverage.out internal/webserver/build dist site docs/godoc
+      - cmd: rm -rf {{.BINARY}} coverage.out internal/webui/embed/build dist site docs/godoc
         platforms: [linux, darwin]
-      - cmd: powershell -NoProfile -Command "Get-Item -ErrorAction SilentlyContinue @('{{.BINARY}}','coverage.out','internal/webserver/build','dist','site','docs/godoc') | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
+      - cmd: powershell -NoProfile -Command "Get-Item -ErrorAction SilentlyContinue @('{{.BINARY}}','coverage.out','internal/webui/embed/build','dist','site','docs/godoc') | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
         platforms: [windows]

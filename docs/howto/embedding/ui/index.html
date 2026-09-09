@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Title }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 3rem auto; max-width: 40rem; }
+    code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>{{ .Title }}</h1>
+  <p>Served by an embedder's own <code>ui.Provider</code>, at base path
+     <code>/{{ .BasePath }}</code>.</p>
+  <p>Built on pgwatch {{ .Flavour }}.</p>
+</body>
+</html>

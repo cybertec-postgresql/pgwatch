@@ -1,0 +1,627 @@
+package sources
+
+import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
+	"io"
+	"maps"
+	"math"
+	"net/http"
+	"net/url"
+	"os"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// NewConn and NewConnWithConfig are wrappers to allow testing
+var (
+	NewConn           = db.New
+	NewConnWithConfig = db.NewWithConfig
+)
+
+const (
+	EnvUnknown       = "UNKNOWN"
+	EnvAzureSingle   = "AZURE_SINGLE" //discontinued
+	EnvAzureFlexible = "AZURE_FLEXIBLE"
+	EnvGoogle        = "GOOGLE"
+)
+
+// SourceConn is the interface that all monitored source connection types must implement.
+type SourceConn interface {
+	Connect(ctx context.Context, opts CmdOpts) error
+	Ping(ctx context.Context) error
+	IsPostgresSource() bool
+	GetSource() Source
+	GetMetricInterval(name string) time.Duration
+	SetMetricIntervals(main, standby metrics.MetricIntervals)
+	Close()
+}
+
+// compile-time assertions
+var _ SourceConn = (*DbConn)(nil)
+var _ SourceConn = (*PromConn)(nil)
+
+type RuntimeInfo struct {
+	IsInRecovery     bool
+	VersionStr       string
+	Version          int
+	RealDbname       string
+	SystemIdentifier string
+	IsSuperuser      bool
+	Extensions       map[string]int
+	ExecEnv          string
+	ApproxDbSize     int64
+	ChangeState      map[string]map[string]string // ["category"][object_identifier] = state
+}
+
+// DbConn represents a single connection to monitor. Unlike source, it contains a database connection.
+// Continuous discovery sources (postgres-continuous-discovery, patroni-continuous-discovery, patroni-namespace-discovery)
+// will produce multiple monitored databases structs based on the discovered databases.
+type (
+	DbConn struct {
+		Source
+		Conn       db.PgxPoolIface
+		ConnConfig *pgxpool.Config
+		RuntimeInfo
+		lastCheckedNs atomic.Int64 // nanoseconds of last successful FetchRuntimeInfo; 0 = never
+		sync.RWMutex
+	}
+
+	SourceConns []SourceConn
+)
+
+func NewDbConn(s Source) *DbConn {
+	return &DbConn{
+		Source: s,
+		RuntimeInfo: RuntimeInfo{
+			Extensions:  make(map[string]int),
+			ChangeState: make(map[string]map[string]string),
+		},
+	}
+}
+
+// NewSourceConn is a factory dispatcher that returns a SourceConn interface.
+func NewSourceConn(s Source) SourceConn {
+	switch s.Kind {
+	case SourcePrometheus:
+		return NewPromConn(s)
+	default:
+		return NewDbConn(s)
+	}
+}
+
+// GetSource returns a copy of the embedded Source.
+func (md *DbConn) GetSource() Source {
+	return md.Source
+}
+
+// ActiveMetrics returns a snapshot of the currently active metric intervals
+// based on the connection's recovery state: standby config wins when the source
+// is in recovery and a standby config is defined, otherwise the primary config is used.
+// The caller receives a cloned copy safe to iterate without holding the lock.
+func (md *DbConn) ActiveMetrics() metrics.MetricIntervals {
+	md.RLock()
+	defer md.RUnlock()
+	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+		return maps.Clone(md.MetricsStandby)
+	}
+	return maps.Clone(md.Metrics)
+}
+
+// SetMetricIntervals atomically sets metric intervals; nil means "no change".
+func (md *DbConn) SetMetricIntervals(main, standby metrics.MetricIntervals) {
+	md.Lock()
+	defer md.Unlock()
+	if main != nil {
+		md.Metrics = main
+	}
+	if standby != nil {
+		md.MetricsStandby = standby
+	}
+}
+
+// Close closes the connection if it is not nil.
+func (md *DbConn) Close() {
+	if md.Conn != nil {
+		md.Conn.Close()
+	}
+}
+
+// Ping will try to ping the server to ensure the connection is still alive
+func (md *DbConn) Ping(ctx context.Context) (err error) {
+	// Bound the round-trip so a half-open peer or a wedged pool cannot stall
+	// the main-loop sweep. The bound is the configured ConnectTimeout plus a
+	// small margin. Ping is exported, so ConnConfig may not be populated at
+	// all — fall back to a 10 s default total in that case. When only the
+	// outer pgxpool.Config is set but the inner ConnConfig is nil (or
+	// ConnectTimeout is unconfigured), the effective bound collapses to just
+	// PingTimeoutMargin.
+	timeout := 10 * time.Second
+	if md.ConnConfig != nil {
+		ct := time.Duration(0)
+		if md.ConnConfig.ConnConfig != nil {
+			ct = md.ConnConfig.ConnConfig.ConnectTimeout
+		}
+		timeout = ct + db.PingTimeoutMargin
+	}
+	pingCtx, cancel := db.WithOpTimeout(ctx, "ping", timeout)
+	defer cancel()
+
+	if md.Kind == SourcePgBouncer {
+		// pgbouncer is very picky about the queries it accepts
+		_, err = md.Conn.Exec(pingCtx, "SHOW VERSION")
+		return
+	}
+	return md.Conn.Ping(pingCtx)
+}
+
+// Connect will establish a connection to the database if it's not already connected.
+// If the connection is already established, it pings the server to ensure it's still alive.
+func (md *DbConn) Connect(ctx context.Context, opts CmdOpts) (err error) {
+	if md.Conn == nil {
+		if err = md.ParseConfig(); err != nil {
+			return err
+		}
+		if md.Kind == SourcePgBouncer {
+			md.ConnConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+		}
+		if opts.MaxParallelConnectionsPerDb > 0 {
+			md.ConnConfig.MaxConns = int32(opts.MaxParallelConnectionsPerDb)
+		}
+		md.Conn, err = NewConnWithConfig(ctx, md.ConnConfig)
+		if err != nil {
+			return err
+		}
+	}
+	return md.Ping(ctx)
+}
+
+// ParseConfig will parse the connection string and store the result in the connection config
+func (md *DbConn) ParseConfig() (err error) {
+	if md.ConnConfig == nil {
+		md.ConnConfig, err = pgxpool.ParseConfig(md.ConnStr)
+		return
+	}
+	return
+}
+
+// GetClusterIdentifier returns a unique identifier for the host assuming SysId is the same for
+// primary and all replicas but connection information is different
+func (md *DbConn) GetClusterIdentifier() string {
+	if err := md.ParseConfig(); err != nil {
+		return ""
+	}
+	md.RLock()
+	defer md.RUnlock()
+	return fmt.Sprintf("%s:%s:%d", md.SystemIdentifier, md.ConnConfig.ConnConfig.Host, md.ConnConfig.ConnConfig.Port)
+}
+
+// GetDatabaseName returns the database name from the connection string
+func (md *DbConn) GetDatabaseName() string {
+	if err := md.ParseConfig(); err != nil {
+		return ""
+	}
+	return md.ConnConfig.ConnConfig.Database
+}
+
+// GetMetricInterval returns the metric interval for the connection
+func (md *DbConn) GetMetricInterval(name string) time.Duration {
+	md.RLock()
+	defer md.RUnlock()
+	if md.IsInRecovery && len(md.MetricsStandby) > 0 {
+		return time.Duration(md.MetricsStandby[name]) * time.Second
+	}
+	return time.Duration(md.Metrics[name]) * time.Second
+}
+
+// IsClientOnSameHost checks if the pgwatch client is running on the same host as the PostgreSQL server
+func (md *DbConn) IsClientOnSameHost() bool {
+	ok, err := db.IsClientOnSameHost(md.Conn)
+	return ok && err == nil
+}
+
+// SetDatabaseName sets the database name in the connection config for resolved databases
+func (md *DbConn) SetDatabaseName(name string) {
+	if err := md.ParseConfig(); err != nil {
+		return
+	}
+	md.ConnStr = "" // unset the connection string to force conn config usage
+	md.ConnConfig.ConnConfig.Database = name
+}
+
+func (md *DbConn) IsPostgresSource() bool {
+	switch md.Kind {
+	case SourcePostgres, SourcePatroniDiscovery, SourcePostgresDiscovery:
+		return true
+	default:
+		return false
+	}
+}
+
+// VersionToInt parses a given version and returns an integer  or
+// an error if unable to parse the version. Only parses valid semantic versions.
+// Performs checking that can find errors within the version.
+// Examples: v1.2 -> 01_02_00, v9.6.3 -> 09_06_03, v11 -> 11_00_00
+var regVer = regexp.MustCompile(`(\d+).?(\d*).?(\d*)`)
+
+func VersionToInt(version string) (v int) {
+	if matches := regVer.FindStringSubmatch(version); len(matches) > 1 {
+		for i, match := range matches[1:] {
+			v += func() (m int) { m, _ = strconv.Atoi(match); return }() * int(math.Pow10(4-i*2))
+		}
+	}
+	return
+}
+
+func (md *DbConn) FetchRuntimeInfo(ctx context.Context, forceRefetch bool) (err error) {
+	// Fast path: check the atomic timestamp without acquiring any lock.
+	// This avoids lock contention when the cached value is still fresh.
+	if !forceRefetch && time.Duration(time.Now().UnixNano()-md.lastCheckedNs.Load()) < 5*time.Minute {
+		return
+	}
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	md.Lock()
+	defer md.Unlock()
+
+	switch md.Kind {
+	case SourcePgBouncer, SourcePgPool:
+		err = md.FetchVersion(ctx, md.Kind)
+	default:
+		err = errors.Join(
+			md.FetchControlInfo(ctx),
+			md.DiscoverPlatform(ctx),
+			md.FetchApproxSize(ctx),
+			md.FetchExtensions(ctx))
+	}
+	if err == nil {
+		md.lastCheckedNs.Store(time.Now().UnixNano())
+	}
+	return
+}
+
+// FetchControlInfo queries pg_control_system() and populates the core RuntimeInfo fields.
+func (md *DbConn) FetchControlInfo(ctx context.Context) error {
+	sql := `select /* pgwatch_generated */
+div(current_setting('server_version_num')::int, 10000) as ver,
+version(),
+pg_is_in_recovery(),
+current_database()::TEXT,
+system_identifier,
+current_setting('is_superuser')::bool
+FROM
+	pg_control_system()`
+	controlCtx, controlCancel := db.WithOpTimeout(ctx, "runtime_info control", db.RuntimeInfoTimeout)
+	defer controlCancel()
+	return md.Conn.QueryRow(controlCtx, sql).
+		Scan(&md.Version, &md.VersionStr,
+			&md.IsInRecovery, &md.RealDbname,
+			&md.SystemIdentifier, &md.IsSuperuser)
+}
+
+// FetchExtensions queries pg_extension and populates md.Extensions with the installed extension versions.
+func (md *DbConn) FetchExtensions(ctx context.Context) error {
+	sqlExtensions := `select /* pgwatch_generated */ extname::text, (regexp_matches(extversion, $$\d+\.?\d+?$$))[1]::text as extversion from pg_extension order by 1;`
+	extCtx, extCancel := db.WithOpTimeout(ctx, "runtime_info extensions", db.RuntimeInfoTimeout)
+	defer extCancel()
+	res, err := md.Conn.Query(extCtx, sqlExtensions)
+	if err != nil {
+		return err
+	}
+	var ext, ver string
+	_, err = pgx.ForEachRow(res, []any{&ext, &ver}, func() error {
+		extver := VersionToInt(ver)
+		if extver == 0 {
+			return fmt.Errorf("unexpected extension %s version input: %s", ext, ver)
+		}
+		md.Extensions[ext] = extver
+		return nil
+	})
+	return err
+}
+
+func (md *DbConn) FetchVersion(ctx context.Context, kind Kind) (err error) {
+	sqls := map[Kind]string{SourcePgBouncer: "SHOW VERSION", SourcePgPool: "SHOW POOL_VERSION"}
+	versionCtx, versionCancel := db.WithOpTimeout(ctx, "runtime_info version", db.RuntimeInfoTimeout)
+	defer versionCancel()
+	if err = md.Conn.QueryRow(versionCtx, sqls[kind], pgx.QueryExecModeSimpleProtocol).Scan(&md.VersionStr); err != nil {
+		return
+	}
+	md.Version = VersionToInt(md.VersionStr)
+	return
+}
+
+// DiscoverPlatform tries to discover the platform based on the database version string and some special settings
+// that are only available on certain platforms. Populates md.ExecEnv.
+func (md *DbConn) DiscoverPlatform(ctx context.Context) error {
+	if md.ExecEnv != "" {
+		return nil // carry over as not likely to change ever
+	}
+	platformCtx, platformCancel := db.WithOpTimeout(ctx, "runtime_info platform", db.RuntimeInfoTimeout)
+	defer platformCancel()
+	sql := `select /* pgwatch_generated */
+	case
+	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by Visual C' then 'AZURE_SINGLE'
+	  when exists (select * from pg_settings where name = 'pg_qs.host_database' and setting = 'azure_sys') and version() ~* 'compiled by gcc' then 'AZURE_FLEXIBLE'
+	  when exists (select * from pg_settings where name = 'cloudsql.supported_extensions') then 'GOOGLE'
+	else
+	  'UNKNOWN'
+	end as exec_env`
+	return md.Conn.QueryRow(platformCtx, sql).Scan(&md.ExecEnv)
+}
+
+// FetchApproxSize fetches the approximate size of the database in bytes and populates md.ApproxDbSize.
+func (md *DbConn) FetchApproxSize(ctx context.Context) error {
+	sizeCtx, sizeCancel := db.WithOpTimeout(ctx, "runtime_info size", db.RuntimeInfoTimeout)
+	defer sizeCancel()
+	sqlApproxDBSize := `select /* pgwatch_generated */ current_setting('block_size')::int8 * sum(relpages) from pg_class c where c.relpersistence != 't'`
+	return md.Conn.QueryRow(sizeCtx, sqlApproxDBSize).Scan(&md.ApproxDbSize)
+}
+
+// FunctionExists checks if a function exists in the database
+func (md *DbConn) FunctionExists(ctx context.Context, functionName string) (exists bool) {
+	sql := `select /* pgwatch_generated */ true 
+from 
+	pg_proc join pg_namespace n on pronamespace = n.oid 
+where 
+	proname = $1 and n.nspname = 'public'`
+	_ = md.Conn.QueryRow(ctx, sql, functionName).Scan(&exists)
+	return
+}
+
+// TryCreateMissingExtensions should be called once on daemon startup if some commonly wanted extension (most notably pg_stat_statements) is missing.
+func (md *DbConn) TryCreateMissingExtensions(ctx context.Context, extensions []string) (string, error) {
+	// Snapshot the already-known extensions under RLock; release before doing any I/O.
+	md.RLock()
+	knownExts := maps.Clone(md.Extensions)
+	md.RUnlock()
+
+	sqlAvailableExts := `select name::text from pg_available_extensions order by 1`
+	createdExts := make([]string, 0)
+
+	availableCtx, availableCancel := db.WithOpTimeout(ctx, "available extensions", db.RuntimeInfoTimeout)
+	data, err := md.Conn.Query(availableCtx, sqlAvailableExts)
+	if err != nil {
+		availableCancel()
+		return "", err
+	}
+	availableExts, err := pgx.CollectRows(data, pgx.RowTo[string])
+	availableCancel()
+	if err != nil {
+		return "", err
+	}
+
+	for _, extToCreate := range extensions {
+		if _, ok := knownExts[extToCreate]; ok {
+			continue
+		}
+		if _, ok := slices.BinarySearch(availableExts, extToCreate); !ok {
+			err = errors.Join(err, fmt.Errorf("requested extension %s is not available on instance", extToCreate))
+			continue
+		}
+		if _, e := md.Conn.Exec(ctx, fmt.Sprintf(`create extension if not exists "%s"`, extToCreate)); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create extension %s: %w", extToCreate, e))
+		} else {
+			createdExts = append(createdExts, extToCreate)
+		}
+	}
+	return strings.Join(createdExts, ","), err
+}
+
+// TryCreateMetricsHelpers should be called once on daemon startup to try to create "metric fetching helper" functions automatically
+func (md *DbConn) TryCreateMetricsHelpers(ctx context.Context, getSQLFn func(string) string) (err error) {
+	// Clone the metric map under RLock; release before doing any I/O.
+	md.RLock()
+	metricsMap := maps.Clone(md.Metrics)
+	maps.Insert(metricsMap, maps.All(md.MetricsStandby))
+	md.RUnlock()
+
+	var sql string
+	for metricName := range metricsMap {
+		if sql = getSQLFn(metricName); sql == "" {
+			continue
+		}
+		if _, e := md.Conn.Exec(ctx, sql); e != nil {
+			err = errors.Join(err, fmt.Errorf("failed to create helper for metric %s: %w", metricName, e))
+		}
+	}
+	return
+}
+
+func (mds SourceConns) GetMonitoredDatabase(DBUniqueName string) SourceConn {
+	for _, md := range mds {
+		if md.GetSource().Name == DBUniqueName {
+			return md
+		}
+	}
+	return nil
+}
+
+// RedactURL replaces the password in URL userinfo with "xxxxx".
+// If rawURL cannot be parsed or has no password, it is returned unchanged.
+func RedactURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	if u.User == nil {
+		return rawURL
+	}
+	if _, hasPass := u.User.Password(); !hasPass {
+		return rawURL
+	}
+	u.User = url.UserPassword(u.User.Username(), "xxxxx")
+	return u.String()
+}
+
+// promConnConfig holds the parsed Prometheus source connection parameters.
+// It is populated once by ParseConfig and reused by Connect and Ping.
+type promConnConfig struct {
+	URL       string
+	Userinfo  *url.Userinfo
+	TLSConfig *tls.Config
+}
+
+// PromConn represents a Prometheus source connection.
+type PromConn struct {
+	Source
+	connConfig *promConnConfig
+	HTTPClient *http.Client
+	sync.RWMutex
+}
+
+func NewPromConn(s Source) *PromConn {
+	return &PromConn{
+		Source: s,
+	}
+}
+
+// ParseConfig parses pc.ConnStr once and caches the result in pc.connConfig.
+// Subsequent calls are no-ops. Mirrors DbConn.ParseConfig.
+func (pc *PromConn) ParseConfig() error {
+	if pc.connConfig != nil {
+		return nil
+	}
+	u, err := url.Parse(pc.ConnStr)
+	if err != nil {
+		return fmt.Errorf("parsing prometheus source URL: %w", err)
+	}
+	userinfo := u.User
+	u.User = nil
+
+	q := u.Query()
+	tlsRootCert := q.Get("tlsrootcert")
+	tlsSkipVerify := q.Get("tlsskipverify") == "true"
+	q.Del("tlsrootcert")
+	q.Del("tlsskipverify")
+	u.RawQuery = q.Encode()
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: tlsSkipVerify} //nolint:gosec // intentional per config
+	if tlsRootCert != "" {
+		caCert, readErr := os.ReadFile(tlsRootCert)
+		if readErr != nil {
+			return fmt.Errorf("reading tlsrootcert %q: %w", tlsRootCert, readErr)
+		}
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(caCert)
+		tlsConfig.RootCAs = pool
+	}
+
+	pc.connConfig = &promConnConfig{
+		URL:       u.String(),
+		Userinfo:  userinfo,
+		TLSConfig: tlsConfig,
+	}
+	return nil
+}
+
+func (pc *PromConn) Connect(ctx context.Context, _ CmdOpts) error {
+	pc.Lock()
+	if pc.HTTPClient == nil {
+		if err := pc.ParseConfig(); err != nil {
+			pc.Unlock()
+			return err
+		}
+		pc.HTTPClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: pc.connConfig.TLSConfig},
+			Timeout:   30 * time.Second,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	}
+	pc.Unlock()
+	return pc.Ping(ctx)
+}
+
+// Scrape executes a single GET request to the source's metrics endpoint with
+// Accept: text/plain and optional Basic Auth from the cached config.
+// The caller is responsible for closing resp.Body.
+// Connect must be called before Scrape.
+func (pc *PromConn) Scrape(ctx context.Context) (*http.Response, error) {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return nil, errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "text/plain")
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+	return client.Do(req)
+}
+
+func (pc *PromConn) Ping(ctx context.Context) error {
+	pc.RLock()
+	client := pc.HTTPClient
+	cfg := pc.connConfig
+	pc.RUnlock()
+
+	if client == nil || cfg == nil {
+		return errors.New("prometheus source not connected: call Connect first")
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
+	if err != nil {
+		return err
+	}
+	if cfg.Userinfo != nil {
+		pass, _ := cfg.Userinfo.Password()
+		req.SetBasicAuth(cfg.Userinfo.Username(), pass)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("prometheus ping: unexpected status %s", resp.Status)
+	}
+	return nil
+}
+
+func (pc *PromConn) IsPostgresSource() bool                           { return false }
+func (pc *PromConn) GetSource() Source                                { return pc.Source }
+func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
+func (pc *PromConn) Close()                                           {}
+
+func (pc *PromConn) GetMetricInterval(name string) time.Duration {
+	pc.RLock()
+	defer pc.RUnlock()
+	return time.Duration(pc.Metrics[name]) * time.Second
+}
+
+func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
+	pc.Lock()
+	defer pc.Unlock()
+	if main != nil {
+		pc.Metrics = main
+	}
+}

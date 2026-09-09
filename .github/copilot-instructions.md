@@ -45,7 +45,7 @@
 
 - To run particular test package:
   ```bash
-  go test -failfast -p 1 -timeout=300s -parallel=1 ./internal/reaper -coverprofile='coverage.out'
+  go test -failfast -p 1 -timeout=300s -parallel=1 ./pkg/reaper -coverprofile='coverage.out'
   ```
 
 ### Viewing Coverage Reports

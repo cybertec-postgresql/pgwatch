@@ -12,17 +12,11 @@
 *.out
 *.txt
 
-# Protobuf files
-*.pb.go
-
 # Packages output folder
 dist
 docs/godoc
 site
 build
-
-# Generated protobuf files
-*.pb.go
 
 # delve debugger file
 debug

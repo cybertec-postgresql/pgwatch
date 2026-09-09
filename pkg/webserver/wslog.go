@@ -1,0 +1,85 @@
+package webserver
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/gorilla/websocket"
+)
+
+const (
+	// Time allowed to write the file to the client.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the client.
+	pongWait = 60 * time.Second
+
+	// Send pings to client with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+)
+
+var (
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+)
+
+func reader(ws *websocket.Conn, done chan struct{}) {
+	defer ws.Close()
+	ws.SetReadLimit(512)
+	err := ws.SetReadDeadline(time.Now().Add(pongWait))
+	if err != nil {
+		return
+	}
+	ws.SetPongHandler(func(string) error { return ws.SetReadDeadline(time.Now().Add(pongWait)) })
+	for {
+		_, _, err = ws.ReadMessage()
+		if err != nil {
+			close(done)
+			break
+		}
+	}
+}
+
+func writer(ws *websocket.Conn, l log.LoggerHooker, done <-chan struct{}) {
+	pingTicker := time.NewTicker(pingPeriod)
+	defer func() {
+		pingTicker.Stop()
+		ws.Close()
+	}()
+	msgChan := make(log.MessageChanType)
+	l.AddSubscriber(msgChan)
+	defer l.RemoveSubscriber(msgChan)
+	for {
+		select {
+		case msg := <-msgChan:
+			if ws.SetWriteDeadline(time.Now().Add(writeWait)) != nil ||
+				ws.WriteMessage(websocket.TextMessage, []byte(msg)) != nil {
+				return
+			}
+		case <-pingTicker.C:
+			if ws.SetWriteDeadline(time.Now().Add(writeWait)) != nil ||
+				ws.WriteMessage(websocket.PingMessage, []byte{}) != nil {
+				return
+			}
+		case <-done:
+			return
+		}
+	}
+}
+
+func (s *WebUIServer) serveWsLog(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		s.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.WithField("request", r.URL.String()).Debugf("established websocket connection")
+	l, _ := s.Logger.(log.LoggerHooker)
+	done := make(chan struct{})
+	go writer(ws, l, done)
+	go reader(ws, done)
+}
