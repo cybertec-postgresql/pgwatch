@@ -7,14 +7,14 @@
 //
 // On Windows:
 //
-//	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+//	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 //	winget install protobuf
 //
 // On Linux/macOS:
 //
-//	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+//	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+//	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 //	# Install protoc via package manager (apt, brew, etc.)
 //
 // Then run: go generate ./api/pb/

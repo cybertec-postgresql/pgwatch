@@ -24,7 +24,7 @@ A preset is a named collection of `metric_name: time_interval` pairs. Presets le
 
 ## Built-in metrics and presets
 
-The pgwatch project ships a set of pre-defined metrics and presets that cover most common needs. For deployments at scale, you will usually want to extend this set with custom metrics or adjust fetch intervals to match your monitoring goals. The full list lives in the [default metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/internal/metrics/metrics.yaml) file in the pgwatch repository, and the Web UI exposes them under the Metrics and Presets pages (see the [Web UI gallery](../gallery/webui.md)).
+The pgwatch project ships a set of pre-defined metrics and presets that cover most common needs. For deployments at scale, you will usually want to extend this set with custom metrics or adjust fetch intervals to match your monitoring goals. The full list lives in the [default metrics.yaml](https://github.com/cybertec-postgresql/pgwatch/blob/master/pkg/metrics/metrics.yaml) file in the pgwatch repository, and the Web UI exposes them under the Metrics and Presets pages (see the [Web UI gallery](../gallery/webui.md)).
 
 A few things to know about the built-in set:
 

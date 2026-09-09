@@ -1,0 +1,765 @@
+package sinks
+
+import (
+	"context"
+	_ "embed"
+	"errors"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+	"sync"
+	"time"
+
+	jsoniter "github.com/json-iterator/go"
+
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	migrator "github.com/cybertec-postgresql/pgx-migrator"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+var (
+	cacheLimit      = 256
+	highLoadTimeout = time.Second * 5
+	targetColumns   = [...]string{"time", "dbname", "data", "tag_data"}
+)
+
+//go:embed sql/admin_schema.sql
+var sqlMetricAdminSchema string
+
+//go:embed sql/admin_functions.sql
+var sqlMetricAdminFunctions string
+
+//go:embed sql/ensure_partition_postgres.sql
+var sqlMetricEnsurePartitionPostgres string
+
+//go:embed sql/ensure_partition_timescale.sql
+var sqlMetricEnsurePartitionTimescale string
+
+//go:embed sql/change_chunk_interval.sql
+var sqlMetricChangeChunkIntervalTimescale string
+
+//go:embed sql/change_compression_interval.sql
+var sqlMetricChangeCompressionIntervalTimescale string
+
+var (
+	metricSchemaSQLs = []string{
+		sqlMetricAdminSchema,
+		sqlMetricAdminFunctions,
+		sqlMetricEnsurePartitionPostgres,
+		sqlMetricEnsurePartitionTimescale,
+		sqlMetricChangeChunkIntervalTimescale,
+		sqlMetricChangeCompressionIntervalTimescale,
+	}
+)
+
+// PostgresWriter is a sink that writes metric measurements to a Postgres database.
+// At the moment, it supports both Postgres and TimescaleDB as a storage backend.
+// However, one is able to use any Postgres-compatible database as a storage backend,
+// e.g. PGEE, Citus, Greenplum, CockroachDB, etc.
+type PostgresWriter struct {
+	ctx                     context.Context
+	sinkDb                  db.PgxPoolIface
+	metricSchema            DbStorageSchemaType
+	opts                    *CmdOpts
+	retentionInterval       time.Duration
+	maintenanceInterval     time.Duration
+	input                   chan metrics.MeasurementEnvelope
+	lastError               chan error
+	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
+	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
+	// mu guards partitionMapMetric and serializes the DDL issued by SyncMetric.
+	mu sync.Mutex
+}
+
+// make sure *dbMetricReaderWriter implements the Migrator interface
+var _ db.Migrator = (*PostgresWriter)(nil)
+
+func NewPostgresWriter(ctx context.Context, connstr string, opts *CmdOpts) (pgw *PostgresWriter, err error) {
+	var conn db.PgxPoolIface
+	if conn, err = db.New(ctx, connstr); err != nil {
+		return
+	}
+	return NewWriterFromPostgresConn(ctx, conn, opts)
+}
+
+var ErrNeedsMigration = errors.New("sink database schema is outdated, please run migrations using `pgwatch config upgrade` command")
+
+func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *CmdOpts) (pgw *PostgresWriter, err error) {
+	l := log.GetLogger(ctx).WithField("sink", "postgres").WithField("db", conn.Config().ConnConfig.Database)
+	ctx = log.WithLogger(ctx, l)
+	pgw = &PostgresWriter{
+		ctx:                     ctx,
+		opts:                    opts,
+		input:                   make(chan metrics.MeasurementEnvelope, cacheLimit),
+		lastError:               make(chan error),
+		sinkDb:                  conn,
+		forceRecreatePartitions: false,
+		partitionMapMetric:      make(map[string]ExistingPartitionInfo),
+	}
+	l.Info("initialising measurements database...")
+	if err = pgw.init(); err != nil {
+		return nil, err
+	}
+	if err = pgw.ReadMetricSchemaType(); err != nil {
+		return nil, err
+	}
+	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
+		return nil, err
+	}
+	pgw.scheduleJob(pgw.maintenanceInterval, func() {
+		pgw.DeleteOldPartitions()
+		pgw.MaintainUniqueSources()
+	})
+	go pgw.poll()
+	l.Info(`measurements sink is activated`)
+	return
+}
+
+func (pgw *PostgresWriter) init() (err error) {
+	return db.Init(pgw.ctx, pgw.sinkDb, func(ctx context.Context, conn db.PgxIface) error {
+		var isValidPartitionInterval bool
+		if err = conn.QueryRow(ctx,
+			"SELECT extract(epoch from $1::interval), extract(epoch from $2::interval), $3::interval >= '1h'::interval",
+			pgw.opts.RetentionInterval, pgw.opts.MaintenanceInterval, pgw.opts.PartitionInterval,
+		).Scan(&pgw.retentionInterval, &pgw.maintenanceInterval, &isValidPartitionInterval); err != nil {
+			return err
+		}
+
+		// epoch returns seconds but time.Duration represents nanoseconds
+		pgw.retentionInterval *= time.Second
+		pgw.maintenanceInterval *= time.Second
+
+		if !isValidPartitionInterval {
+			return fmt.Errorf("--partition-interval must be at least 1 hour, got: %s", pgw.opts.PartitionInterval)
+		}
+		if pgw.maintenanceInterval < 0 {
+			return errors.New("--maintenance-interval must be a positive PostgreSQL interval or 0 to disable it")
+		}
+		if pgw.retentionInterval < time.Hour && pgw.retentionInterval != 0 {
+			return errors.New("--retention must be at least 1 hour PostgreSQL interval or 0 to disable it")
+		}
+
+		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
+		if err != nil || exists {
+			return err
+		}
+		for _, sql := range metricSchemaSQLs {
+			if _, err = conn.Exec(ctx, sql); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+type ExistingPartitionInfo struct {
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+type MeasurementMessagePostgres struct {
+	Time    time.Time
+	DBName  string
+	Metric  string
+	Data    map[string]any
+	TagData map[string]string
+}
+
+type DbStorageSchemaType int
+
+const (
+	DbStorageSchemaPostgres DbStorageSchemaType = iota
+	DbStorageSchemaTimescale
+)
+
+func (pgw *PostgresWriter) scheduleJob(interval time.Duration, job func()) {
+	if interval > 0 {
+		go func() {
+			for {
+				select {
+				case <-pgw.ctx.Done():
+					return
+				case <-time.After(interval):
+					job()
+				}
+			}
+		}()
+	}
+}
+
+func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
+	var isTs bool
+	pgw.metricSchema = DbStorageSchemaPostgres
+	sqlSchemaType := `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
+	if err = pgw.sinkDb.QueryRow(pgw.ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
+		pgw.metricSchema = DbStorageSchemaTimescale
+	}
+	return
+}
+
+// SyncMetric ensures that tables exist for newly added metrics and/or sources
+func (pgw *PostgresWriter) SyncMetric(sourceName, metricName string, op SyncOp) error {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
+	if op == AddOp {
+		return errors.Join(
+			pgw.AddDBUniqueMetricToListingTable(sourceName, metricName),
+			pgw.EnsureMetricDummy(metricName), // ensure that there is at least an empty top-level table not to get ugly Grafana notifications
+		)
+	}
+	return nil
+}
+
+// EnsureBuiltinMetricDummies creates empty tables for all built-in metrics if they don't exist
+func (pgw *PostgresWriter) EnsureBuiltinMetricDummies() (err error) {
+	for _, name := range metrics.GetDefaultBuiltInMetrics() {
+		err = errors.Join(err, pgw.EnsureMetricDummy(name))
+	}
+	return
+}
+
+// EnsureMetricDummy creates an empty table for a metric measurements if it doesn't exist
+func (pgw *PostgresWriter) EnsureMetricDummy(metric string) (err error) {
+	_, err = pgw.sinkDb.Exec(pgw.ctx, "SELECT admin.ensure_dummy_metrics_table($1)", metric)
+	return
+}
+
+// Write sends the measurements to the cache channel
+func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
+	if pgw.ctx.Err() != nil {
+		return pgw.ctx.Err()
+	}
+	select {
+	case pgw.input <- msg:
+		// msgs sent
+	case <-time.After(highLoadTimeout):
+		// msgs dropped due to a huge load, check stdout or file for detailed log
+	}
+	select {
+	case err := <-pgw.lastError:
+		return err
+	default:
+		return nil
+	}
+}
+
+// poll is the main loop that reads from the input channel and flushes the data to the database
+func (pgw *PostgresWriter) poll() {
+	cache := make([]metrics.MeasurementEnvelope, 0, cacheLimit)
+	cacheTimeout := pgw.opts.BatchingDelay
+	tick := time.NewTicker(cacheTimeout)
+	for {
+		select {
+		case <-pgw.ctx.Done(): //check context with high priority
+			return
+		default:
+			select {
+			case entry := <-pgw.input:
+				cache = append(cache, entry)
+				if len(cache) < cacheLimit {
+					break
+				}
+				tick.Stop()
+				pgw.flush(cache)
+				cache = cache[:0]
+				tick = time.NewTicker(cacheTimeout)
+			case <-tick.C:
+				pgw.flush(cache)
+				cache = cache[:0]
+			case <-pgw.ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func newCopyFromMeasurements(rows []metrics.MeasurementEnvelope) *copyFromMeasurements {
+	return &copyFromMeasurements{envelopes: rows, envelopeIdx: -1, measurementIdx: -1}
+}
+
+type copyFromMeasurements struct {
+	envelopes      []metrics.MeasurementEnvelope
+	envelopeIdx    int
+	measurementIdx int // index of the current measurement in the envelope
+	metricName     string
+	err            error
+}
+
+func (c *copyFromMeasurements) NextEnvelope() bool {
+	c.envelopeIdx++
+	c.measurementIdx = -1
+	return c.envelopeIdx < len(c.envelopes)
+}
+
+func (c *copyFromMeasurements) Next() bool {
+	for {
+		// Check if we need to advance to the next envelope
+		if c.envelopeIdx < 0 || c.measurementIdx+1 >= len(c.envelopes[c.envelopeIdx].Data) {
+			// Advance to next envelope
+			if ok := c.NextEnvelope(); !ok {
+				return false // No more envelopes
+			}
+			// Set metric name from first envelope, or detect metric boundary
+			if c.metricName == "" {
+				c.metricName = c.envelopes[c.envelopeIdx].MetricName
+			} else if c.metricName != c.envelopes[c.envelopeIdx].MetricName {
+				// We've hit a different metric - we're done with current metric
+				// Reset position to process this envelope on next call
+				c.envelopeIdx--
+				c.measurementIdx = len(c.envelopes[c.envelopeIdx].Data) // Set to length so we've "finished" this envelope
+				c.metricName = ""                                       // Reset for next metric
+				return false
+			}
+		}
+
+		// Advance to next measurement in current envelope
+		c.measurementIdx++
+		if c.measurementIdx < len(c.envelopes[c.envelopeIdx].Data) {
+			return true // Found valid measurement
+		}
+		// If we reach here, we've exhausted current envelope, loop will advance to next envelope
+	}
+}
+
+func (c *copyFromMeasurements) EOF() bool {
+	return c.envelopeIdx >= len(c.envelopes)
+}
+
+func (c *copyFromMeasurements) Values() ([]any, error) {
+	row := maps.Clone(c.envelopes[c.envelopeIdx].Data[c.measurementIdx])
+	tagRow := maps.Clone(c.envelopes[c.envelopeIdx].CustomTags)
+	if tagRow == nil {
+		tagRow = make(map[string]string)
+	}
+	for k, v := range row {
+		if after, ok := strings.CutPrefix(k, metrics.TagPrefix); ok {
+			tagRow[after] = fmt.Sprintf("%v", v)
+			delete(row, k)
+		}
+	}
+	jsonTags, terr := jsoniter.ConfigFastest.MarshalToString(tagRow)
+	json, err := jsoniter.ConfigFastest.MarshalToString(row)
+	if err != nil || terr != nil {
+		c.err = errors.Join(err, terr)
+		return nil, c.err
+	}
+	return []any{time.Unix(0, c.envelopes[c.envelopeIdx].Data.GetEpoch()), c.envelopes[c.envelopeIdx].DBName, json, jsonTags}, nil
+}
+
+func (c *copyFromMeasurements) Err() error {
+	return c.err
+}
+
+func (c *copyFromMeasurements) MetricName() (ident pgx.Identifier) {
+	if c.envelopeIdx+1 < len(c.envelopes) {
+		// Metric name is taken from the next envelope
+		ident = pgx.Identifier{c.envelopes[c.envelopeIdx+1].MetricName}
+	}
+	return
+}
+
+// flush sends the cached measurements to the database
+func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
+	if len(msgs) == 0 {
+		return
+	}
+	logger := log.GetLogger(pgw.ctx)
+	pgPartBounds := make(map[string]ExistingPartitionInfo) // metric=min/max
+	var err error
+
+	slices.SortFunc(msgs, func(a, b metrics.MeasurementEnvelope) int {
+		if a.MetricName < b.MetricName {
+			return -1
+		} else if a.MetricName > b.MetricName {
+			return 1
+		}
+		return 0
+	})
+
+	for _, msg := range msgs {
+		if len(msg.Data) > 0 {
+			epochTime := time.Unix(0, msg.Data.GetEpoch())
+			bounds, ok := pgPartBounds[msg.MetricName]
+			if !ok || (ok && epochTime.Before(bounds.StartTime)) {
+				bounds.StartTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
+			}
+			if !ok || (ok && epochTime.After(bounds.EndTime)) {
+				bounds.EndTime = epochTime
+				pgPartBounds[msg.MetricName] = bounds
+			}
+		}
+	}
+
+	switch pgw.metricSchema {
+	case DbStorageSchemaPostgres:
+		err = pgw.EnsureMetricTimePartsExist(pgPartBounds)
+	case DbStorageSchemaTimescale:
+		err = pgw.EnsureMetricTimescale(pgPartBounds)
+	default:
+		logger.Fatal("unknown storage schema...")
+	}
+	pgw.forceRecreatePartitions = false
+	if err != nil {
+		select {
+		case pgw.lastError <- err:
+		default:
+		}
+	}
+
+	var rowsBatched, n int64
+	t1 := time.Now()
+	cfm := newCopyFromMeasurements(msgs)
+	for !cfm.EOF() {
+		n, err = pgw.sinkDb.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
+		rowsBatched += n
+		if err != nil {
+			logger.Error(err)
+			if _, ok := err.(*pgconn.ConnectError); ok {
+				logger.Errorf("Sink DB not reachable, dropping %d cached measurements", len(msgs))
+				break
+			}
+			if PgError, ok := err.(*pgconn.PgError); ok {
+				pgw.forceRecreatePartitions = PgError.Code == "23514"
+			}
+			if pgw.forceRecreatePartitions {
+				logger.Warning("Some metric partitions might have been removed, halting all metric storage. Trying to re-create all needed partitions on next run")
+			}
+		}
+	}
+	diff := time.Since(t1)
+	if err == nil {
+		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")
+		return
+	}
+	select {
+	case pgw.lastError <- err:
+	default:
+	}
+}
+
+func (pgw *PostgresWriter) EnsureMetricTimescale(pgPartBounds map[string]ExistingPartitionInfo) (err error) {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
+	logger := log.GetLogger(pgw.ctx)
+	sqlEnsure := `select * from admin.ensure_partition_timescale($1)`
+	for metric := range pgPartBounds {
+		if _, ok := pgw.partitionMapMetric[metric]; !ok {
+			if _, err = pgw.sinkDb.Exec(pgw.ctx, sqlEnsure, metric); err != nil {
+				logger.Errorf("Failed to create a TimescaleDB table for metric '%s': %v", metric, err)
+				return err
+			}
+			pgw.partitionMapMetric[metric] = ExistingPartitionInfo{}
+		}
+	}
+	return
+}
+
+func (pgw *PostgresWriter) EnsureMetricTimePartsExist(metricPartBounds map[string]ExistingPartitionInfo) error {
+	pgw.mu.Lock()
+	defer pgw.mu.Unlock()
+	var err error
+	var rows pgx.Rows
+	sqlEnsure := `select * from admin.ensure_partition_metric_time($1, $2, $3)`
+	for metric, pb := range metricPartBounds {
+		if pb.StartTime.IsZero() || pb.EndTime.IsZero() {
+			return fmt.Errorf("zero StartTime/EndTime in partitioning request: [%s:%v]", metric, pb)
+		}
+		partInfo, ok := pgw.partitionMapMetric[metric]
+		if !ok || pb.StartTime.Before(partInfo.StartTime) || pgw.forceRecreatePartitions {
+			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.StartTime, pgw.opts.PartitionInterval); err != nil {
+				return err
+			}
+			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+				return err
+			}
+			pgw.partitionMapMetric[metric] = partInfo
+		}
+		if pb.EndTime.After(partInfo.EndTime) || pb.EndTime.Equal(partInfo.EndTime) || pgw.forceRecreatePartitions {
+			if rows, err = pgw.sinkDb.Query(pgw.ctx, sqlEnsure, metric, pb.EndTime, pgw.opts.PartitionInterval); err != nil {
+				return err
+			}
+			if partInfo, err = pgx.CollectOneRow(rows, pgx.RowToStructByPos[ExistingPartitionInfo]); err != nil {
+				return err
+			}
+			pgw.partitionMapMetric[metric] = partInfo
+		}
+	}
+	return nil
+}
+
+// DeleteOldPartitions is a background task that deletes old partitions from the measurements DB
+func (pgw *PostgresWriter) DeleteOldPartitions() {
+	l := log.GetLogger(pgw.ctx)
+	var partsDropped int
+	err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.drop_old_time_partitions(older_than => $1::interval)`,
+		pgw.opts.RetentionInterval).Scan(&partsDropped)
+	if err != nil {
+		l.Error("Could not drop old time partitions:", err)
+	} else if partsDropped > 0 {
+		l.Infof("Dropped %d old time partitions", partsDropped)
+	}
+}
+
+// MaintainUniqueSources is a background task that maintains a mapping of unique sources
+// in each metric table in admin.all_distinct_dbname_metrics.
+// This is used to avoid listing the same source multiple times in Grafana dropdowns.
+func (pgw *PostgresWriter) MaintainUniqueSources() {
+	logger := log.GetLogger(pgw.ctx)
+	var rowsAffected int
+	if err := pgw.sinkDb.QueryRow(pgw.ctx, `SELECT admin.maintain_unique_sources()`).Scan(&rowsAffected); err != nil {
+		logger.Error("Failed to run admin.all_distinct_dbname_metrics maintenance:", err)
+		return
+	}
+	logger.WithField("rows", rowsAffected).Info("Successfully processed admin.all_distinct_dbname_metrics")
+}
+
+func (pgw *PostgresWriter) AddDBUniqueMetricToListingTable(dbUnique, metric string) error {
+	sql := `INSERT INTO admin.all_distinct_dbname_metrics
+			SELECT $1, $2
+			WHERE NOT EXISTS (
+				SELECT * FROM admin.all_distinct_dbname_metrics WHERE dbname = $1 AND metric = $2
+			)`
+	_, err := pgw.sinkDb.Exec(pgw.ctx, sql, dbUnique, metric)
+	return err
+}
+
+func NewPostgresSinkMigrator(ctx context.Context, connStr string) (db.Migrator, error) {
+	conn, err := pgxpool.New(ctx, connStr)
+	if err != nil {
+		return nil, err
+	}
+	pgw := &PostgresWriter{
+		ctx:    ctx,
+		sinkDb: conn,
+	}
+	exists, err := db.DoesSchemaExist(ctx, conn, "admin")
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return pgw, nil
+	}
+	for _, sql := range metricSchemaSQLs {
+		if _, err = conn.Exec(ctx, sql); err != nil {
+			return nil, err
+		}
+	}
+	return pgw, nil
+}
+
+var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
+	return migrator.New(
+		migrator.TableName("admin.migration"),
+		migrator.SetNotice(func(s string) {
+			log.GetLogger(pgw.ctx).Info(s)
+		}),
+		migrations(),
+	)
+}
+
+// Migrate upgrades database with all migrations
+func (pgw *PostgresWriter) Migrate() error {
+	m, err := initMigrator(pgw)
+	if err != nil {
+		return fmt.Errorf("cannot initialize migration: %w", err)
+	}
+	return m.Migrate(pgw.ctx, pgw.sinkDb)
+}
+
+// NeedsMigration checks if database needs migration
+func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
+	m, err := initMigrator(pgw)
+	if err != nil {
+		return false, err
+	}
+	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
+}
+
+// migrations holds function returning all upgrade migrations needed
+
+var migrations func() migrator.Option = func() migrator.Option {
+	return migrator.Migrations(
+		&migrator.Migration{
+			Name: "01110 Apply postgres sink schema migrations",
+			Func: func(context.Context, pgx.Tx) error {
+				// "migration" table will be created automatically
+				return nil
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01180 Apply admin functions migrations for v5",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, `
+					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;
+					DROP FUNCTION IF EXISTS admin.ensure_partition_metric_time;
+					DROP FUNCTION IF EXISTS admin.get_old_time_partitions(integer, text);
+					DROP FUNCTION IF EXISTS admin.drop_old_time_partitions(integer, boolean, text);
+				`)
+				if err != nil {
+					return err
+				}
+
+				_, err = tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+				if err != nil {
+					return err
+				}
+				_, err = tx.Exec(ctx, sqlMetricAdminFunctions)
+				return err
+			},
+		},
+
+		&migrator.MigrationNoTx{
+			Name: "01409 Switch to time-only partitioning",
+			Func: func(ctx context.Context, conn migrator.PgxIface) error {
+				const (
+					sqlDropOldEnsurePartitionDbnameTime = `DROP FUNCTION IF EXISTS admin.ensure_partition_metric_dbname_time;`
+
+					sqlListMetricTables = `SELECT c.relname
+						FROM pg_description d
+						JOIN pg_class c ON c.oid = d.objoid
+						WHERE d.description = 'pgwatch-generated-metric-lvl'`
+
+					sqlIsTableMigrated = `SELECT EXISTS (
+						SELECT 1 FROM pg_partitioned_table WHERE partrelid = to_regclass($1) AND partstrat = 'r')`
+
+					sqlRenameMetricTable = `ALTER TABLE %s RENAME TO %s`
+
+					sqlMetricTableBounds = `SELECT COALESCE(MIN(time), NOW()),
+						COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(time) - MIN(time))::interval) / 86400) + 1, 0)
+						FROM %s`
+
+					sqlEnsurePartitionMetricTime = `SELECT admin.ensure_partition_metric_time($1::text, $2::timestamptz, '1 day'::interval, $3)`
+
+					sqlListSubpartitions = `SELECT relid::regclass, parentrelid::regclass 
+						FROM pg_partition_tree(to_regclass($1)) WHERE relid::text LIKE 'subpartitions%' 
+						ORDER BY isleaf DESC, relid::text`
+
+					// moves rows into the new partitioned parent, detaches and drops the old subpartition;
+					// multiple statements in a single Exec run in an implicit transaction
+					sqlMoveSubpartition = `INSERT INTO %[1]s (time, dbname, data, tag_data) SELECT time, dbname, data, tag_data FROM %[2]s;
+						ALTER TABLE %[3]s DETACH PARTITION %[2]s;
+						DROP TABLE %[2]s;`
+
+					sqlDropTableIfExists = `DROP TABLE IF EXISTS %s`
+				)
+				if _, err := conn.Exec(ctx, sqlDropOldEnsurePartitionDbnameTime+
+					sqlMetricAdminFunctions+
+					sqlMetricEnsurePartitionPostgres); err != nil {
+					return err
+				}
+
+				rows, _ := conn.Query(ctx, sqlListMetricTables)
+				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+				if err != nil {
+					return err
+				}
+
+				// skip *_before_v6_migration tables to avoid double migration
+				// this could happen if the migration is re-run after a failed attempt
+				const suffix = "_before_v6_migration"
+				for _, metricTableRawName := range metricTables {
+					if strings.HasSuffix(metricTableRawName, suffix) {
+						continue
+					}
+
+					metricTableRawRename := metricTableRawName + suffix
+					metricTableRenamed := pgx.Identifier{metricTableRawRename}.Sanitize()
+					metricTable := pgx.Identifier{metricTableRawName}.Sanitize()
+
+					// check if the table is already migrated to avoid errors on re-run after a failed migration attempt
+					var isTableMigrated bool
+					if err = conn.QueryRow(ctx, sqlIsTableMigrated, metricTableRawName).Scan(&isTableMigrated); err != nil {
+						return err
+					} else if isTableMigrated {
+						continue
+					}
+
+					err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) (ferr error) {
+						if _, ferr = tx.Exec(ctx, fmt.Sprintf(sqlRenameMetricTable, metricTable, metricTableRenamed)); ferr != nil {
+							return
+						}
+
+						// for an empty table MIN(time) is NULL, so COALESCE falls back to server-side
+						// NOW() and daysToPrecreate becomes 0, creating a single empty partition
+						var minTime time.Time
+						var daysToPrecreate int32
+						if ferr = tx.QueryRow(ctx, fmt.Sprintf(sqlMetricTableBounds, metricTableRenamed)).Scan(&minTime, &daysToPrecreate); ferr == nil {
+							_, ferr = tx.Exec(ctx, sqlEnsurePartitionMetricTime, metricTableRawName, minTime, daysToPrecreate)
+						}
+						return
+					})
+
+					if err != nil {
+						return err
+					}
+
+					type partitionInfo struct {
+						Rel       string
+						ParentRel string
+					}
+					rows, _ := conn.Query(ctx, sqlListSubpartitions, metricTableRawRename)
+					partitionsInfo, err := pgx.CollectRows(rows, pgx.RowToStructByPos[partitionInfo])
+					if err != nil {
+						return err
+					}
+
+					for _, partInfo := range partitionsInfo {
+						if _, err := conn.Exec(ctx, fmt.Sprintf(sqlMoveSubpartition, metricTable, partInfo.Rel, partInfo.ParentRel)); err != nil {
+							return err
+						}
+					}
+
+					if _, err := conn.Exec(ctx, fmt.Sprintf(sqlDropTableIfExists, metricTableRenamed)); err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01474 Change drop_all_metric_tables to procedure",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
+				return err
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01529 Fix ensure_partition_metric_time partitioning strategy",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+				return err
+			},
+		},
+
+		// adding new migration here, update "admin"."migration" in "admin_schema.sql"!
+
+		// &migrator.Migration{
+		// 	Name: "000XX Short description of a migration",
+		// 	Func: func(ctx context.Context, tx pgx.Tx) error {
+		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
+		// 	},
+		// },
+	)
+}
+
+// registeredMigrationsCount returns the number of migrations actually registered in
+// migrations(). This is the single source of truth for "how many migration rows
+// admin.migration must contain after a full migrate"; no separate MigrationsCount
+// constant exists.
+func registeredMigrationsCount() int {
+	m, err := migrator.New(migrations())
+	if err != nil {
+		panic(fmt.Errorf("registeredMigrationsCount: %w", err))
+	}
+	return m.Count()
+}

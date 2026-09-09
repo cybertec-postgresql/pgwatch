@@ -36,6 +36,11 @@ theme:
     - navigation.tabs
     - content.tabs.link
 
+# The embedding example is Go source and its assets, included into
+# developer/embedding.md as a snippet rather than published as pages.
+exclude_docs: |
+  howto/embedding/
+
 plugins:
   - search
   - tags
@@ -96,6 +101,8 @@ nav:
     - Web UI: gallery/webui.md
   - Developer:
     - Contributing: developer/contributing.md
+    - Public API Stability: developer/api_stability.md
+    - Embedding pgwatch: developer/embedding.md
     - Developer Docs: ../devel/godoc/index.html
     - Code of Conduct: developer/CODE_OF_CONDUCT.md
     - License: developer/LICENSE.md

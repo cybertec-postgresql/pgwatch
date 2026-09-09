@@ -45,7 +45,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   build: {
-    outDir: '../webserver/build',
+    outDir: './embed/build',
     emptyOutDir: true,
   },
   define: {

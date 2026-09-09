@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/db"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/sources"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"

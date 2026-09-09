@@ -47,7 +47,7 @@ ARG GO_TAGS
 # Copy source code
 COPY . .
 # Copy built WebUI from previous stage to webserver package
-COPY --from=webui-builder /webserver/build ./internal/webserver/build
+COPY --from=webui-builder /webui/embed/build ./internal/webui/embed/build
 
 # Generate protobuf and build the application
 RUN go generate ./api/pb/ && \
@@ -63,7 +63,7 @@ FROM alpine
 
 # Copy over the compiled gatherer
 COPY --from=go-builder /pgwatch/pgwatch /pgwatch/
-COPY internal/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
+COPY pkg/metrics/metrics.yaml /pgwatch/metrics/metrics.yaml
 
 # Admin UI for configuring servers to be monitored
 EXPOSE 8080
