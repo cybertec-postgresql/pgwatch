@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

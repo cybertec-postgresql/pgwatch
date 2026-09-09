@@ -25,7 +25,7 @@ the only fact exchanged is *the epoch of the newest measurement a sink holds for
 implementations, the `MultiWriter` aggregation semantics, the gRPC wire extension, and the
 configuration switch.** It deliberately introduces **no consumer**. Wiring a collector to
 actually use feedback is out of scope. The deliverable is a complete, tested, unused-by-default
-capability that a consumer can adopt without further changes to `internal/sinks`.
+capability that a consumer can adopt without further changes to `pkg/sinks`.
 
 ---
 
@@ -37,7 +37,7 @@ answer that question at all.
 
 **In scope**:
 
-- A new optional Go interface `sinks.Feedbacker` in `internal/sinks`.
+- A new optional Go interface `sinks.Feedbacker` in `pkg/sinks`.
 - Two-level capability negotiation: static (does this sink kind do feedback at all?) and dynamic
   (does it do feedback for *this* source and *this* metric?).
 - Aggregation semantics for `sinks.MultiWriter` across heterogeneous sinks.
@@ -49,7 +49,7 @@ answer that question at all.
 
 **Out of scope** (each is a separate piece of work):
 
-- **Any consumer of the interface.** No file outside `internal/sinks`, `api/pb`, `docs/`, and the
+- **Any consumer of the interface.** No file outside `pkg/sinks`, `api/pb`, `docs/`, and the
   corresponding tests may call a `Feedbacker` method as a result of this work.
 - Rewind policy — how far back a collector may resume, and what it does with the epoch it
   receives — belongs to the consumer, not to the sink layer.
@@ -90,7 +90,7 @@ layout.
 | **MultiWriter** | `sinks.MultiWriter`; fans one `Write` out to several sinks. Returned by `NewSinkWriter` when more than one `--sink` is configured. |
 | **stateful collector** | A collector whose next output depends on its own previous output position (e.g. a log tail), as opposed to a stateless collector that re-queries current state each interval. The eventual consumer of this interface. |
 | **at-least-once** | A delivery guarantee under which a measurement may be written more than once but is never lost. |
-| **storage name** | The metric name under which measurements are actually persisted, which may differ from the definition name (see `metricNameForStorage` in `internal/reaper/reaper.go`). |
+| **storage name** | The metric name under which measurements are actually persisted, which may differ from the definition name (see `metricNameForStorage` in `pkg/reaper/reaper.go`). |
 | **RPC sink** | `sinks.RPCWriter`; forwards measurements to a user-supplied gRPC server implementing `api/pb.Receiver`. |
 
 ---
@@ -99,8 +99,8 @@ layout.
 
 ### 3.1 Interface and Capability Negotiation
 
-- **REQ-001**: `internal/sinks` MUST define an optional interface `Feedbacker` (exact signature in §4.1). A sink MUST NOT be required to implement it; `Writer` MUST remain unchanged.
-- **REQ-002**: Callers MUST discover feedback support by Go type assertion on the `sinks.Writer` value, following the existing pattern used for `sinks.MetricsDefiner` (`internal/reaper/metric.go:84`) and `db.Migrator` (`internal/cmdopts/cmdoptions.go:188`).
+- **REQ-001**: `pkg/sinks` MUST define an optional interface `Feedbacker` (exact signature in §4.1). A sink MUST NOT be required to implement it; `Writer` MUST remain unchanged.
+- **REQ-002**: Callers MUST discover feedback support by Go type assertion on the `sinks.Writer` value, following the existing pattern used for `sinks.MetricsDefiner` (`pkg/reaper/metric.go:84`) and `db.Migrator` (`internal/cmdopts/cmdoptions.go:188`).
 - **REQ-003**: `Feedbacker` MUST expose a **pair-level** capability predicate `CanFeedback(sourceName, metricName string) bool`. Implementing the interface declares the sink *kind* capable; `CanFeedback` declares whether *this specific pair* can be answered.
 - **REQ-004**: `CanFeedback` MUST be side-effect free, MUST NOT perform network or disk I/O, MUST NOT block, and MUST be safe for concurrent use. It answers from in-memory state only.
 - **REQ-005**: `Feedbacker` MUST expose `LastMeasurement(ctx context.Context, sourceName, metricName string) (int64, error)` returning the `epoch_ns` of the newest measurement the sink holds for the pair.
@@ -174,7 +174,7 @@ layout.
 
 ### 3.6 Constraints
 
-- **CON-001**: No breaking change to `sinks.Writer`, `sinks.MetricsDefiner`, or any existing exported signature in `internal/sinks`.
+- **CON-001**: No breaking change to `sinks.Writer`, `sinks.MetricsDefiner`, or any existing exported signature in `pkg/sinks`.
 - **CON-002**: A feedback query MUST complete within 5 seconds by default. Implementations MUST impose this deadline when the caller's context carries none.
 - **CON-003**: Feedback queries MUST NOT be issued on the measurement hot path. Permitted call sites are collector start-up and explicit administrative/diagnostic paths only.
 - **CON-004**: The `api/pb/pgwatch.proto` change MUST be additive: a new RPC method and new messages only. Existing message field numbers MUST NOT be renumbered, reused, or removed.
@@ -184,7 +184,7 @@ layout.
 ### 3.7 Security
 
 - **SEC-001**: `sourceName` and `metricName` MUST be passed to SQL as bind parameters; only the metric table identifier may be interpolated, and it MUST be quoted with `pgx.Identifier{...}.Sanitize()` or an equivalent.
-- **SEC-002**: The gRPC feedback call MUST reuse the existing `RPCWriter` connection, credentials, and TLS configuration (`internal/sinks/rpc.go`). It MUST NOT open a second connection or weaken transport security.
+- **SEC-002**: The gRPC feedback call MUST reuse the existing `RPCWriter` connection, credentials, and TLS configuration (`pkg/sinks/rpc.go`). It MUST NOT open a second connection or weaken transport security.
 - **SEC-003**: Feedback replies MUST be treated as untrusted input. A sink MUST NOT panic, loop unboundedly, or allocate unboundedly on a malformed, negative, zero, or absurdly large epoch. Sinks normalise per **REQ-013** and **RPC-007**; callers validate per **CAL-004**.
 - **SEC-004**: Feedback queries and their outcomes MUST be logged using the existing sink logging conventions (`log.GetLogger(ctx).WithField("sink", ...)`), at `Debug` level for successful queries and no higher than `Info` for expected `ErrFeedbackUnsupported` / `ErrNoFeedbackData` outcomes.
 
@@ -203,7 +203,7 @@ layout.
 
 ## 4. Interfaces & Data Contracts
 
-### 4.1 `sinks.Feedbacker` (new, in `internal/sinks/feedback.go`)
+### 4.1 `sinks.Feedbacker` (new, in `pkg/sinks/feedback.go`)
 
 ```go
 package sinks
@@ -287,7 +287,7 @@ func lastStoredEpoch(ctx context.Context, w sinks.Writer, source, metric string)
 | feedback disabled by config | `false` | `(0, ErrFeedbackUnsupported)` |
 
 Note: `NewSinkWriter` unwraps a single-sink `MultiWriter` and returns the sink directly
-(`internal/sinks/multiwriter.go:60`), so the single-sink case exercises the sink's own
+(`pkg/sinks/multiwriter.go:60`), so the single-sink case exercises the sink's own
 implementation, not the aggregate. Tests MUST construct `MultiWriter` explicitly via
 `AddWriter` to cover the aggregation rules.
 
@@ -295,7 +295,7 @@ implementation, not the aggregate. Tests MUST construct `MultiWriter` explicitly
 
 Measurements live in `public."<metric>"` with the columns of `admin.metrics_template`
 (`time timestamptz`, `dbname text`, `data jsonb`, `tag_data jsonb`) and an index on
-`(dbname, time)` (`internal/sinks/sql/admin_schema.sql:69`).
+`(dbname, time)` (`pkg/sinks/sql/admin_schema.sql:69`).
 
 ```sql
 -- $1 = sourceName, $2 = retention interval (e.g. '14 days')
@@ -396,7 +396,7 @@ is to pass `opts` to `NewRPCWriter` alongside the connection string, mirroring
 - **AC-014**: Given concurrent `LastMeasurement` and `SyncMetric` calls on the same `PostgresWriter`, When both run under `-race`, Then no data race is reported and neither blocks the other (**PGS-008**).
 - **AC-015**: Given a `LastMeasurement` returning `err == nil`, When the epoch is inspected, Then it is strictly greater than zero (**REQ-013**).
 - **AC-016**: Given an existing gRPC receiver built against the pre-change `pgwatch.proto`, When pgwatch writes measurements to it, Then `UpdateMeasurements`, `SyncMetric`, and `DefineMetrics` behave exactly as before.
-- **AC-017**: Given the full change set, When `grep -rn "Feedbacker\|LastMeasurement\|CanFeedback" --include=*.go` is run over the repository, Then every non-test hit is inside `internal/sinks` (**CON-006**).
+- **AC-017**: Given the full change set, When `grep -rn "Feedbacker\|LastMeasurement\|CanFeedback" --include=*.go` is run over the repository, Then every non-test hit is inside `pkg/sinks` (**CON-006**).
 - **AC-018**: The system shall pass `go vet ./...` and `gofmt -l internal/ api/` with no output after the change.
 
 ---
@@ -404,13 +404,13 @@ is to pass `opts` to `NewRPCWriter` alongside the connection string, mirroring
 ## 6. Test Automation Strategy
 
 - **Test Levels**: Unit (per-sink `CanFeedback`/`LastMeasurement`, `MultiWriter` aggregation, config gating), Integration (Postgres sink against a real database; RPC sink against an in-process gRPC server). No end-to-end level applies, since no consumer exists.
-- **Frameworks**: Go standard `testing`; `github.com/stretchr/testify` (`assert`, `require`) as already used across `internal/sinks/*_test.go`; `pgxmock` for `PostgresWriter` unit tests, mirroring `internal/sinks/postgres_test.go`; `google.golang.org/grpc/test/bufconn` for `RPCWriter` tests, mirroring `internal/sinks/rpc_test.go`.
+- **Frameworks**: Go standard `testing`; `github.com/stretchr/testify` (`assert`, `require`) as already used across `pkg/sinks/*_test.go`; `pgxmock` for `PostgresWriter` unit tests, mirroring `pkg/sinks/postgres_test.go`; `google.golang.org/grpc/test/bufconn` for `RPCWriter` tests, mirroring `pkg/sinks/rpc_test.go`.
 - **Test Data Management**: Postgres integration tests create metric tables through the sink's own `SyncMetric`/`AddOp` path and drop them in `t.Cleanup`. Unit tests use `pgxmock` expectations rather than a live database. No fixtures are shared between tests.
-- **Mocks**: A `fakeFeedbacker` test helper in `internal/sinks` MUST allow scripting `CanFeedback` results, epochs, errors, and call counts, so that **AC-011** (no backend call when disabled) and **AC-008** (capability caching) are assertable. The same helper drives every row of the §4.3 aggregation table without needing four real sinks.
+- **Mocks**: A `fakeFeedbacker` test helper in `pkg/sinks` MUST allow scripting `CanFeedback` results, epochs, errors, and call counts, so that **AC-011** (no backend call when disabled) and **AC-008** (capability caching) are assertable. The same helper drives every row of the §4.3 aggregation table without needing four real sinks.
 - **gRPC server double**: A `bufconn`-backed `Receiver` implementation MUST be scriptable to return each row of the §4.5 status-code table, including a variant that omits `GetLastMeasurement` entirely so `codes.Unimplemented` is produced by gRPC itself rather than by the double.
 - **CI/CD Integration**: Tests run in the existing GitHub Actions Go workflow. Integration tests requiring a live Postgres MUST follow the repository's existing `*_integration_test.go` convention so the default `go test ./...` remains hermetic.
-- **Coverage Requirements**: New code in `internal/sinks` MUST reach at least 80% statement coverage. Every row of the §4.3 aggregation table and every row of the §4.5 status-code table MUST have a dedicated test case.
-- **Race Testing**: `go test -race` MUST cover concurrent `CanFeedback` + `LastMeasurement` + `Write` + `SyncMetric` on `PostgresWriter`, and concurrent `LastMeasurement` on `RPCWriter` exercising the cached-capability flag (**RPC-008**), extending the pattern of `internal/sinks/prometheus_race_test.go`.
+- **Coverage Requirements**: New code in `pkg/sinks` MUST reach at least 80% statement coverage. Every row of the §4.3 aggregation table and every row of the §4.5 status-code table MUST have a dedicated test case.
+- **Race Testing**: `go test -race` MUST cover concurrent `CanFeedback` + `LastMeasurement` + `Write` + `SyncMetric` on `PostgresWriter`, and concurrent `LastMeasurement` on `RPCWriter` exercising the cached-capability flag (**RPC-008**), extending the pattern of `pkg/sinks/prometheus_race_test.go`.
 - **Performance Testing**: A timed integration assertion MUST show that `PostgresWriter.LastMeasurement` on a table with ≥ 30 daily partitions completes in under 100 ms, demonstrating that **PGS-004**'s retention bound prunes partitions.
 - **Regression Guards**:
   - A test MUST assert that `PrometheusWriter` and `JSONWriter` do *not* satisfy `Feedbacker`, so the deliberate non-implementation (**PRM-001**, **JSN-001**) is not silently reversed.
@@ -437,7 +437,7 @@ unavailable: Postgres holds data through `T2`, the RPC receiver only through `T1
 A consumer resuming from `max = T2` means the RPC receiver never receives the `T1..T2` span —
 permanent data loss. Resuming from `min = T1` means Postgres receives the `T1..T2` span twice —
 duplication. pgwatch's pipeline is at-least-once end to end (a failed `Write` is logged and the
-envelope is dropped, `internal/reaper/reaper.go:430`), and duplicate measurements are visibly
+envelope is dropped, `pkg/reaper/reaper.go:430`), and duplicate measurements are visibly
 wrong but recoverable, whereas a hole in a monitoring timeline is not. Minimum is therefore the
 correct conservative choice. **REQ-024** extends the same logic: a sink holding *nothing* is the
 extreme case of lagging, so the aggregate reports "no data" and the consumer falls back to its
@@ -483,7 +483,7 @@ to compute in each. **GUD-002** records the intent to keep it that way.
 ### 7.7 Why the capability ships without a consumer
 
 Splitting the interface from its first consumer is deliberate, not incidental. The two changes
-have different review surfaces: this one is a self-contained addition to `internal/sinks` plus an
+have different review surfaces: this one is a self-contained addition to `pkg/sinks` plus an
 additive `.proto` method, reviewable against the tables in §4 and provably behaviour-neutral
 (**CON-006**); a consumer change is about resume correctness, replay bounds, and duplicate
 tolerance in one specific collector. Landing the interface first also means the consumer branch
@@ -542,7 +542,7 @@ specification; each needs its own:
 
 - **DAT-001**: `epoch_ns` semantics — measurements carry Unix nanoseconds in `metrics.EpochColumnName`; the Postgres sink persists this as `timestamptz`. Round-tripping through `timestamptz` truncates to microsecond precision, so a returned epoch may be up to 999 ns older than the value originally written. This is immaterial and MUST NOT be treated as a defect.
 - **DAT-002**: Metric storage names — feedback queries operate on the storage name (`metricNameForStorage`), not the definition name, matching what `SyncMetric` and `Write` use. Sinks receive whatever name the caller supplies; **CAL-006** places the obligation on the caller.
-- **DAT-003**: `PostgresWriter.opts.RetentionInterval` — a PostgreSQL interval string, already validated at sink init (`internal/sinks/postgres.go:123`). Reused verbatim as the query bound; no new validation is required.
+- **DAT-003**: `PostgresWriter.opts.RetentionInterval` — a PostgreSQL interval string, already validated at sink init (`pkg/sinks/postgres.go:123`). Reused verbatim as the query bound; no new validation is required.
 
 ### Technology Platform Dependencies
 
@@ -732,10 +732,10 @@ A conforming implementation MUST satisfy all of the following:
 5. Every acceptance criterion **AC-001** … **AC-018** has at least one corresponding test, traceable by name or comment.
 6. `api/pb/pgwatch.proto` diff is additive only; field numbers 1–4 of `MeasurementEnvelope` and 1–3 of `SyncReq` are untouched (**CON-004**).
 7. A gRPC receiver compiled against the previous `.proto` interoperates with the new pgwatch for all three pre-existing methods (**AC-016**).
-8. No `Feedbacker` method is called anywhere outside `internal/sinks` and its tests (**AC-017**).
+8. No `Feedbacker` method is called anywhere outside `pkg/sinks` and its tests (**AC-017**).
 9. No `Feedbacker` method is invoked from `PostgresWriter.poll`, `PostgresWriter.flush`, or any other per-measurement path (**CON-003**).
 10. All SQL built for feedback passes `sourceName` as a bind parameter; the only interpolated element is the sanitised table identifier (**SEC-001**).
-11. `go test -race ./internal/sinks/...` passes.
+11. `go test -race ./pkg/sinks/...` passes.
 12. `gofmt -l internal/ api/` produces no output and `go vet ./...` is clean (**AC-018**).
 13. Documentation under `docs/` describes the new flag, the two-level capability model, which sinks support feedback, and the §4.5 status-code contract for third-party gRPC receiver implementers.
 14. Running pgwatch with an unchanged configuration produces the same collection behaviour as the pre-change build; the only user-visible additions are the new flag in `--help` and the new gRPC method (**CON-006**).
@@ -747,8 +747,8 @@ A conforming implementation MUST satisfy all of the following:
 - [`spec/design-source-failure-resilience.md`](design-source-failure-resilience.md) — bounded contexts and last-known-good caching on the source side; shares the "bound every round-trip, degrade instead of blocking" principle (§7.9).
 - [`spec/architecture-prometheus-exporter-source.md`](architecture-prometheus-exporter-source.md) — Prometheus as a pgwatch source; explains the pull-model characteristics that make `PrometheusWriter` unsuitable as a feedback provider (§7.3).
 - [`spec/refactor-sourceconn-interface.md`](refactor-sourceconn-interface.md) — source connection abstraction; context for how sinks and sources are wired together.
-- `internal/sinks/doc.go` — package overview of the sink connectors; MUST be extended to mention the optional feedback capability.
-- `internal/sinks/multiwriter.go` — `Writer`, `MetricsDefiner`, and the existing optional-capability pattern this specification extends.
-- `internal/sinks/sql/admin_schema.sql` — `admin.metrics_template`, the column and index layout the Postgres feedback query relies on.
+- `pkg/sinks/doc.go` — package overview of the sink connectors; MUST be extended to mention the optional feedback capability.
+- `pkg/sinks/multiwriter.go` — `Writer`, `MetricsDefiner`, and the existing optional-capability pattern this specification extends.
+- `pkg/sinks/sql/admin_schema.sql` — `admin.metrics_template`, the column and index layout the Postgres feedback query relies on.
 - `api/pb/pgwatch.proto` — the `Receiver` service contract extended in §4.5.
 - [gRPC status codes](https://grpc.io/docs/guides/status-codes/) — `Unimplemented` and `NotFound` semantics used by §4.5.
