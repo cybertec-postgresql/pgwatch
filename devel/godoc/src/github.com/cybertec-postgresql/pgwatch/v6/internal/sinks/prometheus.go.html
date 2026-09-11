@@ -64,15 +64,15 @@
 <span id="L7" class="ln">     7  </span>	&#34;net&#34;
 <span id="L8" class="ln">     8  </span>	&#34;net/http&#34;
 <span id="L9" class="ln">     9  </span>	&#34;slices&#34;
-<span id="L10" class="ln">    10  </span>	&#34;strconv&#34;
-<span id="L11" class="ln">    11  </span>	&#34;strings&#34;
-<span id="L12" class="ln">    12  </span>	&#34;sync&#34;
-<span id="L13" class="ln">    13  </span>	&#34;time&#34;
-<span id="L14" class="ln">    14  </span>
-<span id="L15" class="ln">    15  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v6/internal/log&#34;
-<span id="L16" class="ln">    16  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v6/internal/metrics&#34;
-<span id="L17" class="ln">    17  </span>	&#34;github.com/prometheus/client_golang/prometheus&#34;
-<span id="L18" class="ln">    18  </span>	&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;
+<span id="L10" class="ln">    10  </span>	&#34;strings&#34;
+<span id="L11" class="ln">    11  </span>	&#34;sync&#34;
+<span id="L12" class="ln">    12  </span>	&#34;time&#34;
+<span id="L13" class="ln">    13  </span>
+<span id="L14" class="ln">    14  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v6/internal/log&#34;
+<span id="L15" class="ln">    15  </span>	&#34;github.com/cybertec-postgresql/pgwatch/v6/internal/metrics&#34;
+<span id="L16" class="ln">    16  </span>	&#34;github.com/prometheus/client_golang/prometheus&#34;
+<span id="L17" class="ln">    17  </span>	&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;
+<span id="L18" class="ln">    18  </span>	&#34;github.com/prometheus/common/model&#34;
 <span id="L19" class="ln">    19  </span>)
 <span id="L20" class="ln">    20  </span>
 <span id="L21" class="ln">    21  </span>type PromMetricCache = map[string]map[string]metrics.MeasurementEnvelope <span class="comment">// [dbUnique][metric]lastly_fetched_data</span>
@@ -331,103 +331,138 @@
 <span id="L274" class="ln">   274  </span>
 <span id="L275" class="ln">   275  </span>	seen := make(map[string]any)
 <span id="L276" class="ln">   276  </span>
-<span id="L277" class="ln">   277  </span>	for _, measurement := range msg.Data {
-<span id="L278" class="ln">   278  </span>		labels := make(map[string]string)
-<span id="L279" class="ln">   279  </span>		fields := make(map[string]float64)
-<span id="L280" class="ln">   280  </span>		if msg.CustomTags != nil {
-<span id="L281" class="ln">   281  </span>			labels = maps.Clone(msg.CustomTags)
-<span id="L282" class="ln">   282  </span>		}
-<span id="L283" class="ln">   283  </span>		labels[&#34;dbname&#34;] = msg.DBName
-<span id="L284" class="ln">   284  </span>
-<span id="L285" class="ln">   285  </span>		<span class="comment">// Prom-sourced measurements each carry their own timestamp.</span>
-<span id="L286" class="ln">   286  </span>		rowEpochTime := baseEpochTime
-<span id="L287" class="ln">   287  </span>		for k, v := range measurement {
-<span id="L288" class="ln">   288  </span>			if k == metrics.EpochColumnName {
-<span id="L289" class="ln">   289  </span>				if isPromSource {
-<span id="L290" class="ln">   290  </span>					if ns, ok := v.(int64); ok &amp;&amp; ns != 0 {
-<span id="L291" class="ln">   291  </span>						rowEpochTime = time.Unix(0, ns)
-<span id="L292" class="ln">   292  </span>					}
-<span id="L293" class="ln">   293  </span>				}
-<span id="L294" class="ln">   294  </span>				continue
-<span id="L295" class="ln">   295  </span>			}
-<span id="L296" class="ln">   296  </span>			if v == nil || v == &#34;&#34; {
-<span id="L297" class="ln">   297  </span>				continue
-<span id="L298" class="ln">   298  </span>			}
-<span id="L299" class="ln">   299  </span>
-<span id="L300" class="ln">   300  </span>			if tag, found := strings.CutPrefix(k, metrics.TagPrefix); found {
-<span id="L301" class="ln">   301  </span>				labels[tag] = fmt.Sprintf(&#34;%v&#34;, v)
-<span id="L302" class="ln">   302  </span>			} else {
-<span id="L303" class="ln">   303  </span>				switch t := v.(type) {
-<span id="L304" class="ln">   304  </span>				case int, int32, int64, float32, float64:
-<span id="L305" class="ln">   305  </span>					fields[k], _ = strconv.ParseFloat(fmt.Sprintf(&#34;%v&#34;, v), 64)
-<span id="L306" class="ln">   306  </span>				case bool:
-<span id="L307" class="ln">   307  </span>					fields[k] = map[bool]float64{true: 1, false: 0}[t]
-<span id="L308" class="ln">   308  </span>				default:
-<span id="L309" class="ln">   309  </span>					promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s], unsupported datatype: %v&#34;, k, msg.DBName, msg.MetricName, t)
-<span id="L310" class="ln">   310  </span>					continue
-<span id="L311" class="ln">   311  </span>				}
+<span id="L277" class="ln">   277  </span>	<span class="comment">// fqName and the value type depend only on the field name, and a Desc</span>
+<span id="L278" class="ln">   278  </span>	<span class="comment">// only on (fqName, help, label keys); both are therefore memoized per</span>
+<span id="L279" class="ln">   279  </span>	<span class="comment">// envelope instead of being rebuilt for every row.</span>
+<span id="L280" class="ln">   280  </span>	type fieldMeta struct {
+<span id="L281" class="ln">   281  </span>		fqName    string
+<span id="L282" class="ln">   282  </span>		valueType prometheus.ValueType
+<span id="L283" class="ln">   283  </span>	}
+<span id="L284" class="ln">   284  </span>	metaByField := make(map[string]fieldMeta)
+<span id="L285" class="ln">   285  </span>	type descKey struct {
+<span id="L286" class="ln">   286  </span>		fqName    string
+<span id="L287" class="ln">   287  </span>		labelKeys string
+<span id="L288" class="ln">   288  </span>	}
+<span id="L289" class="ln">   289  </span>	descs := make(map[descKey]*prometheus.Desc)
+<span id="L290" class="ln">   290  </span>	fqNamePrefix := promw.Namespace + &#34;_&#34; + msg.MetricName + &#34;_&#34;
+<span id="L291" class="ln">   291  </span>
+<span id="L292" class="ln">   292  </span>	for _, measurement := range msg.Data {
+<span id="L293" class="ln">   293  </span>		var labels map[string]string
+<span id="L294" class="ln">   294  </span>		if msg.CustomTags != nil {
+<span id="L295" class="ln">   295  </span>			labels = maps.Clone(msg.CustomTags)
+<span id="L296" class="ln">   296  </span>		} else {
+<span id="L297" class="ln">   297  </span>			labels = make(map[string]string)
+<span id="L298" class="ln">   298  </span>		}
+<span id="L299" class="ln">   299  </span>		labels[&#34;dbname&#34;] = msg.DBName
+<span id="L300" class="ln">   300  </span>		fields := make(map[string]float64)
+<span id="L301" class="ln">   301  </span>
+<span id="L302" class="ln">   302  </span>		<span class="comment">// Prom-sourced measurements each carry their own timestamp.</span>
+<span id="L303" class="ln">   303  </span>		rowEpochTime := baseEpochTime
+<span id="L304" class="ln">   304  </span>		for k, v := range measurement {
+<span id="L305" class="ln">   305  </span>			if k == metrics.EpochColumnName {
+<span id="L306" class="ln">   306  </span>				if isPromSource {
+<span id="L307" class="ln">   307  </span>					if ns, ok := v.(int64); ok &amp;&amp; ns != 0 {
+<span id="L308" class="ln">   308  </span>						rowEpochTime = time.Unix(0, ns)
+<span id="L309" class="ln">   309  </span>					}
+<span id="L310" class="ln">   310  </span>				}
+<span id="L311" class="ln">   311  </span>				continue
 <span id="L312" class="ln">   312  </span>			}
-<span id="L313" class="ln">   313  </span>		}
-<span id="L314" class="ln">   314  </span>
-<span id="L315" class="ln">   315  </span>		<span class="comment">// Sort label keys for deterministic descriptor identity.</span>
-<span id="L316" class="ln">   316  </span>		labelKeys := slices.Sorted(maps.Keys(labels))
-<span id="L317" class="ln">   317  </span>		labelValues := make([]string, len(labelKeys))
-<span id="L318" class="ln">   318  </span>		for i, k := range labelKeys {
-<span id="L319" class="ln">   319  </span>			labelValues[i] = labels[k]
-<span id="L320" class="ln">   320  </span>		}
-<span id="L321" class="ln">   321  </span>		joinedLabelValues := strings.Join(labelValues, &#34;_&#34;)
-<span id="L322" class="ln">   322  </span>
-<span id="L323" class="ln">   323  </span>		for field, value := range fields {
-<span id="L324" class="ln">   324  </span>			var fqName string
-<span id="L325" class="ln">   325  </span>			var fieldPromDataType prometheus.ValueType
-<span id="L326" class="ln">   326  </span>
-<span id="L327" class="ln">   327  </span>			if isPromSource {
-<span id="L328" class="ln">   328  </span>				<span class="comment">// Prom→prom proxy path: ScrapeAll stores exactly one value</span>
-<span id="L329" class="ln">   329  </span>				<span class="comment">// column per family, named after the family itself. Skip any</span>
-<span id="L330" class="ln">   330  </span>				<span class="comment">// other numeric column that may appear unexpectedly.</span>
-<span id="L331" class="ln">   331  </span>				if field != msg.MetricName {
-<span id="L332" class="ln">   332  </span>					continue
-<span id="L333" class="ln">   333  </span>				}
-<span id="L334" class="ln">   334  </span>				fqName = field
-<span id="L335" class="ln">   335  </span>				fieldPromDataType = prometheus.UntypedValue
-<span id="L336" class="ln">   336  </span>			} else {
-<span id="L337" class="ln">   337  </span>				fieldPromDataType = prometheus.CounterValue
-<span id="L338" class="ln">   338  </span>				if msg.MetricName == promInstanceUpStateMetric ||
-<span id="L339" class="ln">   339  </span>					len(gauges) &gt; 0 &amp;&amp; (gauges[0] == &#34;*&#34; || slices.Contains(gauges, field)) {
-<span id="L340" class="ln">   340  </span>					fieldPromDataType = prometheus.GaugeValue
-<span id="L341" class="ln">   341  </span>				}
-<span id="L342" class="ln">   342  </span>				if msg.MetricName == promInstanceUpStateMetric {
-<span id="L343" class="ln">   343  </span>					fqName = fmt.Sprintf(&#34;%s_%s&#34;, promw.Namespace, msg.MetricName)
-<span id="L344" class="ln">   344  </span>				} else {
-<span id="L345" class="ln">   345  </span>					fqName = fmt.Sprintf(&#34;%s_%s_%s&#34;, promw.Namespace, msg.MetricName, field)
-<span id="L346" class="ln">   346  </span>				}
-<span id="L347" class="ln">   347  </span>			}
-<span id="L348" class="ln">   348  </span>
-<span id="L349" class="ln">   349  </span>			<span class="comment">// skip if this exact identity was already emitted in this scrape</span>
-<span id="L350" class="ln">   350  </span>			identity := fqName + &#34;_&#34; + joinedLabelValues
-<span id="L351" class="ln">   351  </span>			if _, dup := seen[identity]; dup {
-<span id="L352" class="ln">   352  </span>				promw.logger.
-<span id="L353" class="ln">   353  </span>					WithField(&#34;metric&#34;, msg.MetricName).
-<span id="L354" class="ln">   354  </span>					Warning(&#34;duplicate metric identity dropped, prefix differentiating string columns with tag_&#34;)
-<span id="L355" class="ln">   355  </span>				errorCount++
-<span id="L356" class="ln">   356  </span>				continue
-<span id="L357" class="ln">   357  </span>			}
-<span id="L358" class="ln">   358  </span>			seen[identity] = struct{}{}
-<span id="L359" class="ln">   359  </span>
-<span id="L360" class="ln">   360  </span>			desc := prometheus.NewDesc(fqName, msg.MetricName, labelKeys, nil)
-<span id="L361" class="ln">   361  </span>			m, err := prometheus.NewConstMetric(desc, fieldPromDataType, value, labelValues...)
-<span id="L362" class="ln">   362  </span>			if err != nil {
-<span id="L363" class="ln">   363  </span>				promw.logger.Warningf(&#34;skipping metric %s of [%s:%s]: %v&#34;, fqName, msg.DBName, msg.MetricName, err)
-<span id="L364" class="ln">   364  </span>				errorCount++
-<span id="L365" class="ln">   365  </span>				continue
-<span id="L366" class="ln">   366  </span>			}
-<span id="L367" class="ln">   367  </span>			ch &lt;- prometheus.NewMetricWithTimestamp(rowEpochTime, m)
-<span id="L368" class="ln">   368  </span>			written++
-<span id="L369" class="ln">   369  </span>		}
-<span id="L370" class="ln">   370  </span>	}
-<span id="L371" class="ln">   371  </span>	return
-<span id="L372" class="ln">   372  </span>}
-<span id="L373" class="ln">   373  </span>
+<span id="L313" class="ln">   313  </span>			if v == nil || v == &#34;&#34; {
+<span id="L314" class="ln">   314  </span>				continue
+<span id="L315" class="ln">   315  </span>			}
+<span id="L316" class="ln">   316  </span>
+<span id="L317" class="ln">   317  </span>			if tag, found := strings.CutPrefix(k, metrics.TagPrefix); found {
+<span id="L318" class="ln">   318  </span>				labels[tag] = fmt.Sprintf(&#34;%v&#34;, v)
+<span id="L319" class="ln">   319  </span>				continue
+<span id="L320" class="ln">   320  </span>			}
+<span id="L321" class="ln">   321  </span>			switch t := v.(type) {
+<span id="L322" class="ln">   322  </span>			case int:
+<span id="L323" class="ln">   323  </span>				fields[k] = float64(t)
+<span id="L324" class="ln">   324  </span>			case int32:
+<span id="L325" class="ln">   325  </span>				fields[k] = float64(t)
+<span id="L326" class="ln">   326  </span>			case int64:
+<span id="L327" class="ln">   327  </span>				fields[k] = float64(t)
+<span id="L328" class="ln">   328  </span>			case float32:
+<span id="L329" class="ln">   329  </span>				fields[k] = float64(t)
+<span id="L330" class="ln">   330  </span>			case float64:
+<span id="L331" class="ln">   331  </span>				fields[k] = t
+<span id="L332" class="ln">   332  </span>			case bool:
+<span id="L333" class="ln">   333  </span>				if t {
+<span id="L334" class="ln">   334  </span>					fields[k] = 1
+<span id="L335" class="ln">   335  </span>				} else {
+<span id="L336" class="ln">   336  </span>					fields[k] = 0
+<span id="L337" class="ln">   337  </span>				}
+<span id="L338" class="ln">   338  </span>			default:
+<span id="L339" class="ln">   339  </span>				promw.logger.Debugf(&#34;skipping scraping column %s of [%s:%s], unsupported datatype: %v&#34;, k, msg.DBName, msg.MetricName, t)
+<span id="L340" class="ln">   340  </span>			}
+<span id="L341" class="ln">   341  </span>		}
+<span id="L342" class="ln">   342  </span>
+<span id="L343" class="ln">   343  </span>		<span class="comment">// Sort label keys for deterministic descriptor identity.</span>
+<span id="L344" class="ln">   344  </span>		labelKeys := slices.Sorted(maps.Keys(labels))
+<span id="L345" class="ln">   345  </span>		labelValues := make([]string, len(labelKeys))
+<span id="L346" class="ln">   346  </span>		for i, k := range labelKeys {
+<span id="L347" class="ln">   347  </span>			labelValues[i] = labels[k]
+<span id="L348" class="ln">   348  </span>		}
+<span id="L349" class="ln">   349  </span>		joinedLabelValues := strings.Join(labelValues, &#34;_&#34;)
+<span id="L350" class="ln">   350  </span>		<span class="comment">// model.SeparatorByte cannot occur in label names.</span>
+<span id="L351" class="ln">   351  </span>		joinedLabelKeys := strings.Join(labelKeys, string(model.SeparatorByte))
+<span id="L352" class="ln">   352  </span>
+<span id="L353" class="ln">   353  </span>		for field, value := range fields {
+<span id="L354" class="ln">   354  </span>			meta, ok := metaByField[field]
+<span id="L355" class="ln">   355  </span>			if !ok {
+<span id="L356" class="ln">   356  </span>				if isPromSource {
+<span id="L357" class="ln">   357  </span>					<span class="comment">// Prom→prom proxy path: ScrapeAll stores exactly one value</span>
+<span id="L358" class="ln">   358  </span>					<span class="comment">// column per family, named after the family itself. Skip any</span>
+<span id="L359" class="ln">   359  </span>					<span class="comment">// other numeric column that may appear unexpectedly.</span>
+<span id="L360" class="ln">   360  </span>					if field != msg.MetricName {
+<span id="L361" class="ln">   361  </span>						continue
+<span id="L362" class="ln">   362  </span>					}
+<span id="L363" class="ln">   363  </span>					meta = fieldMeta{fqName: field, valueType: prometheus.UntypedValue}
+<span id="L364" class="ln">   364  </span>				} else {
+<span id="L365" class="ln">   365  </span>					meta.valueType = prometheus.CounterValue
+<span id="L366" class="ln">   366  </span>					if msg.MetricName == promInstanceUpStateMetric ||
+<span id="L367" class="ln">   367  </span>						len(gauges) &gt; 0 &amp;&amp; (gauges[0] == &#34;*&#34; || slices.Contains(gauges, field)) {
+<span id="L368" class="ln">   368  </span>						meta.valueType = prometheus.GaugeValue
+<span id="L369" class="ln">   369  </span>					}
+<span id="L370" class="ln">   370  </span>					if msg.MetricName == promInstanceUpStateMetric {
+<span id="L371" class="ln">   371  </span>						meta.fqName = promw.Namespace + &#34;_&#34; + msg.MetricName
+<span id="L372" class="ln">   372  </span>					} else {
+<span id="L373" class="ln">   373  </span>						meta.fqName = fqNamePrefix + field
+<span id="L374" class="ln">   374  </span>					}
+<span id="L375" class="ln">   375  </span>				}
+<span id="L376" class="ln">   376  </span>				metaByField[field] = meta
+<span id="L377" class="ln">   377  </span>			}
+<span id="L378" class="ln">   378  </span>
+<span id="L379" class="ln">   379  </span>			<span class="comment">// skip if this exact identity was already emitted in this scrape</span>
+<span id="L380" class="ln">   380  </span>			identity := meta.fqName + &#34;_&#34; + joinedLabelValues
+<span id="L381" class="ln">   381  </span>			if _, dup := seen[identity]; dup {
+<span id="L382" class="ln">   382  </span>				promw.logger.
+<span id="L383" class="ln">   383  </span>					WithField(&#34;metric&#34;, msg.MetricName).
+<span id="L384" class="ln">   384  </span>					Warning(&#34;duplicate metric identity dropped, prefix differentiating string columns with tag_&#34;)
+<span id="L385" class="ln">   385  </span>				errorCount++
+<span id="L386" class="ln">   386  </span>				continue
+<span id="L387" class="ln">   387  </span>			}
+<span id="L388" class="ln">   388  </span>			seen[identity] = struct{}{}
+<span id="L389" class="ln">   389  </span>
+<span id="L390" class="ln">   390  </span>			dk := descKey{meta.fqName, joinedLabelKeys}
+<span id="L391" class="ln">   391  </span>			desc, ok := descs[dk]
+<span id="L392" class="ln">   392  </span>			if !ok {
+<span id="L393" class="ln">   393  </span>				desc = prometheus.NewDesc(meta.fqName, msg.MetricName, labelKeys, nil)
+<span id="L394" class="ln">   394  </span>				descs[dk] = desc
+<span id="L395" class="ln">   395  </span>			}
+<span id="L396" class="ln">   396  </span>			m, err := prometheus.NewConstMetric(desc, meta.valueType, value, labelValues...)
+<span id="L397" class="ln">   397  </span>			if err != nil {
+<span id="L398" class="ln">   398  </span>				promw.logger.Warningf(&#34;skipping metric %s of [%s:%s]: %v&#34;, meta.fqName, msg.DBName, msg.MetricName, err)
+<span id="L399" class="ln">   399  </span>				errorCount++
+<span id="L400" class="ln">   400  </span>				continue
+<span id="L401" class="ln">   401  </span>			}
+<span id="L402" class="ln">   402  </span>			ch &lt;- prometheus.NewMetricWithTimestamp(rowEpochTime, m)
+<span id="L403" class="ln">   403  </span>			written++
+<span id="L404" class="ln">   404  </span>		}
+<span id="L405" class="ln">   405  </span>	}
+<span id="L406" class="ln">   406  </span>	return
+<span id="L407" class="ln">   407  </span>}
+<span id="L408" class="ln">   408  </span>
 </pre><p></p>
 
 <div id="footer">
