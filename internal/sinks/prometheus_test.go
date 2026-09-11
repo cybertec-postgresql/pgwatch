@@ -1,6 +1,7 @@
 package sinks
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -437,4 +438,37 @@ func TestPrometheusWriter_NonPromSourced_NamespacePrefix(t *testing.T) {
 
 	descStr := dataMetrics[0].Desc().String()
 	assert.Contains(t, descStr, `fqName: "`+namespace+`_pg_stat_activity_numbackends"`)
+}
+
+// BenchmarkWritePromMetrics measures the per-scrape conversion cost of one
+// cached envelope (500 rows, 3 tags, 8 numeric columns).
+func BenchmarkWritePromMetrics(b *testing.B) {
+	promw := newTestPrometheusWriter("pgwatch")
+	promw.gauges = map[string][]string{"bench": {"*"}}
+
+	const rows, fields = 500, 8
+	epoch := time.Now().UnixNano()
+	data := make(metrics.Measurements, rows)
+	for i := range data {
+		m := metrics.Measurement{
+			metrics.EpochColumnName: epoch,
+			"tag_schema":            "public",
+			"tag_table":             "table_" + strconv.Itoa(i),
+			"tag_state":             "active",
+		}
+		for f := range fields {
+			m["col_"+strconv.Itoa(f)] = int64(i * f)
+		}
+		data[i] = m
+	}
+	msg := metrics.MeasurementEnvelope{DBName: "db1", MetricName: "bench", Data: data}
+
+	ch := make(chan prometheus.Metric, rows*fields+1)
+	b.ReportAllocs()
+	for b.Loop() {
+		promw.WritePromMetrics(msg, ch)
+		for len(ch) > 0 {
+			<-ch
+		}
+	}
 }
