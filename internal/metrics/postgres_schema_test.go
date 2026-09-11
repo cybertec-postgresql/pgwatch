@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 )
 

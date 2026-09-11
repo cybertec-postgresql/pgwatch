@@ -12,7 +12,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

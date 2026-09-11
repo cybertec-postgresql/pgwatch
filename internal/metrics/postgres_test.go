@@ -7,7 +7,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 )
 
