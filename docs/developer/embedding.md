@@ -12,7 +12,7 @@ Everything on this page is public API covered by the
 [stability policy](api_stability.md).
 
 ```console
-$ go get github.com/cybertec-postgresql/pgwatch/v6@latest
+$ go get github.com/cybertec-postgresql/pgwatch/v7@latest
 ```
 
 There are four extension points, and you can use any subset of them:

@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 )
 
 var ctx = log.WithLogger(context.Background(), log.NewNoopLogger())

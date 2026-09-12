@@ -11,9 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/api/pb"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/api/pb"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	jsoniter "github.com/json-iterator/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

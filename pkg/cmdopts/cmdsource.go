@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 )
 
 type SourceCommand struct {

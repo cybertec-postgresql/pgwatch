@@ -6,8 +6,8 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

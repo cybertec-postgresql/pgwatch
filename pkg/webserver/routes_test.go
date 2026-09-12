@@ -11,7 +11,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 )
 
 // login returns a valid JWT issued by the given server.

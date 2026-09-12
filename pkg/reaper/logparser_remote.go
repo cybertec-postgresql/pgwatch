@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 )
 
 func (lp *LogParser) parseLogsRemote() error {

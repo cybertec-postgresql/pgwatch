@@ -7,7 +7,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 )
 
 func (s *WebUIServer) handleMetrics(w http.ResponseWriter, r *http.Request) {

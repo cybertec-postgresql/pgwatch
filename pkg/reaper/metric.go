@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sinks"
 	"github.com/sirupsen/logrus"
 )
 

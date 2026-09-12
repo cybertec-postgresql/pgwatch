@@ -5,8 +5,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	migrator "github.com/cybertec-postgresql/pgx-migrator"
 	"github.com/jackc/pgx/v5"
 )

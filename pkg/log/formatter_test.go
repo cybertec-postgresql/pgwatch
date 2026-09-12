@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	formatter "github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	formatter "github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 

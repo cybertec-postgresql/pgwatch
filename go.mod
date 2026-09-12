@@ -1,4 +1,4 @@
-module github.com/cybertec-postgresql/pgwatch/v6
+module github.com/cybertec-postgresql/pgwatch/v7
 
 go 1.27.0
 

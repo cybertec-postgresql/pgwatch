@@ -8,12 +8,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 	flags "github.com/jessevdk/go-flags"
 )
 
