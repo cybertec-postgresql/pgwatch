@@ -328,7 +328,7 @@ the packages, not the binary.
 
 ## 8. Dependencies & External Integrations
 
-- Go 1.26 module system (`internal/` rule, module proxy).
+- Go 1.27 module system (`internal/` rule, module proxy).
 - Existing JWT middleware (`internal/webserver/jwt.go`) and CORS middleware.
 - GoReleaser and Docker builds: the build of the default provider's assets stays in
   `cmd/pgwatch` builds only.

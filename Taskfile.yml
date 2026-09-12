@@ -1,7 +1,7 @@
 version: '3'
 
 # pgwatch cross-platform development tasks (Windows / Linux / macOS).
-# Toolchain: Go 1.26, Node.js 22 + Yarn 1.x, Docker with compose v2, protoc (proto task only).
+# Toolchain: Go 1.27, Node.js 22 + Yarn 1.x, Docker with compose v2, protoc (proto task only).
 # Run `task --list` for all tasks and `task tools` to install the Go-based tool dependencies.
 
 vars:
