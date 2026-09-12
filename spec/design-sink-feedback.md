@@ -66,7 +66,7 @@ layout.
 
 **Assumptions**:
 
-- Repository module path is `github.com/cybertec-postgresql/pgwatch/v6`, Go 1.26.
+- Repository module path is `github.com/cybertec-postgresql/pgwatch/v6`, Go 1.27.
 - The measurement epoch column is `epoch_ns` (`metrics.EpochColumnName`), Unix nanoseconds,
   `int64`.
 - Sinks are constructed once at start-up by `sinks.NewSinkWriter` and live for the process
@@ -546,7 +546,7 @@ specification; each needs its own:
 
 ### Technology Platform Dependencies
 
-- **PLT-001**: Go 1.26 — the module's declared version; no newer language feature is required beyond the builtin `min`, available since Go 1.21.
+- **PLT-001**: Go 1.27 — the module's declared version; no newer language feature is required beyond the builtin `min`, available since Go 1.21.
 - **PLT-002**: gRPC and protobuf toolchain — regenerating `api/pb` after the additive `.proto` change requires `protoc` with `protoc-gen-go` and `protoc-gen-go-grpc`, per the repository's existing generation step.
 
 ### Compliance Dependencies
