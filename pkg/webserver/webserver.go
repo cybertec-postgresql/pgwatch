@@ -247,8 +247,10 @@ func (s *WebUIServer) dispatcher(mux, extMux *http.ServeMux) http.Handler {
 		return mux
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if h, pattern := mux.Handler(r); pattern != "" && pattern != s.basePath {
-			h.ServeHTTP(w, r)
+		// ServeMux.Handler only matches, it does not populate the request's
+		// path values, so serve through the mux itself once it has won.
+		if _, pattern := mux.Handler(r); pattern != "" && pattern != s.basePath {
+			mux.ServeHTTP(w, r)
 			return
 		}
 		if _, pattern := extMux.Handler(r); pattern != "" {
