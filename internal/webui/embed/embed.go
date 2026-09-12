@@ -10,7 +10,7 @@ import (
 	"embed"
 	"io/fs"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
 )
 
 // build is produced by `yarn build` in internal/webui (see vite.config.ts) and

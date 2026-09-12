@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/stretchr/testify/assert"
 )

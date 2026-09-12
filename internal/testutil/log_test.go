@@ -3,8 +3,8 @@ package testutil_test
 import (
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

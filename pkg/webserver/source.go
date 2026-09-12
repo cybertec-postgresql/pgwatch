@@ -7,7 +7,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 )
 
 func (s *WebUIServer) handleSources(w http.ResponseWriter, r *http.Request) {

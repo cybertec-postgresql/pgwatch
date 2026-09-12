@@ -24,9 +24,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/app"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/app"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
 	flags "github.com/jessevdk/go-flags"
 )
 

@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 	client "go.etcd.io/etcd/client/v3"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 )
 
 func TestMonitoredDatabase_ResolveDatabasesFromPostgres(t *testing.T) {

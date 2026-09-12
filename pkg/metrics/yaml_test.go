@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )

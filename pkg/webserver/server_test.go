@@ -12,8 +12,8 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 	"github.com/stretchr/testify/assert"
 )
 

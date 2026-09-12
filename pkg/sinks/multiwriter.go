@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 )
 
 // Writer is an interface that writes metrics values

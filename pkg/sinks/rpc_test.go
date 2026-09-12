@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sinks"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/jackc/pgx/v5"
 )
 

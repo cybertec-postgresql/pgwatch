@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

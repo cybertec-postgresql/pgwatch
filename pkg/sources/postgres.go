@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )

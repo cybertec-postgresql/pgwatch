@@ -6,10 +6,10 @@ import (
 	"os"
 	"runtime/debug"
 
-	webui "github.com/cybertec-postgresql/pgwatch/v6/internal/webui/embed"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/app"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
+	webui "github.com/cybertec-postgresql/pgwatch/v7/internal/webui/embed"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/app"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 )
 
 var (

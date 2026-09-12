@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/reaper"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/webserver"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/reaper"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 )
 
 // App holds the wiring of a pgwatch instance. Create it with New and start it

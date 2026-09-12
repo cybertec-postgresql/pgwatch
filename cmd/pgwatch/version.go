@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
 )
 
 // version output variables

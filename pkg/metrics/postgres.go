@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/db"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
 )
 
 func NewPostgresMetricReaderWriter(ctx context.Context, connstr string) (ReaderWriter, error) {

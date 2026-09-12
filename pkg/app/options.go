@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/ui"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
 )
 
 // Option configures the application before it is run.

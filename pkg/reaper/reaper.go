@@ -10,11 +10,11 @@ import (
 
 	"sync/atomic"
 
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/cmdopts"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/log"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/metrics"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sinks"
-	"github.com/cybertec-postgresql/pgwatch/v6/pkg/sources"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sinks"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 	"golang.org/x/sync/errgroup"
 )
 
