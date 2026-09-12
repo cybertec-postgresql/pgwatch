@@ -5,12 +5,16 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 )
 
@@ -138,5 +142,55 @@ func TestCORSOrigin(t *testing.T) {
 			nil, nil, nil, withUI(), webserver.WithCORSOrigin("https://example.test"))
 		assert.NoError(t, err)
 		assert.Equal(t, "https://example.test", origin(t, srv))
+	})
+}
+
+// TestWithRoutesPathValues makes sure the dispatcher installed by WithRoutes
+// keeps the wildcards of the built-in routes populated.
+func TestWithRoutesPathValues(t *testing.T) {
+	host := "http://localhost:8089"
+	dir := t.TempDir()
+	sourcesFile := filepath.Join(dir, "sources.yaml")
+	assert.NoError(t, os.WriteFile(sourcesFile, []byte("[]\n"), 0644))
+	metricsFile := filepath.Join(dir, "metrics.yaml")
+	assert.NoError(t, os.WriteFile(metricsFile, []byte("metrics:\npresets:\n"), 0644))
+
+	srw, err := sources.NewYAMLSourcesReaderWriter(context.Background(), sourcesFile)
+	assert.NoError(t, err)
+	mrw, err := metrics.NewYAMLMetricReaderWriter(context.Background(), metricsFile)
+	assert.NoError(t, err)
+
+	srv, err := webserver.Init(context.Background(),
+		webserver.CmdOpts{WebAddr: "localhost:8089"}, mrw, srw, nil, withUI(),
+		webserver.WithRoutes(func(mux *http.ServeMux, basePath string, _ func(http.HandlerFunc) http.Handler) {
+			mux.HandleFunc(basePath+"ext", func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte("ext"))
+			})
+		}))
+	assert.NoError(t, err)
+	assert.NotNil(t, srv)
+
+	token := login(t, srv, host)
+	get := func(path string) *httptest.ResponseRecorder {
+		req, err := http.NewRequest(http.MethodGet, host+path, nil)
+		assert.NoError(t, err)
+		req.Header.Set("Token", token)
+		rr := httptest.NewRecorder()
+		srv.Handler.ServeHTTP(rr, req)
+		return rr
+	}
+
+	for _, path := range []string{"/source/does-not-exist", "/metric/does-not-exist", "/preset/does-not-exist"} {
+		t.Run(path, func(t *testing.T) {
+			rr := get(path)
+			assert.Equal(t, http.StatusNotFound, rr.Code, "the handler must see the {name} path value: %s", rr.Body.String())
+			assert.NotContains(t, rr.Body.String(), "is required")
+		})
+	}
+
+	t.Run("extension route still works", func(t *testing.T) {
+		rr := get("/ext")
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "ext", rr.Body.String())
 	})
 }
