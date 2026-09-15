@@ -4871,7 +4871,6 @@ presets:
             change_events: 300
             db_size: 300
             db_stats: 60
-            index_col_stats: 86400
             index_stats: 900
             locks: 60
             locks_mode: 60
