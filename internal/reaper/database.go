@@ -205,7 +205,13 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 				sr.md.RUnlock()
 				sql := metric.GetSQL(version)
 				if sql == "" {
-					l.WithField("source", sr.md.Name).WithField("version", version).Warning("no SQL found for metric version")
+					ll := l.WithField("metric", name).WithField("version", version)
+					if len(metric.SQLs) > 0 {
+						// SQL defined only for newer server versions, expected, e.g. PG 19-only metrics on PG 18
+						ll.Debug("metric not supported by source version")
+					} else {
+						ll.Warning("no SQL found for metric version")
+					}
 					sr.lastFetch[name] = time.Now()
 					break
 				}
