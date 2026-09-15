@@ -222,6 +222,16 @@ tasks:
     cmds:
       - docker build --build-arg GIT_TIME={{.GIT_TIME}} --build-arg GIT_HASH={{.GIT_HASH}} --build-arg VERSION={{.VERSION}} -t cybertecpostgresql/pgwatch-demo:latest -f docker/demo/Dockerfile .
 
+  docker:image:multiarch:
+    desc: Build and push a multi-arch (amd64/arm64) production image manually, mirrors .github/actions/build-docker. Add extra `-t` tags as needed before running. Requires `docker login` and a buildx builder with the docker-container driver (`docker buildx create --use`).
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_TIME={{.GIT_TIME}} --build-arg GIT_HASH={{.GIT_HASH}} --build-arg VERSION={{.VERSION}} -t cybertecpostgresql/pgwatch:latest -f docker/Dockerfile --push .
+
+  docker:image:demo:multiarch:
+    desc: Build and push a multi-arch (amd64/arm64) demo image manually, mirrors .github/actions/build-docker. Add extra `-t` tags as needed before running. Requires `docker login` and a buildx builder with the docker-container driver (`docker buildx create --use`).
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_TIME={{.GIT_TIME}} --build-arg GIT_HASH={{.GIT_HASH}} --build-arg VERSION={{.VERSION}} -t cybertecpostgresql/pgwatch-demo:latest -f docker/demo/Dockerfile --push .
+
   # --------------- Demo database (was docker/scripts/*.sh) ---------------
 
   demo:init:
