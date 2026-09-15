@@ -43,6 +43,21 @@ func TestDeaultMetrics(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestDefaultPresetsReferenceDefinedMetrics(t *testing.T) {
+	// prometheus source presets list exporter metric families, not SQL metrics
+	promPresets := map[string]bool{"patroni": true, "postgres-exporter-basic": true}
+	defs := metrics.GetDefaultMetrics()
+	for presetName, preset := range defs.PresetDefs {
+		if promPresets[presetName] {
+			continue
+		}
+		for metricName := range preset.Metrics {
+			_, ok := defs.MetricDefs[metricName]
+			assert.Truef(t, ok, "preset %q references undefined metric %q", presetName, metricName)
+		}
+	}
+}
+
 func TestWriteMetricsToFile(t *testing.T) {
 	// Define test data
 	metricDefs := metrics.Metrics{
