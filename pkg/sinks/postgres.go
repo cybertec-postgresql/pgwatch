@@ -754,7 +754,7 @@ func getMigrations() []any {
 	}
 }
 
-func SinkSchemaId() string {
+func SinkSchemaID() string {
 	ms := getMigrations()
 	switch mm := ms[len(ms)-1].(type) {
 	case *migrator.Migration:

@@ -189,7 +189,7 @@ func getMigrations() []any {
 	}
 }
 
-func ConfigSchemaId() string {
+func ConfigSchemaID() string {
 	ms := getMigrations()
 	switch mm := ms[len(ms)-1].(type) {
 	case *migrator.Migration:

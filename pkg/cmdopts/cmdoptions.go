@@ -206,9 +206,9 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 // NeedsSchemaUpgrade.
 var (
 	// ConfigSchema is the expected configuration database schema version.
-	ConfigSchema = metrics.ConfigSchemaId
+	ConfigSchema = metrics.ConfigSchemaID
 	// SinkSchema is the expected sink (measurements) database schema version.
-	SinkSchema = sinks.SinkSchemaId
+	SinkSchema = sinks.SinkSchemaID
 )
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.
