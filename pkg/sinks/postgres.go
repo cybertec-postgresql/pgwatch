@@ -561,7 +561,7 @@ var initMigrator = func(pgw *PostgresWriter) (*migrator.Migrator, error) {
 		migrator.SetNotice(func(s string) {
 			log.GetLogger(pgw.ctx).Info(s)
 		}),
-		migrations(),
+		migrator.Migrations(getMigrations()...),
 	)
 }
 
@@ -583,10 +583,10 @@ func (pgw *PostgresWriter) NeedsMigration() (bool, error) {
 	return m.NeedUpgrade(pgw.ctx, pgw.sinkDb)
 }
 
-// migrations holds function returning all upgrade migrations needed
+// getMigrations holds function returning all upgrade migrations needed
+func getMigrations() []any {
 
-var migrations func() migrator.Option = func() migrator.Option {
-	return migrator.Migrations(
+	return []any{
 		&migrator.Migration{
 			Name: "01110 Apply postgres sink schema migrations",
 			Func: func(context.Context, pgx.Tx) error {
@@ -751,19 +751,24 @@ var migrations func() migrator.Option = func() migrator.Option {
 		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
 		// 	},
 		// },
-	)
+	}
 }
 
-// registeredMigrationsCount returns the number of migrations actually registered in
-// migrations(). This is the single source of truth for "how many migration rows
-// admin.migration must contain after a full migrate"; no separate MigrationsCount
-// constant exists.
-func registeredMigrationsCount() int {
-	m, err := migrator.New(migrations())
-	if err != nil {
-		panic(fmt.Errorf("registeredMigrationsCount: %w", err))
+func SinkSchemaID() string {
+	ms := getMigrations()
+	switch mm := ms[len(ms)-1].(type) {
+	case *migrator.Migration:
+		return mm.Name[:5]
+	case *migrator.MigrationNoTx:
+		return mm.Name[:5]
+	default:
+		return ""
 	}
-	return m.Count()
+}
+
+// registeredMigrationsCount returns the number of migrations
+func registeredMigrationsCount() int {
+	return len(getMigrations())
 }
 
 // CanFeedback reports whether LastMeasurement can be attempted for the pair.

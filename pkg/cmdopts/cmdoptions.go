@@ -204,11 +204,11 @@ func (c *Options) InitSinkWriter(ctx context.Context) (err error) {
 // Schema versions the binary is built against. A configuration or sink
 // database reporting a different version needs migration; see
 // NeedsSchemaUpgrade.
-const (
+var (
 	// ConfigSchema is the expected configuration database schema version.
-	ConfigSchema = "00824"
+	ConfigSchema = metrics.ConfigSchemaID
 	// SinkSchema is the expected sink (measurements) database schema version.
-	SinkSchema = "01529"
+	SinkSchema = sinks.SinkSchemaID
 )
 
 // NeedsSchemaUpgrade checks if the configuration database schema needs an upgrade.
