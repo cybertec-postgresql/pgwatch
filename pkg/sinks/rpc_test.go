@@ -183,7 +183,7 @@ func TestRPCDefineMetric(t *testing.T) {
 func TestAuthCredsSending(t *testing.T) {
 	a := assert.New(t)
 
-	unauthenticatedConnStr := "grpc://notpgwatch:notpgwatch@localhost:6060"
+	unauthenticatedConnStr := fmt.Sprintf("grpc://notpgwatch:notpgwatch@%s", testutil.PlainServerAddress)
 	rw, err := sinks.NewRPCWriter(ctx, unauthenticatedConnStr, &sinks.CmdOpts{})
 	a.NoError(err)
 

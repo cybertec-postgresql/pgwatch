@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 )
@@ -18,11 +17,16 @@ const EtcdImage = "gcr.io/etcd-development/etcd:" + EtcdVersion
 // the CN in server test cert is set to `localhost`
 
 var CAFile = "ca.crt"
-var TLSConnStr = fmt.Sprintf("grpc://localhost:5050?sslrootca=%s", CAFile)
 
-const TLSServerAddress = "localhost:5050"
-const PlainServerAddress = "localhost:6060"
-const PlainConnStr = "grpc://localhost:6060"
+// Addresses of the gRPC receivers started by SetupRPCServers. They are set
+// there, once the ephemeral ports are known, and are only meaningful after it
+// has returned.
+var (
+	TLSServerAddress   string
+	TLSConnStr         string
+	PlainServerAddress string
+	PlainConnStr       string
+)
 
 var CA = `-----BEGIN CERTIFICATE-----
 MIIDPzCCAiegAwIBAgIUeENQlQFVH5h7HszFJLLWo+KCQwQwDQYJKoZIhvcNAQEL

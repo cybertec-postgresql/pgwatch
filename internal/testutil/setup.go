@@ -3,6 +3,8 @@ package testutil
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"fmt"
 	"net"
 	"os"
 	"time"
@@ -112,43 +114,60 @@ func AuthInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, hand
 	return handler(ctx, req)
 }
 
+// SetupRPCServers starts the plain and TLS gRPC receivers used by the sink
+// tests and publishes their addresses in PlainServerAddress/PlainConnStr and
+// TLSServerAddress/TLSConnStr. The ports are ephemeral on purpose: a fixed one
+// collides when two test binaries run at once, and on Windows it cannot even
+// be rebound while an earlier binary's connections sit in TIME_WAIT, which Go
+// does not paper over with SO_REUSEADDR there.
 func SetupRPCServers() (func(), error) {
-	err := os.WriteFile(CAFile, []byte(CA), 0644)
-	teardown := func() { _ = os.Remove(CAFile) }
-	if err != nil {
+	var servers []*grpc.Server
+	teardown := func() {
+		for _, s := range servers {
+			s.Stop()
+		}
+		_ = os.Remove(CAFile)
+	}
+
+	if err := os.WriteFile(CAFile, []byte(CA), 0644); err != nil {
 		return teardown, err
 	}
 
-	addresses := [2]string{PlainServerAddress, TLSServerAddress}
-	for _, address := range addresses {
-		lis, err := net.Listen("tcp", address)
+	for _, withTLS := range [2]bool{false, true} {
+		lis, err := net.Listen("tcp", "localhost:0")
 		if err != nil {
 			return teardown, err
 		}
+		// The server certificate has localhost as its CN, so the address must
+		// be spelled that way and not as the resolved 127.0.0.1.
+		address := fmt.Sprintf("localhost:%d", lis.Addr().(*net.TCPAddr).Port)
 
 		var creds credentials.TransportCredentials
-		if address == TLSServerAddress {
-			creds, err = LoadServerTLSCredentials()
-			if err != nil {
-				return nil, err
+		if withTLS {
+			if creds, err = LoadServerTLSCredentials(); err != nil {
+				return teardown, err
 			}
+			TLSServerAddress = address
+			TLSConnStr = fmt.Sprintf("grpc://%s?sslrootca=%s", address, CAFile)
+		} else {
+			PlainServerAddress = address
+			PlainConnStr = "grpc://" + address
 		}
 
 		server := grpc.NewServer(
 			grpc.UnaryInterceptor(AuthInterceptor),
 			grpc.Creds(creds),
 		)
+		servers = append(servers, server)
 
 		recv := new(Receiver)
 		pb.RegisterReceiverServer(server, recv)
 
 		go func() {
-			if err := server.Serve(lis); err != nil {
+			if err := server.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 				panic(err)
 			}
 		}()
 	}
-	// wait a little for servers to start
-	time.Sleep(time.Second)
 	return teardown, nil
 }

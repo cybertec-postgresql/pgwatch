@@ -37,8 +37,14 @@ func TestFeedbackStaysUnwired(t *testing.T) {
 			return err
 		}
 		if d.IsDir() {
+			// Dot directories are tool state, not repository code: .git, but
+			// also agent worktrees and editor caches that can hold a whole
+			// second copy of the tree.
+			if path != root && strings.HasPrefix(d.Name(), ".") {
+				return fs.SkipDir
+			}
 			switch d.Name() {
-			case ".git", "node_modules", "webui", "build":
+			case "node_modules", "webui", "build", "dist":
 				return fs.SkipDir
 			}
 			return nil

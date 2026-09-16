@@ -3,12 +3,23 @@ package cmdopts
 import (
 	"errors"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/stretchr/testify/assert"
 )
+
+// longOpt renders a long option the way go-flags prints it in help text:
+// POSIX "--name" everywhere, Windows-style "/name" on Windows (see
+// optstyle_windows.go in go-flags). Parsing accepts both on either platform.
+func longOpt(name string) string {
+	if runtime.GOOS == "windows" {
+		return "/" + name
+	}
+	return "--" + name
+}
 
 // eeGroup is a stand-in for an embedder-specific flag group.
 type eeGroup struct {
@@ -93,7 +104,7 @@ func TestHelpUnchangedWithoutExtension(t *testing.T) {
 	assert.Equal(t, plain, helpOutput(t), "--help must be deterministic")
 
 	extended := helpOutput(t, new(eeExtension))
-	assert.Contains(t, extended, "--ee-token")
+	assert.Contains(t, extended, longOpt("ee-token"))
 	assert.Contains(t, extended, "Enterprise commands")
 
 	// Every line of the plain help must survive verbatim in the extended one --
