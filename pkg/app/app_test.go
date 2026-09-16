@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 	"time"
 
@@ -116,12 +115,15 @@ func TestRun_ExitCodes(t *testing.T) {
 	})
 
 	t.Run("ExitCodeUserCancel on interrupt", func(t *testing.T) {
+		if !canSelfSignal {
+			t.Skip("the test process cannot signal itself on this platform")
+		}
 		a, err := New(context.Background(), newOptions(t))
 		require.NoError(t, err)
 		code := make(chan int, 1)
 		go func() { code <- a.Run(context.Background()) }()
 		waitReady(t, a) // the signal handler is in place well before this
-		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGTERM))
+		require.NoError(t, raiseTerm())
 		assert.Equal(t, int(cmdopts.ExitCodeUserCancel), waitCode(t, code))
 	})
 }
