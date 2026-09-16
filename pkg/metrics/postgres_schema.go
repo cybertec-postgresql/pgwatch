@@ -42,7 +42,7 @@ var initMigrator = func(ctx context.Context) (*migrator.Migrator, error) {
 		migrator.SetNotice(func(s string) {
 			log.GetLogger(ctx).Info(s)
 		}),
-		migrations(),
+		migrator.Migrations(getMigrations()...),
 	)
 }
 
@@ -80,12 +80,8 @@ func (dmrw *dbMetricReaderWriter) NeedsMigration() (bool, error) {
 	return NeedsConfigSchemaMigration(dmrw.ctx, dmrw.configDb)
 }
 
-// MigrationsCount is the total number of migrations in pgwatch.migration table
-const MigrationsCount = 3
-
-// migrations holds function returning all upgrade migrations needed
-var migrations func() migrator.Option = func() migrator.Option {
-	return migrator.Migrations(
+func getMigrations() []any {
+	return []any{
 		&migrator.Migration{
 			Name: "00179 Apply metrics migrations for v3",
 			Func: func(context.Context, pgx.Tx) error {
@@ -189,5 +185,18 @@ var migrations func() migrator.Option = func() migrator.Option {
 		// 		return executeMigrationScript(ctx, tx, "000XX.sql")
 		// 	},
 		// },
-	)
+
+	}
+}
+
+func ConfigSchemaId() string {
+	ms := getMigrations()
+	switch mm := ms[len(ms)-1].(type) {
+	case *migrator.Migration:
+		return mm.Name[:5]
+	case *migrator.MigrationNoTx:
+		return mm.Name[:5]
+	default:
+		return ""
+	}
 }

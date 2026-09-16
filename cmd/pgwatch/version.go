@@ -22,5 +22,5 @@ Version info:
   Git Commit:    %s
   Built:         %s
 
-`, version, cmdopts.ConfigSchema, cmdopts.SinkSchema, commit, date)
+`, version, cmdopts.ConfigSchema(), cmdopts.SinkSchema(), commit, date)
 }
