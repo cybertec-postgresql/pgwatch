@@ -132,31 +132,38 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--log-level=[debug|info|error]`
 
-    Verbosity level for stdout and log file (default: info)
+    Verbosity level for stdout and log file (default: info).  
+    ENV: `$PW_LOG_LEVEL`
 
 - `--log-file=`
 
-    File name to store logs
+    File name to store logs.  
+    ENV: `$PW_LOG_FILE`
 
 - `--log-file-format=[json|text]`
 
-    Format of file logs (default: json)
+    Format of file logs (default: json).  
+    ENV: `$PW_LOG_FILE_FORMAT`
 
 - `--log-file-rotate`
 
-    Rotate log files
+    Rotate log files.  
+    ENV: `$PW_LOG_FILE_ROTATE`
 
 - `--log-file-size=`
 
-    Maximum size in MB of the log file before it gets rotated (default: 100)
+    Maximum size in MB of the log file before it gets rotated (default: 100).  
+    ENV: `$PW_LOG_FILE_SIZE`
 
 - `--log-file-age=`
 
-    Number of days to retain old log files, 0 means forever (default: 0)
+    Number of days to retain old log files, 0 means forever (default: 0).  
+    ENV: `$PW_LOG_FILE_AGE`
 
 - `--log-file-number=`
 
-    Maximum number of old log files to retain, 0 to retain all (default: 0)
+    Maximum number of old log files to retain, 0 to retain all (default: 0).  
+    ENV: `$PW_LOG_FILE_NUMBER`
 
 ### WebUI
 
