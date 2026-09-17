@@ -74,16 +74,20 @@
 // Logging:
 //
 //	-v, --log-level=[debug|info|error]       Verbosity level for stdout and log
-//	                                         file (default: info)
-//	    --log-file=                          File name to store logs
+//	                                         file (default: info) [$PW_LOG_LEVEL]
+//	    --log-file=                          File name to store logs [$PW_LOG_FILE]
 //	    --log-file-format=[json|text]        Format of file logs (default: json)
-//	    --log-file-rotate                    Rotate log files
+//	                                         [$PW_LOG_FILE_FORMAT]
+//	    --log-file-rotate                    Rotate log files [$PW_LOG_FILE_ROTATE]
 //	    --log-file-size=                     Maximum size in MB of the log file
 //	                                         before it gets rotated (default: 100)
+//	                                         [$PW_LOG_FILE_SIZE]
 //	    --log-file-age=                      Number of days to retain old log
 //	                                         files, 0 means forever (default: 0)
+//	                                         [$PW_LOG_FILE_AGE]
 //	    --log-file-number=                   Maximum number of old log files to
 //	                                         retain, 0 to retain all (default: 0)
+//	                                         [$PW_LOG_FILE_NUMBER]
 //
 // WebUI:
 //
