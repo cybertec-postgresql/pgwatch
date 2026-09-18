@@ -20,26 +20,15 @@ import (
 // Constants and types
 var pgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
 
-// supportedMessageLangs is the set of lc_messages prefixes whose severities
-// can be normalised to English.
-//
-// This used to be the translation tables themselves -- eight severities in ten
-// languages, spelled out here. pglogwatch carries them now, and keeping a
-// second copy would mean two lists to update and no way to notice they had
-// drifted apart. Only the KEYS were ever read outside severityToEnglish, to
-// decide whether a language is known.
-//
-// "C." is in the set and is not in pglogwatch's tables, deliberately: the C
-// locale writes English severities, so passing it through unchanged -- which
-// is what pglogwatch does with a language it does not know -- is correct.
+// supportedMessageLangs is the set of lc_messages prefixes pglogwatch can
+// normalise to English. "C." is included though pglogwatch lacks a table for it:
+// the C locale already writes English, and unknown languages pass through.
 var supportedMessageLangs = map[string]bool{
 	"C.": true, "de": true, "fr": true, "it": true, "ko": true,
 	"pl": true, "ru": true, "sv": true, "tr": true, "zh": true,
 }
 
-// maxChunkSize is how much pg_read_file fetches per round trip, and
-// maxTrackedFiles bounds the offset store. Both keep their pre-migration
-// values so the remote read pattern and the memory ceiling are unchanged.
+// Both keep their pre-migration values: read pattern and memory ceiling unchanged.
 const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
 const maxTrackedFiles = 2500
 
@@ -54,47 +43,22 @@ type LogParser struct {
 	eventCountsTotal map[string]int64 // for the whole instance
 	lastSendTime     time.Time
 
-	// countsMu guards eventCounts, eventCountsTotal and lastSendTime.
-	//
-	// It is new with the pglogwatch engine: parsing now runs in its own
-	// goroutine while the send interval ticks in another, because a
-	// following reader blocks when the server is quiet and the interval
-	// has to elapse anyway. The pre-migration parsers were single
-	// goroutine loops and needed no lock.
-	countsMu sync.Mutex
-
-	// offsets records how far each log file has been read, in BYTES.
-	offsets *endSeededOffsets
+	countsMu sync.Mutex        // guards eventCounts, eventCountsTotal, lastSendTime
+	offsets  *endSeededOffsets // how far each log file has been read, in bytes
 }
 
-// LogConfig is the server's logging configuration, as resolved from its GUCs.
+// LogConfig is the server's logging configuration, resolved from its GUCs.
 //
-// The field ORDER is load-bearing: pgx.RowToAddrOfStructByPos maps columns to
-// fields by position, so a field added here must be matched by a column added
-// at the same position in tryDetermineLogSettings' query.
+// Field ORDER is load-bearing: pgx.RowToAddrOfStructByPos maps by position, so a
+// new field needs a column at the same position in tryDetermineLogSettings.
 type LogConfig struct {
-	CollectorEnabled bool
-
-	// CSVDestination and JSONDestination report whether log_destination
-	// contains csvlog and jsonlog. Neither being set means stderr, which
-	// is PostgreSQL's default and which pgwatch could not read at all
-	// before this migration.
-	CSVDestination  bool
-	JSONDestination bool
-
+	CollectorEnabled   bool
+	CSVDestination     bool // neither set means stderr, PostgreSQL's default
+	JSONDestination    bool
 	TruncateOnRotation bool
 	Directory          string
 	ServerMessagesLang string
-
-	// LinePrefix is log_line_prefix, and matters only for stderr: it is
-	// what tells the parser where the timestamp, user and database sit in
-	// a line that has no columns.
-	//
-	// pglogwatch can detect a prefix from the log itself, but asking the
-	// server is better where the server is right there to ask -- detection
-	// has to guess from a sample, and a log whose first lines are unusual
-	// can be guessed wrong.
-	LinePrefix string
+	LinePrefix         string // log_line_prefix; stderr only, and beats pglogwatch's own detection
 }
 
 func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
@@ -107,15 +71,8 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 		return nil, fmt.Errorf("could not determine Postgres logs settings: %w", err)
 	}
 
-	// This error stays, where the log_destination one went.
-	//
-	// The two look alike and are not. log_destination only chooses a
-	// FORMAT, and pglogwatch reads all three of them, so rejecting a server
-	// over it was a limitation of the old regex rather than a fact about
-	// the server. logging_collector is different in kind: with it off,
-	// PostgreSQL writes to the postmaster's stderr and there are no log
-	// files in log_directory to read. No parser fixes that, and reporting
-	// zero events would be indistinguishable from a healthy quiet server.
+	// Unlike the log_destination check this replaces, this one is real: with
+	// the collector off there are no files in log_directory at all.
 	if !cfg.CollectorEnabled {
 		return nil, errors.New("logging_collector is not enabled on the db server")
 	}

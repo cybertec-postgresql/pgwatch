@@ -13,38 +13,16 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 )
 
-// The pglogwatch-backed parsing engine.
-//
-// pgwatch used to carry two log parsers -- one for local files, one for
-// pg_read_file -- each with its own line splitting, rotation handling and
-// resumption logic, both driven by a regex over csvlog. Both are replaced by
-// one loop over pglogwatch.Parser; the only thing that differs between local
-// and remote is which io.Reader it is given.
-//
-// What pgwatch keeps is what is actually pgwatch's: resolving the GUCs,
-// deciding local versus remote, counting per database and per instance, and
-// the envelope shape the sinks and dashboards expect.
+// The pglogwatch-backed parsing engine: one loop over pglogwatch.Parser, fed by
+// either a local or a remote io.Reader. Counts go to eventCounts (records whose
+// Database matches the source) and eventCountsTotal (every record), keyed by the
+// English severity, which pglogwatch normalises from Config.MessagesLang.
 
-// counting is what this whole file exists to do, and it is worth stating
-// plainly because the rest is plumbing:
+// parseStream drives the parser over one reader until it ends or ctx is done.
 //
-//	per-database counts go to eventCounts   -- only records whose Database
-//	                                           matches the source's dbname
-//	per-instance counts go to eventCountsTotal -- every record
-//
-// Both are keyed by the ENGLISH severity name. pglogwatch normalises localised
-// severities itself, from Config.MessagesLang, which is why lc_messages is
-// still resolved and passed down but severityToEnglish is no longer called on
-// the hot path.
-
-// parseStream drives the parser over one reader until the reader ends or the
-// context is cancelled.
-//
-// The send is on a ticker in THIS goroutine while the parse runs in another,
-// rather than checked inside the parse loop, because a following reader blocks
-// when the server is quiet. Checking the interval between records would mean a
-// quiet server stops reporting -- and "no errors in this interval" is a
-// measurement pgwatch is supposed to emit, not a gap.
+// The send ticks in THIS goroutine while the parse runs in another: a following
+// reader blocks on a quiet server, and a quiet interval still has to report its
+// zeroes rather than leave a gap.
 func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 	defer func() { _ = rc.Close() }()
 
@@ -57,21 +35,10 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 	for {
 		select {
 		case <-lp.ctx.Done():
-			// Wait for consume to exit before returning, because the
-			// deferred Close above mutates reader state that consume is
-			// still reading. Returning straight from here is a data race
-			// -- the detector catches it on any cancelled remote parse.
-			//
-			// This does not hang: every reader this is given takes ctx and
-			// ends at EOF once it is cancelled, and an in-flight
-			// pg_read_file is cancelled with it.
-			<-parsed
+			<-parsed // the deferred Close races consume if it is still reading
 			return nil
 		case err := <-parsed:
-			// Send what the last partial interval accumulated before
-			// returning, so a shutdown or a rotation does not discard
-			// counts that were already parsed.
-			lp.sendCounts()
+			lp.sendCounts() // don't discard the last partial interval
 			return err
 		case <-tick.C:
 			if lp.HasSendIntervalElapsed() {
@@ -81,30 +48,13 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 	}
 }
 
-// minSendTickInterval keeps a zero or negative Interval from reaching
-// time.NewTicker, which panics on one.
-//
-// The pre-migration loops slept on time.After(0), which returns immediately,
-// so a zero interval meant "send as fast as possible" rather than "never" --
-// HasSendIntervalElapsed is unconditionally true at zero. That behaviour is
-// preserved, at a rate that is a loop rather than a spin. In production the
-// interval comes from GetMetricInterval and is always positive; zero shows up
-// in tests, where a panic is a poor way to learn it.
+// minSendTickInterval keeps a zero Interval (tests only) off time.NewTicker,
+// which panics on one, while preserving "send as fast as possible" at zero.
 const minSendTickInterval = 100 * time.Millisecond
 
-// sendTicksPerInterval is how many times per send interval the loop wakes up.
-//
-// It must be more than one. HasSendIntervalElapsed asks whether STRICTLY more
-// than Interval has passed since the last send, so a ticker of exactly Interval
-// arrives a hair too early every time -- lastSendTime is stamped during a tick,
-// and the next tick is Interval later, which is not more than Interval. The
-// check fails, the send is skipped, and the metric comes out every SECOND tick:
-// half the configured rate, with the occasional interval slipping through when
-// tick delivery jitter pushes the comparison over the line. That was visible in
-// testing as 120-second gaps on a 60-second interval.
-//
-// Waking up four times per interval costs three no-op wakeups and puts the send
-// within a quarter interval of its due time.
+// sendTicksPerInterval must be > 1: HasSendIntervalElapsed wants STRICTLY more
+// than Interval, so a ticker of exactly Interval is always a hair early and the
+// send is skipped on alternate ticks -- half the configured rate.
 const sendTicksPerInterval = 4
 
 func (lp *LogParser) tickInterval() time.Duration {
@@ -123,16 +73,12 @@ func (lp *LogParser) consume(r io.Reader) error {
 		Format:       lp.parserFormat(),
 		MessagesLang: lp.ServerMessagesLang,
 
-		// Only read for stderr, and empty would mean "detect it from
-		// the log". Passing the server's own setting is better than a
-		// guess from a sample when the server is right there to ask.
+		// stderr only; empty would mean "detect from the log", and the
+		// server's own setting beats a guess from a sample.
 		LinePrefix: lp.LinePrefix,
 
-		// pgwatch counts severities and nothing else, so a message it
-		// cannot read is not worth a log line per occurrence -- a
-		// malformed line is normal at the start of a rotated file and
-		// after a resume. The parser counts them; the count is reported
-		// once, when the stream ends.
+		// Malformed lines are normal after a rotation or a resume, and not
+		// worth a log line each. Stats() reports the count at stream end.
 		OnMalformed: nil,
 	})
 
@@ -150,39 +96,26 @@ func (lp *LogParser) consume(r io.Reader) error {
 func (lp *LogParser) count(rec *pglogwatch.Record) {
 	severity := rec.Severity.String()
 	if severity == "" {
-		// An unrecognised severity. The regex this replaces required
-		// \w+ and would not have matched the line at all, so not
-		// counting it is the pre-migration behaviour.
-		return
+		return // unrecognised; the regex this replaces would not have matched either
 	}
 
 	lp.countsMu.Lock()
 	defer lp.countsMu.Unlock()
 
-	// Comparing a string against string(someByteSlice) does not allocate:
-	// the compiler recognises the pattern and compares the bytes in place.
-	// Writing string(rec.Database) into a variable first WOULD allocate,
-	// on every record, which is most of what this migration is here to
-	// avoid.
+	// Compared inline: the compiler elides the conversion. Assigning
+	// string(rec.Database) to a variable first would allocate per record.
 	if lp.realDbname == string(rec.Database) {
 		lp.eventCounts[severity]++
 	}
 	lp.eventCountsTotal[severity]++
 }
 
-// sendCounts emits an envelope and zeroes the tallies, or returns without
-// blocking if the context is done.
+// sendCounts emits an envelope and zeroes the tallies.
 //
-// Reading and zeroing happen in ONE critical section, before the send rather
-// than after it. Sending first and zeroing afterwards loses every record the
-// parser counted while the send was blocked: the send blocks whenever the sink
-// applies backpressure, the parse goroutine keeps counting into the same maps
-// throughout, and the zeroing that follows wipes those counts before any
-// envelope has carried them. The loss is silent and grows with sink latency.
-//
-// Zeroing first means records that arrive during the send land in the freshly
-// emptied maps and are reported by the NEXT envelope, which is where they
-// belong.
+// Read and zero share one critical section, BEFORE the send: zeroing after a
+// send that blocked on sink backpressure would discard everything the parser
+// counted meanwhile. Records arriving mid-send land in the emptied maps and go
+// out with the next envelope.
 func (lp *LogParser) sendCounts() {
 	lp.countsMu.Lock()
 	envelope := lp.getMeasurementEnvelopeLocked()
@@ -197,13 +130,8 @@ func (lp *LogParser) sendCounts() {
 	}
 }
 
-// parserFormat maps the resolved log_destination to a parser format.
-//
-// log_destination is a LIST -- "stderr,csvlog" is common -- so this is a
-// precedence, not a lookup. csvlog wins because it is what pgwatch has always
-// read: a server configured for both keeps producing exactly the counts it
-// produced before the migration, which is the whole point. jsonlog comes
-// next as the other structured format, and stderr is what is left.
+// parserFormat maps log_destination to a parser format. It is a LIST, so this
+// is a precedence: csvlog first, to keep pre-migration counts identical.
 func (lp *LogParser) parserFormat() pglogwatch.Format {
 	switch {
 	case lp.CSVDestination:
@@ -228,14 +156,9 @@ func (lp *LogParser) openLocal() (io.ReadCloser, error) {
 	return fs.Open(lp.ctx)
 }
 
-// openRemote presents pg_read_file as one stream.
-//
-// Follow and PollInterval mirror openLocal, and for the same reason: without
-// them the reader ends at the last byte the server had written when it opened,
-// consume returns, parseStream sends one measurement and returns, and
-// runLogParser treats that clean return as success and never calls again. Log
-// parsing would report once per pgwatch start and then go silent, while every
-// other metric kept flowing -- a failure with no error to notice it by.
+// openRemote presents pg_read_file as one stream. Follow mirrors openLocal:
+// without it the reader ends at the server's current last byte and never
+// reports again.
 func (lp *LogParser) openRemote() (io.ReadCloser, error) {
 	return pgremote.Open(lp.ctx, lp.SourceConn.Conn, pgremote.Config{
 		Dir:          lp.Directory,
@@ -247,11 +170,9 @@ func (lp *LogParser) openRemote() (io.ReadCloser, error) {
 	})
 }
 
-// remoteGlob selects the files the chosen destination writes.
-//
-// It matters more remotely than locally: pg_ls_logdir lists every file in the
-// directory, and a server writing both csvlog and stderr has two complete
-// copies of its log there. Reading both would double every count.
+// remoteGlob selects the files the chosen destination writes. pg_ls_logdir
+// lists everything, and a server writing two formats would otherwise be counted
+// twice.
 func (lp *LogParser) remoteGlob() string {
 	switch {
 	case lp.CSVDestination:
@@ -263,31 +184,18 @@ func (lp *LogParser) remoteGlob() string {
 	}
 }
 
-// endSeededOffsets records how far each log file has been read, in BYTES.
+// endSeededOffsets records how far each log file has been read, in BYTES --
+// what pg_read_file takes natively, and a seek locally.
 //
-// This replaces the pre-migration resumption, which counted LINES and then
-// re-read them one ReadString at a time to skip them: resuming 400 000 lines
-// into a file meant reading 400 000 lines to arrive where it left off, and
-// paying for it again after every restart. A byte offset is a seek, and it is
-// also what pg_read_file(path, offset, len) takes natively, so local and
-// remote finally resume the same way.
-//
-// It also starts every file it has not seen at that file's current end.
-// Starting there is the pre-migration behaviour and it matters: a fresh
-// pgwatch pointed at a server with months of retained logs would otherwise
-// count every severity in all of them and report the lot as one interval's
-// worth. The old local parser did this with Seek(0, io.SeekEnd) on first run,
-// the old remote one by setting offset = size.
+// An unseen file starts at its CURRENT END, so a fresh pgwatch reports what
+// happens next rather than every severity in months of retained logs.
 type endSeededOffsets struct {
 	mu    sync.Mutex
 	seen  map[string]offsetEntry
 	max   int
 	clock uint64 // monotonic tick, for eviction order
 
-	// sizeOf reports a file's current length. It is a field so the remote
-	// path can supply pg_ls_logdir sizes where the local path stats the
-	// filesystem.
-	sizeOf func(path string) (int64, bool)
+	sizeOf func(path string) (int64, bool) // os.Stat locally, pg_ls_logdir remotely
 }
 
 type offsetEntry struct {
@@ -311,8 +219,7 @@ func (o *endSeededOffsets) Get(path string) (int64, bool) {
 		o.touchLocked(path, e.offset)
 		return e.offset, true
 	}
-	// First sight of this file. If it already has content, that content
-	// predates this process and is not ours to report.
+	// First sight: existing content predates this process, so skip it.
 	if size, ok := o.sizeOf(path); ok && size > 0 {
 		o.touchLocked(path, size)
 		return size, true
@@ -326,17 +233,9 @@ func (o *endSeededOffsets) Set(path string, offset int64) {
 	o.mu.Unlock()
 }
 
-// touchLocked stores an offset and evicts the least recently used entry if the
-// map has outgrown its bound.
-//
-// The bound is the point. A log directory accumulates rotated files forever
-// and pgwatch runs for months, so an unbounded map is a slow leak in the one
-// component that is supposed to be cheap. The pre-migration code bounded it by
-// clearing the WHOLE map at the limit, which also discarded the offset of the
-// file currently being read -- that file would then be re-seeded to its
-// current end and every record written since would be skipped. Evicting one
-// entry, least recently used, cannot do that: the active file is by definition
-// the most recently used.
+// touchLocked stores an offset, evicting the least recently used entry past the
+// bound. LRU rather than clearing the map: the active file is the most recently
+// used, so it can never be the one dropped.
 func (o *endSeededOffsets) touchLocked(path string, offset int64) {
 	o.clock++
 	o.seen[path] = offsetEntry{offset: offset, lastUsed: o.clock}
@@ -365,12 +264,9 @@ func localFileSize(path string) (int64, bool) {
 // remoteFileSizes asks pg_ls_logdir once, so that seeding to the end of a
 // remote directory costs one query rather than one per file.
 //
-// The error is returned rather than swallowed, and the caller fails on it.
-// Carrying on with an empty map would report "size unknown" for every file,
-// which endSeededOffsets reads as "never seen, start at zero" -- so a single
-// failed query turns into a full re-read of every retained log file, and months
-// of history counted as one interval's worth of events. Failing the parse is
-// recoverable; that is not.
+// The error must not be swallowed: an empty map reads as "never seen" for every
+// file, so one failed query re-reads the whole retained backlog and reports it
+// as a single interval.
 func remoteFileSizes(ctx context.Context, lp *LogParser) (func(string) (int64, bool), error) {
 	sizes := make(map[string]int64)
 	rows, err := lp.SourceConn.Conn.Query(ctx, "select name, size from pg_ls_logdir()")

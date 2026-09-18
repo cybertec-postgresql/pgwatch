@@ -31,21 +31,7 @@ type DbConnReaper struct {
 	lastFetch   map[string]time.Time
 	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
 
-	// logParserRunning guards against spawning a second server_log_event_counts
-	// parser while one is already running. It is cleared when the parser
-	// returns, so the next tick starts a fresh one.
-	//
-	// It has to be cleared. The parser is a streaming loop that normally runs
-	// until ctx cancel, but it also returns on a reader error -- a server
-	// restart, a dropped pooled connection, a failed pg_ls_logdir. A flag that
-	// is only ever set would turn any of those into permanent silence for this
-	// source, with one logged line and no further measurements until pgwatch
-	// itself restarts. Restart cadence is bounded by the metric's own interval,
-	// since only a tick can start one.
-	//
-	// atomic because the clearing happens on the parser's goroutine while the
-	// tick loop reads it.
-	logParserRunning atomic.Bool
+	logParserRunning atomic.Bool // one server_log_event_counts parser at a time; cleared on exit so a failed one restarts
 
 	degradedMu      sync.RWMutex
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
