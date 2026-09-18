@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
@@ -19,29 +19,22 @@ import (
 
 // Constants and types
 var pgSeverities = [...]string{"DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "LOG", "FATAL", "PANIC"}
-var pgSeveritiesLocale = map[string]map[string]string{
-	"C.": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "WARNING": "WARNING", "ERROR": "ERROR", "FATAL": "FATAL", "PANIC": "PANIC"},
-	"de": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "HINWEIS": "NOTICE", "WARNUNG": "WARNING", "FEHLER": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
-	"fr": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTICE": "NOTICE", "ATTENTION": "WARNING", "ERREUR": "ERROR", "FATAL": "FATAL", "PANIK": "PANIC"},
-	"it": {"DEBUG": "DEBUG", "LOG": "LOG", "INFO": "INFO", "NOTIFICA": "NOTICE", "ATTENZIONE": "WARNING", "ERRORE": "ERROR", "FATALE": "FATAL", "PANICO": "PANIC"},
-	"ko": {"디버그": "DEBUG", "로그": "LOG", "정보": "INFO", "알림": "NOTICE", "경고": "WARNING", "오류": "ERROR", "치명적오류": "FATAL", "손상": "PANIC"},
-	"pl": {"DEBUG": "DEBUG", "DZIENNIK": "LOG", "INFORMACJA": "INFO", "UWAGA": "NOTICE", "OSTRZEŻENIE": "WARNING", "BŁĄD": "ERROR", "KATASTROFALNY": "FATAL", "PANIKA": "PANIC"},
-	"ru": {"ОТЛАДКА": "DEBUG", "СООБЩЕНИЕ": "LOG", "ИНФОРМАЦИЯ": "INFO", "ЗАМЕЧАНИЕ": "NOTICE", "ПРЕДУПРЕЖДЕНИЕ": "WARNING", "ОШИБКА": "ERROR", "ВАЖНО": "FATAL", "ПАНИКА": "PANIC"},
-	"sv": {"DEBUG": "DEBUG", "LOGG": "LOG", "INFO": "INFO", "NOTIS": "NOTICE", "VARNING": "WARNING", "FEL": "ERROR", "FATALT": "FATAL", "PANIK": "PANIC"},
-	"tr": {"DEBUG": "DEBUG", "LOG": "LOG", "BİLGİ": "INFO", "NOT": "NOTICE", "UYARI": "WARNING", "HATA": "ERROR", "ÖLÜMCÜL (FATAL)": "FATAL", "KRİTİK": "PANIC"},
-	"zh": {"调试": "DEBUG", "日志": "LOG", "信息": "INFO", "注意": "NOTICE", "警告": "WARNING", "错误": "ERROR", "致命错误": "FATAL", "比致命错误还过分的错误": "PANIC"},
+
+// supportedMessageLangs is the set of lc_messages prefixes pglogwatch can
+// normalise to English. "C." is included though pglogwatch lacks a table for it:
+// the C locale already writes English, and unknown languages pass through.
+var supportedMessageLangs = map[string]bool{
+	"C.": true, "de": true, "fr": true, "it": true, "ko": true,
+	"pl": true, "ru": true, "sv": true, "tr": true, "zh": true,
 }
 
-const csvLogDefaultRegEx = `^^(?P<log_time>.*?),"?(?P<user_name>.*?)"?,"?(?P<database_name>.*?)"?,(?P<process_id>\d+),"?(?P<connection_from>.*?)"?,(?P<session_id>.*?),(?P<session_line_num>\d+),"?(?P<command_tag>.*?)"?,(?P<session_start_time>.*?),(?P<virtual_transaction_id>.*?),(?P<transaction_id>.*?),(?P<error_severity>\w+),`
-const csvLogDefaultGlobSuffix = "*.csv"
-
+// Both keep their pre-migration values: read pattern and memory ceiling unchanged.
 const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
 const maxTrackedFiles = 2500
 
-type LogParser struct {
-	*LogConfig
+type logParser struct {
+	*logConfig
 	ctx              context.Context
-	LogsMatchRegex   *regexp.Regexp
 	SourceConn       *sources.DbConn
 	realDbname       string // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
 	Interval         time.Duration
@@ -49,37 +42,39 @@ type LogParser struct {
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance
 	lastSendTime     time.Time
-	fileOffsets      map[string]uint64 // map of log file paths to last read offsets
+
+	countsMu sync.Mutex        // guards eventCounts, eventCountsTotal, lastSendTime
+	offsets  *endSeededOffsets // how far each log file has been read, in bytes
 }
 
-type LogConfig struct {
+// logConfig is the server's logging configuration, resolved from its GUCs.
+//
+// Field ORDER is load-bearing: pgx.RowToAddrOfStructByPos maps by position, so a
+// new field needs a column at the same position in tryDetermineLogSettings.
+type logConfig struct {
 	CollectorEnabled   bool
-	CSVDestination     bool
+	CSVDestination     bool // neither set means stderr, PostgreSQL's default
+	JSONDestination    bool
 	TruncateOnRotation bool
 	Directory          string
 	ServerMessagesLang string
+	LinePrefix         string // log_line_prefix; stderr only, and beats pglogwatch's own detection
 }
 
-func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
+func newLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *logParser, err error) {
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
 
-	logsRegex := regexp.MustCompile(csvLogDefaultRegEx)
-
-	logger.Debugf("Using %s as log parsing regex", logsRegex)
-
-	var cfg *LogConfig
+	var cfg *logConfig
 	if cfg, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
 		return nil, fmt.Errorf("could not determine Postgres logs settings: %w", err)
 	}
 
+	// Unlike the log_destination check this replaces, this one is real: with
+	// the collector off there are no files in log_directory at all.
 	if !cfg.CollectorEnabled {
 		return nil, errors.New("logging_collector is not enabled on the db server")
-	}
-
-	if !cfg.CSVDestination {
-		return nil, errors.New("log_destination must contain 'csvlog' for log parsing to work")
 	}
 
 	logger.Debugf("Considering log files in folder: %s", cfg.Directory)
@@ -87,30 +82,33 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 	mdb.RLock()
 	realDbname := mdb.RealDbname
 	mdb.RUnlock()
-	return &LogParser{
+	return &logParser{
 		ctx:              ctx,
-		LogsMatchRegex:   logsRegex,
 		SourceConn:       mdb,
 		realDbname:       realDbname,
 		Interval:         mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:          storeCh,
-		LogConfig:        cfg,
+		logConfig:        cfg,
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
-		fileOffsets:      make(map[string]uint64),
 	}, nil
 }
 
-func (lp *LogParser) HasSendIntervalElapsed() bool {
+func (lp *logParser) hasSendIntervalElapsed() bool {
 	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
 }
 
-func (lp *LogParser) ParseLogs() error {
+func (lp *logParser) parseLogs() error {
 	l := log.GetLogger(lp.ctx)
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host, parsing logs locally")
 		if err = checkHasLocalPrivileges(lp.Directory); err == nil {
-			return lp.parseLogsLocal()
+			lp.offsets = newEndSeededOffsets(localFileSize)
+			rc, err := lp.openLocal()
+			if err != nil {
+				return err
+			}
+			return lp.parseStream(rc)
 		}
 		l.WithError(err).Error("Couldn't parse logs locally, lacking required privileges")
 	}
@@ -120,23 +118,34 @@ func (lp *LogParser) ParseLogs() error {
 		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
-	return lp.parseLogsRemote()
+	sizeOf, err := remoteFileSizes(lp.ctx, lp)
+	if err != nil {
+		return fmt.Errorf("could not list the remote log directory: %w", err)
+	}
+	lp.offsets = newEndSeededOffsets(sizeOf)
+	rc, err := lp.openRemote()
+	if err != nil {
+		return err
+	}
+	return lp.parseStream(rc)
 }
 
-func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogConfig, err error) {
+func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *logConfig, err error) {
 	sql := `select 
 	current_setting('logging_collector') = 'on' as is_enabled,
 	strpos(current_setting('log_destination'), 'csvlog') > 0 as csvlog_dest,
+	strpos(current_setting('log_destination'), 'jsonlog') > 0 as jsonlog_dest,
 	current_setting('log_truncate_on_rotation') = 'on' as log_trunc,
 	case 
 		when current_setting('log_directory') ~ '^(\w:)?\/.+' then current_setting('log_directory') 
 		else current_setting('data_directory') || '/' || current_setting('log_directory') 
 	end as log_dir,
-	current_setting('lc_messages')::varchar(2) as lc_messages`
+	current_setting('lc_messages')::varchar(2) as lc_messages,
+	current_setting('log_line_prefix') as line_prefix`
 	var res pgx.Rows
 	if res, err = conn.Query(ctx, sql); err == nil {
-		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[LogConfig]); err == nil {
-			if _, ok := pgSeveritiesLocale[cfg.ServerMessagesLang]; !ok {
+		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[logConfig]); err == nil {
+			if !supportedMessageLangs[cfg.ServerMessagesLang] {
 				cfg.ServerMessagesLang = "en"
 			}
 			return cfg, nil
@@ -165,33 +174,17 @@ func checkHasLocalPrivileges(logsDirPath string) error {
 	return nil
 }
 
-func severityToEnglish(serverLang, errorSeverity string) string {
-	if serverLang == "en" {
-		return errorSeverity
-	}
-	severityMap := pgSeveritiesLocale[serverLang]
-	severityEn, ok := severityMap[errorSeverity]
-	if !ok {
-		return errorSeverity
-	}
-	return severityEn
+// getMeasurementEnvelope converts current event counts to a MeasurementEnvelope
+func (lp *logParser) getMeasurementEnvelope() metrics.MeasurementEnvelope {
+	lp.countsMu.Lock()
+	defer lp.countsMu.Unlock()
+	return lp.getMeasurementEnvelopeLocked()
 }
 
-func (lp *LogParser) regexMatchesToMap(matches []string) map[string]string {
-	result := make(map[string]string)
-	if len(matches) == 0 || lp.LogsMatchRegex == nil {
-		return result
-	}
-	for i, name := range lp.LogsMatchRegex.SubexpNames() {
-		if i != 0 && name != "" {
-			result[name] = matches[i]
-		}
-	}
-	return result
-}
-
-// GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
-func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
+// getMeasurementEnvelopeLocked is getMeasurementEnvelope with countsMu already
+// held, which is how the send path reads the counts and zeroes them without
+// letting a record land in between.
+func (lp *logParser) getMeasurementEnvelopeLocked() metrics.MeasurementEnvelope {
 	allSeverityCounts := metrics.NewMeasurement(time.Now().UnixNano())
 	for _, s := range pgSeverities {
 		parsedCount, ok := lp.eventCounts[s]

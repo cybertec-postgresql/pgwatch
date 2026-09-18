@@ -5,10 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/cybertec-postgresql/pglogwatch"
 	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
@@ -18,6 +20,12 @@ import (
 )
 
 var expectedSettingsQuery = `select current_setting`
+
+// defaultLinePrefix is PostgreSQL's own default log_line_prefix.
+//
+// It only affects stderr parsing, but tryDetermineLogSettings reads it for
+// every destination, so every mocked settings row has to carry it.
+const defaultLinePrefix = `%m [%p] `
 
 func TestNewLogParser(t *testing.T) {
 	tempDir := t.TempDir()
@@ -37,10 +45,10 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
@@ -50,13 +58,12 @@ func TestNewLogParser(t *testing.T) {
 		assert.Equal(t, "en", lp.ServerMessagesLang)
 		assert.Equal(t, false, lp.TruncateOnRotation)
 		assert.Equal(t, 60*time.Second, lp.Interval)
-		assert.NotNil(t, lp.LogsMatchRegex)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
 	t.Run("tryDetermineLogSettings error", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.Error(t, err)
 		assert.Nil(t, lp)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -64,10 +71,10 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("unknown language defaults to en", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "zz"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "zz", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
@@ -76,10 +83,10 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("relative log directory", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, true, "/data/pg_log", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "/data/pg_log", lp.Directory)
@@ -88,24 +95,77 @@ func TestNewLogParser(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
+	// Retained deliberately, unlike the log_destination error.
+	//
+	// With logging_collector off there are no files in log_directory at
+	// all -- PostgreSQL writes to the postmaster's stderr -- so this is a
+	// fact about the server rather than a limitation of the parser. The
+	// subtests below check it holds for every destination, since the
+	// obvious way to widen the destination check is a switch that reaches a
+	// working stderr branch before ever testing the collector.
 	t.Run("logging_collector disabled", func(t *testing.T) {
-		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(false, true, true, "/data/pg_log", "de"))
+		for _, d := range []struct {
+			name       string
+			csv, jsonl bool
+		}{
+			{"csvlog", true, false},
+			{"jsonlog", false, true},
+			{"stderr", false, false},
+		} {
+			t.Run(d.name, func(t *testing.T) {
+				mock.ExpectQuery(expectedSettingsQuery).
+					WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+						AddRow(false, d.csv, d.jsonl, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-		assert.Equal(t, err.Error(), "logging_collector is not enabled on the db server")
-		assert.Nil(t, lp)
+				lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
+				require.Error(t, err)
+				assert.Equal(t, "logging_collector is not enabled on the db server", err.Error())
+				assert.Nil(t, lp)
+			})
+		}
 	})
 
-	t.Run("csvlog not in log_destination", func(t *testing.T) {
+	// stderr is accepted, where it used to be a hard error.
+	//
+	// This subtest asserted that exact error until the migration. stderr is
+	// PostgreSQL's DEFAULT log_destination, so what it really documented is
+	// that pgwatch's log metric did not work on an unconfigured server --
+	// which is the gap this phase closes.
+	t.Run("stderr destination is accepted", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, false, true, "/data/pg_log", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, false, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
-		assert.Equal(t, err.Error(), "log_destination must contain 'csvlog' for log parsing to work")
-		assert.Nil(t, lp)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
+		require.NoError(t, err)
+		require.NotNil(t, lp)
+		assert.Equal(t, pglogwatch.FormatStderr, lp.parserFormat())
+		assert.Equal(t, defaultLinePrefix, lp.LinePrefix)
+	})
+
+	t.Run("jsonlog destination is accepted", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, false, true, true, "/data/pg_log", "de", defaultLinePrefix))
+
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
+		require.NoError(t, err)
+		require.NotNil(t, lp)
+		assert.Equal(t, pglogwatch.FormatJSON, lp.parserFormat())
+	})
+
+	// log_destination is a list, and "stderr,csvlog" is a common setting.
+	// csvlog has to win: a server configured for both must keep producing
+	// the counts it produced before the migration.
+	t.Run("csvlog wins when both are configured", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, true, true, "/data/pg_log", "de", defaultLinePrefix))
+
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
+		require.NoError(t, err)
+		assert.Equal(t, pglogwatch.FormatCSV, lp.parserFormat())
+		assert.Equal(t, "*.csv", lp.remoteGlob())
 	})
 }
 
@@ -116,8 +176,8 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, "/var/log/postgresql", "de"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, "/var/log/postgresql", "de", defaultLinePrefix))
 
 		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
@@ -133,8 +193,8 @@ func TestTryDetermineLogSettings(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, "/data/log", "xx"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, "/data/log", "xx", defaultLinePrefix))
 
 		logCfg, err := tryDetermineLogSettings(testutil.TestContext, mock)
 		assert.NoError(t, err)
@@ -170,8 +230,8 @@ func TestCheckHasPrivileges(t *testing.T) {
 			defer mock.Close()
 
 			mock.ExpectQuery(expectedSettingsQuery).
-				WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-					AddRow(true, true, false, tempDir, "en"))
+				WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+					AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 			// Mock IsClientOnSameHost to return false (remote)
 			mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
@@ -201,10 +261,10 @@ func TestCheckHasPrivileges(t *testing.T) {
 
 			storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-			lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+			lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 			require.NoError(t, err)
 			// Parse logs should stop the worker and return due to privilege errors.
-			err = lp.ParseLogs()
+			err = lp.parseLogs()
 			assert.Error(t, err)
 
 			// Ensure mock expectations were met
@@ -229,7 +289,7 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 			CustomTags: map[string]string{"env": "test"},
 		},
 	}
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn: mdb,
 		eventCounts: map[string]int64{
 			"ERROR":   5,
@@ -241,7 +301,7 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 			"INFO":    50,
 		},
 	}
-	result := lp.GetMeasurementEnvelope()
+	result := lp.getMeasurementEnvelope()
 
 	assert.Equal(t, "test-db", result.DBName)
 	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
@@ -264,30 +324,6 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 	assert.Equal(t, int64(0), measurement["debug_total"])
 }
 
-func TestSeverityToEnglish(t *testing.T) {
-	tests := []struct {
-		serverLang    string
-		errorSeverity string
-		expected      string
-	}{
-		{"en", "ERROR", "ERROR"},
-		{"de", "FEHLER", "ERROR"},
-		{"fr", "ERREUR", "ERROR"},
-		{"de", "WARNUNG", "WARNING"},
-		{"ru", "ОШИБКА", "ERROR"},
-		{"zh", "错误", "ERROR"},
-		{"unknown", "ERROR", "ERROR"},                  // Unknown language, return as-is
-		{"de", "UNKNOWN_SEVERITY", "UNKNOWN_SEVERITY"}, // Unknown severity in known language
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.serverLang+"_"+tt.errorSeverity, func(t *testing.T) {
-			result := severityToEnglish(tt.serverLang, tt.errorSeverity)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestZeroEventCounts(t *testing.T) {
 	eventCounts := map[string]int64{
 		"ERROR":   5,
@@ -300,94 +336,6 @@ func TestZeroEventCounts(t *testing.T) {
 	// Check that all pgSeverities are zeroed
 	for _, severity := range pgSeverities {
 		assert.Equal(t, int64(0), eventCounts[severity])
-	}
-}
-
-func TestRegexMatchesToMap(t *testing.T) {
-	t.Run("successful match", func(t *testing.T) {
-		lp := &LogParser{
-			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
-		}
-		matches := []string{"ERROR: Something went wrong", "ERROR", "Something went wrong"}
-
-		result := lp.regexMatchesToMap(matches)
-		expected := map[string]string{
-			"severity": "ERROR",
-			"message":  "Something went wrong",
-		}
-
-		assert.Equal(t, expected, result)
-	})
-
-	t.Run("no matches", func(t *testing.T) {
-		lp := &LogParser{
-			LogsMatchRegex: regexp.MustCompile(`(?P<severity>\w+): (?P<message>.+)`),
-		}
-		matches := []string{}
-
-		result := lp.regexMatchesToMap(matches)
-		assert.Empty(t, result)
-	})
-
-	t.Run("nil regex", func(t *testing.T) {
-		lp := &LogParser{}
-		matches := []string{"test"}
-
-		result := lp.regexMatchesToMap(matches)
-		assert.Empty(t, result)
-	})
-}
-
-func TestCSVLogRegex(t *testing.T) {
-	// Test the default CSV log regex with sample log lines
-	lp := &LogParser{
-		LogsMatchRegex: regexp.MustCompile(csvLogDefaultRegEx),
-	}
-
-	testLines := []struct {
-		line     string
-		expected map[string]string
-	}{
-		{
-			line: `2023-12-01 10:30:45.123 UTC,"postgres","testdb",12345,"127.0.0.1:54321",session123,1,"SELECT",2023-12-01 10:30:00 UTC,1/234,567,ERROR,`,
-			expected: map[string]string{
-				"log_time":         "2023-12-01 10:30:45.123 UTC",
-				"user_name":        "postgres",
-				"database_name":    "testdb",
-				"process_id":       "12345",
-				"connection_from":  "127.0.0.1:54321",
-				"session_id":       "session123",
-				"session_line_num": "1",
-				"command_tag":      "SELECT",
-				"error_severity":   "ERROR",
-			},
-		},
-		{
-			line: `2023-12-01 10:30:45.123 UTC,postgres,testdb,12345,127.0.0.1:54321,session123,1,SELECT,2023-12-01 10:30:00 UTC,1/234,567,WARNING,`,
-			expected: map[string]string{
-				"log_time":         "2023-12-01 10:30:45.123 UTC",
-				"user_name":        "postgres",
-				"database_name":    "testdb",
-				"process_id":       "12345",
-				"connection_from":  "127.0.0.1:54321",
-				"session_id":       "session123",
-				"session_line_num": "1",
-				"command_tag":      "SELECT",
-				"error_severity":   "WARNING",
-			},
-		},
-	}
-
-	for i, tt := range testLines {
-		t.Run(string(rune('A'+i)), func(t *testing.T) {
-			matches := lp.LogsMatchRegex.FindStringSubmatch(tt.line)
-			assert.NotEmpty(t, matches, "regex should match the log line")
-
-			result := lp.regexMatchesToMap(matches)
-			for key, expected := range tt.expected {
-				assert.Equal(t, expected, result[key], "mismatch for key %s", key)
-			}
-		})
 	}
 }
 
@@ -410,8 +358,8 @@ func TestLogParseLocal(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(expectedSettingsQuery).
-		WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-			AddRow(true, true, false, tempDir, "en"))
+		WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+			AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 	mock.ExpectQuery(`SELECT COALESCE`).WillReturnRows(
 		pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(true))
@@ -431,9 +379,9 @@ func TestLogParseLocal(t *testing.T) {
 	// Create a channel to receive measurement envelopes
 	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-	lp, err := NewLogParser(ctx, sourceConn, storeCh)
+	lp, err := newLogParser(ctx, sourceConn, storeCh)
 	require.NoError(t, err)
-	err = lp.ParseLogs()
+	err = lp.parseLogs()
 	assert.NoError(t, err)
 
 	// Ensure mock expectations were met.
@@ -458,100 +406,6 @@ func TestLogParseLocal(t *testing.T) {
 	assert.True(t, hasError && hasWarning, "Should have at least error and warning")
 }
 
-func TestGetFileWithLatestTimestamp(t *testing.T) {
-	// Create temporary test files
-	tempDir := t.TempDir()
-
-	t.Run("single file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "test1.log")
-		err := os.WriteFile(file1, []byte("test"), 0644)
-		require.NoError(t, err)
-
-		latest, err := getFileWithLatestTimestamp([]string{file1})
-		assert.NoError(t, err)
-		assert.Equal(t, file1, latest)
-	})
-
-	t.Run("multiple files with different timestamps", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "old.log")
-		file2 := filepath.Join(tempDir, "new.log")
-
-		// Create first file
-		err := os.WriteFile(file1, []byte("old"), 0644)
-		require.NoError(t, err)
-
-		// Wait to ensure different timestamps
-		time.Sleep(10 * time.Millisecond)
-
-		// Create second file (newer)
-		err = os.WriteFile(file2, []byte("new"), 0644)
-		require.NoError(t, err)
-
-		latest, err := getFileWithLatestTimestamp([]string{file1, file2})
-		assert.NoError(t, err)
-		assert.Equal(t, file2, latest)
-	})
-
-	t.Run("empty file list", func(t *testing.T) {
-		latest, err := getFileWithLatestTimestamp([]string{})
-		assert.NoError(t, err)
-		assert.Equal(t, "", latest)
-	})
-
-	t.Run("non-existent file", func(t *testing.T) {
-		nonExistent := filepath.Join(tempDir, "nonexistent.log")
-		latest, err := getFileWithLatestTimestamp([]string{nonExistent})
-		assert.Error(t, err)
-		assert.Equal(t, "", latest)
-	})
-}
-
-func TestGetFileWithNextModTimestamp(t *testing.T) {
-	tempDir := t.TempDir()
-
-	t.Run("finds next file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "first.log")
-		file2 := filepath.Join(tempDir, "second.log")
-		file3 := filepath.Join(tempDir, "third.log")
-
-		// Create files with increasing timestamps
-		err := os.WriteFile(file1, []byte("first"), 0644)
-		require.NoError(t, err)
-
-		time.Sleep(10 * time.Millisecond)
-		err = os.WriteFile(file2, []byte("second"), 0644)
-		require.NoError(t, err)
-
-		time.Sleep(10 * time.Millisecond)
-		err = os.WriteFile(file3, []byte("third"), 0644)
-		require.NoError(t, err)
-
-		globPattern := filepath.Join(tempDir, "*.log")
-		next, err := getFileWithNextModTimestamp(globPattern, file1)
-		assert.NoError(t, err)
-		assert.Equal(t, file2, next)
-	})
-
-	t.Run("no next file", func(t *testing.T) {
-		file1 := filepath.Join(tempDir, "only.log")
-		err := os.WriteFile(file1, []byte("only"), 0644)
-		require.NoError(t, err)
-
-		globPattern := filepath.Join(tempDir, "*.log")
-		next, err := getFileWithNextModTimestamp(globPattern, file1)
-		assert.NoError(t, err)
-		assert.Equal(t, "", next)
-	})
-
-	t.Run("invalid glob pattern", func(t *testing.T) {
-		invalidGlob := "["
-		file1 := filepath.Join(tempDir, "test.log")
-		next, err := getFileWithNextModTimestamp(invalidGlob, file1)
-		assert.Error(t, err)
-		assert.Equal(t, "", next)
-	})
-}
-
 func TestLogParseRemote(t *testing.T) {
 	const (
 		testTimeout       = 3 * time.Second
@@ -574,8 +428,8 @@ func TestLogParseRemote(t *testing.T) {
 		defer mock.Close()
 
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
 		// Phase 2: Mode detection - returns false to trigger remote mode
 		mock.ExpectQuery(`SELECT COALESCE`).
@@ -588,11 +442,16 @@ func TestLogParseRemote(t *testing.T) {
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow("")) // 0 bytes read = permission test
 
-		// Phase 4: Log file discovery - finds the most recent CSV log file with existing content
-		// Note: parseLogsRemote sets offset = size on first run, so it starts at EOF and only reads new data
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
-			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
-				AddRow(logFileName, int32(len(logContent)), time.Now()))
+		// Phase 4: log file discovery, now two queries rather than one.
+		// pgwatch asks for sizes so it can seed each file's offset to its
+		// current end -- existing content predates this process and is not
+		// ours to report -- and pgremote lists the directory itself.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(logContent))))
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(logContent))))
 
 		sourceConn := &sources.DbConn{
 			Source: sources.Source{
@@ -608,12 +467,12 @@ func TestLogParseRemote(t *testing.T) {
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
-		// Run ParseLogs in a goroutine since it runs infinitely until context cancels
+		// Run parseLogs in a goroutine since it runs infinitely until context cancels
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to timeout
@@ -636,8 +495,8 @@ func TestLogParseRemote(t *testing.T) {
 
 		// Setup mocks for initialization
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 
@@ -648,11 +507,12 @@ func TestLogParseRemote(t *testing.T) {
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
-		// No CSV files found initially - parseLogsRemote will keep retrying
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+		// The directory cannot be listed. The seeding query's failure is
+		// not fatal -- an unseeded file simply starts at zero -- but
+		// pgremote.Open's is, so parseLogs returns instead of retrying.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
 			WillReturnError(assert.AnError)
-		// Expect it to retry
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
 			WillReturnError(assert.AnError)
 
 		sourceConn := &sources.DbConn{
@@ -668,12 +528,12 @@ func TestLogParseRemote(t *testing.T) {
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine since it runs infinitely until context cancels
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to timeout
@@ -704,8 +564,8 @@ incomplete line without proper fields
 
 		// Setup all required mocks
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
@@ -714,10 +574,14 @@ incomplete line without proper fields
 			WithArgs(filepath.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
-		// Start at EOF (existing content won't be parsed initially)
-		mock.ExpectQuery(`select name, size, modification from pg_ls_logdir\(\) where name like '%csv' order by modification desc limit 1;`).
-			WillReturnRows(pgxmock.NewRows([]string{"name", "size", "modification"}).
-				AddRow(logFileName, int32(len(malformedContent)), time.Now()))
+		// Start at EOF: the offset is seeded to the file's current size,
+		// so the existing content is not counted.
+		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(malformedContent))))
+		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
+			WillReturnRows(pgxmock.NewRows([]string{"name", "size"}).
+				AddRow(logFileName, int64(len(malformedContent))))
 
 		sourceConn := &sources.DbConn{
 			Source: sources.Source{
@@ -733,12 +597,12 @@ incomplete line without proper fields
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to finish
@@ -762,8 +626,8 @@ incomplete line without proper fields
 
 		// Setup mocks - privilege check passes initially
 		mock.ExpectQuery(expectedSettingsQuery).
-			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "log_trunc", "log_dir", "lc_messages"}).
-				AddRow(true, true, false, tempDir, "en"))
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 		mock.ExpectQuery(`SELECT COALESCE`).
 			WillReturnRows(pgxmock.NewRows([]string{"is_unix_socket"}).AddRow(false))
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
@@ -801,12 +665,12 @@ incomplete line without proper fields
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine
 		go func() {
-			_ = lp.ParseLogs() // It will log a warning and continue retrying
+			_ = lp.parseLogs() // It will log a warning and continue retrying
 		}()
 
 		// Wait for context to finish
@@ -829,23 +693,21 @@ incomplete line without proper fields
 
 // TestRace_LogParserRealDbname verifies that concurrent FetchRuntimeInfo writes to
 // RealDbname and logparser reads of lp.realDbname do not cause a data race.
-// lp.realDbname is snapshotted at LogParser construction time, so only the
-// constructor call itself must be protected (via RLock in NewLogParser).
+// lp.realDbname is snapshotted at logParser construction time, so only the
+// constructor call itself must be protected (via RLock in newLogParser).
 func TestRace_LogParserRealDbname(t *testing.T) {
 	md := sources.NewDbConn(sources.Source{Name: "race-test"})
 
-	// Construct a LogParser directly (no DB needed) reusing the internal struct.
-	lp := &LogParser{
-		LogConfig:        &LogConfig{},
+	// Construct a logParser directly (no DB needed) reusing the internal struct.
+	lp := &logParser{
+		logConfig:        &logConfig{},
 		ctx:              t.Context(),
-		LogsMatchRegex:   regexp.MustCompile(csvLogDefaultRegEx),
 		SourceConn:       md,
 		realDbname:       "initial",
 		Interval:         time.Second,
 		StoreCh:          make(chan metrics.MeasurementEnvelope, 1),
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
-		fileOffsets:      make(map[string]uint64),
 	}
 
 	const iterations = 200
@@ -871,4 +733,198 @@ func TestRace_LogParserRealDbname(t *testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+// The server_log_event_counts envelope schema.
+//
+// This file is written against the PRE-migration implementation on purpose. It
+// is a characterisation test: it pins what pgwatch emits today so that the
+// switch to pglogwatch can be shown not to have changed it. A test written
+// after the migration would only prove the new code agrees with itself.
+//
+// The schema is not pgwatch's to change. Dashboards select these column names,
+// and the measurement store has them as columns; a renamed or missing key is a
+// broken dashboard, not a failing test, so it has to fail here first.
+
+// wantEnvelopeKeys is the complete set of keys the measurement carries: one
+// per severity in pgSeverities, plus one _total per severity.
+//
+// Spelled out rather than generated from pgSeverities, because a test that
+// derives its expectation from the code under test agrees with any change that
+// code makes -- including a change to this list, which is the one thing this
+// test exists to catch.
+var wantEnvelopeKeys = []string{
+	"debug", "info", "notice", "warning", "error", "log", "fatal", "panic",
+	"debug_total", "info_total", "notice_total", "warning_total",
+	"error_total", "log_total", "fatal_total", "panic_total",
+}
+
+func TestEnvelopeSchemaIsExactlyTheseSixteenKeys(t *testing.T) {
+	lp := &logParser{
+		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "test-db"}},
+		eventCounts:      map[string]int64{},
+		eventCountsTotal: map[string]int64{},
+	}
+	m := lp.getMeasurementEnvelope().Data[0]
+
+	// NewMeasurement stamps the timestamp; every other key is a severity.
+	got := make([]string, 0, len(m))
+	for k := range m {
+		if k == metrics.EpochColumnName {
+			continue
+		}
+		got = append(got, k)
+	}
+	assert.ElementsMatch(t, wantEnvelopeKeys, got,
+		"the envelope's key set is fixed; dashboards select these names")
+
+	// Every count is an int64, including the zeroes. A JSON round trip that
+	// turned an absent count into a float64 or a nil would reach the sink
+	// looking like a schema change.
+	for _, k := range wantEnvelopeKeys {
+		require.Contains(t, m, k)
+		assert.IsType(t, int64(0), m[k], "%s must be int64", k)
+	}
+}
+
+func TestEnvelopeCountsAndIdentityAreUnchanged(t *testing.T) {
+	mdb := &sources.DbConn{
+		Source: sources.Source{
+			Name:       "test-db",
+			Kind:       sources.SourcePostgres,
+			CustomTags: map[string]string{"env": "test"},
+		},
+	}
+	lp := &logParser{
+		SourceConn: mdb,
+		// Keyed by ENGLISH severity name. Where those keys come from is
+		// exactly what the migration changes -- a regex capture group
+		// before, pglogwatch's normalised Severity after -- so pinning
+		// the mapping from key to emitted column is what makes the two
+		// implementations comparable.
+		eventCounts:      map[string]int64{"ERROR": 5, "WARNING": 10},
+		eventCountsTotal: map[string]int64{"ERROR": 15, "WARNING": 25, "INFO": 50},
+	}
+
+	env := lp.getMeasurementEnvelope()
+	assert.Equal(t, "test-db", env.DBName)
+	assert.Equal(t, specialMetricServerLogEventCounts, env.MetricName)
+	assert.Equal(t, map[string]string{"env": "test"}, env.CustomTags)
+	require.Len(t, env.Data, 1)
+
+	m := env.Data[0]
+	assert.Equal(t, int64(5), m["error"])
+	assert.Equal(t, int64(10), m["warning"])
+	assert.Equal(t, int64(15), m["error_total"])
+	assert.Equal(t, int64(25), m["warning_total"])
+	assert.Equal(t, int64(50), m["info_total"])
+
+	// A severity counted only per-instance leaves the per-database column
+	// at zero rather than absent, and a severity counted nowhere leaves
+	// both at zero. Absent and zero are different on the wire.
+	assert.Equal(t, int64(0), m["info"])
+	assert.Equal(t, int64(0), m["debug"])
+	assert.Equal(t, int64(0), m["debug_total"])
+}
+
+// DEBUG1..DEBUG5 are dropped, and that is the pre-migration behaviour.
+//
+// PostgreSQL writes DEBUG1 through DEBUG5, never a bare "DEBUG", so the
+// "debug" column has always been zero on a real server: the regex captured
+// "DEBUG3", the count landed under that key, and getMeasurementEnvelope only
+// ever reads the eight names in pgSeverities.
+//
+// Recorded here because pglogwatch reports the same severities and the obvious
+// adapter -- fold DEBUG1..5 into DEBUG -- would look like a bug fix while
+// changing a column that has emitted zero for years. The migration is meant to
+// leave the output identical, so the drop is preserved and made deliberate
+// rather than incidental.
+func TestNumberedDebugSeveritiesAreDropped(t *testing.T) {
+	lp := &logParser{
+		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "test-db"}},
+		eventCounts:      map[string]int64{"DEBUG1": 7, "DEBUG3": 9},
+		eventCountsTotal: map[string]int64{"DEBUG1": 7, "DEBUG3": 9},
+	}
+	m := lp.getMeasurementEnvelope().Data[0]
+
+	assert.Equal(t, int64(0), m["debug"],
+		"numbered debug severities do not reach the debug column")
+	assert.Equal(t, int64(0), m["debug_total"])
+	assert.NotContains(t, m, "debug1")
+	assert.NotContains(t, m, "debug3")
+}
+
+// The envelope schema, verified against its consumer rather than against
+// itself.
+//
+// TestEnvelopeSchemaIsExactlyTheseSixteenKeys pins the emitted key set, but a
+// list in a test file agrees with whatever a developer changes it to. What
+// actually breaks when a column is renamed is the shipped Grafana dashboard,
+// which selects these keys by name out of the measurement's JSON:
+//
+//	sum((data->>'error_total')::int8) as error
+//
+// So this test reads the dashboard and requires every key it selects to be a
+// key the parser emits. It is the closest thing to a contract test available
+// without standing up Grafana.
+
+var dashboardKeyRe = regexp.MustCompile(`data->>'([a-z_0-9]+)'`)
+
+func TestEveryDashboardKeyIsEmitted(t *testing.T) {
+	dashboard := filepath.Join("..", "..", "grafana", "postgres", "v12", "server-log-events.json")
+	raw, err := os.ReadFile(dashboard) //nolint:gosec // a file in this repository
+	require.NoError(t, err, "the dashboard this metric feeds must exist")
+
+	matches := dashboardKeyRe.FindAllStringSubmatch(string(raw), -1)
+	require.NotEmpty(t, matches, "the dashboard must select some keys, or this test proves nothing")
+
+	seen := map[string]bool{}
+	var keys []string
+	for _, m := range matches {
+		if !seen[m[1]] {
+			seen[m[1]] = true
+			keys = append(keys, m[1])
+		}
+	}
+	sort.Strings(keys)
+	t.Logf("dashboard selects %d distinct keys: %v", len(keys), keys)
+
+	lp := &logParser{
+		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "schema-test"}},
+		eventCounts:      map[string]int64{},
+		eventCountsTotal: map[string]int64{},
+	}
+	m := lp.getMeasurementEnvelope().Data[0]
+
+	for _, k := range keys {
+		assert.Contains(t, m, k,
+			"the dashboard selects %q; renaming or dropping it breaks a shipped panel", k)
+		assert.IsType(t, int64(0), m[k],
+			"%q is cast to int8 in the dashboard's SQL, so it must be an integer", k)
+	}
+}
+
+// The counts survive the JSON round trip to the measurement store as integers.
+//
+// The envelope holds any, and a count that reached the sink as a float would
+// still render -- Grafana casts to int8 -- but it would be stored as 5.0 and
+// compared, summed and alerted on as a float. This checks the type the store
+// actually receives rather than the type the map was built with.
+func TestCountsAreIntegersAfterMarshalling(t *testing.T) {
+	lp := &logParser{
+		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "schema-test"}},
+		eventCounts:      map[string]int64{"ERROR": 5},
+		eventCountsTotal: map[string]int64{"ERROR": 9},
+	}
+	m := lp.getMeasurementEnvelope().Data[0]
+
+	for k, v := range m {
+		if k == metrics.EpochColumnName {
+			continue
+		}
+		_, ok := v.(int64)
+		assert.True(t, ok, "%s is %T, not int64", k, v)
+	}
+	assert.Equal(t, int64(5), m["error"])
+	assert.Equal(t, int64(9), m["error_total"])
 }
