@@ -161,7 +161,11 @@ func (lp *LogParser) ParseLogs() error {
 		l.WithError(err).Error("couldn't parse logs remotely, lacking required privileges")
 		return err
 	}
-	lp.offsets = newEndSeededOffsets(remoteFileSizes(lp.ctx, lp))
+	sizeOf, err := remoteFileSizes(lp.ctx, lp)
+	if err != nil {
+		return fmt.Errorf("could not list the remote log directory: %w", err)
+	}
+	lp.offsets = newEndSeededOffsets(sizeOf)
 	rc, err := lp.openRemote()
 	if err != nil {
 		return err

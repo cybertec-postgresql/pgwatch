@@ -57,6 +57,15 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 	for {
 		select {
 		case <-lp.ctx.Done():
+			// Wait for consume to exit before returning, because the
+			// deferred Close above mutates reader state that consume is
+			// still reading. Returning straight from here is a data race
+			// -- the detector catches it on any cancelled remote parse.
+			//
+			// This does not hang: every reader this is given takes ctx and
+			// ends at EOF once it is cancelled, and an in-flight
+			// pg_read_file is cancelled with it.
+			<-parsed
 			return nil
 		case err := <-parsed:
 			// Send what the last partial interval accumulated before
@@ -83,11 +92,26 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 // in tests, where a panic is a poor way to learn it.
 const minSendTickInterval = 100 * time.Millisecond
 
+// sendTicksPerInterval is how many times per send interval the loop wakes up.
+//
+// It must be more than one. HasSendIntervalElapsed asks whether STRICTLY more
+// than Interval has passed since the last send, so a ticker of exactly Interval
+// arrives a hair too early every time -- lastSendTime is stamped during a tick,
+// and the next tick is Interval later, which is not more than Interval. The
+// check fails, the send is skipped, and the metric comes out every SECOND tick:
+// half the configured rate, with the occasional interval slipping through when
+// tick delivery jitter pushes the comparison over the line. That was visible in
+// testing as 120-second gaps on a 60-second interval.
+//
+// Waking up four times per interval costs three no-op wakeups and puts the send
+// within a quarter interval of its due time.
+const sendTicksPerInterval = 4
+
 func (lp *LogParser) tickInterval() time.Duration {
-	if lp.Interval < minSendTickInterval {
-		return minSendTickInterval
+	if t := lp.Interval / sendTicksPerInterval; t >= minSendTickInterval {
+		return t
 	}
-	return lp.Interval
+	return minSendTickInterval
 }
 
 // consume is the parse loop. It runs in its own goroutine; everything it
@@ -148,22 +172,29 @@ func (lp *LogParser) count(rec *pglogwatch.Record) {
 
 // sendCounts emits an envelope and zeroes the tallies, or returns without
 // blocking if the context is done.
+//
+// Reading and zeroing happen in ONE critical section, before the send rather
+// than after it. Sending first and zeroing afterwards loses every record the
+// parser counted while the send was blocked: the send blocks whenever the sink
+// applies backpressure, the parse goroutine keeps counting into the same maps
+// throughout, and the zeroing that follows wipes those counts before any
+// envelope has carried them. The loss is silent and grows with sink latency.
+//
+// Zeroing first means records that arrive during the send land in the freshly
+// emptied maps and are reported by the NEXT envelope, which is where they
+// belong.
 func (lp *LogParser) sendCounts() {
 	lp.countsMu.Lock()
 	envelope := lp.getMeasurementEnvelopeLocked()
-	lp.countsMu.Unlock()
-
-	select {
-	case <-lp.ctx.Done():
-		return
-	case lp.StoreCh <- envelope:
-	}
-
-	lp.countsMu.Lock()
 	zeroEventCounts(lp.eventCounts)
 	zeroEventCounts(lp.eventCountsTotal)
 	lp.lastSendTime = time.Now()
 	lp.countsMu.Unlock()
+
+	select {
+	case <-lp.ctx.Done():
+	case lp.StoreCh <- envelope:
+	}
 }
 
 // parserFormat maps the resolved log_destination to a parser format.
@@ -333,21 +364,33 @@ func localFileSize(path string) (int64, bool) {
 
 // remoteFileSizes asks pg_ls_logdir once, so that seeding to the end of a
 // remote directory costs one query rather than one per file.
-func remoteFileSizes(ctx context.Context, lp *LogParser) func(string) (int64, bool) {
+//
+// The error is returned rather than swallowed, and the caller fails on it.
+// Carrying on with an empty map would report "size unknown" for every file,
+// which endSeededOffsets reads as "never seen, start at zero" -- so a single
+// failed query turns into a full re-read of every retained log file, and months
+// of history counted as one interval's worth of events. Failing the parse is
+// recoverable; that is not.
+func remoteFileSizes(ctx context.Context, lp *LogParser) (func(string) (int64, bool), error) {
 	sizes := make(map[string]int64)
 	rows, err := lp.SourceConn.Conn.Query(ctx, "select name, size from pg_ls_logdir()")
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var name string
-			var size int64
-			if rows.Scan(&name, &size) == nil {
-				sizes[filepath.ToSlash(filepath.Join(lp.Directory, name))] = size
-			}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		var size int64
+		if err := rows.Scan(&name, &size); err != nil {
+			return nil, err
 		}
+		sizes[filepath.ToSlash(filepath.Join(lp.Directory, name))] = size
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return func(path string) (int64, bool) {
 		size, ok := sizes[filepath.ToSlash(path)]
 		return size, ok
-	}
+	}, nil
 }
