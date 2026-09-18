@@ -118,17 +118,17 @@ func jsonRecord(i int, db, severity string) string {
 		i, db, severity, i)
 }
 
-// newResumeParser builds a LogParser wired to a directory, without a database.
+// newResumeParser builds a logParser wired to a directory, without a database.
 //
-// Everything NewLogParser gets from the server is supplied directly here: the
+// Everything newLogParser gets from the server is supplied directly here: the
 // point is to restart the parser over one unchanged directory, and a mocked
 // settings query per restart would add nothing but noise.
-func newResumeParser(ctx context.Context, t *testing.T, dir string, offsets *endSeededOffsets) (*LogParser, chan metrics.MeasurementEnvelope) {
+func newResumeParser(ctx context.Context, t *testing.T, dir string, offsets *endSeededOffsets) (*logParser, chan metrics.MeasurementEnvelope) {
 	t.Helper()
 	ch := make(chan metrics.MeasurementEnvelope, 32)
-	return &LogParser{
+	return &logParser{
 		ctx: ctx,
-		LogConfig: &LogConfig{
+		logConfig: &logConfig{
 			CollectorEnabled: true,
 			JSONDestination:  true,
 			Directory:        dir,
@@ -148,7 +148,7 @@ func newResumeParser(ctx context.Context, t *testing.T, dir string, offsets *end
 //
 // Follow is off: this is one pass over what exists, which is what a restart
 // does before it catches up.
-func readAvailable(t *testing.T, lp *LogParser) map[string]int64 {
+func readAvailable(t *testing.T, lp *logParser) map[string]int64 {
 	t.Helper()
 	fs := &pglogwatch.FileSet{
 		Dir:     lp.Directory,
@@ -200,7 +200,7 @@ func TestRestartCountsNothingTwiceAndSkipsNothing(t *testing.T) {
 	resumeFrom, ok := offsets.Get(logFile)
 	require.True(t, ok, "the first pass must have recorded an offset")
 
-	// Restart: a new LogParser with fresh counters, over the same
+	// Restart: a new logParser with fresh counters, over the same
 	// directory and the same offsets. Nothing was appended in between, so
 	// a parser that re-reads from the start would count all three again.
 	lp2, _ := newResumeParser(ctx, t, dir, offsets)
@@ -365,10 +365,10 @@ func TestRemotePathCountsThroughPgRemote(t *testing.T) {
 	defer cancel()
 
 	storeCh := make(chan metrics.MeasurementEnvelope, 32)
-	lp, err := NewLogParser(ctx, src, storeCh)
+	lp, err := newLogParser(ctx, src, storeCh)
 	require.NoError(t, err)
 
-	go func() { _ = lp.ParseLogs() }()
+	go func() { _ = lp.parseLogs() }()
 
 	got := awaitCounts(ctx, t, storeCh, func(sum map[string]int64) bool {
 		return sum["error_total"] >= 2 && sum["log_total"] >= 1
@@ -399,7 +399,7 @@ func TestRemoteGlobSelectsOneDestination(t *testing.T) {
 		{"stderr", false, false, "*.log", []string{"postgresql.log"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			lp := &LogParser{LogConfig: &LogConfig{
+			lp := &logParser{logConfig: &logConfig{
 				CSVDestination:  tc.csv,
 				JSONDestination: tc.jsonl,
 			}}
@@ -443,7 +443,7 @@ func TestRemoteListFailureIsReported(t *testing.T) {
 //
 // stderr is PostgreSQL's default, so before this migration pgwatch's log metric
 // did not work on an unconfigured server at all. The test is end to end rather
-// than a check of parserFormat because that error came from NewLogParser and
+// than a check of parserFormat because that error came from newLogParser and
 // the counting is what actually has to work.
 
 const stderrLinePrefix = `%m [%p] %u@%d `
@@ -480,10 +480,10 @@ func TestStderrDestinationProducesCounts(t *testing.T) {
 	defer cancel()
 
 	storeCh := make(chan metrics.MeasurementEnvelope, 32)
-	lp, err := NewLogParser(ctx, src, storeCh)
+	lp, err := newLogParser(ctx, src, storeCh)
 	require.NoError(t, err, "stderr must no longer be rejected at construction")
 
-	go func() { _ = lp.ParseLogs() }()
+	go func() { _ = lp.parseLogs() }()
 	time.Sleep(300 * time.Millisecond) // let the follower reach the file
 
 	// Three records for testdb and one for otherdb, then a sentinel.

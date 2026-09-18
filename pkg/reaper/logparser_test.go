@@ -48,7 +48,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
@@ -63,7 +63,7 @@ func TestNewLogParser(t *testing.T) {
 
 	t.Run("tryDetermineLogSettings error", func(t *testing.T) {
 		mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.Error(t, err)
 		assert.Nil(t, lp)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -74,7 +74,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, true, false, false, tempDir, "zz", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "en", lp.ServerMessagesLang)
@@ -86,7 +86,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, true, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		assert.NoError(t, err)
 		assert.NotNil(t, lp)
 		assert.Equal(t, "/data/pg_log", lp.Directory)
@@ -117,7 +117,7 @@ func TestNewLogParser(t *testing.T) {
 					WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 						AddRow(false, d.csv, d.jsonl, true, "/data/pg_log", "de", defaultLinePrefix))
 
-				lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+				lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 				require.Error(t, err)
 				assert.Equal(t, "logging_collector is not enabled on the db server", err.Error())
 				assert.Nil(t, lp)
@@ -136,7 +136,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, false, false, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		require.NoError(t, err)
 		require.NotNil(t, lp)
 		assert.Equal(t, pglogwatch.FormatStderr, lp.parserFormat())
@@ -148,7 +148,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, false, true, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		require.NoError(t, err)
 		require.NotNil(t, lp)
 		assert.Equal(t, pglogwatch.FormatJSON, lp.parserFormat())
@@ -162,7 +162,7 @@ func TestNewLogParser(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
 				AddRow(true, true, true, true, "/data/pg_log", "de", defaultLinePrefix))
 
-		lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+		lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 		require.NoError(t, err)
 		assert.Equal(t, pglogwatch.FormatCSV, lp.parserFormat())
 		assert.Equal(t, "*.csv", lp.remoteGlob())
@@ -261,10 +261,10 @@ func TestCheckHasPrivileges(t *testing.T) {
 
 			storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-			lp, err := NewLogParser(testutil.TestContext, sourceConn, storeCh)
+			lp, err := newLogParser(testutil.TestContext, sourceConn, storeCh)
 			require.NoError(t, err)
 			// Parse logs should stop the worker and return due to privilege errors.
-			err = lp.ParseLogs()
+			err = lp.parseLogs()
 			assert.Error(t, err)
 
 			// Ensure mock expectations were met
@@ -289,7 +289,7 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 			CustomTags: map[string]string{"env": "test"},
 		},
 	}
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn: mdb,
 		eventCounts: map[string]int64{
 			"ERROR":   5,
@@ -301,7 +301,7 @@ func TestEventCountsToMetricStoreMessages(t *testing.T) {
 			"INFO":    50,
 		},
 	}
-	result := lp.GetMeasurementEnvelope()
+	result := lp.getMeasurementEnvelope()
 
 	assert.Equal(t, "test-db", result.DBName)
 	assert.Equal(t, specialMetricServerLogEventCounts, result.MetricName)
@@ -379,9 +379,9 @@ func TestLogParseLocal(t *testing.T) {
 	// Create a channel to receive measurement envelopes
 	storeCh := make(chan metrics.MeasurementEnvelope, 10)
 
-	lp, err := NewLogParser(ctx, sourceConn, storeCh)
+	lp, err := newLogParser(ctx, sourceConn, storeCh)
 	require.NoError(t, err)
-	err = lp.ParseLogs()
+	err = lp.parseLogs()
 	assert.NoError(t, err)
 
 	// Ensure mock expectations were met.
@@ -467,12 +467,12 @@ func TestLogParseRemote(t *testing.T) {
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
-		// Run ParseLogs in a goroutine since it runs infinitely until context cancels
+		// Run parseLogs in a goroutine since it runs infinitely until context cancels
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to timeout
@@ -509,7 +509,7 @@ func TestLogParseRemote(t *testing.T) {
 
 		// The directory cannot be listed. The seeding query's failure is
 		// not fatal -- an unseeded file simply starts at zero -- but
-		// pgremote.Open's is, so ParseLogs returns instead of retrying.
+		// pgremote.Open's is, so parseLogs returns instead of retrying.
 		mock.ExpectQuery(`select name, size from pg_ls_logdir\(\)`).
 			WillReturnError(assert.AnError)
 		mock.ExpectQuery(`SELECT name, size FROM pg_ls_logdir\(\) ORDER BY name`).
@@ -528,12 +528,12 @@ func TestLogParseRemote(t *testing.T) {
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine since it runs infinitely until context cancels
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to timeout
@@ -597,12 +597,12 @@ incomplete line without proper fields
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine
 		go func() {
-			_ = lp.ParseLogs()
+			_ = lp.parseLogs()
 		}()
 
 		// Wait for context to finish
@@ -665,12 +665,12 @@ incomplete line without proper fields
 
 		storeCh := make(chan metrics.MeasurementEnvelope, channelBufferSize)
 
-		lp, err := NewLogParser(ctx, sourceConn, storeCh)
+		lp, err := newLogParser(ctx, sourceConn, storeCh)
 		require.NoError(t, err)
 
 		// Run in goroutine
 		go func() {
-			_ = lp.ParseLogs() // It will log a warning and continue retrying
+			_ = lp.parseLogs() // It will log a warning and continue retrying
 		}()
 
 		// Wait for context to finish
@@ -693,14 +693,14 @@ incomplete line without proper fields
 
 // TestRace_LogParserRealDbname verifies that concurrent FetchRuntimeInfo writes to
 // RealDbname and logparser reads of lp.realDbname do not cause a data race.
-// lp.realDbname is snapshotted at LogParser construction time, so only the
-// constructor call itself must be protected (via RLock in NewLogParser).
+// lp.realDbname is snapshotted at logParser construction time, so only the
+// constructor call itself must be protected (via RLock in newLogParser).
 func TestRace_LogParserRealDbname(t *testing.T) {
 	md := sources.NewDbConn(sources.Source{Name: "race-test"})
 
-	// Construct a LogParser directly (no DB needed) reusing the internal struct.
-	lp := &LogParser{
-		LogConfig:        &LogConfig{},
+	// Construct a logParser directly (no DB needed) reusing the internal struct.
+	lp := &logParser{
+		logConfig:        &logConfig{},
 		ctx:              t.Context(),
 		SourceConn:       md,
 		realDbname:       "initial",
@@ -760,12 +760,12 @@ var wantEnvelopeKeys = []string{
 }
 
 func TestEnvelopeSchemaIsExactlyTheseSixteenKeys(t *testing.T) {
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "test-db"}},
 		eventCounts:      map[string]int64{},
 		eventCountsTotal: map[string]int64{},
 	}
-	m := lp.GetMeasurementEnvelope().Data[0]
+	m := lp.getMeasurementEnvelope().Data[0]
 
 	// NewMeasurement stamps the timestamp; every other key is a severity.
 	got := make([]string, 0, len(m))
@@ -795,7 +795,7 @@ func TestEnvelopeCountsAndIdentityAreUnchanged(t *testing.T) {
 			CustomTags: map[string]string{"env": "test"},
 		},
 	}
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn: mdb,
 		// Keyed by ENGLISH severity name. Where those keys come from is
 		// exactly what the migration changes -- a regex capture group
@@ -806,7 +806,7 @@ func TestEnvelopeCountsAndIdentityAreUnchanged(t *testing.T) {
 		eventCountsTotal: map[string]int64{"ERROR": 15, "WARNING": 25, "INFO": 50},
 	}
 
-	env := lp.GetMeasurementEnvelope()
+	env := lp.getMeasurementEnvelope()
 	assert.Equal(t, "test-db", env.DBName)
 	assert.Equal(t, specialMetricServerLogEventCounts, env.MetricName)
 	assert.Equal(t, map[string]string{"env": "test"}, env.CustomTags)
@@ -831,7 +831,7 @@ func TestEnvelopeCountsAndIdentityAreUnchanged(t *testing.T) {
 //
 // PostgreSQL writes DEBUG1 through DEBUG5, never a bare "DEBUG", so the
 // "debug" column has always been zero on a real server: the regex captured
-// "DEBUG3", the count landed under that key, and GetMeasurementEnvelope only
+// "DEBUG3", the count landed under that key, and getMeasurementEnvelope only
 // ever reads the eight names in pgSeverities.
 //
 // Recorded here because pglogwatch reports the same severities and the obvious
@@ -840,12 +840,12 @@ func TestEnvelopeCountsAndIdentityAreUnchanged(t *testing.T) {
 // leave the output identical, so the drop is preserved and made deliberate
 // rather than incidental.
 func TestNumberedDebugSeveritiesAreDropped(t *testing.T) {
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "test-db"}},
 		eventCounts:      map[string]int64{"DEBUG1": 7, "DEBUG3": 9},
 		eventCountsTotal: map[string]int64{"DEBUG1": 7, "DEBUG3": 9},
 	}
-	m := lp.GetMeasurementEnvelope().Data[0]
+	m := lp.getMeasurementEnvelope().Data[0]
 
 	assert.Equal(t, int64(0), m["debug"],
 		"numbered debug severities do not reach the debug column")
@@ -889,12 +889,12 @@ func TestEveryDashboardKeyIsEmitted(t *testing.T) {
 	sort.Strings(keys)
 	t.Logf("dashboard selects %d distinct keys: %v", len(keys), keys)
 
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "schema-test"}},
 		eventCounts:      map[string]int64{},
 		eventCountsTotal: map[string]int64{},
 	}
-	m := lp.GetMeasurementEnvelope().Data[0]
+	m := lp.getMeasurementEnvelope().Data[0]
 
 	for _, k := range keys {
 		assert.Contains(t, m, k,
@@ -911,12 +911,12 @@ func TestEveryDashboardKeyIsEmitted(t *testing.T) {
 // compared, summed and alerted on as a float. This checks the type the store
 // actually receives rather than the type the map was built with.
 func TestCountsAreIntegersAfterMarshalling(t *testing.T) {
-	lp := &LogParser{
+	lp := &logParser{
 		SourceConn:       &sources.DbConn{Source: sources.Source{Name: "schema-test"}},
 		eventCounts:      map[string]int64{"ERROR": 5},
 		eventCountsTotal: map[string]int64{"ERROR": 9},
 	}
-	m := lp.GetMeasurementEnvelope().Data[0]
+	m := lp.getMeasurementEnvelope().Data[0]
 
 	for k, v := range m {
 		if k == metrics.EpochColumnName {

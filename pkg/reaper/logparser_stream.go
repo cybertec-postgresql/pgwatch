@@ -23,7 +23,7 @@ import (
 // The send ticks in THIS goroutine while the parse runs in another: a following
 // reader blocks on a quiet server, and a quiet interval still has to report its
 // zeroes rather than leave a gap.
-func (lp *LogParser) parseStream(rc io.ReadCloser) error {
+func (lp *logParser) parseStream(rc io.ReadCloser) error {
 	defer func() { _ = rc.Close() }()
 
 	parsed := make(chan error, 1)
@@ -41,7 +41,7 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 			lp.sendCounts() // don't discard the last partial interval
 			return err
 		case <-tick.C:
-			if lp.HasSendIntervalElapsed() {
+			if lp.hasSendIntervalElapsed() {
 				lp.sendCounts()
 			}
 		}
@@ -52,12 +52,12 @@ func (lp *LogParser) parseStream(rc io.ReadCloser) error {
 // which panics on one, while preserving "send as fast as possible" at zero.
 const minSendTickInterval = 100 * time.Millisecond
 
-// sendTicksPerInterval must be > 1: HasSendIntervalElapsed wants STRICTLY more
+// sendTicksPerInterval must be > 1: hasSendIntervalElapsed wants STRICTLY more
 // than Interval, so a ticker of exactly Interval is always a hair early and the
 // send is skipped on alternate ticks -- half the configured rate.
 const sendTicksPerInterval = 4
 
-func (lp *LogParser) tickInterval() time.Duration {
+func (lp *logParser) tickInterval() time.Duration {
 	if t := lp.Interval / sendTicksPerInterval; t >= minSendTickInterval {
 		return t
 	}
@@ -66,7 +66,7 @@ func (lp *LogParser) tickInterval() time.Duration {
 
 // consume is the parse loop. It runs in its own goroutine; everything it
 // touches on lp is guarded by lp.countsMu.
-func (lp *LogParser) consume(r io.Reader) error {
+func (lp *logParser) consume(r io.Reader) error {
 	logger := log.GetLogger(lp.ctx)
 
 	p := pglogwatch.New(r, pglogwatch.Config{
@@ -93,7 +93,7 @@ func (lp *LogParser) consume(r io.Reader) error {
 }
 
 // count attributes one record to the per-database and per-instance tallies.
-func (lp *LogParser) count(rec *pglogwatch.Record) {
+func (lp *logParser) count(rec *pglogwatch.Record) {
 	severity := rec.Severity.String()
 	if severity == "" {
 		return // unrecognised; the regex this replaces would not have matched either
@@ -116,7 +116,7 @@ func (lp *LogParser) count(rec *pglogwatch.Record) {
 // send that blocked on sink backpressure would discard everything the parser
 // counted meanwhile. Records arriving mid-send land in the emptied maps and go
 // out with the next envelope.
-func (lp *LogParser) sendCounts() {
+func (lp *logParser) sendCounts() {
 	lp.countsMu.Lock()
 	envelope := lp.getMeasurementEnvelopeLocked()
 	zeroEventCounts(lp.eventCounts)
@@ -132,7 +132,7 @@ func (lp *LogParser) sendCounts() {
 
 // parserFormat maps log_destination to a parser format. It is a LIST, so this
 // is a precedence: csvlog first, to keep pre-migration counts identical.
-func (lp *LogParser) parserFormat() pglogwatch.Format {
+func (lp *logParser) parserFormat() pglogwatch.Format {
 	switch {
 	case lp.CSVDestination:
 		return pglogwatch.FormatCSV
@@ -144,7 +144,7 @@ func (lp *LogParser) parserFormat() pglogwatch.Format {
 }
 
 // openLocal presents the log directory as one stream.
-func (lp *LogParser) openLocal() (io.ReadCloser, error) {
+func (lp *logParser) openLocal() (io.ReadCloser, error) {
 	fs := &pglogwatch.FileSet{
 		Dir:                lp.Directory,
 		Format:             lp.parserFormat(),
@@ -159,7 +159,7 @@ func (lp *LogParser) openLocal() (io.ReadCloser, error) {
 // openRemote presents pg_read_file as one stream. Follow mirrors openLocal:
 // without it the reader ends at the server's current last byte and never
 // reports again.
-func (lp *LogParser) openRemote() (io.ReadCloser, error) {
+func (lp *logParser) openRemote() (io.ReadCloser, error) {
 	return pgremote.Open(lp.ctx, lp.SourceConn.Conn, pgremote.Config{
 		Dir:          lp.Directory,
 		Glob:         lp.remoteGlob(),
@@ -173,7 +173,7 @@ func (lp *LogParser) openRemote() (io.ReadCloser, error) {
 // remoteGlob selects the files the chosen destination writes. pg_ls_logdir
 // lists everything, and a server writing two formats would otherwise be counted
 // twice.
-func (lp *LogParser) remoteGlob() string {
+func (lp *logParser) remoteGlob() string {
 	switch {
 	case lp.CSVDestination:
 		return "*.csv"
@@ -267,7 +267,7 @@ func localFileSize(path string) (int64, bool) {
 // The error must not be swallowed: an empty map reads as "never seen" for every
 // file, so one failed query re-reads the whole retained backlog and reports it
 // as a single interval.
-func remoteFileSizes(ctx context.Context, lp *LogParser) (func(string) (int64, bool), error) {
+func remoteFileSizes(ctx context.Context, lp *logParser) (func(string) (int64, bool), error) {
 	sizes := make(map[string]int64)
 	rows, err := lp.SourceConn.Conn.Query(ctx, "select name, size from pg_ls_logdir()")
 	if err != nil {

@@ -32,8 +32,8 @@ var supportedMessageLangs = map[string]bool{
 const maxChunkSize uint64 = 10 * 1024 * 1024 // 10 MB
 const maxTrackedFiles = 2500
 
-type LogParser struct {
-	*LogConfig
+type logParser struct {
+	*logConfig
 	ctx              context.Context
 	SourceConn       *sources.DbConn
 	realDbname       string // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
@@ -47,11 +47,11 @@ type LogParser struct {
 	offsets  *endSeededOffsets // how far each log file has been read, in bytes
 }
 
-// LogConfig is the server's logging configuration, resolved from its GUCs.
+// logConfig is the server's logging configuration, resolved from its GUCs.
 //
 // Field ORDER is load-bearing: pgx.RowToAddrOfStructByPos maps by position, so a
 // new field needs a column at the same position in tryDetermineLogSettings.
-type LogConfig struct {
+type logConfig struct {
 	CollectorEnabled   bool
 	CSVDestination     bool // neither set means stderr, PostgreSQL's default
 	JSONDestination    bool
@@ -61,12 +61,12 @@ type LogConfig struct {
 	LinePrefix         string // log_line_prefix; stderr only, and beats pglogwatch's own detection
 }
 
-func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *LogParser, err error) {
+func newLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metrics.MeasurementEnvelope) (lp *logParser, err error) {
 
 	logger := log.GetLogger(ctx).WithField("source", mdb.Name).WithField("metric", specialMetricServerLogEventCounts)
 	ctx = log.WithLogger(ctx, logger)
 
-	var cfg *LogConfig
+	var cfg *logConfig
 	if cfg, err = tryDetermineLogSettings(ctx, mdb.Conn); err != nil {
 		return nil, fmt.Errorf("could not determine Postgres logs settings: %w", err)
 	}
@@ -82,23 +82,23 @@ func NewLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 	mdb.RLock()
 	realDbname := mdb.RealDbname
 	mdb.RUnlock()
-	return &LogParser{
+	return &logParser{
 		ctx:              ctx,
 		SourceConn:       mdb,
 		realDbname:       realDbname,
 		Interval:         mdb.GetMetricInterval(specialMetricServerLogEventCounts),
 		StoreCh:          storeCh,
-		LogConfig:        cfg,
+		logConfig:        cfg,
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
 	}, nil
 }
 
-func (lp *LogParser) HasSendIntervalElapsed() bool {
+func (lp *logParser) hasSendIntervalElapsed() bool {
 	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
 }
 
-func (lp *LogParser) ParseLogs() error {
+func (lp *logParser) parseLogs() error {
 	l := log.GetLogger(lp.ctx)
 	if ok, err := db.IsClientOnSameHost(lp.SourceConn.Conn); ok && err == nil {
 		l.Info("DB is on the same host, parsing logs locally")
@@ -130,7 +130,7 @@ func (lp *LogParser) ParseLogs() error {
 	return lp.parseStream(rc)
 }
 
-func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogConfig, err error) {
+func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *logConfig, err error) {
 	sql := `select 
 	current_setting('logging_collector') = 'on' as is_enabled,
 	strpos(current_setting('log_destination'), 'csvlog') > 0 as csvlog_dest,
@@ -144,7 +144,7 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *LogCon
 	current_setting('log_line_prefix') as line_prefix`
 	var res pgx.Rows
 	if res, err = conn.Query(ctx, sql); err == nil {
-		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[LogConfig]); err == nil {
+		if cfg, err = pgx.CollectOneRow(res, pgx.RowToAddrOfStructByPos[logConfig]); err == nil {
 			if !supportedMessageLangs[cfg.ServerMessagesLang] {
 				cfg.ServerMessagesLang = "en"
 			}
@@ -174,17 +174,17 @@ func checkHasLocalPrivileges(logsDirPath string) error {
 	return nil
 }
 
-// GetMeasurementEnvelope converts current event counts to a MeasurementEnvelope
-func (lp *LogParser) GetMeasurementEnvelope() metrics.MeasurementEnvelope {
+// getMeasurementEnvelope converts current event counts to a MeasurementEnvelope
+func (lp *logParser) getMeasurementEnvelope() metrics.MeasurementEnvelope {
 	lp.countsMu.Lock()
 	defer lp.countsMu.Unlock()
 	return lp.getMeasurementEnvelopeLocked()
 }
 
-// getMeasurementEnvelopeLocked is GetMeasurementEnvelope with countsMu already
+// getMeasurementEnvelopeLocked is getMeasurementEnvelope with countsMu already
 // held, which is how the send path reads the counts and zeroes them without
 // letting a record land in between.
-func (lp *LogParser) getMeasurementEnvelopeLocked() metrics.MeasurementEnvelope {
+func (lp *logParser) getMeasurementEnvelopeLocked() metrics.MeasurementEnvelope {
 	allSeverityCounts := metrics.NewMeasurement(time.Now().UnixNano())
 	for _, s := range pgSeverities {
 		parsedCount, ok := lp.eventCounts[s]

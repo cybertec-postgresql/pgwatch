@@ -377,11 +377,11 @@ func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageNam
 
 // runLogParser launches the server log event counts parser.
 func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
-	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
+	lp, err := newLogParser(ctx, sr.md, sr.reaper.measurementCh)
 	if err != nil {
 		return fmt.Errorf("failed to initialize log parser: %v", err)
 	}
-	if err := lp.ParseLogs(); err != nil {
+	if err := lp.parseLogs(); err != nil {
 		return fmt.Errorf("log parser error: %v", err)
 	}
 	return nil
