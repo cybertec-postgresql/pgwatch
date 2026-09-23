@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
@@ -30,7 +31,7 @@ type DbConnReaper struct {
 	lastFetch   map[string]time.Time
 	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
 
-	logParserStarted bool // server_log_event_counts streaming parser was started; runs until ctx cancel
+	logParserRunning atomic.Bool // one server_log_event_counts parser at a time; cleared on exit so a failed one restarts
 
 	degradedMu      sync.RWMutex
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
@@ -179,11 +180,11 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 			}
 			switch {
 			case name == specialMetricServerLogEventCounts:
-				if !sr.logParserStarted {
-					sr.logParserStarted = true // streaming parser starts once per worker lifetime and runs until ctx cancel
+				if sr.logParserRunning.CompareAndSwap(false, true) {
 					go func() {
+						defer sr.logParserRunning.Store(false)
 						if e := sr.runLogParser(ctx); e != nil {
-							l.WithError(e).Error("log parser error")
+							l.WithError(e).Error("log parser error, will restart on the next tick")
 						}
 					}()
 				}
@@ -376,11 +377,11 @@ func (sr *DbConnReaper) fetchSpecialMetric(ctx context.Context, name, storageNam
 
 // runLogParser launches the server log event counts parser.
 func (sr *DbConnReaper) runLogParser(ctx context.Context) error {
-	lp, err := NewLogParser(ctx, sr.md, sr.reaper.measurementCh)
+	lp, err := newLogParser(ctx, sr.md, sr.reaper.measurementCh)
 	if err != nil {
 		return fmt.Errorf("failed to initialize log parser: %v", err)
 	}
-	if err := lp.ParseLogs(); err != nil {
+	if err := lp.parseLogs(); err != nil {
 		return fmt.Errorf("log parser error: %v", err)
 	}
 	return nil

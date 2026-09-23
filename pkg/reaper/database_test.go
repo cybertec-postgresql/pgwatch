@@ -1224,29 +1224,36 @@ func TestSourceReaper_DetectSprocChanges_BoundedByChangeDetectionTimeout(t *test
 	}
 }
 
-// logSettingsCountingConn counts Query calls whose SQL contains "logging_collector"
-// (the substring identifying the server_log_event_counts settings probe) so a test
-// can assert the streaming log parser was started exactly once across multiple
-// tick iterations.
+// logSettingsCountingConn counts the server_log_event_counts settings probe and
+// records peak concurrency. A count alone cannot tell a legitimate restart from
+// several parsers at once; holding the probe briefly makes overlap observable.
 type logSettingsCountingConn struct {
 	pgxmock.PgxPoolIface
-	count atomic.Int32
+	count         atomic.Int32
+	inFlight      atomic.Int32
+	maxConcurrent atomic.Int32
 }
 
 func (c *logSettingsCountingConn) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {
 	if strings.Contains(query, "logging_collector") {
 		c.count.Add(1)
+		n := c.inFlight.Add(1)
+		for {
+			m := c.maxConcurrent.Load()
+			if n <= m || c.maxConcurrent.CompareAndSwap(m, n) {
+				break
+			}
+		}
+		time.Sleep(150 * time.Millisecond) // widen the window any overlap would fall in
+		c.inFlight.Add(-1)
 	}
 	return c.PgxPoolIface.Query(ctx, query, args...)
 }
 
-// TestSourceReaper_RunStartsLogParserOnlyOnce proves the reaper spawns the
-// server_log_event_counts streaming parser exactly once per worker lifetime.
-// Pre-fix, the switch guard used sr.lastFetch[name] which was never assigned
-// for this metric, so every tick (1s here) spawned a fresh goroutine that
-// re-issued the log-settings SQL — the settings-query count would exceed 1.
-// Post-fix, the dedicated logParserStarted flag ensures a single spawn.
-func TestSourceReaper_RunStartsLogParserOnlyOnce(t *testing.T) {
+// TestSourceReaper_RunsOneLogParserAtATime: the invariant is "one at a time"
+// plus a restart no more often than the metric interval -- not "started once",
+// which would make any transient failure permanent.
+func TestSourceReaper_RunsOneLogParserAtATime(t *testing.T) {
 	metricDefs.MetricDefs[specialMetricServerLogEventCounts] = metrics.Metric{
 		SQLs: metrics.SQLs{0: "SELECT 1 AS value"},
 	}
@@ -1258,8 +1265,7 @@ func TestSourceReaper_RunStartsLogParserOnlyOnce(t *testing.T) {
 
 	// FetchRuntimeInfo attempt each tick; failing it keeps the loop ticking quietly.
 	mock.ExpectQuery("select /\\* pgwatch_generated \\*/").WillReturnError(assert.AnError)
-	// The log-settings query must be attempted exactly once; failing it makes the
-	// spawned parser goroutine exit immediately, keeping the test fast.
+	// Failing it makes each parser exit at once: the transient-failure case.
 	mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
 
 	cc := &logSettingsCountingConn{PgxPoolIface: mock}
@@ -1282,8 +1288,16 @@ func TestSourceReaper_RunStartsLogParserOnlyOnce(t *testing.T) {
 	defer cancel()
 	go sr.Reap(ctx)
 
-	require.Eventually(t, func() bool { return cc.count.Load() == 1 },
+	require.Eventually(t, func() bool { return cc.count.Load() >= 1 },
 		2*time.Second, 10*time.Millisecond, "log parser should have been started")
 	time.Sleep(2500 * time.Millisecond) // ≥2 more ticks at 1s tick interval
-	assert.Equal(t, int32(1), cc.count.Load(), "log parser must be started exactly once")
+
+	assert.Equal(t, int32(1), cc.maxConcurrent.Load(),
+		"only one log parser may run at a time")
+
+	started := cc.count.Load()
+	assert.Greater(t, started, int32(1),
+		"a parser that exited must be restarted, or a transient failure silences the metric forever")
+	assert.LessOrEqual(t, started, int32(5),
+		"restarts must be paced by the metric interval, not spun in a loop")
 }
