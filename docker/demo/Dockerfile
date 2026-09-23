@@ -69,7 +69,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get -qy install curl gnupg postgresql-common apt-transport-https lsb-release \
     && sh /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
-    && curl -L "https://www.postgresql.org/media/keys/ACCC4CF8.asc" | apt-key add - \
     && curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | bash \
     && apt-get -qy install \
         timescaledb-2-postgresql-18 postgresql-plpython3-18 postgresql-18-pg-qualstats \
@@ -78,8 +77,8 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Grafana
-RUN curl -L https://apt.grafana.com/gpg.key | apt-key add - \
-    && echo "deb https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list \
+RUN curl -L https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/grafana.gpg] https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list \
     && apt-get update \
     && apt-get -qy install grafana=12.3.1 \
     && grafana-cli plugins install marcusolsson-treemap-panel
