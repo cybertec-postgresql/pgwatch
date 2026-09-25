@@ -3,6 +3,7 @@ package webserver_test
 import (
 	"context"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -193,4 +194,54 @@ func TestWithRoutesPathValues(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "ext", rr.Body.String())
 	})
+}
+
+// TestBasePathSpellings makes sure every spelling of the base path gives the
+// same routes, the same rendered BasePath and the same hook prefix.
+func TestBasePathSpellings(t *testing.T) {
+	for _, basePath := range []string{"pgwatch", "/pgwatch", "pgwatch/", "/pgwatch/"} {
+		t.Run(basePath, func(t *testing.T) {
+			var hookBasePath string
+			srv, err := webserver.Init(context.Background(),
+				webserver.CmdOpts{WebAddr: "localhost:0", WebBasePath: basePath},
+				nil, nil, nil, withUI(),
+				webserver.WithRoutes(func(_ *http.ServeMux, basePath string, _ func(http.HandlerFunc) http.Handler) {
+					hookBasePath = basePath
+				}))
+			assert.NoError(t, err)
+			assert.NotNil(t, srv)
+			assert.Equal(t, "/pgwatch/", hookBasePath)
+
+			get := func(path string) *httptest.ResponseRecorder {
+				req, err := http.NewRequest(http.MethodGet, "http://localhost"+path, nil)
+				assert.NoError(t, err)
+				rr := httptest.NewRecorder()
+				srv.Handler.ServeHTTP(rr, req)
+				return rr
+			}
+
+			rr := get("/pgwatch/liveness")
+			assert.Equal(t, http.StatusOK, rr.Code)
+
+			rr = get("/pgwatch/")
+			assert.Equal(t, http.StatusOK, rr.Code)
+			assert.Equal(t, "<!DOCTYPE html><html><body>pgwatch</body></html>", rr.Body.String())
+		})
+	}
+}
+
+func TestBasePathInvalid(t *testing.T) {
+	addr := "localhost:8090"
+	srv, err := webserver.Init(context.Background(),
+		webserver.CmdOpts{WebAddr: addr, WebBasePath: "a//b"}, nil, nil, nil, withUI())
+	assert.ErrorContains(t, err, "--web-base-path")
+	assert.ErrorContains(t, err, "a//b")
+	assert.Nil(t, srv)
+
+	// the port must still be free
+	ln, err := net.Listen("tcp", addr)
+	assert.NoError(t, err)
+	if ln != nil {
+		_ = ln.Close()
+	}
 }

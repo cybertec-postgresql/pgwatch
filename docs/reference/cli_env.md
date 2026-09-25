@@ -179,7 +179,7 @@ It reads the configuration from the specified sources and metrics, then begins c
 
 - `--web-base-path=`
 
-    Base path for web UI and API endpoints (e.g., 'pgwatch' for reverse proxy setups). When set, all web endpoints will be served under this path.  
+    Base path for web UI and API endpoints ('pgwatch' or '/pgwatch/'). When set, pgwatch serves all web endpoints under this path.  
     ENV: `$PW_WEBBASEPATH`
 
     Example: `--web-base-path=/pgwatch`

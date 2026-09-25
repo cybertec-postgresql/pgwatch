@@ -66,7 +66,9 @@ func (p provider) SPARoutes() []string { return []string{"*"} }
 
 `app.WithRoutes` hands you a mux, the computed base path, and the REST API's
 own auth wrapper. Routes registered here sit under the same base path as the
-REST API and can never shadow a built-in route:
+REST API and can never shadow a built-in route.
+`basePath` is always `/` or `/<base path>/`, whatever spelling the operator
+used for `--web-base-path`, so append route names to it without a leading slash:
 
 ```go
 func (e *acmeExtension) routes(mux *http.ServeMux, basePath string, auth func(http.HandlerFunc) http.Handler) {

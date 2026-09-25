@@ -49,6 +49,9 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	if opts.WebDisable == WebDisableAll {
 		return nil, nil
 	}
+	if opts.WebBasePath, err = normalizeBasePath(opts.WebBasePath); err != nil {
+		return nil, err
+	}
 	mux := http.NewServeMux()
 	s := &WebUIServer{
 		Server: http.Server{
@@ -117,6 +120,34 @@ func Init(ctx context.Context, opts CmdOpts, mrw metrics.ReaderWriter, srw sourc
 	go func() { panic(s.Serve(ln)) }()
 
 	return s, nil
+}
+
+// normalizeBasePath strips leading and trailing slashes from the base path, so
+// "pgwatch", "/pgwatch", "pgwatch/" and "/pgwatch/" all mean the same. An empty
+// segment or a character outside the RFC 3986 path set is an error.
+func normalizeBasePath(p string) (string, error) {
+	base := strings.Trim(p, "/")
+	if base == "" {
+		return "", nil
+	}
+	for seg := range strings.SplitSeq(base, "/") {
+		if seg == "" {
+			return "", fmt.Errorf("invalid --web-base-path %q: empty path segment", p)
+		}
+		for _, r := range seg {
+			if !isPathChar(r) {
+				return "", fmt.Errorf("invalid --web-base-path %q: character %q is not allowed in a URL path", p, r)
+			}
+		}
+	}
+	return base, nil
+}
+
+// isPathChar reports whether r is an RFC 3986 pchar, counting '%' as the start
+// of a percent-encoded octet.
+func isPathChar(r rune) bool {
+	return 'a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' || '0' <= r && r <= '9' ||
+		strings.ContainsRune("-._~%!$&'()*+,;=:@", r)
 }
 
 // prepareIndexHTML renders the index.html template once at startup
