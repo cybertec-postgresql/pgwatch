@@ -24,6 +24,9 @@ export PW_WEBADDR=:8432
 pgwatch
 ```
 
+pgwatch ignores leading and trailing slashes, so `pgwatch`, `/pgwatch`, `pgwatch/` and `/pgwatch/` all serve the UI and API under `/pgwatch/`.
+pgwatch refuses to start if the path has an empty segment, such as `a//b`, or a character that is not valid in a URL path.
+
 The web UI automatically adapts to the configured base path without requiring a rebuild.
 
 WebSockets are used for live log streaming. Make sure your reverse proxy is configured to support WebSocket connections.

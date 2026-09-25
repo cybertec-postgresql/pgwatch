@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"context"
 	"io"
 	"io/fs"
 	"net/http"
@@ -250,4 +251,41 @@ func TestServer_prepareIndexHTML(t *testing.T) {
 		assert.NoError(t, s.prepareIndexHTML())
 		assert.Contains(t, string(s.indexHTML), "base= foo=")
 	})
+}
+
+func TestNormalizeBasePath(t *testing.T) {
+	for _, tc := range []struct {
+		in, base, prefix string
+	}{
+		{"", "", "/"},
+		{"pgwatch", "pgwatch", "/pgwatch/"},
+		{"/pgwatch", "pgwatch", "/pgwatch/"},
+		{"pgwatch/", "pgwatch", "/pgwatch/"},
+		{"/pgwatch/", "pgwatch", "/pgwatch/"},
+		{"/", "", "/"},
+		{"//", "", "/"},
+		{"/a/b/", "a/b", "/a/b/"},
+		{"pg%20watch:@!$&'()*+,;=-._~", "pg%20watch:@!$&'()*+,;=-._~", "/pg%20watch:@!$&'()*+,;=-._~/"},
+	} {
+		t.Run(tc.in, func(t *testing.T) {
+			base, err := normalizeBasePath(tc.in)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.base, base)
+
+			s, err := Init(context.Background(),
+				CmdOpts{WebAddr: "localhost:0", WebBasePath: tc.in, WebDisable: WebDisableUI},
+				nil, nil, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.prefix, s.basePath)
+			assert.Equal(t, tc.base, s.WebBasePath)
+		})
+	}
+
+	for _, in := range []string{"a//b", "/a//b/", "pg watch", "pg?watch", "pg#watch"} {
+		t.Run("invalid "+in, func(t *testing.T) {
+			_, err := normalizeBasePath(in)
+			assert.ErrorContains(t, err, "--web-base-path")
+			assert.ErrorContains(t, err, in)
+		})
+	}
 }
