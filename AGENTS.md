@@ -5,7 +5,7 @@ pgwatch v6: Go (1.26) PostgreSQL monitoring agent + React/Vite WebUI. Module `gi
 ## Build prerequisites (easy to miss)
 
 - `internal/webserver/webserver.go` does `//go:embed build`. `internal/webserver/build/` is gitignored and produced by the WebUI build. Without it, Go build/test/lint all fail. Build it once: `cd internal/webui && yarn install --network-timeout 100000 && yarn build` (or `task ui`).
-- `api/pb/*.pb.go` are gitignored generated files. Regenerate after editing `api/pb/pgwatch.proto`: `go generate ./api/pb/` (needs `protoc` + `protoc-gen-go`, `protoc-gen-go-grpc`; `task tools` installs the Go plugins).
+- `api/pb/*.pb.go` are gitignored generated files. Regenerate after editing `api/pb/pgwatch.proto`: `go generate ./api/pb/` or `task proto` (needs `protoc` + `protoc-gen-go`, `protoc-gen-go-grpc`; `task tools` installs the Go plugins).
 - Task runner is `Taskfile.yml` (go-task). `task --list` shows everything. `task check` = lint + test (the pre-PR gate).
 
 ## Test
