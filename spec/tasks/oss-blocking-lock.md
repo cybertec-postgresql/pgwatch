@@ -33,8 +33,8 @@ REQ-005, REQ-006, CON-001, GUD-001, AC-005 and AC-006 are cross-cutting and are 
 
 **Purpose**: a known-good baseline to measure the column contract against
 
-- [ ] T001 Run `go test ./pkg/metrics/...` and confirm it is green on the baseline
-- [ ] T002 Record the column list the current `blocking_locks` SQL returns (`pkg/metrics/metrics.yaml:277-288`) as the reference for the AC-006 check in T005
+- [x] T001 Run `go test ./pkg/metrics/...` and confirm it is green on the baseline
+- [x] T002 Record the column list the current `blocking_locks` SQL returns (`pkg/metrics/metrics.yaml:277-288`) as the reference for the AC-006 check in T005
 
 ---
 
@@ -44,10 +44,10 @@ REQ-005, REQ-006, CON-001, GUD-001, AC-005 and AC-006 are cross-cutting and are 
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create `pkg/metrics/blocking_locks_integration_test.go` that starts PostgreSQL with `testutil.SetupPostgresContainer()` (`internal/testutil/setup.go:24`), opens a `pgx` connection per session, creates a table `t` with one row, and loads the `blocking_locks` SQL for key `14` from `GetDefaultMetrics()` (`pkg/metrics/default.go:17`). Follow the container setup in `pkg/sinks/postgres_feedback_integration_test.go:25-32`
-- [ ] T004 Add helpers to the same file: `holdLock(t, conn, stmt)` runs `BEGIN` plus a statement and leaves the transaction open; `waitFor(t, conn, stmt)` runs the statement in a goroutine and returns once `pg_stat_activity.wait_event_type = 'Lock'` for that backend; `runMetric(t, conn)` executes the SQL and returns the rows as `[]map[string]any`; `t.Cleanup` rolls every session back
-- [ ] T005 [P] Add `TestBlockingLocksColumns` to `pkg/metrics/metrics_yaml_test.go`: parse the `blocking_locks` SQL for key `14` and assert that every alias of REQ-005 is present, using the list recorded in T002 (REQ-005, AC-006). It must pass before and after the SQL change
-- [ ] T006 [P] Add `TestBlockingLocksNoWait` to the integration file: with no waiting session the metric returns zero rows (CON-001, AC-005). It passes on the baseline SQL and must keep passing
+- [x] T003 Create `pkg/metrics/blocking_locks_integration_test.go` (package `metrics_test`, because `internal/testutil` imports `pkg/metrics`) that starts PostgreSQL with `testutil.SetupPostgresContainer()` (`internal/testutil/setup.go:24`), opens a `pgx` connection per session, creates a table `t` with one row, and loads the `blocking_locks` SQL for key `14` from `GetDefaultMetrics()` (`pkg/metrics/default.go:17`). Follow the container setup in `pkg/sinks/postgres_feedback_integration_test.go:25-32`
+- [x] T004 Add helpers to the same file: `holdLock(t, conn, stmt)` runs `BEGIN` plus a statement and leaves the transaction open; `waitFor(t, conn, stmt)` runs the statement in a goroutine and returns once `pg_stat_activity.wait_event_type = 'Lock'` for that backend; `runMetric(t, conn)` executes the SQL and returns the rows as `[]map[string]any`; `t.Cleanup` rolls every session back
+- [x] T005 [P] Add `TestBlockingLocksColumns` to `pkg/metrics/metrics_yaml_test.go`: parse the `blocking_locks` SQL for key `14` and assert that every alias of REQ-005 is present, using the list recorded in T002 (REQ-005, AC-006). It must pass before and after the SQL change
+- [x] T006 [P] Add `TestBlockingLocksNoWait` to the integration file: with no waiting session the metric returns zero rows (CON-001, AC-005). It passes on the baseline SQL and must keep passing
 
 **Checkpoint**: the harness starts a container, drives sessions, runs the metric SQL, and the column guard is green on the baseline
 
@@ -63,16 +63,16 @@ REQ-005, REQ-006, CON-001, GUD-001, AC-005 and AC-006 are cross-cutting and are 
 
 > Write these first and confirm they fail on the baseline SQL before T010.
 
-- [ ] T007 [P] [US1] `TestBlockingLocksModeConflict`: A holds `AccessShareLock` on `t` (`SELECT`), C holds `RowExclusiveLock` on `t` (`INSERT`), B waits in `CREATE INDEX ON t`. Assert rows name C as `other_pid` and no row names A (AC-002). Fails today because the join reports A too
-- [ ] T008 [P] [US1] `TestBlockingLocksAdvisory`: A holds `pg_advisory_lock(1)`, B waits in `pg_advisory_lock(1)`. Assert exactly one row with `other_pid` A and `other_locktype` `advisory` (AC-003). Fails today because the join matches only relation or transaction id
-- [ ] T009 [P] [US1] `TestBlockingLocksOneRowPerPair`: A holds two granted locks on the object B waits for (an `UPDATE` in an open transaction gives a `RowExclusiveLock` on `t` and a transaction id lock; B updates the same row). Assert exactly one row pairs B and A (REQ-001, AC-004). Fails today because both granted locks join
+- [x] T007 [P] [US1] `TestBlockingLocksModeConflict`: A holds `AccessShareLock` on `t` (`SELECT`), C holds `RowExclusiveLock` on `t` (`INSERT`), B waits in `CREATE INDEX ON t`. Assert rows name C as `other_pid` and no row names A (AC-002). Fails today because the join reports A too
+- [x] T008 [P] [US1] `TestBlockingLocksAdvisory`: A holds `pg_advisory_lock(1)`, B waits in `pg_advisory_lock(1)`. Assert exactly one row with `other_pid` A and `other_locktype` `advisory` (AC-003). Fails today because the join matches only relation or transaction id
+- [x] T009 [P] [US1] `TestBlockingLocksOneRowPerPair`: A holds two granted locks on the object B waits for (a `SELECT` and an `INSERT` in one open transaction give `AccessShareLock` and `RowExclusiveLock` on `t`; B runs `LOCK TABLE t IN ACCESS EXCLUSIVE MODE`). Assert exactly one row pairs B and A (REQ-001, AC-004). Fails today because both granted locks join. The scenario changed from the first draft: an `UPDATE` waiting on a transaction id lock matches one granted row on the baseline SQL and would not have failed
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Rewrite the `blocking_locks` SQL for key `14` in `pkg/metrics/metrics.yaml:268-317`: keep the `sa_snapshot` CTE and its three filters (REQ-006); select waiting locks with `NOT granted` joined to `sa_snapshot`; replace the join on relation or transaction id (`:296-304`) with `cross join lateral unnest(pg_blocking_pids(waiting.pid)) as blocker(pid)`, so the function runs once per waiting session (REQ-002, CON-002); join `sa_snapshot` as `other_stm` on `blocker.pid`
-- [ ] T011 [US1] Source `other_locktype`, `other_table` and `other_mode` from a `left join lateral` over `pg_locks` for `blocker.pid` on the same `locktype`, `database`, `relation`, `transactionid`, `virtualxid`, `classid`, `objid` and `objsubid` as the waiting lock, ordered by `granted desc`, `limit 1`, so a granted lock wins over a queued one and a missing row yields nulls without dropping the pair (REQ-001, REQ-004)
-- [ ] T012 [US1] Keep every alias, cast and `coalesce` of `pkg/metrics/metrics.yaml:277-288` unchanged in the new select list so T005 stays green (REQ-005)
-- [ ] T013 [US1] Run T005 to T009 and confirm T007 to T009 now pass and T005, T006 still pass
+- [x] T010 [US1] Rewrite the `blocking_locks` SQL for key `14` in `pkg/metrics/metrics.yaml:268-317`: keep the `sa_snapshot` CTE and its three filters (REQ-006); select waiting locks with `NOT granted` joined to `sa_snapshot`; replace the join on relation or transaction id (`:296-304`) with `cross join lateral unnest(pg_blocking_pids(waiting.pid)) as blocker(pid)`, so the function runs once per waiting session (REQ-002, CON-002); join `sa_snapshot` as `other_stm` on `blocker.pid`
+- [x] T011 [US1] Source `other_locktype`, `other_table` and `other_mode` from a `left join lateral` over `pg_locks` for `blocker.pid` on the same `locktype`, `database`, `relation`, `transactionid`, `virtualxid`, `classid`, `objid` and `objsubid` as the waiting lock, ordered by `granted desc`, `limit 1`, so a granted lock wins over a queued one and a missing row yields nulls without dropping the pair (REQ-001, REQ-004)
+- [x] T012 [US1] Keep every alias, cast and `coalesce` of `pkg/metrics/metrics.yaml:277-288` unchanged in the new select list so T005 stays green (REQ-005)
+- [x] T013 [US1] Run T005 to T009 and confirm T007 to T009 now pass and T005, T006 still pass
 
 **Checkpoint**: `blocking_locks` agrees with `backends.blocked` (`pkg/metrics/metrics.yaml:100`) on who is blocked; no false blockers, no missed lock types
 
@@ -88,12 +88,12 @@ REQ-005, REQ-006, CON-001, GUD-001, AC-005 and AC-006 are cross-cutting and are 
 
 > Write this first and confirm it fails before T015.
 
-- [ ] T014 [US2] `TestBlockingLocksWaitingSeconds`: A updates row 1 of `t` in an open transaction, B updates row 1 and the test sleeps two seconds after B is seen waiting. Assert exactly one row with `waiting_pid` B, `other_pid` A and `waiting_seconds >= 2` (AC-001). Also assert the value is a float with at most three decimals (REQ-003)
+- [x] T014 [US2] `TestBlockingLocksWaitingSeconds`: A updates row 1 of `t` in an open transaction, B updates row 1 and the test sleeps two seconds after B is seen waiting. Assert exactly one row with `waiting_pid` B, `other_pid` A and `waiting_seconds >= 2` (AC-001). Also assert the value is a float with at most three decimals (REQ-003)
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add `round(extract(epoch from now() - waiting.waitstart)::numeric, 3)::float8 AS waiting_seconds` to the select list in `pkg/metrics/metrics.yaml`, after `waiting_pid`. `extract` of a null `waitstart` yields null, which REQ-003 requires; add no `coalesce`
-- [ ] T016 [US2] Run T005 and T014 and confirm both pass
+- [x] T015 [US2] Add `round(extract(epoch from now() - waiting.waitstart)::numeric, 3)::float8 AS waiting_seconds` to the select list in `pkg/metrics/metrics.yaml`, after `waiting_pid`. `extract` of a null `waitstart` yields null, which REQ-003 requires; add no `coalesce`
+- [x] T016 [US2] Run T005 and T014 and confirm both pass
 
 **Checkpoint**: US1 and US2 both hold; the metric has thirteen data columns plus `epoch_ns`
 
@@ -101,9 +101,9 @@ REQ-005, REQ-006, CON-001, GUD-001, AC-005 and AC-006 are cross-cutting and are 
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T017 [P] Rewrite the `blocking_locks` description in `pkg/metrics/metrics.yaml:262-266` so it names `waiting_seconds` and states that blockers come from `pg_blocking_pids()` (GUD-001)
-- [ ] T018 [P] Confirm the integration test runs under `task test` (`Taskfile.yml:76`, no build tag, like `pkg/sinks/postgres_feedback_integration_test.go`) within its 300 s timeout; confirm `TestAllKnownMetricsPresent` (`pkg/metrics/metrics_yaml_test.go:181`) and `TestSQLScalarsAreStructurallyIntact` (`:208`) still pass on the edited scalar
-- [ ] T019 Run `task lint` and `task test`; confirm AC-001 through AC-006 all hold and the whole package is green on Windows as well as Linux (commit `c6944da768` made the suite green on Windows; keep it so)
+- [x] T017 [P] Rewrite the `blocking_locks` description in `pkg/metrics/metrics.yaml:262-266` so it names `waiting_seconds` and states that blockers come from `pg_blocking_pids()` (GUD-001)
+- [x] T018 [P] Confirm the integration test runs under `task test` (`Taskfile.yml:76`, no build tag, like `pkg/sinks/postgres_feedback_integration_test.go`) within its 300 s timeout; confirm `TestAllKnownMetricsPresent` (`pkg/metrics/metrics_yaml_test.go:181`) and `TestSQLScalarsAreStructurallyIntact` (`:208`) still pass on the edited scalar
+- [x] T019 Run `task lint` and `task test`; confirm AC-001 through AC-006 all hold and the whole package is green on Windows as well as Linux (commit `c6944da768` made the suite green on Windows; keep it so)
 
 ---
 
