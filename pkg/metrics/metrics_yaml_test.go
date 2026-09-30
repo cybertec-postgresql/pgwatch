@@ -349,3 +349,38 @@ func tail(s string, n int) string {
 	}
 	return "..." + s[len(s)-n:]
 }
+
+// blockingLocksColumns is the column contract of blocking_locks (REQ-005 of
+// spec/oss-blocking-lock.md). Dashboards query these names, so a rewrite of
+// the SQL must keep every one of them.
+var blockingLocksColumns = []string{
+	"epoch_ns",
+	"tag_waiting_locktype",
+	"tag_waiting_user",
+	"tag_waiting_mode",
+	"tag_waiting_table",
+	"waiting_query",
+	"waiting_pid",
+	"other_locktype",
+	"other_table",
+	"other_query",
+	"other_mode",
+	"other_pid",
+	"other_user",
+}
+
+func TestBlockingLocksColumns(t *testing.T) {
+	a := assert.New(t)
+	m, ok := GetDefaultMetrics().MetricDefs["blocking_locks"]
+	if !a.True(ok, "blocking_locks must exist in metrics.yaml") {
+		return
+	}
+	sql, ok := m.SQLs[14]
+	if !a.True(ok, "blocking_locks must keep SQL key 14") {
+		return
+	}
+	for _, col := range blockingLocksColumns {
+		re := regexp.MustCompile(`(?i)\bAS\s+` + col + `\b`)
+		a.Regexp(re, sql, "column %q missing from the blocking_locks select list", col)
+	}
+}
