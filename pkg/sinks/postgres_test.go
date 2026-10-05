@@ -509,6 +509,33 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 	assert.Equal(t, "", cfm.metricName)
 }
 
+func TestCopyFromMeasurements_SkipMetric(t *testing.T) {
+	data := []metrics.MeasurementEnvelope{
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 1}, {"value": 2}}},
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 3}}},
+		{MetricName: "metric2", Data: metrics.Measurements{{"value": 4}}},
+		{MetricName: "metric3", Data: metrics.Measurements{{"value": 5}}},
+	}
+	cfm := newCopyFromMeasurements(data)
+
+	// copy failed mid-metric, with a sticky error
+	assert.True(t, cfm.Next())
+	cfm.err = errors.New("bad value")
+	cfm.SkipMetric()
+	assert.NoError(t, cfm.Err())
+	assert.Equal(t, pgx.Identifier{"metric2"}, cfm.MetricName())
+
+	// copy failed before reading anything
+	cfm.SkipMetric()
+	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
+	assert.True(t, cfm.Next())
+	assert.Equal(t, 5, cfm.envelopes[cfm.envelopeIdx].Data[cfm.measurementIdx]["value"])
+
+	// failing the last metric ends the copy
+	cfm.SkipMetric()
+	assert.True(t, cfm.EOF())
+}
+
 func TestCopyFromMeasurements_CopyFail(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)

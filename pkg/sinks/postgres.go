@@ -365,6 +365,28 @@ func (c *copyFromMeasurements) MetricName() (ident pgx.Identifier) {
 	return
 }
 
+// SkipMetric drops the rest of the metric whose copy failed, or the next one if the
+// copy failed before reading it, so the following CopyFrom starts on a fresh metric
+func (c *copyFromMeasurements) SkipMetric() {
+	name := c.metricName
+	if name == "" {
+		if c.envelopeIdx+1 >= len(c.envelopes) {
+			return
+		}
+		name = c.envelopes[c.envelopeIdx+1].MetricName
+	}
+	for c.envelopeIdx+1 < len(c.envelopes) && c.envelopes[c.envelopeIdx+1].MetricName == name {
+		c.envelopeIdx++
+	}
+	if c.envelopeIdx+1 >= len(c.envelopes) {
+		c.envelopeIdx = len(c.envelopes) // nothing left: EOF
+	} else {
+		c.measurementIdx = len(c.envelopes[c.envelopeIdx].Data)
+	}
+	c.metricName = ""
+	c.err = nil
+}
+
 // flush sends the cached measurements to the database
 func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	if len(msgs) == 0 {
@@ -416,15 +438,13 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 	var rowsBatched, n int64
 	t1 := time.Now()
-	for start, end := 0, 0; start < len(msgs); start = end {
-		metric := msgs[start].MetricName
-		for end = start + 1; end < len(msgs) && msgs[end].MetricName == metric; end++ {
-		}
-		// a fresh source per metric: a failed copy may leave it half-read
-		n, err = pgw.sinkDb.CopyFrom(context.Background(), pgx.Identifier{metric}, targetColumns[:], newCopyFromMeasurements(msgs[start:end]))
+	cfm := newCopyFromMeasurements(msgs)
+	for !cfm.EOF() {
+		n, err = pgw.sinkDb.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
 		rowsBatched += n
 		if err != nil {
 			logger.Error(err)
+			cfm.SkipMetric()
 			if _, ok := err.(*pgconn.ConnectError); ok {
 				logger.Errorf("Sink DB not reachable, dropping %d cached measurements", len(msgs))
 				break
