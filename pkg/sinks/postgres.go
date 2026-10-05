@@ -416,9 +416,12 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 
 	var rowsBatched, n int64
 	t1 := time.Now()
-	cfm := newCopyFromMeasurements(msgs)
-	for !cfm.EOF() {
-		n, err = pgw.sinkDb.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
+	for start, end := 0, 0; start < len(msgs); start = end {
+		metric := msgs[start].MetricName
+		for end = start + 1; end < len(msgs) && msgs[end].MetricName == metric; end++ {
+		}
+		// a fresh source per metric: a failed copy may leave it half-read
+		n, err = pgw.sinkDb.CopyFrom(context.Background(), pgx.Identifier{metric}, targetColumns[:], newCopyFromMeasurements(msgs[start:end]))
 		rowsBatched += n
 		if err != nil {
 			logger.Error(err)

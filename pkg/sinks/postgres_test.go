@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -1260,6 +1261,55 @@ func TestFlush_CheckViolationForcesPartitionRecreation(t *testing.T) {
 	assert.True(t, pgw.forceRecreatePartitions)
 	require.Len(t, pgw.lastError, 1)
 	assert.ErrorIs(t, <-pgw.lastError, checkViolation)
+}
+
+func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.MeasurementEnvelope) {
+	done := make(chan struct{})
+	go func() {
+		pgw.flush(msgs)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("flush did not return")
+	}
+}
+
+func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
+	conn, pgw := newMockFlushWriter(t, "metric_a")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+	}
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.NoError(t, conn.ExpectationsWereMet())
+	assert.Len(t, pgw.lastError, 1)
+}
+
+func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
+	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
+		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
+			AddRow(time.Unix(0, 2000), "db1", jsonEq(`{"epoch_ns":2000,"value":2}`), jsonEq(`{}`))).
+		WillReturnResult(1)
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.NoError(t, conn.ExpectationsWereMet())
 }
 
 // TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
