@@ -16,7 +16,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
-	pgxmock "github.com/pashagolub/pgxmock/v5"
+	pgxmock "github.com/pashagolub/pgxmock/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

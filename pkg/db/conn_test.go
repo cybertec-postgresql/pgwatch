@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/db"
-	"github.com/pashagolub/pgxmock/v5"
+	"github.com/pashagolub/pgxmock/v6"
 	"github.com/stretchr/testify/require"
 )
 

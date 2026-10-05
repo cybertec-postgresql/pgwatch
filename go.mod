@@ -11,7 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/json-iterator/go v1.1.12
-	github.com/pashagolub/pgxmock/v5 v5.2.0
+	github.com/pashagolub/pgxmock/v6 v6.0.0-beta
 	github.com/prometheus/client_golang v1.24.1
 	github.com/prometheus/client_model v0.6.3
 	github.com/prometheus/common v0.71.0
