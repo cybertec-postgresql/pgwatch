@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1184,6 +1185,15 @@ func newMockFlushWriter(t *testing.T, existingMetrics ...string) (pgxmock.PgxPoo
 	return conn, pgw
 }
 
+type jsonEq string // matches a JSON string regardless of key order
+
+func (j jsonEq) Match(v any) bool {
+	s, ok := v.(string)
+	var want, got any
+	return ok && jsoniter.UnmarshalFromString(string(j), &want) == nil &&
+		jsoniter.UnmarshalFromString(s, &got) == nil && reflect.DeepEqual(want, got)
+}
+
 func TestFlush_CopiesEachMetricIntoItsTable(t *testing.T) {
 	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
 	msgs := []metrics.MeasurementEnvelope{
@@ -1205,12 +1215,12 @@ func TestFlush_CopiesEachMetricIntoItsTable(t *testing.T) {
 
 	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:]).
 		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 1000), "db1", `{"epoch_ns":1000,"value":1}`, `{"env":"test","host":"h1"}`).
-			AddRow(time.Unix(0, 1000), "db1", `{"epoch_ns":1000,"value":2}`, `{"env":"test"}`)).
+			AddRow(time.Unix(0, 1000), "db1", jsonEq(`{"epoch_ns":1000,"value":1}`), jsonEq(`{"env":"test","host":"h1"}`)).
+			AddRow(time.Unix(0, 1000), "db1", jsonEq(`{"epoch_ns":1000,"value":2}`), jsonEq(`{"env":"test"}`))).
 		WillReturnResult(2)
 	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
 		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 3000), "db1", `{"epoch_ns":3000,"value":3}`, `{}`)).
+			AddRow(time.Unix(0, 3000), "db1", jsonEq(`{"epoch_ns":3000,"value":3}`), jsonEq(`{}`))).
 		WillReturnResult(1)
 
 	pgw.flush(msgs)
