@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -506,6 +507,33 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 	assert.False(t, cfm.Next())
 	// State should be positioned to restart on next metric
 	assert.Equal(t, "", cfm.metricName)
+}
+
+func TestCopyFromMeasurements_SkipMetric(t *testing.T) {
+	data := []metrics.MeasurementEnvelope{
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 1}, {"value": 2}}},
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 3}}},
+		{MetricName: "metric2", Data: metrics.Measurements{{"value": 4}}},
+		{MetricName: "metric3", Data: metrics.Measurements{{"value": 5}}},
+	}
+	cfm := newCopyFromMeasurements(data)
+
+	// copy failed mid-metric, with a sticky error
+	assert.True(t, cfm.Next())
+	cfm.err = errors.New("bad value")
+	cfm.SkipMetric()
+	assert.NoError(t, cfm.Err())
+	assert.Equal(t, pgx.Identifier{"metric2"}, cfm.MetricName())
+
+	// copy failed before reading anything
+	cfm.SkipMetric()
+	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
+	assert.True(t, cfm.Next())
+	assert.Equal(t, 5, cfm.envelopes[cfm.envelopeIdx].Data[cfm.measurementIdx]["value"])
+
+	// failing the last metric ends the copy
+	cfm.SkipMetric()
+	assert.True(t, cfm.EOF())
 }
 
 func TestCopyFromMeasurements_CopyFail(t *testing.T) {
@@ -1260,6 +1288,55 @@ func TestFlush_CheckViolationForcesPartitionRecreation(t *testing.T) {
 	assert.True(t, pgw.forceRecreatePartitions)
 	require.Len(t, pgw.lastError, 1)
 	assert.ErrorIs(t, <-pgw.lastError, checkViolation)
+}
+
+func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.MeasurementEnvelope) {
+	done := make(chan struct{})
+	go func() {
+		pgw.flush(msgs)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("flush did not return")
+	}
+}
+
+func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
+	conn, pgw := newMockFlushWriter(t, "metric_a")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+	}
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.NoError(t, conn.ExpectationsWereMet())
+	assert.Len(t, pgw.lastError, 1)
+}
+
+func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
+	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
+		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
+			AddRow(time.Unix(0, 2000), "db1", jsonEq(`{"epoch_ns":2000,"value":2}`), jsonEq(`{}`))).
+		WillReturnResult(1)
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.NoError(t, conn.ExpectationsWereMet())
 }
 
 // TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
