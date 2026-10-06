@@ -69,7 +69,6 @@ type PostgresWriter struct {
 	retentionInterval       time.Duration
 	maintenanceInterval     time.Duration
 	input                   chan metrics.MeasurementEnvelope
-	lastError               chan error
 	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
 	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
 	// mu guards partitionMapMetric and serializes the DDL issued by SyncMetric.
@@ -96,7 +95,6 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		ctx:                     ctx,
 		opts:                    opts,
 		input:                   make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:               make(chan error),
 		sinkDb:                  conn,
 		forceRecreatePartitions: false,
 		partitionMapMetric:      make(map[string]ExistingPartitionInfo),
@@ -240,12 +238,7 @@ func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
 	case <-time.After(highLoadTimeout):
 		// msgs dropped due to a huge load, check stdout or file for detailed log
 	}
-	select {
-	case err := <-pgw.lastError:
-		return err
-	default:
-		return nil
-	}
+	return nil
 }
 
 // poll is the main loop that reads from the input channel and flushes the data to the database
@@ -428,10 +421,7 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	}
 	pgw.forceRecreatePartitions = false
 	if err != nil {
-		select {
-		case pgw.lastError <- err:
-		default:
-		}
+		logger.Error(err)
 	}
 
 	var rowsBatched, n int64
@@ -455,14 +445,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 			}
 		}
 	}
-	diff := time.Since(t1)
-	if err == nil {
-		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")
-		return
-	}
-	select {
-	case pgw.lastError <- err:
-	default:
+	if rowsBatched > 0 {
+		logger.WithField("rows", rowsBatched).WithField("elapsed", time.Since(t1)).Info("measurements written")
 	}
 }
 

@@ -1233,7 +1233,6 @@ func newCopySinkWriter(t *testing.T, metricNames ...string) (*copySink, *Postgre
 		opts:               &CmdOpts{PartitionInterval: "1 day"},
 		metricSchema:       DbStorageSchemaPostgres,
 		partitionMapMetric: parts,
-		lastError:          make(chan error, 1),
 	}
 	return sink, pgw
 }
@@ -1263,7 +1262,6 @@ func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
 	flushWithTimeout(t, pgw, msgs)
 
 	assert.Empty(t, sink.rows)
-	assert.Len(t, pgw.lastError, 1)
 }
 
 func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
