@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -504,6 +505,33 @@ func TestCopyFromMeasurements_StateManagement(t *testing.T) {
 	assert.False(t, cfm.Next())
 	// State should be positioned to restart on next metric
 	assert.Equal(t, "", cfm.metricName)
+}
+
+func TestCopyFromMeasurements_SkipMetric(t *testing.T) {
+	data := []metrics.MeasurementEnvelope{
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 1}, {"value": 2}}},
+		{MetricName: "metric1", Data: metrics.Measurements{{"value": 3}}},
+		{MetricName: "metric2", Data: metrics.Measurements{{"value": 4}}},
+		{MetricName: "metric3", Data: metrics.Measurements{{"value": 5}}},
+	}
+	cfm := newCopyFromMeasurements(data)
+
+	// copy failed mid-metric, with a sticky error
+	assert.True(t, cfm.Next())
+	cfm.err = errors.New("bad value")
+	cfm.SkipMetric()
+	assert.NoError(t, cfm.Err())
+	assert.Equal(t, pgx.Identifier{"metric2"}, cfm.MetricName())
+
+	// copy failed before reading anything
+	cfm.SkipMetric()
+	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
+	assert.True(t, cfm.Next())
+	assert.Equal(t, 5, cfm.envelopes[cfm.envelopeIdx].Data[cfm.measurementIdx]["value"])
+
+	// failing the last metric ends the copy
+	cfm.SkipMetric()
+	assert.True(t, cfm.EOF())
 }
 
 func TestCopyFromMeasurements_CopyFail(t *testing.T) {
@@ -1163,6 +1191,94 @@ func TestFlush_SinkDBIsDown(t *testing.T) {
 
 	// It should return, Issue:#1426 will keep it spinning forever
 	pgw.flush(msgs)
+}
+
+// copySink mimics pgx CopyFrom: it fails before reading the source on an empty
+// table name, otherwise it reads rows until the source ends or fails
+type copySink struct {
+	pgxmock.PgxPoolIface
+	rows map[string][]string // metric -> data column of copied rows
+}
+
+func (s *copySink) CopyFrom(_ context.Context, tableName pgx.Identifier, _ []string, src pgx.CopyFromSource) (int64, error) {
+	if len(tableName) == 0 || tableName[0] == "" {
+		return 0, errors.New("zero-length delimited identifier")
+	}
+	var copied []string
+	for src.Next() {
+		vals, err := src.Values()
+		if err != nil {
+			return 0, err
+		}
+		copied = append(copied, vals[2].(string))
+	}
+	if err := src.Err(); err != nil {
+		return 0, err
+	}
+	s.rows[tableName[0]] = append(s.rows[tableName[0]], copied...)
+	return int64(len(copied)), nil
+}
+
+func newCopySinkWriter(t *testing.T, metricNames ...string) (*copySink, *PostgresWriter) {
+	conn, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	sink := &copySink{PgxPoolIface: conn, rows: map[string][]string{}}
+	parts := make(map[string]ExistingPartitionInfo)
+	for _, m := range metricNames { // partitions already exist, no queries needed
+		parts[m] = ExistingPartitionInfo{StartTime: time.Unix(0, 0), EndTime: time.Now().Add(time.Hour)}
+	}
+	pgw := &PostgresWriter{
+		ctx:                ctx,
+		sinkDb:             sink,
+		opts:               &CmdOpts{PartitionInterval: "1 day"},
+		metricSchema:       DbStorageSchemaPostgres,
+		partitionMapMetric: parts,
+		lastError:          make(chan error, 1),
+	}
+	return sink, pgw
+}
+
+func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.MeasurementEnvelope) {
+	done := make(chan struct{})
+	go func() {
+		pgw.flush(msgs)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("flush did not return")
+	}
+}
+
+func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
+	sink, pgw := newCopySinkWriter(t, "metric_a")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+	}
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.Empty(t, sink.rows)
+	assert.Len(t, pgw.lastError, 1)
+}
+
+func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
+	sink, pgw := newCopySinkWriter(t, "metric_a", "metric_b")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
+			{"epoch_ns": int64(1000), "value": math.NaN()},
+			{"epoch_ns": int64(1000), "value": 1},
+		}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.Equal(t, map[string][]string{"metric_b": {`{"epoch_ns":2000,"value":2}`}}, sink.rows)
 }
 
 // TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
