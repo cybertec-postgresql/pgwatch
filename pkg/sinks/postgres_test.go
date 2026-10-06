@@ -1204,7 +1204,6 @@ func newMockFlushWriter(t *testing.T, existingMetrics ...string) (pgxmock.PgxPoo
 		ctx:                ctx,
 		sinkDb:             conn,
 		metricSchema:       DbStorageSchemaTimescale,
-		lastError:          make(chan error, 1), // flush drops errors nobody is waiting for
 		partitionMapMetric: make(map[string]ExistingPartitionInfo),
 	}
 	for _, m := range existingMetrics {
@@ -1254,7 +1253,6 @@ func TestFlush_CopiesEachMetricIntoItsTable(t *testing.T) {
 	pgw.flush(msgs)
 
 	assert.NoError(t, conn.ExpectationsWereMet())
-	assert.Empty(t, pgw.lastError)
 }
 
 func TestFlush_CreatesMissingTimescaleTable(t *testing.T) {
@@ -1271,7 +1269,6 @@ func TestFlush_CreatesMissingTimescaleTable(t *testing.T) {
 
 	assert.NoError(t, conn.ExpectationsWereMet())
 	assert.Contains(t, pgw.partitionMapMetric, "new_metric")
-	assert.Empty(t, pgw.lastError)
 }
 
 func TestFlush_CheckViolationForcesPartitionRecreation(t *testing.T) {
@@ -1286,8 +1283,6 @@ func TestFlush_CheckViolationForcesPartitionRecreation(t *testing.T) {
 
 	assert.NoError(t, conn.ExpectationsWereMet())
 	assert.True(t, pgw.forceRecreatePartitions)
-	require.Len(t, pgw.lastError, 1)
-	assert.ErrorIs(t, <-pgw.lastError, checkViolation)
 }
 
 func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.MeasurementEnvelope) {
@@ -1316,7 +1311,6 @@ func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
 	flushWithTimeout(t, pgw, msgs)
 
 	assert.NoError(t, conn.ExpectationsWereMet())
-	assert.Len(t, pgw.lastError, 1)
 }
 
 func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
