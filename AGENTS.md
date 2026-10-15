@@ -18,6 +18,7 @@
 - `internal/metrics/metrics.yaml` is embedded and is the built-in default metric/preset definitions. Changes there ship in the binary.
 - Schema migrations (`pgx-migrator`) live in `internal/sinks/postgres.go` (sink DB) and `internal/metrics/postgres_schema.go` (config DB). Append new ones at the end; never edit or reorder existing ones. Names start with a zero-padded number (e.g. `"01409 ..."`).
 - `spec/` holds design docs and task templates for larger features.
+- Release notes are GitHub releases (`gh release view <tag>`); there is no CHANGELOG.
 
 ## Contributing
 
