@@ -21,4 +21,4 @@
 
 ## Contributing
 
-- Follow `AI_POLICY.md`: every PR, issue or comment assisted by an AI tool must name that tool.
+- External contributors follow `AI_POLICY.md`: name the AI tool in every PR, issue or comment. Maintainers set attribution in their own agent settings; add none on their behalf.
