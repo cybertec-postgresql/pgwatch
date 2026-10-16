@@ -155,10 +155,8 @@ func (promw *PrometheusWriter) SyncMetric(sourceName, metricName string, op Sync
 
 var notSupportedMetrics = map[string]struct{}{
 	"change_events":     {}, // fully consist of text columns
-	"pgbouncer_stats":   {}, // this and below metrics column names cannot be renamed with tag_ prefix
-	"pgbouncer_clients": {},
-	"pgpool_processes":  {},
-	"pgpool_stats":      {},
+	"pgbouncer_clients": {}, // one row per client connection, unbounded label cardinality
+	"pgpool_processes":  {}, // one row per pgpool process, unbounded label cardinality
 }
 
 func (promw *PrometheusWriter) AddCacheEntry(dbUnique, metric string, msgArr metrics.MeasurementEnvelope) { // cache structure: [dbUnique][metric]lastly_fetched_data

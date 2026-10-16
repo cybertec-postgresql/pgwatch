@@ -58,7 +58,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  dbname,\n  tag_data->>'node_id' as node_id,\n  data->>'role' as role,\n  data->>'status' as status,\n  case when data->>'status' = 'up' then 1 else 0 end as status_num,\n  data->>'hostname' as hostname,\n  data->>'port' as port,\n  data->>'lb_weight' as lb_weight,\n  data->>'load_balance_node' as load_balance_node,\n  data->>'replication_delay' as replication_delay,\n  data->>'select_cnt' as select_cnt,  \n  data->>'last_status_change' as last_status_change,  \n  time::text as \"updated\"\nfrom\n  pgpool_stats\nwhere\n  time = (select max(time) from pgpool_stats where dbname in ($dbname) and $__timeFilter(time) group by dbname)\n  and dbname in ($dbname)\norder by\n  dbname,\n  node_id,\n  time desc\n",
+                        "rawSql": "select\n  dbname,\n  tag_data->>'node_id' as node_id,\n  tag_data->>'role' as role,\n  tag_data->>'status' as status,\n  case when tag_data->>'status' = 'up' then 1 else 0 end as status_num,\n  tag_data->>'hostname' as hostname,\n  tag_data->>'port' as port,\n  data->>'lb_weight' as lb_weight,\n  data->>'load_balance_node' as load_balance_node,\n  data->>'replication_delay' as replication_delay,\n  data->>'select_cnt' as select_cnt,  \n  time::text as \"updated\"\nfrom\n  pgpool_stats\nwhere\n  time = (select max(time) from pgpool_stats where dbname in ($dbname) and $__timeFilter(time) group by dbname)\n  and dbname in ($dbname)\norder by\n  dbname,\n  node_id,\n  time desc\n",
                         "select": [
                           [
                             {
