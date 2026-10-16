@@ -35,7 +35,7 @@ func (lp *logParser) parseStream(rc io.ReadCloser) error {
 	for {
 		select {
 		case <-lp.ctx.Done():
-			<-parsed // the deferred Close races consume if it is still reading
+			<-parsed //nolint:errcheck // the deferred Close races consume if it is still reading
 			return nil
 		case err := <-parsed:
 			lp.sendCounts() // don't discard the last partial interval
