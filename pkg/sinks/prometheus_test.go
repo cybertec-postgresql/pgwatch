@@ -268,6 +268,17 @@ func TestPrometheusWRiteUnsupportedMetric(t *testing.T) {
 	}))
 }
 
+func TestPrometheusPoolerMetricsCaching(t *testing.T) {
+	promw := newTestPrometheusWriter("test")
+	for _, name := range []string{"pgbouncer_stats", "pgpool_stats", "pgbouncer_clients", "pgpool_processes"} {
+		promw.AddCacheEntry("db1", name, metrics.MeasurementEnvelope{SourceKind: "pgbouncer"})
+	}
+	assert.Contains(t, promw.Cache["db1"], "pgbouncer_stats")
+	assert.Contains(t, promw.Cache["db1"], "pgpool_stats")
+	assert.NotContains(t, promw.Cache["db1"], "pgbouncer_clients")
+	assert.NotContains(t, promw.Cache["db1"], "pgpool_processes")
+}
+
 // TestSourceKindPrometheus covers T041: SourceKind == "prometheus" is the sentinel
 // used to distinguish prom-sourced envelopes from DB-sourced ones.
 func TestSourceKindPrometheus(t *testing.T) {
