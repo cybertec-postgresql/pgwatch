@@ -18,7 +18,8 @@
 - `pkg/metrics/metrics.yaml` is embedded and is the built-in default metric/preset definitions. Changes there ship in the binary.
 - Schema migrations (`pgx-migrator`) live in `pkg/sinks/postgres.go` (sink DB) and `pkg/metrics/postgres_schema.go` (config DB). Append new ones at the end; never edit or reorder existing ones. Names start with a zero-padded number (e.g. `"01409 ..."`).
 - `spec/` holds design docs and task templates for larger features.
+- Release notes are GitHub releases (`gh release view <tag>`); there is no CHANGELOG.
 
 ## Contributing
 
-- Follow `AI_POLICY.md`: every PR, issue or comment assisted by an AI tool must name that tool.
+- External contributors follow `AI_POLICY.md`: name the AI tool in every PR, issue or comment. Maintainers set attribution in their own agent settings; add none on their behalf.

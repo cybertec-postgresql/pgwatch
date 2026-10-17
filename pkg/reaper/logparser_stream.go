@@ -280,7 +280,7 @@ func remoteFileSizes(ctx context.Context, lp *logParser) (func(string) (int64, b
 		if err := rows.Scan(&name, &size); err != nil {
 			return nil, err
 		}
-		sizes[filepath.ToSlash(filepath.Join(lp.Directory, name))] = size
+		sizes[serverPath(lp.Directory, name)] = size
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -154,6 +154,9 @@ func tryDetermineLogSettings(ctx context.Context, conn db.PgxIface) (cfg *logCon
 	return nil, err
 }
 
+// serverPath joins a path on the database server, whose separator is always /.
+func serverPath(dir, name string) string { return path.Join(dir, name) }
+
 func checkHasRemotePrivileges(ctx context.Context, mdb *sources.DbConn, logsDirPath string) error {
 	var logFile string
 	err := mdb.Conn.QueryRow(ctx, "select name from pg_ls_logdir() limit 1").Scan(&logFile)
@@ -162,7 +165,7 @@ func checkHasRemotePrivileges(ctx context.Context, mdb *sources.DbConn, logsDirP
 	}
 
 	var dummy string
-	err = mdb.Conn.QueryRow(ctx, "select pg_read_file($1, 0, 0)", filepath.Join(logsDirPath, logFile)).Scan(&dummy)
+	err = mdb.Conn.QueryRow(ctx, "select pg_read_file($1, 0, 0)", serverPath(logsDirPath, logFile)).Scan(&dummy)
 	return err
 }
 
