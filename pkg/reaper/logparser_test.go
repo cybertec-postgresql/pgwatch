@@ -3,6 +3,7 @@ package reaper
 import (
 	"context"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -248,7 +249,7 @@ func TestCheckHasPrivileges(t *testing.T) {
 
 				// Mock pg_read_file() to fail with permission denied error
 				mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-					WithArgs(filepath.Join(tempDir, "log.csv")).
+					WithArgs(path.Join(tempDir, "log.csv")).
 					WillReturnError(assert.AnError)
 			}
 
@@ -279,6 +280,23 @@ func TestCheckHasPrivileges(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheckHasRemotePrivilegesUsesServerPath(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
+		WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow("postgresql-2026-10-16_203849.log"))
+	mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
+		WithArgs("/var/lib/postgresql/18/docker/log/postgresql-2026-10-16_203849.log").
+		WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
+
+	sourceConn := &sources.DbConn{Source: sources.Source{Name: "test-source"}, Conn: mock}
+	err = checkHasRemotePrivileges(testutil.TestContext, sourceConn, "/var/lib/postgresql/18/docker/log")
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestEventCountsToMetricStoreMessages(t *testing.T) {
@@ -439,7 +457,7 @@ func TestLogParseRemote(t *testing.T) {
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
 			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logFileName))
 		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-			WithArgs(filepath.Join(tempDir, logFileName)).
+			WithArgs(path.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow("")) // 0 bytes read = permission test
 
 		// Phase 4: log file discovery, now two queries rather than one.
@@ -504,7 +522,7 @@ func TestLogParseRemote(t *testing.T) {
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
 			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logFileName))
 		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-			WithArgs(filepath.Join(tempDir, logFileName)).
+			WithArgs(path.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
 		// The directory cannot be listed. The seeding query's failure is
@@ -571,7 +589,7 @@ incomplete line without proper fields
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
 			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logFileName))
 		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-			WithArgs(filepath.Join(tempDir, logFileName)).
+			WithArgs(path.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
 		// Start at EOF: the offset is seeded to the file's current size,
@@ -633,7 +651,7 @@ incomplete line without proper fields
 		mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
 			WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logFileName))
 		mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-			WithArgs(filepath.Join(tempDir, logFileName)).
+			WithArgs(path.Join(tempDir, logFileName)).
 			WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
 		// File discovery succeeds
@@ -649,7 +667,7 @@ incomplete line without proper fields
 
 		// But pg_read_file fails with permission error during actual read
 		mock.ExpectQuery(`select pg_read_file\(\$1, \$2, \$3\)`).
-			WithArgs(filepath.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
+			WithArgs(path.Join(tempDir, logFileName), int32(0), int32(len(logContent))).
 			WillReturnError(assert.AnError)
 
 		sourceConn := &sources.DbConn{

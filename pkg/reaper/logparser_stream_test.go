@@ -334,7 +334,7 @@ func TestRemotePathCountsThroughPgRemote(t *testing.T) {
 	mock.ExpectQuery(`select name from pg_ls_logdir\(\) limit 1`).
 		WillReturnRows(pgxmock.NewRows([]string{"name"}).AddRow(logName))
 	mock.ExpectQuery(`select pg_read_file\(\$1, 0, 0\)`).
-		WithArgs(filepath.Join(remoteLogDir, logName)).
+		WithArgs(remotePath).
 		WillReturnRows(pgxmock.NewRows([]string{"pg_read_file"}).AddRow(""))
 
 	// Offset seeding. An empty result means pgwatch has not seen this file
