@@ -384,3 +384,46 @@ func TestBlockingLocksColumns(t *testing.T) {
 		a.Regexp(re, sql, "column %q missing from the blocking_locks select list", col)
 	}
 }
+
+// backendsColumns is the column list of backends. Dashboards query these
+// names, so a rewrite of the SQL must keep every one of them.
+var backendsColumns = []string{
+	"epoch_ns",
+	"total",
+	"instance_total",
+	"max_connections",
+	"background_workers",
+	"active",
+	"idle",
+	"idleintransaction",
+	"longest_idle_in_tx_seconds",
+	"waiting",
+	"blocked",
+	"longest_waiting_seconds",
+	"avg_waiting_seconds",
+	"longest_session_seconds",
+	"avg_session_seconds",
+	"longest_tx_seconds",
+	"avg_tx_seconds",
+	"longest_autovacuum_seconds",
+	"longest_query_seconds",
+	"avg_query_seconds",
+	"max_xmin_age_tx",
+	"av_workers",
+}
+
+func TestBackendsColumns(t *testing.T) {
+	a := assert.New(t)
+	m, ok := GetDefaultMetrics().MetricDefs["backends"]
+	if !a.True(ok, "backends must exist in metrics.yaml") {
+		return
+	}
+	sql, ok := m.SQLs[14]
+	if !a.True(ok, "backends must keep SQL key 14") {
+		return
+	}
+	for _, col := range backendsColumns {
+		re := regexp.MustCompile(`(?i)\bAS\s+` + col + `\b`)
+		a.Regexp(re, sql, "column %q missing from the backends select list", col)
+	}
+}

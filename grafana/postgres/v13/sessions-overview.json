@@ -651,7 +651,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_query_seconds')::int8) as longest_query,\n  max((data->>'avg_query_seconds')::float) as avg_query\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_query_seconds')::float) as longest_query,\n  max((data->>'avg_query_seconds')::float) as avg_query\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
                         "select": [
                           [
                             {
@@ -817,7 +817,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_tx_seconds')::int8) as longest_tx,\n  max((data->>'avg_tx_seconds')::float) as avg_tx\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_tx_seconds')::float) as longest_tx,\n  max((data->>'avg_tx_seconds')::float) as avg_tx\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
                         "select": [
                           [
                             {
@@ -972,6 +972,157 @@
           }
         }
       },
+      "panel-15": {
+        "kind": "Panel",
+        "spec": {
+          "id": 15,
+          "title": "Longest idle-in-transaction duration",
+          "description": "Seconds since the oldest idle-in-transaction client session (aborted ones included) entered that state. Such a session holds its snapshot and locks, so vacuum cannot remove dead rows.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-metrics"
+                      },
+                      "spec": {
+                        "format": "time_series",
+                        "group": [],
+                        "metricColumn": "none",
+                        "rawQuery": true,
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_idle_in_tx_seconds')::float) as longest_idle_in_tx\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "select": [
+                          [
+                            {
+                              "params": [
+                                "value"
+                              ],
+                              "type": "column"
+                            }
+                          ]
+                        ],
+                        "timeColumn": "time",
+                        "where": [
+                          {
+                            "name": "$__timeFilter",
+                            "params": [],
+                            "type": "macro"
+                          }
+                        ]
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "12.1.0",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "max"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "s",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "longest_idle_in_tx"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "dark-orange",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
       "panel-6": {
         "kind": "Panel",
         "spec": {
@@ -998,7 +1149,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_autovacuum_seconds')::int8) as longest_autovacuum_seconds\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_autovacuum_seconds')::float) as longest_autovacuum_seconds\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
                         "select": [
                           [
                             {
@@ -1205,7 +1356,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_waiting_seconds')::int8) as longest_waiting,\n  max((data->>'avg_waiting_seconds')::float) as avg_waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_waiting_seconds')::float) as longest_waiting,\n  max((data->>'avg_waiting_seconds')::float) as avg_waiting\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
                         "select": [
                           [
                             {
@@ -1372,7 +1523,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_session_seconds')::int8) as longest_session,\n  max((data->>'avg_session_seconds')::float) as avg_session\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
+                        "rawSql": "select\n  $__timeGroup(time, $agg_interval),\n  max((data->>'longest_session_seconds')::float) as longest_session,\n  max((data->>'avg_session_seconds')::float) as avg_session\nfrom backends\nwhere dbname = '$dbname' and $__timeFilter(time)\ngroup by 1\norder by 1",
                         "select": [
                           [
                             {
@@ -1624,7 +1775,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-8"
+                          "name": "panel-15"
                         }
                       }
                     },
@@ -1637,7 +1788,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-6"
+                          "name": "panel-8"
                         }
                       }
                     },
@@ -1650,7 +1801,7 @@
                         "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-10"
+                          "name": "panel-6"
                         }
                       }
                     },
@@ -1659,6 +1810,19 @@
                       "spec": {
                         "x": 0,
                         "y": 50,
+                        "width": 24,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 56,
                         "width": 24,
                         "height": 6,
                         "element": {
