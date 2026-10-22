@@ -342,6 +342,7 @@ func (sr *DbConnReaper) CollectAndDispatch(ctx context.Context, rows pgx.Rows, n
 		return err
 	}
 	if len(data) > 0 {
+		normalizePoolerMeasurements(ctx, sr.md.Kind, name, data)
 		sr.dispatchMetricData(ctx, name, metric, data)
 	}
 	return nil
