@@ -36,6 +36,24 @@ func SetupPostgresContainer() (*postgres.PostgresContainer, func(), error) {
 	return pgContainer, tearDown, err
 }
 
+// SetupTimescaleContainer creates a PostgreSQL container with the TimescaleDB extension available.
+func SetupTimescaleContainer() (*postgres.PostgresContainer, func(), error) {
+	pgContainer, err := postgres.Run(TestContext,
+		TimescaleImage,
+		postgres.WithDatabase(MockDatabase),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(30*time.Second)),
+	)
+
+	tearDown := func() {
+		_ = pgContainer.Terminate(TestContext)
+	}
+
+	return pgContainer, tearDown, err
+}
+
 // Creates a PostgreSQL container with CSV logging enabled.
 // This is useful for testing log parsing functionality with server_log_event_counts metric.
 func SetupPostgresContainerWithConfig(configPath string) (*postgres.PostgresContainer, func(), error) {

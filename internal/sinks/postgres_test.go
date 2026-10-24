@@ -57,6 +57,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		)
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery("SELECT count").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 		for _, m := range metrics.GetDefaultBuiltInMetrics() {
 			conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(m).WillReturnResult(pgxmock.NewResult("EXECUTE", 1))
 		}
@@ -106,6 +107,7 @@ func TestNewWriterFromPostgresConn(t *testing.T) {
 		)
 		conn.ExpectQuery("SELECT EXISTS").WithArgs("admin").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
 		conn.ExpectQuery("SELECT schema_type").WillReturnRows(pgxmock.NewRows([]string{"schema_type"}).AddRow(true))
+		conn.ExpectQuery("SELECT count").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 		conn.ExpectExec("SELECT admin.ensure_dummy_metrics_table").WithArgs(pgxmock.AnyArg()).WillReturnError(assert.AnError)
 
 		pgw, err := NewWriterFromPostgresConn(ctx, conn, opts)
@@ -1244,4 +1246,30 @@ func TestDropAllMetricTables(t *testing.T) {
 		WHERE n.nspname = 'admin' AND p.proname = 'drop_all_metric_tables'
 	`).Scan(&prokind))
 	a.Equal("p", prokind, "admin.drop_all_metric_tables must be a procedure")
+}
+
+func TestCheckTimescaleTablesIntact(t *testing.T) {
+	a := assert.New(t)
+	conn, err := pgxmock.NewPool()
+	a.NoError(err)
+	pgw := PostgresWriter{ctx: ctx, sinkDb: conn}
+
+	t.Run("PostgresSchemaSkipsCheck", func(*testing.T) {
+		pgw.metricSchema = DbStorageSchemaPostgres
+		pgw.CheckTimescaleTablesIntact()
+		a.NoError(conn.ExpectationsWereMet())
+	})
+
+	pgw.metricSchema = DbStorageSchemaTimescale
+	for name, expect := range map[string]func(){
+		"Intact":     func() { conn.ExpectQuery("SELECT count").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0)) },
+		"Converted":  func() { conn.ExpectQuery("SELECT count").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(3)) },
+		"QueryError": func() { conn.ExpectQuery("SELECT count").WillReturnError(assert.AnError) },
+	} {
+		t.Run(name, func(*testing.T) {
+			expect()
+			pgw.CheckTimescaleTablesIntact()
+			a.NoError(conn.ExpectationsWereMet())
+		})
+	}
 }
