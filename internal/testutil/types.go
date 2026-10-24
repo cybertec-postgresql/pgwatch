@@ -10,6 +10,7 @@ import (
 var TestContext = log.WithLogger(context.Background(), log.NewNoopLogger())
 
 const PostgresImage = "docker.io/postgres:19beta2-alpine"
+const TimescaleImage = "docker.io/timescale/timescaledb:2.31.0-pg17"
 const MockDatabase = "mydatabase"
 
 const EtcdVersion = "v3.5.14"
