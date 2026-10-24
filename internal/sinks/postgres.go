@@ -108,7 +108,6 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 	if err = pgw.ReadMetricSchemaType(); err != nil {
 		return nil, err
 	}
-	pgw.CheckTimescaleTablesIntact()
 	if err = pgw.EnsureBuiltinMetricDummies(); err != nil {
 		return nil, err
 	}
@@ -202,31 +201,6 @@ func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 		pgw.metricSchema = DbStorageSchemaTimescale
 	}
 	return
-}
-
-// CheckTimescaleTablesIntact logs an error when a TimescaleDB sink has metric tables
-// that are native partitioned tables instead of hypertables. Migration 01409 in
-// pgwatch 6.0.0 converted hypertables this way and dropped their data (#1614).
-// pgwatch can't repair such a sink, so the user has to recreate it.
-func (pgw *PostgresWriter) CheckTimescaleTablesIntact() {
-	if pgw.metricSchema != DbStorageSchemaTimescale {
-		return
-	}
-	const sqlCountNativeMetricTables = `SELECT count(*)
-		FROM pg_partitioned_table pt
-		JOIN pg_description d ON d.objoid = pt.partrelid AND d.classoid = 'pg_class'::regclass
-		WHERE d.description = 'pgwatch-generated-metric-lvl'`
-	logger := log.GetLogger(pgw.ctx)
-	var n int
-	if err := pgw.sinkDb.QueryRow(pgw.ctx, sqlCountNativeMetricTables).Scan(&n); err != nil {
-		logger.WithError(err).Warning("cannot check TimescaleDB metric tables")
-		return
-	}
-	if n > 0 {
-		logger.Errorf("TimescaleDB sink has %d metric tables that are not hypertables. "+
-			"The 6.0.0 sink upgrade converted them and dropped their data. "+
-			"Recreate the sink database, see https://github.com/cybertec-postgresql/pgwatch/issues/1614", n)
-	}
 }
 
 // SyncMetric ensures that tables exist for newly added metrics and/or sources
