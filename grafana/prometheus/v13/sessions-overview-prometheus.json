@@ -798,6 +798,61 @@
           }
         }
       },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Longest idle-in-transaction duration",
+          "description": "Seconds since the oldest idle-in-transaction client session (aborted ones included) entered that state. Such a session holds its snapshot and locks, so vacuum cannot remove dead rows.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "pgwatch-prometheus"
+                      },
+                      "spec": {
+                        "exemplar": true,
+                        "expr": "max(max_over_time(pgwatch_backends_longest_idle_in_tx_seconds{dbname='$dbname'}[$agg_interval]))",
+                        "interval": "",
+                        "legendFormat": "Longest idle in TX"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "interval": "$agg_interval"
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "7.5.9",
+            "spec": {
+              "options": {
+                "alertThreshold": true
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
       "panel-8": {
         "kind": "Panel",
         "spec": {
@@ -1062,7 +1117,7 @@
                         "height": 9,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-9"
+                          "name": "panel-10"
                         }
                       }
                     },
@@ -1075,7 +1130,7 @@
                         "height": 9,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-6"
+                          "name": "panel-9"
                         }
                       }
                     },
@@ -1084,6 +1139,19 @@
                       "spec": {
                         "x": 0,
                         "y": 54,
+                        "width": 24,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 63,
                         "width": 24,
                         "height": 9,
                         "element": {

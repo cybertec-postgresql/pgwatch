@@ -77,7 +77,8 @@ metrics:
             This metric gathers detailed information from the PostgreSQL pg_stat_activity view, providing an overview of the database's current session
             and activity state. It tracks the total number of client backends, active sessions, idle sessions, sessions waiting on locks, and background workers.
             The metric also calculates statistics on blocked sessions, most extended waiting times, average and longest session durations, transaction times,
-            and query durations. Additionally, it monitors autovacuum worker activity and provides the age of the oldest transaction (measured by xmin).
+            and query durations. It also reports how long the oldest idle-in-transaction session, aborted ones included, has been idle since its last state change.
+            Additionally, it monitors autovacuum worker activity and provides the age of the oldest transaction (measured by xmin).
             This metric helps administrators monitor session states, detect bottlenecks, and ensure the system is within its connection limits,
             providing visibility into database performance and contention.
         sqls:
@@ -96,6 +97,7 @@ metrics:
                   (select count(*) from sa_snapshot where state = 'active' and backend_type = 'client backend') as active,
                   (select count(*) from sa_snapshot where state = 'idle' and backend_type = 'client backend') as idle,
                   (select count(*) from sa_snapshot where state = 'idle in transaction' and backend_type = 'client backend') as idleintransaction,
+                  (select round(extract(epoch from max(now() - state_change)), 3)::float from sa_snapshot where state in ('idle in transaction', 'idle in transaction (aborted)') and backend_type = 'client backend') as longest_idle_in_tx_seconds,
                   (select count(*) from sa_snapshot where wait_event_type in ('LWLock', 'Lock', 'BufferPin') and backend_type = 'client backend') as waiting,
                   (select coalesce(sum(case when coalesce(array_length(pg_blocking_pids(pid), 1), 0) >= 1 then 1 else 0 end), 0) from sa_snapshot where backend_type = 'client backend' and state = 'active') as blocked,
                   (select round(extract(epoch from max(now() - query_start)), 3)::float from sa_snapshot where wait_event_type in ('LWLock', 'Lock', 'BufferPin') and backend_type = 'client backend') as longest_waiting_seconds,

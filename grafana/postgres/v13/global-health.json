@@ -58,7 +58,7 @@
                         "group": [],
                         "metricColumn": "none",
                         "rawQuery": true,
-                        "rawSql": "SELECT * FROM (\nSELECT\n  dbname,\n  max((data->>'longest_tx_seconds')::int) AS longest_tx_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  dbname\n) x\nWHERE longest_tx_seconds > 0\nORDER BY 2 DESC\nLIMIT $top_limit",
+                        "rawSql": "SELECT * FROM (\nSELECT\n  dbname,\n  max((data->>'longest_tx_seconds')::float) AS longest_tx_seconds\nFROM\n  backends\nWHERE\n  $__timeFilter(\"time\")\nGROUP BY\n  dbname\n) x\nWHERE longest_tx_seconds > 0\nORDER BY 2 DESC\nLIMIT $top_limit",
                         "select": [
                           [
                             {
