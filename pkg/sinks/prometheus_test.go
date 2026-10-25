@@ -483,3 +483,60 @@ func BenchmarkWritePromMetrics(b *testing.B) {
 		}
 	}
 }
+
+// AC-006 of server_log_patterns: the template, a string column, never becomes
+// a label, and each pattern row is one series.
+func TestPrometheusLogPatternsHaveNoTemplateLabel(t *testing.T) {
+	promw := newTestPrometheusWriter("pgwatch")
+	row := func(id, severity, sqlstate, db string, template any, count int64, durSum any) metrics.Measurement {
+		return metrics.Measurement{
+			metrics.EpochColumnName: time.Now().UnixNano(),
+			"tag_pattern_id":        id,
+			"tag_severity":          severity,
+			"tag_sqlstate":          sqlstate,
+			"tag_database":          db,
+			"template":              template,
+			"rules_version":         int64(1),
+			"count":                 count,
+			"duration_sum_ms":       durSum,
+			"duration_max_ms":       durSum,
+		}
+	}
+	require.NoError(t, promw.Write(metrics.MeasurementEnvelope{
+		DBName:     "db1",
+		MetricName: "server_log_patterns",
+		Data: metrics.Measurements{
+			row("9f2c41aa0d1e7b33", "log", "", "shop", "duration: $1 statement: SELECT $2", 1840, 2210.4),
+			row("03be7c19aa45d0e1", "error", "42P01", "shop", `relation "orders" does not exist`, 3, nil),
+			row("other", "log", "", "", nil, 412, 380.1),
+		},
+	}))
+
+	reg := prometheus.NewRegistry()
+	require.NoError(t, reg.Register(promw))
+	families, err := reg.Gather()
+	require.NoError(t, err)
+
+	var counts *dto.MetricFamily
+	for _, f := range families {
+		for _, m := range f.GetMetric() {
+			for _, l := range m.GetLabel() {
+				assert.NotEqual(t, "template", l.GetName(), f.GetName())
+			}
+		}
+		if f.GetName() == "pgwatch_server_log_patterns_count" {
+			counts = f
+		}
+	}
+	require.NotNil(t, counts)
+	require.Len(t, counts.GetMetric(), 3, "one series per pattern row")
+	ids := make([]string, 0, 3)
+	for _, m := range counts.GetMetric() {
+		for _, l := range m.GetLabel() {
+			if l.GetName() == "pattern_id" {
+				ids = append(ids, l.GetValue())
+			}
+		}
+	}
+	assert.ElementsMatch(t, []string{"9f2c41aa0d1e7b33", "03be7c19aa45d0e1", "other"}, ids)
+}

@@ -59,6 +59,26 @@ func TestNewLogParser(t *testing.T) {
 		assert.Equal(t, "en", lp.ServerMessagesLang)
 		assert.Equal(t, false, lp.TruncateOnRotation)
 		assert.Equal(t, 60*time.Second, lp.Interval)
+		assert.False(t, lp.countsOff)
+		assert.Nil(t, lp.patterns, "server_log_patterns is not configured")
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("server_log_patterns only", func(t *testing.T) {
+		mock.ExpectQuery(expectedSettingsQuery).
+			WillReturnRows(pgxmock.NewRows([]string{"is_enabled", "csvlog_dest", "jsonlog_dest", "log_trunc", "log_dir", "lc_messages", "line_prefix"}).
+				AddRow(true, true, false, false, tempDir, "en", defaultLinePrefix))
+		src := &sources.DbConn{
+			Source: sources.Source{Name: "test-source", Metrics: metrics.MetricIntervals{specialMetricServerLogPatterns: 30}},
+			Conn:   mock,
+		}
+
+		lp, err := newLogParser(testutil.TestContext, src, storeCh)
+		require.NoError(t, err)
+		assert.True(t, lp.countsOff)
+		require.NotNil(t, lp.patterns)
+		assert.Equal(t, 30*time.Second, lp.patterns.interval)
+		assert.Equal(t, 30*time.Second, lp.sendInterval())
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 

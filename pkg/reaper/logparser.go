@@ -36,14 +36,16 @@ type logParser struct {
 	*logConfig
 	ctx              context.Context
 	SourceConn       *sources.DbConn
-	realDbname       string // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
-	Interval         time.Duration
+	realDbname       string        // snapshot of SourceConn.RealDbname at construction time (avoids lock per log line)
+	Interval         time.Duration // of server_log_event_counts
+	countsOff        bool          // server_log_event_counts is not configured
 	StoreCh          chan<- metrics.MeasurementEnvelope
 	eventCounts      map[string]int64 // for the specific DB. [WARNING: 34, ERROR: 10, ...], zeroed on storage send
 	eventCountsTotal map[string]int64 // for the whole instance
 	lastSendTime     time.Time
+	patterns         *patternTally // server_log_patterns; nil when not configured
 
-	countsMu sync.Mutex        // guards eventCounts, eventCountsTotal, lastSendTime
+	countsMu sync.Mutex        // guards eventCounts, eventCountsTotal, lastSendTime, patterns
 	offsets  *endSeededOffsets // how far each log file has been read, in bytes
 }
 
@@ -82,20 +84,34 @@ func newLogParser(ctx context.Context, mdb *sources.DbConn, storeCh chan<- metri
 	mdb.RLock()
 	realDbname := mdb.RealDbname
 	mdb.RUnlock()
-	return &logParser{
+	countsInterval := mdb.GetMetricInterval(specialMetricServerLogEventCounts)
+	lp = &logParser{
 		ctx:              ctx,
 		SourceConn:       mdb,
 		realDbname:       realDbname,
-		Interval:         mdb.GetMetricInterval(specialMetricServerLogEventCounts),
+		Interval:         countsInterval,
 		StoreCh:          storeCh,
 		logConfig:        cfg,
 		eventCounts:      make(map[string]int64),
 		eventCountsTotal: make(map[string]int64),
-	}, nil
+	}
+	if iv := mdb.GetMetricInterval(specialMetricServerLogPatterns); iv > 0 {
+		lp.patterns = newPatternTally(iv)
+		lp.countsOff = countsInterval <= 0
+	}
+	return lp, nil
 }
 
 func (lp *logParser) hasSendIntervalElapsed() bool {
 	return lp.lastSendTime.IsZero() || lp.lastSendTime.Before(time.Now().Add(-lp.Interval))
+}
+
+// sendInterval is the shortest interval of the configured log metrics.
+func (lp *logParser) sendInterval() time.Duration {
+	if p := lp.patterns; p != nil && (lp.countsOff || p.interval < lp.Interval) {
+		return p.interval
+	}
+	return lp.Interval
 }
 
 func (lp *logParser) parseLogs() error {

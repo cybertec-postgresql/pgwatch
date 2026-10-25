@@ -21,6 +21,7 @@ import (
 const (
 	specialMetricChangeEvents         = "change_events"
 	specialMetricServerLogEventCounts = "server_log_event_counts"
+	specialMetricServerLogPatterns    = "server_log_patterns"
 	specialMetricInstanceUp           = "instance_up"
 )
 
@@ -302,7 +303,7 @@ func (r *reaper) CreateSourceHelpers(ctx context.Context, monitoredSource *sourc
 // isSpecialMetric reports whether a metric name has special handling that
 // bypasses the StorageName override.
 func (r *reaper) isSpecialMetric(name string) bool {
-	return name == specialMetricChangeEvents || name == specialMetricServerLogEventCounts
+	return name == specialMetricChangeEvents || name == specialMetricServerLogEventCounts || name == specialMetricServerLogPatterns
 }
 
 // ShutdownWorker stops the source reaper for a single named source, closes its

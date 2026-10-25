@@ -61,6 +61,7 @@ var knownMetrics = []string{
 	"replication_slots",
 	"sequence_health",
 	"server_log_event_counts",
+	"server_log_patterns",
 	"settings",
 	"smart_health_per_disk",
 	"sproc_hashes",

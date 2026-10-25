@@ -30,7 +30,7 @@ A few things to know about the built-in set:
 
 - Roughly half of the built-in metrics are referenced by one of the shipped presets and are ready to use out of the box. The rest need extra Postgres extensions, OS-level tooling, or elevated privileges.
 - A handful of built-in metrics are restricted to a specific node role — primary-only or standby-only — and the gatherer skips them on nodes in the opposite role.
-- Some metrics have non-standard behavior. `change_events`, `server_log_event_counts`, and `instance_up` are the most prominent examples.
+- Some metrics have non-standard behavior. `change_events`, `server_log_event_counts`, `server_log_patterns`, and `instance_up` are the most prominent examples.
 
 ## Custom-metric design rules
 

@@ -1301,3 +1301,42 @@ func TestSourceReaper_RunsOneLogParserAtATime(t *testing.T) {
 	assert.LessOrEqual(t, started, int32(5),
 		"restarts must be paced by the metric interval, not spun in a loop")
 }
+
+// REQ-003: either log metric starts the parser, and both share one.
+func TestSourceReaper_StartsOneLogParserForEitherLogMetric(t *testing.T) {
+	for name, intervals := range map[string]metrics.MetricIntervals{
+		"patterns only": {specialMetricServerLogPatterns: 1},
+		"both":          {specialMetricServerLogEventCounts: 1, specialMetricServerLogPatterns: 1},
+	} {
+		t.Run(name, func(t *testing.T) {
+			for m := range intervals {
+				metricDefs.MetricDefs[m] = metrics.Metric{SQLs: metrics.SQLs{0: "SELECT 1 AS value"}}
+			}
+			mock, err := pgxmock.NewPool()
+			require.NoError(t, err)
+			defer mock.Close()
+			mock.MatchExpectationsInOrder(false)
+			mock.ExpectQuery(`select /\* pgwatch_generated \*/`).WillReturnError(assert.AnError)
+			mock.ExpectQuery(expectedSettingsQuery).WillReturnError(assert.AnError)
+
+			cc := &logSettingsCountingConn{PgxPoolIface: mock}
+			md := &sources.DbConn{
+				Source: sources.Source{Name: "log_parser_" + name, Kind: sources.SourcePostgres, Metrics: intervals},
+				Conn:   cc,
+			}
+			r := &reaper{
+				Options:          &cmdopts.Options{Metrics: metrics.CmdOpts{}, Sinks: sinks.CmdOpts{}},
+				measurementCh:    make(chan metrics.MeasurementEnvelope, 10),
+				measurementCache: NewInstanceMetricCache(),
+			}
+			ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), log.NewNoopLogger()))
+			defer cancel()
+			go NewDbConnReaper(r, md).Reap(ctx)
+
+			require.Eventually(t, func() bool { return cc.count.Load() >= 1 },
+				2*time.Second, 10*time.Millisecond, "log parser should have been started")
+			time.Sleep(300 * time.Millisecond)
+			assert.Equal(t, int32(1), cc.maxConcurrent.Load(), "one parser serves both log metrics")
+		})
+	}
+}

@@ -10,7 +10,7 @@ Patroni is a popular PostgreSQL-specific HA-cluster manager. Because Patroni clu
 
 ## PostgreSQL server log parsing
 
-pgwatch can ingest PostgreSQL server logs in CSVLOG format and count event severities (errors, warnings, etc.) per database and per instance. Only counts are stored — never the raw log lines, usernames, or query bodies — so the feature is safe to enable in security-sensitive environments. The gatherer picks between local and remote parsing automatically based on whether it can read the log directory directly. See [How-to: Enable log parsing](../howto/enable_log_parsing.md).
+pgwatch can ingest PostgreSQL server logs in CSVLOG format and count event severities (errors, warnings, etc.) per database and per instance (`server_log_event_counts`). It can also count records per message pattern (`server_log_patterns`): each record is reduced to a template with every value masked, so it tells which errors happen and which statements are slow, with their durations. Only counts and these templates are stored — never the raw log lines or the values in them. Identifiers such as table names stay in a template, and so does the role name of a failed password authentication. The gatherer picks between local and remote parsing automatically based on whether it can read the log directory directly. See [How-to: Enable log parsing](../howto/enable_log_parsing.md).
 
 ## Connection poolers
 
