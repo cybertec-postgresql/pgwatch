@@ -2088,6 +2088,17 @@ metrics:
                 /*
                   Dummy placeholder - special handling in gatherer code for log parsing
                 */
+    server_log_patterns:
+        description: >
+            Counts Postgres server log records per message pattern: each record is reduced to a value-free
+            template and grouped by severity, SQLSTATE, template and database, with statement durations summed
+            when the record has one. Up to 100 patterns per severity are stored per interval; the rest is summed
+            into one row with tag_pattern_id "other". Uses the same log parser as server_log_event_counts.
+        sqls:
+            14: |-
+                /*
+                  Dummy placeholder - special handling in gatherer code for log parsing
+                */
     settings:
         description: >
             DEPRECATED: use 'settings_num' instead. This metric returns most configuration values as text columns,
@@ -5056,6 +5067,7 @@ presets:
             replication_slots: 120
             sequence_health: 3600
             server_log_event_counts: 60
+            server_log_patterns: 60
             settings_num: 7200
             sproc_stats: 180
             stat_activity: 30
@@ -5283,6 +5295,7 @@ presets:
             replication_slots: 30
             sequence_health: 30
             server_log_event_counts: 30
+            server_log_patterns: 30
             settings_num: 30
             smart_health_per_disk: 30
             sproc_hashes: 30

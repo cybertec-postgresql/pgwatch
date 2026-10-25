@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pglogwatch"
-	"github.com/cybertec-postgresql/pglogwatch/pgremote"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/pashagolub/pglogwatch"
+	"github.com/pashagolub/pglogwatch/pgremote"
 )
 
 // The pglogwatch-backed parsing engine: one loop over pglogwatch.Parser, fed by
@@ -38,13 +38,22 @@ func (lp *logParser) parseStream(rc io.ReadCloser) error {
 			<-parsed //nolint:errcheck // the deferred Close races consume if it is still reading
 			return nil
 		case err := <-parsed:
-			lp.sendCounts() // don't discard the last partial interval
+			lp.sendDue(true) // don't discard the last partial interval
 			return err
 		case <-tick.C:
-			if lp.hasSendIntervalElapsed() {
-				lp.sendCounts()
-			}
+			lp.sendDue(false)
 		}
+	}
+}
+
+// sendDue sends each configured measurement whose interval has elapsed, or
+// every one when flush is set.
+func (lp *logParser) sendDue(flush bool) {
+	if !lp.countsOff && (flush || lp.hasSendIntervalElapsed()) {
+		lp.sendCounts()
+	}
+	if lp.patterns != nil && (flush || lp.patterns.due()) {
+		lp.sendPatterns()
 	}
 }
 
@@ -58,7 +67,7 @@ const minSendTickInterval = 100 * time.Millisecond
 const sendTicksPerInterval = 4
 
 func (lp *logParser) tickInterval() time.Duration {
-	if t := lp.Interval / sendTicksPerInterval; t >= minSendTickInterval {
+	if t := lp.sendInterval() / sendTicksPerInterval; t >= minSendTickInterval {
 		return t
 	}
 	return minSendTickInterval
@@ -99,6 +108,12 @@ func (lp *logParser) count(rec *pglogwatch.Record) {
 		return // unrecognised; the regex this replaces would not have matched either
 	}
 
+	var template []byte
+	var id [8]byte
+	if lp.patterns != nil {
+		template, id = lp.patterns.templateOf(rec, lp.parserFormat())
+	}
+
 	lp.countsMu.Lock()
 	defer lp.countsMu.Unlock()
 
@@ -108,6 +123,9 @@ func (lp *logParser) count(rec *pglogwatch.Record) {
 		lp.eventCounts[severity]++
 	}
 	lp.eventCountsTotal[severity]++
+	if lp.patterns != nil {
+		lp.patterns.addLocked(rec, id, template)
+	}
 }
 
 // sendCounts emits an envelope and zeroes the tallies.
@@ -150,7 +168,7 @@ func (lp *logParser) openLocal() (io.ReadCloser, error) {
 		Format:             lp.parserFormat(),
 		Follow:             true,
 		TruncateOnRotation: lp.TruncateOnRotation,
-		PollInterval:       lp.Interval,
+		PollInterval:       lp.sendInterval(),
 		Offsets:            lp.offsets,
 	}
 	return fs.Open(lp.ctx)
@@ -165,7 +183,7 @@ func (lp *logParser) openRemote() (io.ReadCloser, error) {
 		Glob:         lp.remoteGlob(),
 		ChunkSize:    int64(maxChunkSize),
 		Follow:       true,
-		PollInterval: lp.Interval,
+		PollInterval: lp.sendInterval(),
 		Offsets:      lp.offsets,
 	})
 }

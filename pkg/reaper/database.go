@@ -31,7 +31,7 @@ type DbConnReaper struct {
 	lastFetch   map[string]time.Time
 	lastUptimeS int64 // last seen postmaster_uptime_s for restart detection
 
-	logParserRunning atomic.Bool // one server_log_event_counts parser at a time; cleared on exit so a failed one restarts
+	logParserRunning atomic.Bool // one log parser at a time, for both log metrics; cleared on exit so a failed one restarts
 
 	degradedMu      sync.RWMutex
 	degradedMetrics map[string]struct{} // metrics that failed individual retry; executed via fetchMetric until they recover
@@ -179,7 +179,7 @@ func (sr *DbConnReaper) Reap(ctx context.Context) {
 				continue
 			}
 			switch {
-			case name == specialMetricServerLogEventCounts:
+			case name == specialMetricServerLogEventCounts || name == specialMetricServerLogPatterns:
 				if sr.logParserRunning.CompareAndSwap(false, true) {
 					go func() {
 						defer sr.logParserRunning.Store(false)
