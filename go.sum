@@ -28,10 +28,6 @@ github.com/cpuguy83/dockercfg v0.3.2 h1:DlJTyZGBDlXqUZ2Dk2Q3xHs/FtnooJJVaad2S9GK
 github.com/cpuguy83/dockercfg v0.3.2/go.mod h1:sugsbF4//dDlL/i+S+rtpIWp+5h0BHJHfjj5/jFyUJc=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
 github.com/creack/pty v1.1.24/go.mod h1:08sCNb52WyoAwi2QDyzUCTgcvVFhUzewun7wtTfvcwE=
-github.com/cybertec-postgresql/pglogwatch v1.0.0 h1:t845rM1cQ7VSUbribSpgrKQEBu4qFayhrZMJvhegi/s=
-github.com/cybertec-postgresql/pglogwatch v1.0.0/go.mod h1:1hRm7shm5JRVU5/Abd1cXTCtcw9AwEhmTuiN1740L6s=
-github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.1 h1:R2x+R6s2y2DhWUFk4oeCgDA/zthVwXrxzG9tg8zsnjY=
-github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.1/go.mod h1:XFVE3iAspett/R1plIwkYmj/z6/jLrRulJUgfrMfHLY=
 github.com/cybertec-postgresql/pgx-migrator v1.4.0 h1:KTIUymZFWmrcDwfBlKL81+DC23NKSWCaXCDNl7EHDg8=
 github.com/cybertec-postgresql/pgx-migrator v1.4.0/go.mod h1:sZ1RBTgEaMblugMUO7rrJWh1IfNda9YFTO5cgotBNU0=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -128,6 +124,10 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJwooC2xJA040=
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
+github.com/pashagolub/pglogwatch v1.1.0 h1:638/XUHynXug3EUjHs5UukBmelklkFkKsYFNbcLv4Eo=
+github.com/pashagolub/pglogwatch v1.1.0/go.mod h1:auYsGfuAR3PrA8+lWPsgo6u0SwXCcwPrHuWaH/hizXA=
+github.com/pashagolub/pglogwatch/pgremote v1.1.0 h1:PVMj8YiilvwnFJyW9ug9sJ7TiVXrBIzd8L/4Joy/0t8=
+github.com/pashagolub/pglogwatch/pgremote v1.1.0/go.mod h1:JIO5yYR62EWXzHliKT5TzsouyBFCiMUqN+0wcP9IYJQ=
 github.com/pashagolub/pgxmock/v3 v3.4.0 h1:87VMr2q7m2+6VzXo4Tsp9kMklGlj6mMN19Hp/bp2Rwo=
 github.com/pashagolub/pgxmock/v3 v3.4.0/go.mod h1:FvCl7xqPbLLI3XohihJ1NzXnikjM3q/NWSixg4t9hrU=
 github.com/pashagolub/pgxmock/v4 v4.9.0 h1:itlO8nrVRnzkdMBXLs8pWUyyB2PC3Gku0WGIj/gGl7I=

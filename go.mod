@@ -3,14 +3,14 @@ module github.com/cybertec-postgresql/pgwatch/v7
 go 1.27.0
 
 require (
-	github.com/cybertec-postgresql/pglogwatch v1.0.0
-	github.com/cybertec-postgresql/pglogwatch/pgremote v1.0.1
 	github.com/cybertec-postgresql/pgx-migrator v1.4.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/json-iterator/go v1.1.12
+	github.com/pashagolub/pglogwatch v1.1.0
+	github.com/pashagolub/pglogwatch/pgremote v1.1.0
 	github.com/pashagolub/pgxmock/v6 v6.0.0-beta
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3

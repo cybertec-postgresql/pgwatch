@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cybertec-postgresql/pglogwatch"
-	"github.com/cybertec-postgresql/pglogwatch/pgremote"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
+	"github.com/pashagolub/pglogwatch"
+	"github.com/pashagolub/pglogwatch/pgremote"
 )
 
 // The pglogwatch-backed parsing engine: one loop over pglogwatch.Parser, fed by

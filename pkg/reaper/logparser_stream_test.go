@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cybertec-postgresql/pglogwatch"
-	"github.com/cybertec-postgresql/pglogwatch/pgremote"
 	"github.com/cybertec-postgresql/pgwatch/v7/internal/testutil"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
+	"github.com/pashagolub/pglogwatch"
+	"github.com/pashagolub/pglogwatch/pgremote"
 	pgxmock "github.com/pashagolub/pgxmock/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
