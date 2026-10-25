@@ -1194,7 +1194,20 @@
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "title": "Server Log Patterns",
+        "type": "link",
+        "icon": "dashboard",
+        "tooltip": "Records grouped by message pattern",
+        "url": "/d/server-log-patterns-prometheus?orgId=1&${dbname:queryparam}",
+        "targetBlank": false,
+        "includeVars": false,
+        "keepTime": true,
+        "asDropdown": false,
+        "tags": []
+      }
+    ],
     "liveNow": false,
     "preload": false,
     "tags": [
