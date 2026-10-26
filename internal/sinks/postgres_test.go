@@ -519,18 +519,22 @@ func TestCopyFromMeasurements_SkipMetric(t *testing.T) {
 	// copy failed mid-metric, with a sticky error
 	assert.True(t, cfm.Next())
 	cfm.err = errors.New("bad value")
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric1"})
 	assert.NoError(t, cfm.Err())
 	assert.Equal(t, pgx.Identifier{"metric2"}, cfm.MetricName())
 
 	// copy failed before reading anything
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric2"})
+	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
+
+	// copy failed after the metric was fully drained: nothing more is skipped
+	cfm.SkipMetric(pgx.Identifier{"metric2"})
 	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
 	assert.True(t, cfm.Next())
 	assert.Equal(t, 5, cfm.envelopes[cfm.envelopeIdx].Data[cfm.measurementIdx]["value"])
 
 	// failing the last metric ends the copy
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric3"})
 	assert.True(t, cfm.EOF())
 }
 
@@ -1197,32 +1201,31 @@ func TestFlush_SinkDBIsDown(t *testing.T) {
 // table name, otherwise it reads rows until the source ends or fails
 type copySink struct {
 	pgxmock.PgxPoolIface
-	rows map[string][]string // metric -> data column of copied rows
+	rows map[string]int // metric -> number of copied rows
 }
 
 func (s *copySink) CopyFrom(_ context.Context, tableName pgx.Identifier, _ []string, src pgx.CopyFromSource) (int64, error) {
 	if len(tableName) == 0 || tableName[0] == "" {
 		return 0, errors.New("zero-length delimited identifier")
 	}
-	var copied []string
+	var copied int
 	for src.Next() {
-		vals, err := src.Values()
-		if err != nil {
+		if _, err := src.Values(); err != nil {
 			return 0, err
 		}
-		copied = append(copied, vals[2].(string))
+		copied++
 	}
 	if err := src.Err(); err != nil {
 		return 0, err
 	}
-	s.rows[tableName[0]] = append(s.rows[tableName[0]], copied...)
-	return int64(len(copied)), nil
+	s.rows[tableName[0]] += copied
+	return int64(copied), nil
 }
 
 func newCopySinkWriter(t *testing.T, metricNames ...string) (*copySink, *PostgresWriter) {
 	conn, err := pgxmock.NewPool()
 	require.NoError(t, err)
-	sink := &copySink{PgxPoolIface: conn, rows: map[string][]string{}}
+	sink := &copySink{PgxPoolIface: conn, rows: map[string]int{}}
 	parts := make(map[string]ExistingPartitionInfo)
 	for _, m := range metricNames { // partitions already exist, no queries needed
 		parts[m] = ExistingPartitionInfo{StartTime: time.Unix(0, 0), EndTime: time.Now().Add(time.Hour)}
@@ -1276,7 +1279,40 @@ func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
 
 	flushWithTimeout(t, pgw, msgs)
 
-	assert.Equal(t, map[string][]string{"metric_b": {`{"epoch_ns":2000,"value":2}`}}, sink.rows)
+	assert.Equal(t, map[string]int{"metric_b": 1}, sink.rows)
+}
+
+// drainThenFailSink mimics a server-side COPY error (e.g. a 23514 check violation)
+// that pgx reports only after it has already drained the source for that metric
+type drainThenFailSink struct {
+	copySink
+	failTable string
+}
+
+func (s *drainThenFailSink) CopyFrom(ctx context.Context, tableName pgx.Identifier, cols []string, src pgx.CopyFromSource) (int64, error) {
+	if tableName[0] != s.failTable {
+		return s.copySink.CopyFrom(ctx, tableName, cols, src)
+	}
+	for src.Next() {
+		if _, err := src.Values(); err != nil {
+			return 0, err
+		}
+	}
+	return 0, errors.New("new row violates check constraint (SQLSTATE 23514)")
+}
+
+func TestFlush_ServerSideCopyErrorKeepsNextMetric(t *testing.T) {
+	inner, pgw := newCopySinkWriter(t, "metric_a", "metric_b")
+	sink := &drainThenFailSink{copySink: *inner, failTable: "metric_a"}
+	pgw.sinkDb = sink
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.Equal(t, map[string]int{"metric_b": 1}, sink.rows)
 }
 
 // TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
