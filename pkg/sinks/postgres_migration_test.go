@@ -361,3 +361,72 @@ func TestMigration_AllMigrationsRunFromEmpty(t *testing.T) {
 	// Idempotency: a second migrate must be a clean no-op.
 	r.NoError(mig.Migrate(), "second migrate after full replay must be a no-op")
 }
+
+// TestMigration_TimescaleHypertablesSurvive reproduces #1614. Migration 01409 must leave
+// TimescaleDB hypertables and their rows alone, and 01614 must replace an outdated
+// admin.ensure_partition_timescale left over from older pgwatch versions.
+func TestMigration_TimescaleHypertablesSurvive(t *testing.T) {
+	if os.Getenv("PGWATCH_TEST_SKIP_MIGRATION") != "" {
+		t.Skip("migration integration test skipped via PGWATCH_TEST_SKIP_MIGRATION")
+	}
+	r := require.New(t)
+	a := assert.New(t)
+
+	tsContainer, tsTearDown, err := testutil.SetupTimescaleContainer()
+	r.NoError(err)
+	defer tsTearDown()
+
+	connStr, err := tsContainer.ConnectionString(ctx, "sslmode=disable")
+	r.NoError(err)
+
+	conn, err := pgx.Connect(ctx, connStr)
+	r.NoError(err)
+	defer conn.Close(ctx)
+
+	// the extension must exist before bootstrap so admin.storage_schema_type becomes 'timescale'
+	_, err = conn.Exec(ctx, `CREATE EXTENSION IF NOT EXISTS timescaledb`)
+	r.NoError(err)
+
+	mig, err := NewPostgresSinkMigrator(ctx, connStr)
+	r.NoError(err)
+
+	var schemaType string
+	r.NoError(conn.QueryRow(ctx, `SELECT schema_type FROM admin.storage_schema_type`).Scan(&schemaType))
+	r.Equal("timescale", schemaType)
+
+	const metric = "ts_metric"
+	_, err = conn.Exec(ctx, `SELECT admin.ensure_partition_timescale($1)`, metric)
+	r.NoError(err)
+	_, err = conn.Exec(ctx, `INSERT INTO public.`+metric+` (time, dbname, data) VALUES
+		(now() - interval '3 days', 'db1', '{"x": 1}'::jsonb),
+		(now(), 'db1', '{"x": 2}'::jsonb)`)
+	r.NoError(err)
+
+	// replace the function with one that fails, standing in for the version installed by pgwatch v4
+	_, err = conn.Exec(ctx, `CREATE OR REPLACE FUNCTION admin.ensure_partition_timescale(metric text)
+		RETURNS void AS $$ BEGIN RAISE EXCEPTION 'outdated function'; END $$ LANGUAGE plpgsql`)
+	r.NoError(err)
+
+	simulatePreV6Migration(t, conn)
+	r.NoError(mig.Migrate())
+
+	isHypertable := func(name string) bool {
+		var ok bool
+		r.NoError(conn.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM timescaledb_information.hypertables WHERE hypertable_schema = 'public' AND hypertable_name = $1)`,
+			name).Scan(&ok))
+		return ok
+	}
+
+	a.True(isHypertable(metric), "01409 must not convert hypertables")
+	a.False(isRangePartitioned(t, conn, metric), "hypertable must not become a native partitioned table")
+	a.Equal(2, rowCount(t, conn, metric), "hypertable rows must survive the migrations")
+
+	_, err = conn.Exec(ctx, `SELECT admin.ensure_partition_timescale($1)`, "ts_metric_new")
+	r.NoError(err, "01614 must reinstall admin.ensure_partition_timescale")
+	a.True(isHypertable("ts_metric_new"))
+
+	needs, err := mig.NeedsMigration()
+	r.NoError(err)
+	a.False(needs)
+}

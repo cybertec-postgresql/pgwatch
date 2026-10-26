@@ -7,3 +7,6 @@ import "time"
 func (md *DbConn) SetLastCheckedForTesting(t time.Time) {
 	md.lastCheckedNs.Store(t.UnixNano())
 }
+
+// GetTransport exposes getTransport to tests.
+var GetTransport = getTransport

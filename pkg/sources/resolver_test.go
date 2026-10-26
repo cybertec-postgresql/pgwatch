@@ -211,6 +211,34 @@ func TestNewHostConfig_BasicParsing(t *testing.T) {
 			},
 		},
 		{
+			name: "etcd with ca_file uses https",
+			uri:  "etcd://host1:2379,host2:2379/service/demo?ca_file=/ca.crt",
+			expected: sources.HostConfig{
+				DcsType:      "etcd",
+				DcsEndpoints: []string{"https://host1:2379", "https://host2:2379"},
+				Path:         "/service/demo",
+			},
+		},
+		{
+			name: "etcd with client cert only uses https",
+			uri:  "etcd://localhost:2379/service/demo?cert_file=/cert.crt&key_file=/key.key",
+			expected: sources.HostConfig{
+				DcsType:      "etcd",
+				DcsEndpoints: []string{"https://localhost:2379"},
+				Path:         "/service/demo",
+			},
+		},
+		{
+			name:    "cert_file without key_file",
+			uri:     "etcd://localhost:2379/service?cert_file=/cert.crt",
+			wantErr: true,
+		},
+		{
+			name:    "key_file without cert_file",
+			uri:     "etcd://localhost:2379/service?ca_file=/ca.crt&key_file=/key.key",
+			wantErr: true,
+		},
+		{
 			name: "zookeeper URI",
 			uri:  "zookeeper://localhost:2181/patroni",
 			expected: sources.HostConfig{
@@ -324,9 +352,10 @@ func TestNewHostConfig_WithQueryParameters(t *testing.T) {
 		},
 		{
 			name:     "TLS params with multiple hosts",
-			uri:      "etcd://host1:2379,host2:2379/service?ca_file=/ca.crt&cert_file=/cert.crt",
+			uri:      "etcd://host1:2379,host2:2379/service?ca_file=/ca.crt&cert_file=/cert.crt&key_file=/key.key",
 			caFile:   "/ca.crt",
 			certFile: "/cert.crt",
+			keyFile:  "/key.key",
 		},
 	}
 
@@ -347,7 +376,7 @@ func TestNewHostConfig_WithAuthAndTLS(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "etcd", hc.DcsType)
-	assert.Equal(t, []string{"http://host1:2379", "http://host2:2379"}, hc.DcsEndpoints)
+	assert.Equal(t, []string{"https://host1:2379", "https://host2:2379"}, hc.DcsEndpoints)
 	assert.Equal(t, "/service/demo", hc.Path)
 	assert.Equal(t, "admin", hc.Username)
 	assert.Equal(t, "secret", hc.Password)
