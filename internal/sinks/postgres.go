@@ -192,11 +192,12 @@ func (pgw *PostgresWriter) scheduleJob(interval time.Duration, job func()) {
 	}
 }
 
+const sqlSchemaTypeIsTimescale = `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
+
 func (pgw *PostgresWriter) ReadMetricSchemaType() (err error) {
 	var isTs bool
 	pgw.metricSchema = DbStorageSchemaPostgres
-	sqlSchemaType := `SELECT schema_type = 'timescale' FROM admin.storage_schema_type`
-	if err = pgw.sinkDb.QueryRow(pgw.ctx, sqlSchemaType).Scan(&isTs); err == nil && isTs {
+	if err = pgw.sinkDb.QueryRow(pgw.ctx, sqlSchemaTypeIsTimescale).Scan(&isTs); err == nil && isTs {
 		pgw.metricSchema = DbStorageSchemaTimescale
 	}
 	return
@@ -655,6 +656,19 @@ var migrations func() migrator.Option = func() migrator.Option {
 					return err
 				}
 
+				// This guard was added after 6.0.0 shipped, which breaks the rule of never
+				// editing an applied migration. Without it the loop below converts TimescaleDB
+				// hypertables into native partitioned tables and drops all their data (#1614).
+				// Sinks that already applied 01409 never run it again, so the edit only
+				// protects sinks that have not upgraded yet.
+				var isTimescale bool
+				if err := conn.QueryRow(ctx, sqlSchemaTypeIsTimescale).Scan(&isTimescale); err != nil {
+					return err
+				}
+				if isTimescale {
+					return nil
+				}
+
 				rows, _ := conn.Query(ctx, sqlListMetricTables)
 				metricTables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 				if err != nil {
@@ -737,6 +751,14 @@ var migrations func() migrator.Option = func() migrator.Option {
 			Name: "01529 Fix ensure_partition_metric_time partitioning strategy",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, sqlMetricEnsurePartitionPostgres)
+				return err
+			},
+		},
+
+		&migrator.Migration{
+			Name: "01614 Reinstall ensure_partition_timescale",
+			Func: func(ctx context.Context, tx pgx.Tx) error {
+				_, err := tx.Exec(ctx, sqlMetricEnsurePartitionTimescale)
 				return err
 			},
 		},
