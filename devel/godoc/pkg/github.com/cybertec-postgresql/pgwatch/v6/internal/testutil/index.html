@@ -149,6 +149,9 @@ and will not be included in production binaries.
 				
 				<dd><a href="#SetupRPCServers">func SetupRPCServers() (func(), error)</a></dd>
 			
+				
+				<dd><a href="#SetupTimescaleContainer">func SetupTimescaleContainer() (*postgres.PostgresContainer, func(), error)</a></dd>
+			
 			
 				
 				<dd><a href="#BlockingBatchResults">type BlockingBatchResults</a></dd>
@@ -338,6 +341,9 @@ and will not be included in production binaries.
 				
 				<pre>const <span id="TLSServerAddress">TLSServerAddress</span> = &#34;localhost:5050&#34;</pre>
 			
+				
+				<pre>const <span id="TimescaleImage">TimescaleImage</span> = &#34;docker.io/timescale/timescaledb:2.31.0-pg17&#34;</pre>
+			
 		
 		
 			<h2 id="pkg-variables">Variables</h2>
@@ -430,7 +436,7 @@ VwAI/SWm7NlxgF6Sr5CIo2KR
 		
 			
 			
-			<h2 id="AuthInterceptor">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L102">AuthInterceptor</a>
+			<h2 id="AuthInterceptor">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L120">AuthInterceptor</a>
 				<a class="permalink" href="#AuthInterceptor">&#xb6;</a>
 				
 				
@@ -471,7 +477,7 @@ func waits for them via wg.Wait before returning.
 		
 			
 			
-			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L90">LoadServerTLSCredentials</a>
+			<h2 id="LoadServerTLSCredentials">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L108">LoadServerTLSCredentials</a>
 				<a class="permalink" href="#LoadServerTLSCredentials">&#xb6;</a>
 				
 				
@@ -501,7 +507,7 @@ test finishes via t.Cleanup.
 		
 			
 			
-			<h2 id="SetupEtcdContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L75">SetupEtcdContainer</a>
+			<h2 id="SetupEtcdContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L93">SetupEtcdContainer</a>
 				<a class="permalink" href="#SetupEtcdContainer">&#xb6;</a>
 				
 				
@@ -527,7 +533,7 @@ test finishes via t.Cleanup.
 		
 			
 			
-			<h2 id="SetupPostgresContainerWithConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L41">SetupPostgresContainerWithConfig</a>
+			<h2 id="SetupPostgresContainerWithConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L59">SetupPostgresContainerWithConfig</a>
 				<a class="permalink" href="#SetupPostgresContainerWithConfig">&#xb6;</a>
 				
 				
@@ -542,7 +548,7 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="SetupPostgresContainerWithInitScripts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L57">SetupPostgresContainerWithInitScripts</a>
+			<h2 id="SetupPostgresContainerWithInitScripts">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L75">SetupPostgresContainerWithInitScripts</a>
 				<a class="permalink" href="#SetupPostgresContainerWithInitScripts">&#xb6;</a>
 				
 				
@@ -555,13 +561,27 @@ This is useful for testing log parsing functionality with server_log_event_count
 		
 			
 			
-			<h2 id="SetupRPCServers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L115">SetupRPCServers</a>
+			<h2 id="SetupRPCServers">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L133">SetupRPCServers</a>
 				<a class="permalink" href="#SetupRPCServers">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func SetupRPCServers() (func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			
+			
+			
+
+		
+			
+			
+			<h2 id="SetupTimescaleContainer">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/setup.go.html#L40">SetupTimescaleContainer</a>
+				<a class="permalink" href="#SetupTimescaleContainer">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SetupTimescaleContainer() (*<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/">postgres</a>.<a href="https://pkg.go.dev/github.com/testcontainers/testcontainers-go/modules/postgres/#PostgresContainer">PostgresContainer</a>, func(), <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>SetupTimescaleContainer creates a PostgreSQL container with the TimescaleDB extension available.
+
 			
 			
 

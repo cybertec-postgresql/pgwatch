@@ -419,6 +419,75 @@
 <span id="L362" class="ln">   362  </span>	r.NoError(mig.Migrate(), &#34;second migrate after full replay must be a no-op&#34;)
 <span id="L363" class="ln">   363  </span>}
 <span id="L364" class="ln">   364  </span>
+<span id="L365" class="ln">   365  </span><span class="comment">// TestMigration_TimescaleHypertablesSurvive reproduces #1614. Migration 01409 must leave</span>
+<span id="L366" class="ln">   366  </span><span class="comment">// TimescaleDB hypertables and their rows alone, and 01614 must replace an outdated</span>
+<span id="L367" class="ln">   367  </span><span class="comment">// admin.ensure_partition_timescale left over from older pgwatch versions.</span>
+<span id="L368" class="ln">   368  </span>func TestMigration_TimescaleHypertablesSurvive(t *testing.T) {
+<span id="L369" class="ln">   369  </span>	if os.Getenv(&#34;PGWATCH_TEST_SKIP_MIGRATION&#34;) != &#34;&#34; {
+<span id="L370" class="ln">   370  </span>		t.Skip(&#34;migration integration test skipped via PGWATCH_TEST_SKIP_MIGRATION&#34;)
+<span id="L371" class="ln">   371  </span>	}
+<span id="L372" class="ln">   372  </span>	r := require.New(t)
+<span id="L373" class="ln">   373  </span>	a := assert.New(t)
+<span id="L374" class="ln">   374  </span>
+<span id="L375" class="ln">   375  </span>	tsContainer, tsTearDown, err := testutil.SetupTimescaleContainer()
+<span id="L376" class="ln">   376  </span>	r.NoError(err)
+<span id="L377" class="ln">   377  </span>	defer tsTearDown()
+<span id="L378" class="ln">   378  </span>
+<span id="L379" class="ln">   379  </span>	connStr, err := tsContainer.ConnectionString(ctx, &#34;sslmode=disable&#34;)
+<span id="L380" class="ln">   380  </span>	r.NoError(err)
+<span id="L381" class="ln">   381  </span>
+<span id="L382" class="ln">   382  </span>	conn, err := pgx.Connect(ctx, connStr)
+<span id="L383" class="ln">   383  </span>	r.NoError(err)
+<span id="L384" class="ln">   384  </span>	defer conn.Close(ctx)
+<span id="L385" class="ln">   385  </span>
+<span id="L386" class="ln">   386  </span>	<span class="comment">// the extension must exist before bootstrap so admin.storage_schema_type becomes &#39;timescale&#39;</span>
+<span id="L387" class="ln">   387  </span>	_, err = conn.Exec(ctx, `CREATE EXTENSION IF NOT EXISTS timescaledb`)
+<span id="L388" class="ln">   388  </span>	r.NoError(err)
+<span id="L389" class="ln">   389  </span>
+<span id="L390" class="ln">   390  </span>	mig, err := NewPostgresSinkMigrator(ctx, connStr)
+<span id="L391" class="ln">   391  </span>	r.NoError(err)
+<span id="L392" class="ln">   392  </span>
+<span id="L393" class="ln">   393  </span>	var schemaType string
+<span id="L394" class="ln">   394  </span>	r.NoError(conn.QueryRow(ctx, `SELECT schema_type FROM admin.storage_schema_type`).Scan(&amp;schemaType))
+<span id="L395" class="ln">   395  </span>	r.Equal(&#34;timescale&#34;, schemaType)
+<span id="L396" class="ln">   396  </span>
+<span id="L397" class="ln">   397  </span>	const metric = &#34;ts_metric&#34;
+<span id="L398" class="ln">   398  </span>	_, err = conn.Exec(ctx, `SELECT admin.ensure_partition_timescale($1)`, metric)
+<span id="L399" class="ln">   399  </span>	r.NoError(err)
+<span id="L400" class="ln">   400  </span>	_, err = conn.Exec(ctx, `INSERT INTO public.`+metric+` (time, dbname, data) VALUES
+<span id="L401" class="ln">   401  </span>		(now() - interval &#39;3 days&#39;, &#39;db1&#39;, &#39;{&#34;x&#34;: 1}&#39;::jsonb),
+<span id="L402" class="ln">   402  </span>		(now(), &#39;db1&#39;, &#39;{&#34;x&#34;: 2}&#39;::jsonb)`)
+<span id="L403" class="ln">   403  </span>	r.NoError(err)
+<span id="L404" class="ln">   404  </span>
+<span id="L405" class="ln">   405  </span>	<span class="comment">// replace the function with one that fails, standing in for the version installed by pgwatch v4</span>
+<span id="L406" class="ln">   406  </span>	_, err = conn.Exec(ctx, `CREATE OR REPLACE FUNCTION admin.ensure_partition_timescale(metric text)
+<span id="L407" class="ln">   407  </span>		RETURNS void AS $$ BEGIN RAISE EXCEPTION &#39;outdated function&#39;; END $$ LANGUAGE plpgsql`)
+<span id="L408" class="ln">   408  </span>	r.NoError(err)
+<span id="L409" class="ln">   409  </span>
+<span id="L410" class="ln">   410  </span>	simulatePreV6Migration(t, conn)
+<span id="L411" class="ln">   411  </span>	r.NoError(mig.Migrate())
+<span id="L412" class="ln">   412  </span>
+<span id="L413" class="ln">   413  </span>	isHypertable := func(name string) bool {
+<span id="L414" class="ln">   414  </span>		var ok bool
+<span id="L415" class="ln">   415  </span>		r.NoError(conn.QueryRow(ctx,
+<span id="L416" class="ln">   416  </span>			`SELECT EXISTS (SELECT 1 FROM timescaledb_information.hypertables WHERE hypertable_schema = &#39;public&#39; AND hypertable_name = $1)`,
+<span id="L417" class="ln">   417  </span>			name).Scan(&amp;ok))
+<span id="L418" class="ln">   418  </span>		return ok
+<span id="L419" class="ln">   419  </span>	}
+<span id="L420" class="ln">   420  </span>
+<span id="L421" class="ln">   421  </span>	a.True(isHypertable(metric), &#34;01409 must not convert hypertables&#34;)
+<span id="L422" class="ln">   422  </span>	a.False(isRangePartitioned(t, conn, metric), &#34;hypertable must not become a native partitioned table&#34;)
+<span id="L423" class="ln">   423  </span>	a.Equal(2, rowCount(t, conn, metric), &#34;hypertable rows must survive the migrations&#34;)
+<span id="L424" class="ln">   424  </span>
+<span id="L425" class="ln">   425  </span>	_, err = conn.Exec(ctx, `SELECT admin.ensure_partition_timescale($1)`, &#34;ts_metric_new&#34;)
+<span id="L426" class="ln">   426  </span>	r.NoError(err, &#34;01614 must reinstall admin.ensure_partition_timescale&#34;)
+<span id="L427" class="ln">   427  </span>	a.True(isHypertable(&#34;ts_metric_new&#34;))
+<span id="L428" class="ln">   428  </span>
+<span id="L429" class="ln">   429  </span>	needs, err := mig.NeedsMigration()
+<span id="L430" class="ln">   430  </span>	r.NoError(err)
+<span id="L431" class="ln">   431  </span>	a.False(needs)
+<span id="L432" class="ln">   432  </span>}
+<span id="L433" class="ln">   433  </span>
 </pre><p></p>
 
 <div id="footer">
