@@ -2317,6 +2317,7 @@
 <p>(etcd only) Pass DCS credentials and TLS material through the connection string if your DCS is secured:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>etcd://username:password@etcd1:2379/service/batman?ca_file=/etc/ssl/etcd-ca.pem&amp;cert_file=/etc/ssl/client.crt&amp;key_file=/etc/ssl/client.key
 </span></code></pre></div>
+<p>If any of <code>ca_file</code>, <code>cert_file</code> or <code>key_file</code> is set, pgwatch connects to every etcd endpoint over HTTPS. Otherwise it uses plain HTTP. <code>cert_file</code> and <code>key_file</code> must be set together. Without <code>ca_file</code>, pgwatch verifies the etcd server certificate against the system CA pool.</p>
 </li>
 <li>
 <p>Pick the <code>patroni</code> preset on the source. It emits the Patroni metric families listed in <a href="../reference/prometheus_source.html#presets">Reference: Prometheus source → Presets</a> at 30–60 second intervals.</p>

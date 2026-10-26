@@ -223,6 +223,9 @@ At the moment, sources definitions support two storages:
 					
 					<dd>&nbsp; &nbsp; <a href="#HostConfig.IsScopeSpecified">func (hc HostConfig) IsScopeSpecified() bool</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="#HostConfig.UsesTLS">func (hc HostConfig) UsesTLS() bool</a></dd>
+				
 			
 				
 				<dd><a href="#Kind">type Kind</a></dd>
@@ -590,13 +593,15 @@ If rawURL cannot be parsed or has no password, it is returned unchanged.
 		
 			
 			
-			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L174">getTransport</a>
+			<h2 id="getTransport">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L176">getTransport</a>
 				<a class="permalink" href="#getTransport">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func getTransport(conf <a href="#HostConfig">HostConfig</a>) (*<a href="https://pkg.go.dev/crypto/tls/">tls</a>.<a href="https://pkg.go.dev/crypto/tls/#Config">Config</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
-			
+			<p>getTransport builds the TLS config for the etcd client.
+It returns nil when no TLS parameters are set.
+
 			
 			
 
@@ -982,7 +987,7 @@ primary and all replicas but connection information is different
 		
 			
 			
-			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L282">HostConfig</a>
+			<h2 id="HostConfig">type <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L275">HostConfig</a>
 				<a class="permalink" href="#HostConfig">&#xb6;</a>
 				
 				
@@ -1010,7 +1015,7 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L299">NewHostConfig</a>
+				<h3 id="NewHostConfig">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L297">NewHostConfig</a>
 					<a class="permalink" href="#NewHostConfig">&#xb6;</a>
 					
 					
@@ -1023,13 +1028,26 @@ primary and all replicas but connection information is different
 
 			
 				
-				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L293">IsScopeSpecified</a>
+				<h3 id="HostConfig.IsScopeSpecified">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L291">IsScopeSpecified</a>
 					<a class="permalink" href="#HostConfig.IsScopeSpecified">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (hc <a href="#HostConfig">HostConfig</a>) IsScopeSpecified() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
 				
+				
+				
+				
+			
+				
+				<h3 id="HostConfig.UsesTLS">func (HostConfig) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L287">UsesTLS</a>
+					<a class="permalink" href="#HostConfig.UsesTLS">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (hc <a href="#HostConfig">HostConfig</a>) UsesTLS() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+				<p>UsesTLS reports whether any TLS parameter is set.
+
 				
 				
 				
@@ -1469,7 +1487,7 @@ unreachable source does not block the others.
 				
 			
 				
-				<h3 id="Resolver.ResolveDatabasesFromPatroni">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L368">ResolveDatabasesFromPatroni</a>
+				<h3 id="Resolver.ResolveDatabasesFromPatroni">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L374">ResolveDatabasesFromPatroni</a>
 					<a class="permalink" href="#Resolver.ResolveDatabasesFromPatroni">&#xb6;</a>
 					
 					
@@ -1481,7 +1499,7 @@ unreachable source does not block the others.
 				
 			
 				
-				<h3 id="Resolver.ResolveDatabasesFromPostgres">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L441">ResolveDatabasesFromPostgres</a>
+				<h3 id="Resolver.ResolveDatabasesFromPostgres">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L447">ResolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#Resolver.ResolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
@@ -1503,7 +1521,7 @@ resolution replaces the entry.
 				
 			
 				
-				<h3 id="Resolver.getEtcdClusterMembers">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L212">getEtcdClusterMembers</a>
+				<h3 id="Resolver.getEtcdClusterMembers">func (*Resolver) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L205">getEtcdClusterMembers</a>
 					<a class="permalink" href="#Resolver.getEtcdClusterMembers">&#xb6;</a>
 					
 					
@@ -1714,7 +1732,7 @@ will produce multiple monitored databases structs based on the discovered databa
 
 			
 				
-				<h3 id="resolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L459">resolveDatabasesFromPostgres</a>
+				<h3 id="resolveDatabasesFromPostgres">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/sources/resolver.go.html#L465">resolveDatabasesFromPostgres</a>
 					<a class="permalink" href="#resolveDatabasesFromPostgres">&#xb6;</a>
 					
 					
