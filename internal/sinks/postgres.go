@@ -69,7 +69,6 @@ type PostgresWriter struct {
 	retentionInterval       time.Duration
 	maintenanceInterval     time.Duration
 	input                   chan metrics.MeasurementEnvelope
-	lastError               chan error
 	forceRecreatePartitions bool                             // to signal override PG metrics storage cache
 	partitionMapMetric      map[string]ExistingPartitionInfo // metric = min/max bounds
 	// mu guards partitionMapMetric and serializes the DDL issued by SyncMetric.
@@ -96,7 +95,6 @@ func NewWriterFromPostgresConn(ctx context.Context, conn db.PgxPoolIface, opts *
 		ctx:                     ctx,
 		opts:                    opts,
 		input:                   make(chan metrics.MeasurementEnvelope, cacheLimit),
-		lastError:               make(chan error),
 		sinkDb:                  conn,
 		forceRecreatePartitions: false,
 		partitionMapMetric:      make(map[string]ExistingPartitionInfo),
@@ -241,12 +239,7 @@ func (pgw *PostgresWriter) Write(msg metrics.MeasurementEnvelope) error {
 	case <-time.After(highLoadTimeout):
 		// msgs dropped due to a huge load, check stdout or file for detailed log
 	}
-	select {
-	case err := <-pgw.lastError:
-		return err
-	default:
-		return nil
-	}
+	return nil
 }
 
 // poll is the main loop that reads from the input channel and flushes the data to the database
@@ -364,6 +357,25 @@ func (c *copyFromMeasurements) MetricName() (ident pgx.Identifier) {
 	return
 }
 
+// SkipMetric drops whatever is left of the given metric after a failed CopyFrom, so
+// the following CopyFrom starts on a fresh metric. Nothing is skipped when pgx had
+// already drained the metric before the server reported the error.
+func (c *copyFromMeasurements) SkipMetric(name pgx.Identifier) {
+	if len(name) == 0 {
+		return
+	}
+	for c.envelopeIdx+1 < len(c.envelopes) && c.envelopes[c.envelopeIdx+1].MetricName == name[0] {
+		c.envelopeIdx++
+	}
+	if c.envelopeIdx+1 >= len(c.envelopes) {
+		c.envelopeIdx = len(c.envelopes) // nothing left: EOF
+	} else {
+		c.measurementIdx = len(c.envelopes[c.envelopeIdx].Data)
+	}
+	c.metricName = ""
+	c.err = nil
+}
+
 // flush sends the cached measurements to the database
 func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	if len(msgs) == 0 {
@@ -407,20 +419,19 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 	}
 	pgw.forceRecreatePartitions = false
 	if err != nil {
-		select {
-		case pgw.lastError <- err:
-		default:
-		}
+		logger.Error(err)
 	}
 
 	var rowsBatched, n int64
 	t1 := time.Now()
 	cfm := newCopyFromMeasurements(msgs)
 	for !cfm.EOF() {
-		n, err = pgw.sinkDb.CopyFrom(context.Background(), cfm.MetricName(), targetColumns[:], cfm)
+		metric := cfm.MetricName()
+		n, err = pgw.sinkDb.CopyFrom(context.Background(), metric, targetColumns[:], cfm)
 		rowsBatched += n
 		if err != nil {
 			logger.Error(err)
+			cfm.SkipMetric(metric)
 			if _, ok := err.(*pgconn.ConnectError); ok {
 				logger.Errorf("Sink DB not reachable, dropping %d cached measurements", len(msgs))
 				break
@@ -433,14 +444,8 @@ func (pgw *PostgresWriter) flush(msgs []metrics.MeasurementEnvelope) {
 			}
 		}
 	}
-	diff := time.Since(t1)
-	if err == nil {
-		logger.WithField("rows", rowsBatched).WithField("elapsed", diff).Info("measurements written")
-		return
-	}
-	select {
-	case pgw.lastError <- err:
-	default:
+	if rowsBatched > 0 {
+		logger.WithField("rows", rowsBatched).WithField("elapsed", time.Since(t1)).Info("measurements written")
 	}
 }
 
