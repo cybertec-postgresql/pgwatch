@@ -521,18 +521,22 @@ func TestCopyFromMeasurements_SkipMetric(t *testing.T) {
 	// copy failed mid-metric, with a sticky error
 	assert.True(t, cfm.Next())
 	cfm.err = errors.New("bad value")
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric1"})
 	assert.NoError(t, cfm.Err())
 	assert.Equal(t, pgx.Identifier{"metric2"}, cfm.MetricName())
 
 	// copy failed before reading anything
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric2"})
+	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
+
+	// copy failed after the metric was fully drained: nothing more is skipped
+	cfm.SkipMetric(pgx.Identifier{"metric2"})
 	assert.Equal(t, pgx.Identifier{"metric3"}, cfm.MetricName())
 	assert.True(t, cfm.Next())
 	assert.Equal(t, 5, cfm.envelopes[cfm.envelopeIdx].Data[cfm.measurementIdx]["value"])
 
 	// failing the last metric ends the copy
-	cfm.SkipMetric()
+	cfm.SkipMetric(pgx.Identifier{"metric3"})
 	assert.True(t, cfm.EOF())
 }
 
@@ -1412,4 +1416,24 @@ func TestDropAllMetricTables(t *testing.T) {
 		WHERE n.nspname = 'admin' AND p.proname = 'drop_all_metric_tables'
 	`).Scan(&prokind))
 	a.Equal("p", prokind, "admin.drop_all_metric_tables must be a procedure")
+}
+
+// a server-side COPY error (e.g. a 23514 check violation) is reported only after
+// pgx has already drained the source for that metric, so the next metric is kept
+func TestFlush_ServerSideCopyErrorKeepsNextMetric(t *testing.T) {
+	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:]).
+		WillReturnError(&pgconn.PgError{Code: "23514"})
+	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
+		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
+			AddRow(time.Unix(0, 2000), "db1", jsonEq(`{"epoch_ns":2000,"value":2}`), jsonEq(`{}`))).
+		WillReturnResult(1)
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.NoError(t, conn.ExpectationsWereMet())
 }
