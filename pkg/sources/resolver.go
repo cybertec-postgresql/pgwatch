@@ -171,39 +171,32 @@ func jsonTextToStringMap(jsonText string) (map[string]string, error) {
 	return retmap, nil
 }
 
+// getTransport builds the TLS config for the etcd client.
+// It returns nil when no TLS parameters are set.
 func getTransport(conf HostConfig) (*tls.Config, error) {
-	var caCertPool *x509.CertPool
+	if !conf.UsesTLS() {
+		return nil, nil
+	}
+	tlsClientConfig := new(tls.Config)
 
-	// create valid CertPool only if the ca certificate file exists
 	if conf.CAFile != "" {
 		caCert, err := os.ReadFile(conf.CAFile)
 		if err != nil {
-			return nil, fmt.Errorf("cannot load CA file: %s", err)
+			return nil, fmt.Errorf("cannot load CA file: %w", err)
 		}
-
-		caCertPool = x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("no PEM certificates found in CA file %s", conf.CAFile)
+		}
+		tlsClientConfig.RootCAs = caCertPool
 	}
 
-	var certificates []tls.Certificate
-
-	// create valid []Certificate only if the client cert and key files exists
-	if conf.CertFile != "" && conf.KeyFile != "" {
+	if conf.CertFile != "" {
 		cert, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("cannot load client cert or key file: %s", err)
+			return nil, fmt.Errorf("cannot load client cert or key file: %w", err)
 		}
-
-		certificates = []tls.Certificate{cert}
-	}
-
-	tlsClientConfig := new(tls.Config)
-
-	if caCertPool != nil {
-		tlsClientConfig.RootCAs = caCertPool
-		if certificates != nil {
-			tlsClientConfig.Certificates = certificates
-		}
+		tlsClientConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	return tlsClientConfig, nil
@@ -290,6 +283,11 @@ type HostConfig struct {
 	KeyFile      string `yaml:"key_file"`
 }
 
+// UsesTLS reports whether any TLS parameter is set.
+func (hc HostConfig) UsesTLS() bool {
+	return hc.CAFile != "" || hc.CertFile != "" || hc.KeyFile != ""
+}
+
 func (hc HostConfig) IsScopeSpecified() bool {
 	// Path is usually "/namespace/scope"
 	// so we check if it has at least 2 slashes
@@ -339,11 +337,26 @@ func NewHostConfig(URI string) (hc HostConfig, err error) {
 		return
 	}
 
+	hc.Path = url.Path
+	hc.Username = url.User.Username()
+	hc.Password, _ = url.User.Password() // password is optional, so we ignore the error
+	hc.CAFile = url.Query().Get("ca_file")
+	hc.CertFile = url.Query().Get("cert_file")
+	hc.KeyFile = url.Query().Get("key_file")
+	if (hc.CertFile == "") != (hc.KeyFile == "") {
+		return hc, errors.New("cert_file and key_file must be set together")
+	}
+
 	switch url.Scheme {
 	case dcsTypeEtcd:
 		hc.DcsType = dcsTypeEtcd
+		// The etcd client drops the TLS config for http:// endpoints
+		endpointScheme := "http://"
+		if hc.UsesTLS() {
+			endpointScheme = "https://"
+		}
 		for _, h := range hosts {
-			hc.DcsEndpoints = append(hc.DcsEndpoints, "http://"+h)
+			hc.DcsEndpoints = append(hc.DcsEndpoints, endpointScheme+h)
 		}
 	case dcsTypeZookeeper:
 		hc.DcsType = dcsTypeZookeeper
@@ -354,13 +367,6 @@ func NewHostConfig(URI string) (hc HostConfig, err error) {
 	default:
 		return hc, fmt.Errorf("unsupported DCS type: %s", url.Scheme)
 	}
-
-	hc.Path = url.Path
-	hc.Username = url.User.Username()
-	hc.Password, _ = url.User.Password() // password is optional, so we ignore the error
-	hc.CAFile = url.Query().Get("ca_file")
-	hc.CertFile = url.Query().Get("cert_file")
-	hc.KeyFile = url.Query().Get("key_file")
 
 	return hc, nil
 }
