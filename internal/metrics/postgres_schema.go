@@ -15,10 +15,16 @@ import (
 var sqlConfigSchema string
 
 var initSchema = func(ctx context.Context, conn db.PgxIface) (err error) {
-	var exists bool
-	if exists, err = db.DoesSchemaExist(ctx, conn, "pgwatch"); err != nil || exists {
+	exists, err := db.DoesSchemaExist(ctx, conn, "pgwatch")
+	if err != nil {
+		log.GetLogger(ctx).WithError(err).Error(`cannot initialize configuration database: failed to check whether schema "pgwatch" exists`)
 		return err
 	}
+	if exists {
+		log.GetLogger(ctx).Info(`schema "pgwatch" already exists, skipping configuration database initialization`)
+		return nil
+	}
+
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
