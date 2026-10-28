@@ -143,8 +143,13 @@ func (pgw *PostgresWriter) init() (err error) {
 		}
 
 		exists, err := db.DoesSchemaExist(ctx, conn, "admin")
-		if err != nil || exists {
+		if err != nil {
+			log.GetLogger(ctx).WithError(err).Error(`cannot initialize measurements database: failed to check whether schema "admin" exists`)
 			return err
+		}
+		if exists {
+			log.GetLogger(ctx).Info(`schema "admin" already exists, skipping measurements database initialization`)
+			return nil
 		}
 		for _, sql := range metricSchemaSQLs {
 			if _, err = conn.Exec(ctx, sql); err != nil {
@@ -546,9 +551,11 @@ func NewPostgresSinkMigrator(ctx context.Context, connStr string) (db.Migrator, 
 	}
 	exists, err := db.DoesSchemaExist(ctx, conn, "admin")
 	if err != nil {
+		log.GetLogger(ctx).WithError(err).Error(`cannot initialize measurements database: failed to check whether schema "admin" exists`)
 		return nil, err
 	}
 	if exists {
+		log.GetLogger(ctx).Info(`schema "admin" already exists, skipping measurements database initialization`)
 		return pgw, nil
 	}
 	for _, sql := range metricSchemaSQLs {
