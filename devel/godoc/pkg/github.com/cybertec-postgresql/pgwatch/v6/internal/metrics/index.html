@@ -465,10 +465,16 @@
 			
 				
 				<pre>var <span id="initSchema">initSchema</span> = func(ctx <a href="https://pkg.go.dev/context/">context</a>.<a href="https://pkg.go.dev/context/#Context">Context</a>, conn <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/#PgxIface">PgxIface</a>) (err <a href="https://pkg.go.dev/builtin/#error">error</a>) {
-    var <span id="exists">exists</span> <a href="https://pkg.go.dev/builtin/#bool">bool</a>
-    if exists, err = <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/#DoesSchemaExist">DoesSchemaExist</a>(ctx, conn, &#34;pgwatch&#34;); err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> || exists {
+    exists, err := <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/">db</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/db/#DoesSchemaExist">DoesSchemaExist</a>(ctx, conn, &#34;pgwatch&#34;)
+    if err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
+        <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/log/#GetLogger">GetLogger</a>(ctx).<a href="#WithError">WithError</a>(err).<a href="#Error">Error</a>(`cannot initialize configuration database: failed to check whether schema &#34;pgwatch&#34; exists`)
         return err
     }
+    if exists {
+        <a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/log/">log</a>.<a href="/devel/godoc/pkg/github.com/cybertec-postgresql/pgwatch/v6/internal/log/#GetLogger">GetLogger</a>(ctx).<a href="#Info">Info</a>(`schema &#34;pgwatch&#34; already exists, skipping configuration database initialization`)
+        return <a href="https://pkg.go.dev/builtin/#nil">nil</a>
+    }
+
     tx, err := conn.<a href="#Begin">Begin</a>(ctx)
     if err != <a href="https://pkg.go.dev/builtin/#nil">nil</a> {
         return err
@@ -594,7 +600,7 @@
 		
 			
 			
-			<h2 id="EnsureConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L51">EnsureConfigSchema</a>
+			<h2 id="EnsureConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L57">EnsureConfigSchema</a>
 				<a class="permalink" href="#EnsureConfigSchema">&#xb6;</a>
 				
 				
@@ -622,7 +628,7 @@ does not exist yet, seeding it with the default metric and preset definitions.
 		
 			
 			
-			<h2 id="MigrateConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L56">MigrateConfigSchema</a>
+			<h2 id="MigrateConfigSchema">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L62">MigrateConfigSchema</a>
 				<a class="permalink" href="#MigrateConfigSchema">&#xb6;</a>
 				
 				
@@ -636,7 +642,7 @@ does not exist yet, seeding it with the default metric and preset definitions.
 		
 			
 			
-			<h2 id="NeedsConfigSchemaMigration">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L65">NeedsConfigSchemaMigration</a>
+			<h2 id="NeedsConfigSchemaMigration">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L71">NeedsConfigSchemaMigration</a>
 				<a class="permalink" href="#NeedsConfigSchemaMigration">&#xb6;</a>
 				
 				
@@ -1420,7 +1426,7 @@ Returns an error if any name is not found.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.Migrate">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L74">Migrate</a>
+				<h3 id="dbMetricReaderWriter.Migrate">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L80">Migrate</a>
 					<a class="permalink" href="#dbMetricReaderWriter.Migrate">&#xb6;</a>
 					
 					
@@ -1433,7 +1439,7 @@ Returns an error if any name is not found.
 				
 			
 				
-				<h3 id="dbMetricReaderWriter.NeedsMigration">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L79">NeedsMigration</a>
+				<h3 id="dbMetricReaderWriter.NeedsMigration">func (*dbMetricReaderWriter) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/metrics/postgres_schema.go.html#L85">NeedsMigration</a>
 					<a class="permalink" href="#dbMetricReaderWriter.NeedsMigration">&#xb6;</a>
 					
 					
