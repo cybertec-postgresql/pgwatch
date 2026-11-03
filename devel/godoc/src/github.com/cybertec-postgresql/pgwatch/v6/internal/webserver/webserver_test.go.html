@@ -167,41 +167,94 @@
 <span id="L110" class="ln">   110  </span>	})
 <span id="L111" class="ln">   111  </span>}
 <span id="L112" class="ln">   112  </span>
-<span id="L113" class="ln">   113  </span>func TestServer_handleTestConnect(t *testing.T) {
-<span id="L114" class="ln">   114  </span>	ts := &amp;WebUIServer{
-<span id="L115" class="ln">   115  </span>		Logger: logrus.StandardLogger(),
-<span id="L116" class="ln">   116  </span>	}
-<span id="L117" class="ln">   117  </span>
-<span id="L118" class="ln">   118  </span>	t.Run(&#34;POST&#34;, func(t *testing.T) {
-<span id="L119" class="ln">   119  </span>		r := httptest.NewRequest(http.MethodPost, &#34;/testconnect&#34;, strings.NewReader(&#34;bad connection string&#34;))
-<span id="L120" class="ln">   120  </span>		w := httptest.NewRecorder()
-<span id="L121" class="ln">   121  </span>		ts.handleTestConnect(w, r)
-<span id="L122" class="ln">   122  </span>		resp := w.Result()
-<span id="L123" class="ln">   123  </span>		defer resp.Body.Close()
-<span id="L124" class="ln">   124  </span>		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-<span id="L125" class="ln">   125  </span>	})
-<span id="L126" class="ln">   126  </span>
-<span id="L127" class="ln">   127  </span>	t.Run(&#34;failed reader&#34;, func(t *testing.T) {
-<span id="L128" class="ln">   128  </span>		r := httptest.NewRequest(http.MethodPost, &#34;/testconnect&#34;, &amp;errorReader{})
-<span id="L129" class="ln">   129  </span>		w := httptest.NewRecorder()
-<span id="L130" class="ln">   130  </span>		ts.handleTestConnect(w, r)
-<span id="L131" class="ln">   131  </span>		resp := w.Result()
-<span id="L132" class="ln">   132  </span>		defer resp.Body.Close()
-<span id="L133" class="ln">   133  </span>		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-<span id="L134" class="ln">   134  </span>	})
-<span id="L135" class="ln">   135  </span>
-<span id="L136" class="ln">   136  </span>	t.Run(&#34;GET&#34;, func(t *testing.T) {
-<span id="L137" class="ln">   137  </span>		r := httptest.NewRequest(http.MethodGet, &#34;/testconnect&#34;, nil)
-<span id="L138" class="ln">   138  </span>		w := httptest.NewRecorder()
-<span id="L139" class="ln">   139  </span>		ts.handleTestConnect(w, r)
-<span id="L140" class="ln">   140  </span>		resp := w.Result()
-<span id="L141" class="ln">   141  </span>		defer resp.Body.Close()
-<span id="L142" class="ln">   142  </span>		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-<span id="L143" class="ln">   143  </span>		body, _ := io.ReadAll(resp.Body)
-<span id="L144" class="ln">   144  </span>		assert.Equal(t, &#34;Method Not Allowed\n&#34;, string(body))
-<span id="L145" class="ln">   145  </span>	})
-<span id="L146" class="ln">   146  </span>}
-<span id="L147" class="ln">   147  </span>
+<span id="L113" class="ln">   113  </span>func TestServer_handleStaticCacheControl(t *testing.T) {
+<span id="L114" class="ln">   114  </span>	origUIFS := uiFS
+<span id="L115" class="ln">   115  </span>	defer func() { uiFS = origUIFS }()
+<span id="L116" class="ln">   116  </span>
+<span id="L117" class="ln">   117  </span>	tempFile := path.Join(t.TempDir(), &#34;file.ext&#34;)
+<span id="L118" class="ln">   118  </span>	assert.NoError(t, os.WriteFile(tempFile, []byte(&#34;content&#34;), 0644))
+<span id="L119" class="ln">   119  </span>	uiFS = mockFS{
+<span id="L120" class="ln">   120  </span>		OpenFunc: func(name string) (fs.File, error) {
+<span id="L121" class="ln">   121  </span>			switch name {
+<span id="L122" class="ln">   122  </span>			case &#34;static/app.js&#34;, &#34;assets/index-abc123.js&#34;, &#34;favicon.ico&#34;:
+<span id="L123" class="ln">   123  </span>				return os.Open(tempFile)
+<span id="L124" class="ln">   124  </span>			default:
+<span id="L125" class="ln">   125  </span>				return nil, fs.ErrNotExist
+<span id="L126" class="ln">   126  </span>			}
+<span id="L127" class="ln">   127  </span>		},
+<span id="L128" class="ln">   128  </span>	}
+<span id="L129" class="ln">   129  </span>
+<span id="L130" class="ln">   130  </span>	const (
+<span id="L131" class="ln">   131  </span>		revalidate = &#34;no-cache&#34;
+<span id="L132" class="ln">   132  </span>		immutable  = &#34;public, max-age=31536000, immutable&#34;
+<span id="L133" class="ln">   133  </span>	)
+<span id="L134" class="ln">   134  </span>	tests := []struct {
+<span id="L135" class="ln">   135  </span>		name     string
+<span id="L136" class="ln">   136  </span>		basePath string
+<span id="L137" class="ln">   137  </span>		url      string
+<span id="L138" class="ln">   138  </span>		want     string
+<span id="L139" class="ln">   139  </span>	}{
+<span id="L140" class="ln">   140  </span>		{&#34;SPA route&#34;, &#34;/&#34;, &#34;/sources&#34;, revalidate},
+<span id="L141" class="ln">   141  </span>		{&#34;root&#34;, &#34;/&#34;, &#34;/&#34;, revalidate},
+<span id="L142" class="ln">   142  </span>		{&#34;static file&#34;, &#34;/&#34;, &#34;/static/app.js&#34;, immutable},
+<span id="L143" class="ln">   143  </span>		{&#34;assets file&#34;, &#34;/&#34;, &#34;/assets/index-abc123.js&#34;, immutable},
+<span id="L144" class="ln">   144  </span>		{&#34;other root file&#34;, &#34;/&#34;, &#34;/favicon.ico&#34;, revalidate},
+<span id="L145" class="ln">   145  </span>		{&#34;SPA route with base path&#34;, &#34;/pgwatch/&#34;, &#34;/pgwatch/metrics&#34;, revalidate},
+<span id="L146" class="ln">   146  </span>		{&#34;assets file with base path&#34;, &#34;/pgwatch/&#34;, &#34;/pgwatch/assets/index-abc123.js&#34;, immutable},
+<span id="L147" class="ln">   147  </span>		{&#34;other root file with base path&#34;, &#34;/pgwatch/&#34;, &#34;/pgwatch/favicon.ico&#34;, revalidate},
+<span id="L148" class="ln">   148  </span>	}
+<span id="L149" class="ln">   149  </span>	for _, tt := range tests {
+<span id="L150" class="ln">   150  </span>		t.Run(tt.name, func(t *testing.T) {
+<span id="L151" class="ln">   151  </span>			ts := &amp;WebUIServer{
+<span id="L152" class="ln">   152  </span>				Logger:    logrus.StandardLogger(),
+<span id="L153" class="ln">   153  </span>				basePath:  tt.basePath,
+<span id="L154" class="ln">   154  </span>				indexHTML: []byte(&#34;&lt;html&gt;&lt;/html&gt;&#34;),
+<span id="L155" class="ln">   155  </span>			}
+<span id="L156" class="ln">   156  </span>			w := httptest.NewRecorder()
+<span id="L157" class="ln">   157  </span>			ts.handleStatic(w, httptest.NewRequest(http.MethodGet, tt.url, nil))
+<span id="L158" class="ln">   158  </span>			resp := w.Result()
+<span id="L159" class="ln">   159  </span>			defer resp.Body.Close()
+<span id="L160" class="ln">   160  </span>			assert.Equal(t, http.StatusOK, resp.StatusCode)
+<span id="L161" class="ln">   161  </span>			assert.Equal(t, tt.want, resp.Header.Get(&#34;Cache-Control&#34;))
+<span id="L162" class="ln">   162  </span>		})
+<span id="L163" class="ln">   163  </span>	}
+<span id="L164" class="ln">   164  </span>}
+<span id="L165" class="ln">   165  </span>
+<span id="L166" class="ln">   166  </span>func TestServer_handleTestConnect(t *testing.T) {
+<span id="L167" class="ln">   167  </span>	ts := &amp;WebUIServer{
+<span id="L168" class="ln">   168  </span>		Logger: logrus.StandardLogger(),
+<span id="L169" class="ln">   169  </span>	}
+<span id="L170" class="ln">   170  </span>
+<span id="L171" class="ln">   171  </span>	t.Run(&#34;POST&#34;, func(t *testing.T) {
+<span id="L172" class="ln">   172  </span>		r := httptest.NewRequest(http.MethodPost, &#34;/testconnect&#34;, strings.NewReader(&#34;bad connection string&#34;))
+<span id="L173" class="ln">   173  </span>		w := httptest.NewRecorder()
+<span id="L174" class="ln">   174  </span>		ts.handleTestConnect(w, r)
+<span id="L175" class="ln">   175  </span>		resp := w.Result()
+<span id="L176" class="ln">   176  </span>		defer resp.Body.Close()
+<span id="L177" class="ln">   177  </span>		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+<span id="L178" class="ln">   178  </span>	})
+<span id="L179" class="ln">   179  </span>
+<span id="L180" class="ln">   180  </span>	t.Run(&#34;failed reader&#34;, func(t *testing.T) {
+<span id="L181" class="ln">   181  </span>		r := httptest.NewRequest(http.MethodPost, &#34;/testconnect&#34;, &amp;errorReader{})
+<span id="L182" class="ln">   182  </span>		w := httptest.NewRecorder()
+<span id="L183" class="ln">   183  </span>		ts.handleTestConnect(w, r)
+<span id="L184" class="ln">   184  </span>		resp := w.Result()
+<span id="L185" class="ln">   185  </span>		defer resp.Body.Close()
+<span id="L186" class="ln">   186  </span>		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+<span id="L187" class="ln">   187  </span>	})
+<span id="L188" class="ln">   188  </span>
+<span id="L189" class="ln">   189  </span>	t.Run(&#34;GET&#34;, func(t *testing.T) {
+<span id="L190" class="ln">   190  </span>		r := httptest.NewRequest(http.MethodGet, &#34;/testconnect&#34;, nil)
+<span id="L191" class="ln">   191  </span>		w := httptest.NewRecorder()
+<span id="L192" class="ln">   192  </span>		ts.handleTestConnect(w, r)
+<span id="L193" class="ln">   193  </span>		resp := w.Result()
+<span id="L194" class="ln">   194  </span>		defer resp.Body.Close()
+<span id="L195" class="ln">   195  </span>		assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+<span id="L196" class="ln">   196  </span>		body, _ := io.ReadAll(resp.Body)
+<span id="L197" class="ln">   197  </span>		assert.Equal(t, &#34;Method Not Allowed\n&#34;, string(body))
+<span id="L198" class="ln">   198  </span>	})
+<span id="L199" class="ln">   199  </span>}
+<span id="L200" class="ln">   200  </span>
 </pre><p></p>
 
 <div id="footer">

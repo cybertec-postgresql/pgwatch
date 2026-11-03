@@ -317,6 +317,15 @@
 			
 				
 				<pre>const (
+    <span class="comment">// cacheControlRevalidate makes browsers revalidate on every request, so an</span>
+    <span class="comment">// upgrade is picked up without a hard refresh.</span>
+    <span id="cacheControlRevalidate">cacheControlRevalidate</span> = &#34;no-cache&#34;
+    <span class="comment">// cacheControlImmutable is for content-hashed files that never change.</span>
+    <span id="cacheControlImmutable">cacheControlImmutable</span> = &#34;public, max-age=31536000, immutable&#34;
+)</pre>
+			
+				
+				<pre>const (
     <span class="comment">// Time allowed to write the file to the client.</span>
     <span id="writeWait">writeWait</span> = 10 * <a href="https://pkg.go.dev/time/">time</a>.<a href="https://pkg.go.dev/time/#Second">Second</a>
 
@@ -355,7 +364,7 @@
 		
 			
 			
-			<h2 id="corsMiddleware">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L211">corsMiddleware</a>
+			<h2 id="corsMiddleware">func <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L222">corsMiddleware</a>
 				<a class="permalink" href="#corsMiddleware">&#xb6;</a>
 				
 				
@@ -851,7 +860,7 @@ Supports both single and bulk creation
 				
 			
 				
-				<h3 id="WebUIServer.handleLiveness">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L172">handleLiveness</a>
+				<h3 id="WebUIServer.handleLiveness">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L183">handleLiveness</a>
 					<a class="permalink" href="#WebUIServer.handleLiveness">&#xb6;</a>
 					
 					
@@ -927,7 +936,7 @@ and path parameters like /preset/{name}
 				
 			
 				
-				<h3 id="WebUIServer.handleReadiness">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L182">handleReadiness</a>
+				<h3 id="WebUIServer.handleReadiness">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L193">handleReadiness</a>
 					<a class="permalink" href="#WebUIServer.handleReadiness">&#xb6;</a>
 					
 					
@@ -965,7 +974,7 @@ and path parameters like /source/{name}
 				
 			
 				
-				<h3 id="WebUIServer.handleStatic">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L124">handleStatic</a>
+				<h3 id="WebUIServer.handleStatic">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L132">handleStatic</a>
 					<a class="permalink" href="#WebUIServer.handleStatic">&#xb6;</a>
 					
 					
@@ -977,7 +986,7 @@ and path parameters like /source/{name}
 				
 			
 				
-				<h3 id="WebUIServer.handleTestConnect">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L192">handleTestConnect</a>
+				<h3 id="WebUIServer.handleTestConnect">func (*WebUIServer) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/webserver/webserver.go.html#L203">handleTestConnect</a>
 					<a class="permalink" href="#WebUIServer.handleTestConnect">&#xb6;</a>
 					
 					
