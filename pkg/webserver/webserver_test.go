@@ -191,6 +191,57 @@ func TestServer_isSPARoute(t *testing.T) {
 	}
 }
 
+func TestServer_handleStaticCacheControl(t *testing.T) {
+	tempFile := path.Join(t.TempDir(), "file.ext")
+	assert.NoError(t, os.WriteFile(tempFile, []byte("content"), 0644))
+	uiFS := mockFS{
+		OpenFunc: func(name string) (fs.File, error) {
+			switch name {
+			case "static/app.js", "assets/index-abc123.js", "favicon.ico":
+				return os.Open(tempFile)
+			default:
+				return nil, fs.ErrNotExist
+			}
+		},
+	}
+
+	const (
+		revalidate = "no-cache"
+		immutable  = "public, max-age=31536000, immutable"
+	)
+	tests := []struct {
+		name     string
+		basePath string
+		url      string
+		want     string
+	}{
+		{"SPA route", "/", "/sources", revalidate},
+		{"root", "/", "/", revalidate},
+		{"static file", "/", "/static/app.js", immutable},
+		{"assets file", "/", "/assets/index-abc123.js", immutable},
+		{"other root file", "/", "/favicon.ico", revalidate},
+		{"SPA route with base path", "/pgwatch/", "/pgwatch/metrics", revalidate},
+		{"assets file with base path", "/pgwatch/", "/pgwatch/assets/index-abc123.js", immutable},
+		{"other root file with base path", "/pgwatch/", "/pgwatch/favicon.ico", revalidate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := &WebUIServer{
+				Logger:     logrus.StandardLogger(),
+				basePath:   tt.basePath,
+				indexHTML:  []byte("<html></html>"),
+				uiProvider: mockProvider{fsys: uiFS},
+			}
+			w := httptest.NewRecorder()
+			ts.handleStatic(w, httptest.NewRequest(http.MethodGet, tt.url, nil))
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, tt.want, resp.Header.Get("Cache-Control"))
+		})
+	}
+}
+
 func TestServer_handleStatic_wildcardRoutes(t *testing.T) {
 	indexHTML := []byte(`<!DOCTYPE html><html><body>index</body></html>`)
 	ts := &WebUIServer{

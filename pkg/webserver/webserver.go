@@ -183,6 +183,14 @@ func (s *WebUIServer) isSPARoute(path string) bool {
 	return slices.Contains(routes, path)
 }
 
+const (
+	// cacheControlRevalidate makes browsers revalidate on every request, so an
+	// upgrade is picked up without a hard refresh.
+	cacheControlRevalidate = "no-cache"
+	// cacheControlImmutable is for content-hashed files that never change.
+	cacheControlImmutable = "public, max-age=31536000, immutable"
+)
+
 func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -195,6 +203,7 @@ func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if s.isSPARoute(path) { // is index.html
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(s.indexHTML)))
+		w.Header().Set("Cache-Control", cacheControlRevalidate)
 		_, _ = w.Write(s.indexHTML)
 		s.Debug("index.html served")
 		return
@@ -217,8 +226,10 @@ func (s *WebUIServer) handleStatic(w http.ResponseWriter, r *http.Request) {
 	// Determine content type
 	contentType := mime.TypeByExtension(filepath.Ext(path))
 	w.Header().Set("Content-Type", contentType)
-	if strings.HasPrefix(path, "static/") {
-		w.Header().Set("Cache-Control", "public, max-age=31536000")
+	if strings.HasPrefix(path, "static/") || strings.HasPrefix(path, "assets/") {
+		w.Header().Set("Cache-Control", cacheControlImmutable)
+	} else {
+		w.Header().Set("Cache-Control", cacheControlRevalidate)
 	}
 
 	stat, err := file.Stat()
