@@ -267,6 +267,11 @@
 <span id="L210" class="ln">   210  </span>	return nil
 <span id="L211" class="ln">   211  </span>}
 <span id="L212" class="ln">   212  </span>
+<span id="L213" class="ln">   213  </span><span class="comment">// Tx returns nil; the blocking batch is not tied to a transaction.</span>
+<span id="L214" class="ln">   214  </span>func (b *BlockingBatchResults) Tx() pgx.Tx {
+<span id="L215" class="ln">   215  </span>	return nil
+<span id="L216" class="ln">   216  </span>}
+<span id="L217" class="ln">   217  </span>
 </pre><p></p>
 
 <div id="footer">

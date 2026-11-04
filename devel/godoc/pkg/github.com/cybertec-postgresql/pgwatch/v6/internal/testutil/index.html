@@ -172,6 +172,9 @@ and will not be included in production binaries.
 					
 					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.QueryRow">func (b *BlockingBatchResults) QueryRow() pgx.Row</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="#BlockingBatchResults.Tx">func (b *BlockingBatchResults) Tx() pgx.Tx</a></dd>
+				
 			
 				
 				<dd><a href="#BlockingPool">type BlockingPool</a></dd>
@@ -671,6 +674,19 @@ This is useful for testing log parsing functionality with server_log_event_count
 				</h3>
 				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) QueryRow() pgx.<a href="#Row">Row</a></pre>
 				<p>QueryRow blocks until ctx.Done() and returns a Row whose Scan returns ctx.Err().
+
+				
+				
+				
+			
+				
+				<h3 id="BlockingBatchResults.Tx">func (*BlockingBatchResults) <a href="/devel/godoc/src/github.com/cybertec-postgresql/pgwatch/v6/internal/testutil/mocks.go.html#L214">Tx</a>
+					<a class="permalink" href="#BlockingBatchResults.Tx">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (b *<a href="#BlockingBatchResults">BlockingBatchResults</a>) Tx() pgx.<a href="#Tx">Tx</a></pre>
+				<p>Tx returns nil; the blocking batch is not tied to a transaction.
 
 				
 				
