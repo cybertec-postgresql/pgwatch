@@ -87,3 +87,40 @@ jobs:
           GIT_HASH=${{ steps.meta.outputs.GIT_HASH }}
           GIT_TIME=${{ steps.meta.outputs.GIT_TIME }}
           VERSION=${{ steps.meta.outputs.VERSION }}      
+  docs:
+    name: Deploy versioned docs
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out tag
+      uses: actions/checkout@v7
+
+    - name: Configure Git
+      run: |
+        git config user.name "${GITHUB_ACTOR}"
+        git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: 3.12
+
+    - name: Install dependencies
+      run: pip install mike mkdocs-material mkdocs-glightbox
+
+    - name: Deploy docs with mike
+      run: |
+        git fetch origin gh-pages --depth=1
+        git branch gh-pages origin/gh-pages
+        major="${GITHUB_REF_NAME%%.*}"   # v6.1.0 -> v6
+        version="${major}.x"
+        # A patch release of an older major line must not take the `latest` alias.
+        newer=$(mike list --json | jq --argjson m "${major#v}" \
+          '[.[].version | capture("^v(?<n>[0-9]+)") | .n | tonumber | select(. > $m)] | length')
+        if [ "$newer" -eq 0 ]; then
+          mike deploy --push --update-aliases "$version" latest
+          mike set-default --push latest
+        else
+          mike deploy --push "$version"
+        fi
