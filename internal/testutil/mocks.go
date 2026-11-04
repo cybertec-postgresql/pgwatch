@@ -209,3 +209,8 @@ func (b *BlockingBatchResults) Err() error {
 	}
 	return nil
 }
+
+// Tx returns nil; the blocking batch is not tied to a transaction.
+func (b *BlockingBatchResults) Tx() pgx.Tx {
+	return nil
+}
