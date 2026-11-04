@@ -541,6 +541,19 @@ metrics:
         gauges:
             - '*'
         storage_name: db_size
+    extensions:
+        description: >
+            Installed extensions of the monitored database with the installed version and the
+            default version the server currently offers.
+        sqls:
+            14: |-
+                select /* pgwatch_generated */
+                  (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                  e.extname as tag_extension,
+                  e.extversion as installed_version,
+                  a.default_version
+                from pg_extension e
+                left join pg_available_extensions a on a.name = e.extname
     db_stats:
         description: >
             Retrieves key statistics from the PostgreSQL `pg_stat_database` view, providing insights into the current database's performance.
@@ -5007,6 +5020,7 @@ presets:
             datfrozenxid: 300
             db_size: 300
             db_stats: 60
+            extensions: 3600
             index_stats: 900
             instance_up: 60
             locks: 60
@@ -5042,6 +5056,7 @@ presets:
             datfrozenxid: 300
             db_size: 300
             db_stats: 60
+            extensions: 3600
             index_stats: 900
             instance_up: 60
             kpi: 120
@@ -5266,6 +5281,7 @@ presets:
             db_size: 30
             db_size_approx: 30
             db_stats: 30
+            extensions: 30
             index_hashes: 30
             index_stats: 30
             instance_up: 30
