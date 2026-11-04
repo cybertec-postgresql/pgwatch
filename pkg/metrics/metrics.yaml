@@ -550,10 +550,13 @@ metrics:
                 select /* pgwatch_generated */
                   (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
                   e.extname as tag_extension,
-                  e.extversion as installed_version,
-                  a.default_version
+                  e.extversion as tag_installed_version,
+                  a.default_version as tag_default_version,
+                  (a.default_version is not null and a.default_version <> e.extversion)::int as update_available
                 from pg_extension e
                 left join pg_available_extensions a on a.name = e.extname
+        gauges:
+            - update_available
     db_stats:
         description: >
             Retrieves key statistics from the PostgreSQL `pg_stat_database` view, providing insights into the current database's performance.

@@ -425,11 +425,11 @@ func TestExtensionsColumns(t *testing.T) {
 	if !a.True(ok, "extensions must keep SQL key 14") {
 		return
 	}
-	for _, col := range []string{"epoch_ns", "tag_extension", "installed_version"} {
+	for _, col := range []string{"epoch_ns", "tag_extension", "tag_installed_version", "tag_default_version", "update_available"} {
 		re := regexp.MustCompile(`(?i)\bAS\s+` + col + `\b`)
 		a.Regexp(re, sql, "column %q missing from the extensions select list", col)
 	}
-	a.Contains(sql, "a.default_version")
+	a.Equal([]string{"update_available"}, m.Gauges)
 }
 
 func TestBackendsColumns(t *testing.T) {

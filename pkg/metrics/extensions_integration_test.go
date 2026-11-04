@@ -30,7 +30,7 @@ func TestExtensionsMetricAgainstPostgres(t *testing.T) {
 		def             *string
 	}
 	collect := func() []row {
-		rows, err := conn.Query(ctx, "select tag_extension, installed_version, default_version from ("+sql+") x")
+		rows, err := conn.Query(ctx, "select tag_extension, tag_installed_version, tag_default_version from ("+sql+") x")
 		require.NoError(t, err)
 		defer rows.Close()
 		var out []row
