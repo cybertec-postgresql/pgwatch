@@ -223,7 +223,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -263,8 +263,25 @@
           "format": "table",
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'shared_buffers'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
-          "refId": "A"
+          "rawSql": "SELECT (data->>'value')::float8 * 8192 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'shared_buffers'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "timeFrom": "6h",
@@ -302,7 +319,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "kbytes"
         },
         "overrides": []
       },
@@ -381,7 +398,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "kbytes"
         },
         "overrides": []
       },
@@ -460,7 +477,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -500,8 +517,25 @@
           "format": "table",
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'effective_cache_size'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
-          "refId": "A"
+          "rawSql": "SELECT (data->>'value')::float8 * 8192 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'effective_cache_size'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "timeFrom": "6h",
@@ -1352,7 +1386,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 3,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -1510,7 +1544,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 3,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -2464,7 +2498,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 2,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -2483,8 +2517,7 @@
                 "color": "blue"
               }
             ]
-          },
-          "unit": "percentunit"
+          }
         },
         "overrides": []
       },
@@ -2563,7 +2596,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "mbytes"
         },
         "overrides": []
       },
@@ -2642,7 +2675,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "mbytes"
         },
         "overrides": []
       },
