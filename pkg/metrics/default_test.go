@@ -65,3 +65,13 @@ func TestDefaultMetrics_PostgresExporterBasicPreset(t *testing.T) {
 			"preset 'postgres-exporter-basic' must include metric family %q", family)
 	}
 }
+
+func TestDefaultPresetsListExtensions(t *testing.T) {
+	m := metrics.GetDefaultMetrics()
+	assert.EqualValues(t, 3600, m.PresetDefs["exhaustive"].Metrics["extensions"])
+	assert.EqualValues(t, 3600, m.PresetDefs["full"].Metrics["extensions"])
+	assert.EqualValues(t, 30, m.PresetDefs["debug"].Metrics["extensions"])
+	for _, p := range []string{"basic", "standard", "minimal"} {
+		assert.NotContains(t, m.PresetDefs[p].Metrics, "extensions", "preset %q", p)
+	}
+}

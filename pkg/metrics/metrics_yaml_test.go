@@ -30,6 +30,7 @@ var knownMetrics = []string{
 	"db_size",
 	"db_size_approx",
 	"db_stats",
+	"extensions",
 	"index_hashes",
 	"index_stats",
 	"instance_up",
@@ -411,6 +412,24 @@ var backendsColumns = []string{
 	"avg_query_seconds",
 	"max_xmin_age_tx",
 	"av_workers",
+}
+
+func TestExtensionsColumns(t *testing.T) {
+	a := assert.New(t)
+	m, ok := GetDefaultMetrics().MetricDefs["extensions"]
+	if !a.True(ok, "extensions must exist in metrics.yaml") {
+		return
+	}
+	a.False(m.IsInstanceLevel, "extensions is per database")
+	sql, ok := m.SQLs[14]
+	if !a.True(ok, "extensions must keep SQL key 14") {
+		return
+	}
+	for _, col := range []string{"epoch_ns", "tag_extension", "tag_installed_version", "tag_default_version", "update_available"} {
+		re := regexp.MustCompile(`(?i)\bAS\s+` + col + `\b`)
+		a.Regexp(re, sql, "column %q missing from the extensions select list", col)
+	}
+	a.Equal([]string{"update_available"}, m.Gauges)
 }
 
 func TestBackendsColumns(t *testing.T) {
