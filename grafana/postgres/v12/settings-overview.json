@@ -223,7 +223,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -263,8 +263,25 @@
           "format": "table",
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'shared_buffers'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
-          "refId": "A"
+          "rawSql": "SELECT (data->>'value')::float8 * 8192 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'shared_buffers'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "timeFrom": "6h",
@@ -302,7 +319,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "kbytes"
         },
         "overrides": []
       },
@@ -381,7 +398,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "kbytes"
         },
         "overrides": []
       },
@@ -460,7 +477,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -500,8 +517,25 @@
           "format": "table",
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'effective_cache_size'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
-          "refId": "A"
+          "rawSql": "SELECT (data->>'value')::float8 * 8192 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'effective_cache_size'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "timeFrom": "6h",
@@ -952,9 +986,9 @@
           "mappings": [
             {
               "options": {
-                "0": {
+                "off": {
                   "color": "dark-red",
-                  "index": 0,
+                  "index": 1,
                   "text": "off"
                 }
               },
@@ -965,7 +999,7 @@
                 "1": {
                   "color": "dark-green",
                   "index": 1,
-                  "text": "on"
+                  "text": "off"
                 }
               },
               "type": "value"
@@ -974,6 +1008,7 @@
               "options": {
                 "match": "null",
                 "result": {
+                  "index": 0,
                   "text": "N/A"
                 }
               },
@@ -984,16 +1019,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#d44a3a",
-                "value": null
-              },
-              {
-                "color": "#299c46",
-                "value": 1
+                "color": "dark-green",
+                "value": 0
               }
             ]
-          },
-          "unit": "none"
+          }
         },
         "overrides": []
       },
@@ -1016,7 +1046,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "showPercentChange": false,
@@ -1033,8 +1063,25 @@
           "format": "table",
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT (data->>'value')::float8 AS value\nFROM settings_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'wal_compression'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
-          "refId": "A"
+          "rawSql": "WITH q_ver_num AS (\n  SELECT (data->>'value')::int AS server_version_num\n  FROM settings_num\n  WHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'server_version_num'\n  AND $__timeFilter(time)\n  ORDER BY time DESC LIMIT 1\n)\nSELECT\n  CASE WHEN server_version_num >= 150000 THEN\n    ('{pglz,lz4,zstd,on,off}'::text[])[(data->>'value')::int]\n  ELSE\n    ('{off,on}'::text[])[1 + (data->>'value')::int]\n  END AS wal_compression_text\nFROM settings_num, q_ver_num\nWHERE dbname = '$dbname'\n  AND tag_data->>'name' = 'wal_compression'\n  AND $__timeFilter(time)\nORDER BY time DESC LIMIT 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "timeFrom": "6h",
@@ -1089,7 +1136,7 @@
             "steps": [
               {
                 "color": "#d44a3a",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#299c46",
@@ -1352,7 +1399,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 3,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -1510,7 +1557,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 3,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -2464,7 +2511,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 2,
+          "decimals": 1,
           "mappings": [
             {
               "options": {
@@ -2483,8 +2530,7 @@
                 "color": "blue"
               }
             ]
-          },
-          "unit": "percentunit"
+          }
         },
         "overrides": []
       },
@@ -2563,7 +2609,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "mbytes"
         },
         "overrides": []
       },
@@ -2642,7 +2688,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "mbytes"
         },
         "overrides": []
       },

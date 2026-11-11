@@ -3425,7 +3425,7 @@
           "orderByTime": "ASC",
           "policy": "default",
           "rawQuery": true,
-          "rawSql": "SELECT\n  0 as time,\n  sum(count)\nFROM (\n  SELECT\n    CASE WHEN (data->>'value')::float8 = 0 THEN 1 ELSE 0 END AS count\n  FROM settings_num\n  WHERE dbname = '$dbname'\n    AND tag_data->>'name' = 'autovacuum'\n    AND time > now() - '1d'::interval\n  ORDER BY time DESC LIMIT 1\n  UNION ALL\n  SELECT count(*)\n  FROM table_stats\n  WHERE dbname = '$dbname'\n    AND time = (SELECT max(time) FROM table_stats WHERE dbname = '$dbname')\n    AND (data->>'no_autovacuum')::int = 1\n) x",
+          "rawSql": "SELECT\n  0 AS time,\n  sum(count)\nFROM (\n  (\n    SELECT\n      CASE WHEN (data->>'value')::float8 = 0 THEN 1 ELSE 0 END AS count\n    FROM settings_num\n    WHERE dbname = '$dbname'\n      AND tag_data->>'name' = 'autovacuum'\n      AND time > now() - '1d'::interval\n    ORDER BY time DESC\n    LIMIT 1\n  )\n  UNION ALL\n  (\n    SELECT count(*)\n    FROM table_stats\n    WHERE dbname = '$dbname'\n      AND time = (SELECT max(time) FROM table_stats WHERE dbname = '$dbname')\n      AND (data->>'no_autovacuum')::int = 1\n  )\n) x",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
