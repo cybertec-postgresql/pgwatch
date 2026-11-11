@@ -16,7 +16,7 @@ services:
       # - "--web-base-path=pgwatch"
     ports:
       - "8080:8080"
-      - "9090:9090"
+      # - "9091:9090" # Uncomment for Prometheus metrics
       # - "6060:6060" # Uncomment for profiling
     volumes:
       - "../pkg/metrics/metrics.yaml:/etc/pgwatch/metrics.yml"
