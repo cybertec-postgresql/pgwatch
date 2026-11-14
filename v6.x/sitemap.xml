@@ -2,190 +2,190 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://pgwat.ch/v6.x/index.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/advanced_features.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/components.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/installation_options.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/metrics_and_presets.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/observability_stack.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/operating_in_production.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/os_helpers.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/security.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/concept/web_ui.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/developer/CODE_OF_CONDUCT.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/developer/LICENSE.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/developer/contributing.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/gallery/dashboards.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/gallery/webui.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/add_custom_metric.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/config_db_bootstrap.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/dashboarding_alerting.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/deploy_to_kubernetes.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/enable_log_parsing.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/enable_prometheus_scrape.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/harden_docker_deployment.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/implement_grpc_server.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/metrics_db_bootstrap.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/migrate_v2_to_v3.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/monitor_patroni_cluster.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/monitor_pgbouncer.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/monitor_prometheus_exporter.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/reverse_proxy.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/set_up_alerting.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/howto/yaml_configuration.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/cli_env.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/docker_images.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/docker_variables.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/managed_postgres_support.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/metric_definitions.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/ports.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/prometheus_source.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/rest.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/sinks_options.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/sizing_recommendations.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/reference/source_types.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/tutorial/custom_installation.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/tutorial/docker_installation.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/tutorial/preparing_databases.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/tutorial/quickstart.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
     <url>
          <loc>https://pgwat.ch/v6.x/tutorial/upgrading.html</loc>
-         <lastmod>2026-11-04</lastmod>
+         <lastmod>2026-11-14</lastmod>
     </url>
 </urlset>
