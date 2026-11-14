@@ -288,11 +288,12 @@ BEGIN
     -- Add new entries (dbnames that exist in metric table but not in listing)
     WITH inserted AS (
       INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric)
-      SELECT unnest(v_found_dbnames), v_metric_name
+      SELECT d, v_metric_name
+      FROM unnest(v_found_dbnames) AS d
       WHERE NOT EXISTS (
-        SELECT 1 FROM admin.all_distinct_dbname_metrics 
-        WHERE dbname = ANY(v_found_dbnames) 
-          AND metric = v_metric_name
+        SELECT 1 FROM admin.all_distinct_dbname_metrics m
+        WHERE m.dbname = d
+          AND m.metric = v_metric_name
       )
       RETURNING 1
     )
