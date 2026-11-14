@@ -778,7 +778,7 @@ func getMigrations() []any {
 		},
 
 		&migrator.Migration{
-			Name: "01642 Fix maintain_unique_sources missing dbnames",
+			Name: "01645 Fix maintain_unique_sources missing dbnames",
 			Func: func(ctx context.Context, tx pgx.Tx) error {
 				_, err := tx.Exec(ctx, sqlMetricAdminFunctions)
 				return err
