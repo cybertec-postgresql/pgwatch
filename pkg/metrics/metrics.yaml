@@ -5017,6 +5017,7 @@ presets:
             autovacuum_scores: 120
             backends: 60
             bgwriter: 60
+            blocking_locks: 60
             checkpointer: 60
             change_events: 300
             cpu_load: 60
@@ -5042,6 +5043,7 @@ presets:
             table_bloat_approx_summary_sql: 7200
             table_io_stats: 600
             table_stats: 300
+            wait_events: 60
             wal: 60
             wal_receiver: 120
             wal_size: 300
@@ -5053,6 +5055,7 @@ presets:
             autovacuum_scores: 120
             backends: 60
             bgwriter: 60
+            blocking_locks: 60
             checkpointer: 60
             change_events: 300
             cpu_load: 60
@@ -5095,6 +5098,7 @@ presets:
             table_bloat_approx_summary_sql: 7200
             table_io_stats: 600
             table_stats: 300
+            wait_events: 60
             wal: 60
             wal_receiver: 120
             wal_size: 120
@@ -5199,6 +5203,7 @@ presets:
             autovacuum_scores: 120
             archiver_pending_count: 120
             backends: 60
+            blocking_locks: 60
             bgwriter: 60
             checkpointer: 60
             change_events: 300
@@ -5223,6 +5228,7 @@ presets:
             table_bloat_approx_summary_sql: 7200
             table_io_stats: 600
             table_stats: 300
+            wait_events: 60
             wal: 60
             wal_receiver: 120
             wal_size: 300
