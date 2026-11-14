@@ -99,6 +99,7 @@ VALUES
     (2,  '01409 Switch to time-only partitioning'),
     (3,  '01474 Change drop_all_metric_tables to procedure'),
     (4,  '01529 Fix ensure_partition_metric_time partitioning strategy'),
-    (5,  '01614 Reinstall ensure_partition_timescale');
+    (5,  '01614 Reinstall ensure_partition_timescale'),
+    (6,  '01642 Fix maintain_unique_sources missing dbnames');
     -- apply new migration value to `sinkSchema` in `cmd/pgwatch/version.go` file as well
 

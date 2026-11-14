@@ -927,6 +927,53 @@ func Test_Maintain(t *testing.T) {
 		pgw.MaintainUniqueSources()
 	})
 
+	t.Run("MaintainUniqueSources_AddsOnlyMissingEntries", func(_ *testing.T) {
+		err = pgw.EnsureMetricDummy("test_metric_e")
+		r.NoError(err)
+		_, err = conn.Exec(ctx, `
+			CREATE TABLE subpartitions.test_metric_e_2024w01 PARTITION OF public.test_metric_e FOR VALUES FROM ('2024-01-01') TO ('2024-01-08');
+			INSERT INTO test_metric_e (time, dbname, data) VALUES
+				('2024-01-03', 'db1', '{}'::jsonb),
+				('2024-01-03', 'db2', '{}'::jsonb),
+				('2024-01-03', 'db3', '{}'::jsonb);
+		`)
+		r.NoError(err)
+
+		listed := func() []string {
+			rows, qerr := conn.Query(ctx, "SELECT dbname FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_e' ORDER BY dbname")
+			r.NoError(qerr)
+			names, qerr := pgx.CollectRows(rows, pgx.RowTo[string])
+			r.NoError(qerr)
+			return names
+		}
+		maintain := func() int {
+			var n int
+			r.NoError(conn.QueryRow(ctx, "SELECT admin.maintain_unique_sources()").Scan(&n))
+			return n
+		}
+
+		// one of three dbnames is listed, the other two must be added
+		_, err = conn.Exec(ctx, "INSERT INTO admin.all_distinct_dbname_metrics (dbname, metric) VALUES ('db1', 'test_metric_e')")
+		r.NoError(err)
+		a.Equal(2, maintain())
+		a.Equal([]string{"db1", "db2", "db3"}, listed())
+
+		// nothing is missing, so nothing is inserted
+		a.Equal(0, maintain())
+		a.Equal([]string{"db1", "db2", "db3"}, listed())
+
+		// no listing row at all
+		_, err = conn.Exec(ctx, "DELETE FROM admin.all_distinct_dbname_metrics WHERE metric = 'test_metric_e'")
+		r.NoError(err)
+		a.Equal(3, maintain())
+		a.Equal([]string{"db1", "db2", "db3"}, listed())
+
+		// Cleanup
+		_, err = conn.Exec(ctx, "DROP TABLE test_metric_e;")
+		r.NoError(err)
+		pgw.MaintainUniqueSources()
+	})
+
 	t.Run("MaintainUniqueSources_AdvisoryLock", func(_ *testing.T) {
 		// Create a second connection to simulate concurrent maintenance
 		conn2, err := pgx.Connect(ctx, connStr)
