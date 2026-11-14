@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"reflect"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/metrics"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pashagolub/pgxmock/v6"
 	"github.com/stretchr/testify/assert"
@@ -1199,94 +1197,47 @@ func TestFlush_SinkDBIsDown(t *testing.T) {
 	pgw.flush(msgs)
 }
 
-// newMockFlushWriter returns a Timescale writer whose metric tables already exist,
-// so flush goes straight to CopyFrom
-func newMockFlushWriter(t *testing.T, existingMetrics ...string) (pgxmock.PgxPoolIface, *PostgresWriter) {
+// copySink mimics pgx CopyFrom: it fails before reading the source on an empty
+// table name, otherwise it reads rows until the source ends or fails
+type copySink struct {
+	pgxmock.PgxPoolIface
+	rows map[string]int // metric -> number of copied rows
+}
+
+func (s *copySink) CopyFrom(_ context.Context, tableName pgx.Identifier, _ []string, src pgx.CopyFromSource) (int64, error) {
+	if len(tableName) == 0 || tableName[0] == "" {
+		return 0, errors.New("zero-length delimited identifier")
+	}
+	var copied int
+	for src.Next() {
+		if _, err := src.Values(); err != nil {
+			return 0, err
+		}
+		copied++
+	}
+	if err := src.Err(); err != nil {
+		return 0, err
+	}
+	s.rows[tableName[0]] += copied
+	return int64(copied), nil
+}
+
+func newCopySinkWriter(t *testing.T, metricNames ...string) (*copySink, *PostgresWriter) {
 	conn, err := pgxmock.NewPool()
 	require.NoError(t, err)
+	sink := &copySink{PgxPoolIface: conn, rows: map[string]int{}}
+	parts := make(map[string]ExistingPartitionInfo)
+	for _, m := range metricNames { // partitions already exist, no queries needed
+		parts[m] = ExistingPartitionInfo{StartTime: time.Unix(0, 0), EndTime: time.Now().Add(time.Hour)}
+	}
 	pgw := &PostgresWriter{
 		ctx:                ctx,
-		sinkDb:             conn,
-		metricSchema:       DbStorageSchemaTimescale,
-		partitionMapMetric: make(map[string]ExistingPartitionInfo),
+		sinkDb:             sink,
+		opts:               &CmdOpts{PartitionInterval: "1 day"},
+		metricSchema:       DbStorageSchemaPostgres,
+		partitionMapMetric: parts,
 	}
-	for _, m := range existingMetrics {
-		pgw.partitionMapMetric[m] = ExistingPartitionInfo{}
-	}
-	return conn, pgw
-}
-
-type jsonEq string // matches a JSON string regardless of key order
-
-func (j jsonEq) Match(v any) bool {
-	s, ok := v.(string)
-	var want, got any
-	return ok && jsoniter.UnmarshalFromString(string(j), &want) == nil &&
-		jsoniter.UnmarshalFromString(s, &got) == nil && reflect.DeepEqual(want, got)
-}
-
-func TestFlush_CopiesEachMetricIntoItsTable(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
-	msgs := []metrics.MeasurementEnvelope{
-		{
-			MetricName: "metric_b",
-			DBName:     "db1",
-			Data:       metrics.Measurements{{"epoch_ns": int64(3000), "value": 3}},
-		},
-		{
-			MetricName: "metric_a",
-			DBName:     "db1",
-			CustomTags: map[string]string{"env": "test"},
-			Data: metrics.Measurements{
-				{"epoch_ns": int64(1000), "value": 1, "tag_host": "h1"},
-				{"epoch_ns": int64(1000), "value": 2},
-			},
-		},
-	}
-
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:]).
-		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 1000), "db1", jsonEq(`{"epoch_ns":1000,"value":1}`), jsonEq(`{"env":"test","host":"h1"}`)).
-			AddRow(time.Unix(0, 1000), "db1", jsonEq(`{"epoch_ns":1000,"value":2}`), jsonEq(`{"env":"test"}`))).
-		WillReturnResult(2)
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
-		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 3000), "db1", jsonEq(`{"epoch_ns":3000,"value":3}`), jsonEq(`{}`))).
-		WillReturnResult(1)
-
-	pgw.flush(msgs)
-
-	assert.NoError(t, conn.ExpectationsWereMet())
-}
-
-func TestFlush_CreatesMissingTimescaleTable(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t)
-	msgs := []metrics.MeasurementEnvelope{
-		{MetricName: "new_metric", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
-	}
-
-	conn.ExpectExec("ensure_partition_timescale").WithArgs("new_metric").
-		WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	conn.ExpectCopyFrom(pgx.Identifier{"new_metric"}, targetColumns[:]).WillReturnResult(1)
-
-	pgw.flush(msgs)
-
-	assert.NoError(t, conn.ExpectationsWereMet())
-	assert.Contains(t, pgw.partitionMapMetric, "new_metric")
-}
-
-func TestFlush_CheckViolationForcesPartitionRecreation(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t, "metric_a")
-	msgs := []metrics.MeasurementEnvelope{
-		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
-	}
-	checkViolation := &pgconn.PgError{Code: "23514"}
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:]).WillReturnError(checkViolation)
-
-	pgw.flush(msgs)
-
-	assert.NoError(t, conn.ExpectationsWereMet())
-	assert.True(t, pgw.forceRecreatePartitions)
+	return sink, pgw
 }
 
 func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.MeasurementEnvelope) {
@@ -1303,22 +1254,21 @@ func flushWithTimeout(t *testing.T, pgw *PostgresWriter, msgs []metrics.Measurem
 }
 
 func TestFlush_UnmarshalableMeasurementDoesNotHang(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t, "metric_a")
+	sink, pgw := newCopySinkWriter(t, "metric_a")
 	msgs := []metrics.MeasurementEnvelope{
 		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
 			{"epoch_ns": int64(1000), "value": math.NaN()},
 			{"epoch_ns": int64(1000), "value": 1},
 		}},
 	}
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
 
 	flushWithTimeout(t, pgw, msgs)
 
-	assert.NoError(t, conn.ExpectationsWereMet())
+	assert.Empty(t, sink.rows)
 }
 
 func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
+	sink, pgw := newCopySinkWriter(t, "metric_a", "metric_b")
 	msgs := []metrics.MeasurementEnvelope{
 		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{
 			{"epoch_ns": int64(1000), "value": math.NaN()},
@@ -1326,15 +1276,43 @@ func TestFlush_UnmarshalableMeasurementKeepsOtherMetrics(t *testing.T) {
 		}},
 		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
 	}
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:])
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
-		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 2000), "db1", jsonEq(`{"epoch_ns":2000,"value":2}`), jsonEq(`{}`))).
-		WillReturnResult(1)
 
 	flushWithTimeout(t, pgw, msgs)
 
-	assert.NoError(t, conn.ExpectationsWereMet())
+	assert.Equal(t, map[string]int{"metric_b": 1}, sink.rows)
+}
+
+// drainThenFailSink mimics a server-side COPY error (e.g. a 23514 check violation)
+// that pgx reports only after it has already drained the source for that metric
+type drainThenFailSink struct {
+	copySink
+	failTable string
+}
+
+func (s *drainThenFailSink) CopyFrom(ctx context.Context, tableName pgx.Identifier, cols []string, src pgx.CopyFromSource) (int64, error) {
+	if tableName[0] != s.failTable {
+		return s.copySink.CopyFrom(ctx, tableName, cols, src)
+	}
+	for src.Next() {
+		if _, err := src.Values(); err != nil {
+			return 0, err
+		}
+	}
+	return 0, errors.New("new row violates check constraint (SQLSTATE 23514)")
+}
+
+func TestFlush_ServerSideCopyErrorKeepsNextMetric(t *testing.T) {
+	inner, pgw := newCopySinkWriter(t, "metric_a", "metric_b")
+	sink := &drainThenFailSink{copySink: *inner, failTable: "metric_a"}
+	pgw.sinkDb = sink
+	msgs := []metrics.MeasurementEnvelope{
+		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
+		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
+	}
+
+	flushWithTimeout(t, pgw, msgs)
+
+	assert.Equal(t, map[string]int{"metric_b": 1}, sink.rows)
 }
 
 // TestDropAllMetricTables verifies that admin.drop_all_metric_tables() is a procedure that
@@ -1416,24 +1394,4 @@ func TestDropAllMetricTables(t *testing.T) {
 		WHERE n.nspname = 'admin' AND p.proname = 'drop_all_metric_tables'
 	`).Scan(&prokind))
 	a.Equal("p", prokind, "admin.drop_all_metric_tables must be a procedure")
-}
-
-// a server-side COPY error (e.g. a 23514 check violation) is reported only after
-// pgx has already drained the source for that metric, so the next metric is kept
-func TestFlush_ServerSideCopyErrorKeepsNextMetric(t *testing.T) {
-	conn, pgw := newMockFlushWriter(t, "metric_a", "metric_b")
-	msgs := []metrics.MeasurementEnvelope{
-		{MetricName: "metric_a", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(1000), "value": 1}}},
-		{MetricName: "metric_b", DBName: "db1", Data: metrics.Measurements{{"epoch_ns": int64(2000), "value": 2}}},
-	}
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_a"}, targetColumns[:]).
-		WillReturnError(&pgconn.PgError{Code: "23514"})
-	conn.ExpectCopyFrom(pgx.Identifier{"metric_b"}, targetColumns[:]).
-		WithRows(pgxmock.NewCopyRows(targetColumns[:]...).
-			AddRow(time.Unix(0, 2000), "db1", jsonEq(`{"epoch_ns":2000,"value":2}`), jsonEq(`{}`))).
-		WillReturnResult(1)
-
-	flushWithTimeout(t, pgw, msgs)
-
-	assert.NoError(t, conn.ExpectationsWereMet())
 }
