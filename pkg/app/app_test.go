@@ -49,6 +49,30 @@ func TestNew(t *testing.T) {
 	})
 }
 
+type stubReaper struct{ srcs sources.SourceConns }
+
+func (s *stubReaper) Reap(context.Context)                  {}
+func (s *stubReaper) Ready() bool                           { return true }
+func (s *stubReaper) MonitoredSources() sources.SourceConns { return s.srcs }
+
+func TestApp_MonitoredSources(t *testing.T) {
+	t.Run("nil without a reaper", func(t *testing.T) {
+		assert.Nil(t, (&App{}).MonitoredSources())
+	})
+
+	t.Run("delegates to the reaper", func(t *testing.T) {
+		srcs := sources.SourceConns{sources.NewDbConn(sources.Source{Name: "db"})}
+		a := &App{reaper: &stubReaper{srcs: srcs}}
+		assert.Equal(t, srcs, a.MonitoredSources())
+	})
+
+	t.Run("nil before Run", func(t *testing.T) {
+		a, err := New(context.Background(), newOptions(t))
+		require.NoError(t, err)
+		assert.Nil(t, a.MonitoredSources())
+	})
+}
+
 func TestRun_ExitCodes(t *testing.T) {
 	t.Run("ExitCodeConfigError on config readers", func(t *testing.T) {
 		opts := newOptions(t)

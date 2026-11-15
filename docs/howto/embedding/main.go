@@ -1,7 +1,7 @@
 // Command embedding is a minimal pgwatch embedder: it runs the real collector
 // and REST API, serves its own web UI instead of the React one, adds an
-// authenticated /hello endpoint next to the REST API, and contributes its own
-// command-line flag group.
+// authenticated /hello endpoint next to the REST API, lists the monitored
+// sources on /sources, and contributes its own command-line flag group.
 //
 // Run it exactly like pgwatch itself, for example:
 //
@@ -14,6 +14,7 @@
 //	TOKEN=$(curl -s -XPOST -d '{"user":"admin","password":"secret"}' \
 //	    http://localhost:8080/login)
 //	curl -H "Token: $TOKEN" http://localhost:8080/hello
+//	curl -H "Token: $TOKEN" http://localhost:8080/sources
 package main
 
 import (
@@ -73,6 +74,7 @@ type acmeOptions struct {
 // flags. An extension can add subcommands here too.
 type acmeExtension struct {
 	opts acmeOptions
+	app  *app.App // set in main once app.New returns; read by /sources
 }
 
 func (e *acmeExtension) Register(parser *flags.Parser, _ *cmdopts.Options) error {
@@ -88,6 +90,25 @@ func (e *acmeExtension) routes(mux *http.ServeMux, basePath string, auth func(ht
 	mux.Handle(basePath+"hello", auth(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintln(w, e.opts.Greeting)
 	}))
+	mux.Handle(basePath+"sources", auth(e.sources))
+}
+
+// sources lists the sources the reaper monitors, read from memory. Version
+// and role are only meaningful for a Postgres source whose runtime info was
+// fetched at least once, that is Version > 0.
+func (e *acmeExtension) sources(w http.ResponseWriter, _ *http.Request) {
+	for _, c := range e.app.MonitoredSources() {
+		s := c.GetSource()
+		if !c.IsPostgresSource() {
+			fmt.Fprintf(w, "%s\t%s\n", s.Name, s.Kind)
+			continue
+		}
+		if ri := c.GetRuntimeInfo(); ri.Version > 0 {
+			fmt.Fprintf(w, "%s\t%s\tversion=%d\tin_recovery=%t\n", s.Name, s.Kind, ri.Version, ri.IsInRecovery)
+			continue
+		}
+		fmt.Fprintf(w, "%s\t%s\tnot fetched yet\n", s.Name, s.Kind)
+	}
 }
 
 func main() {
@@ -118,6 +139,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(int(cmdopts.ExitCodeConfigError))
 	}
+	ext.app = a
 
 	os.Exit(a.Run(ctx))
 }

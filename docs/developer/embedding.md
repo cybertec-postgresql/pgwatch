@@ -149,6 +149,32 @@ callstack.
 `App` also exposes `Options()`, `Logger()` and `Ready()` if you need to reach
 into the running instance.
 
+## Reading the monitored sources
+
+`App.MonitoredSources()` returns the sources the reaper monitors, as of its
+last refresh, discovered databases included. It reads them from memory, so
+there is no query to the sink. It returns nil before the first refresh. The
+slice is a copy, but its entries are the live connections:
+
+```go
+for _, c := range a.MonitoredSources() {
+    s := c.GetSource() // Name, Kind, CustomTags, ...
+    if !c.IsPostgresSource() {
+        continue
+    }
+    if ri := c.GetRuntimeInfo(); ri.Version > 0 {
+        // ri.Version, ri.IsInRecovery, ri.Extensions, ...
+    }
+}
+```
+
+`GetRuntimeInfo()` returns a copy, with its maps cloned. Trust it only when
+`IsPostgresSource()` is true and `Version > 0`. A pgbouncer or pgpool
+connection holds the pooler's version, and a source whose info was never
+fetched holds zeros, so `IsInRecovery` is `false` in both cases. The reaper
+refreshes the info at most every 5 minutes, so after a failover the role can
+be up to 5 minutes late.
+
 ## Skipping the UI entirely
 
 If your embedder only wants the REST API, pass `--web-disable=ui` and no

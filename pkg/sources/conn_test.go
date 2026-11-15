@@ -732,6 +732,38 @@ func TestPromConn_FetchRuntimeInfo(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDbConn_GetRuntimeInfo(t *testing.T) {
+	md := sources.NewDbConn(sources.Source{Name: "db"})
+	md.Version = 170000
+	md.IsInRecovery = true
+	md.Extensions["pg_stat_statements"] = 11000
+	md.ChangeState["table_hashes"] = map[string]string{"public.t": "abc"}
+
+	ri := md.GetRuntimeInfo()
+	assert.Equal(t, 170000, ri.Version)
+	assert.True(t, ri.IsInRecovery)
+	assert.Equal(t, 11000, ri.Extensions["pg_stat_statements"])
+	assert.Equal(t, "abc", ri.ChangeState["table_hashes"]["public.t"])
+
+	ri.Extensions["pg_stat_statements"] = 1
+	ri.Extensions["new_ext"] = 1
+	ri.ChangeState["table_hashes"]["public.t"] = "changed"
+	ri.ChangeState["new_category"] = map[string]string{}
+	assert.Equal(t, map[string]int{"pg_stat_statements": 11000}, md.Extensions)
+	assert.Equal(t, map[string]map[string]string{"table_hashes": {"public.t": "abc"}}, md.ChangeState)
+
+	t.Run("nil maps stay nil", func(t *testing.T) {
+		ri := (&sources.DbConn{}).GetRuntimeInfo()
+		assert.Nil(t, ri.Extensions)
+		assert.Nil(t, ri.ChangeState)
+	})
+}
+
+func TestPromConn_GetRuntimeInfo(t *testing.T) {
+	pc := sources.NewPromConn(sources.Source{})
+	assert.Equal(t, sources.RuntimeInfo{}, pc.GetRuntimeInfo())
+}
+
 func TestRedactURL(t *testing.T) {
 	tests := []struct {
 		name  string
