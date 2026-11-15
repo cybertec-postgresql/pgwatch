@@ -45,6 +45,11 @@ type SourceConn interface {
 	Ping(ctx context.Context) error
 	IsPostgresSource() bool
 	GetSource() Source
+	// GetRuntimeInfo returns a copy of the runtime info that FetchRuntimeInfo
+	// collected. Trust it only when IsPostgresSource() is true and Version > 0:
+	// a pooler connection holds the pooler's version, and an info never
+	// fetched holds zeros, so IsInRecovery is false in both cases.
+	GetRuntimeInfo() RuntimeInfo
 	GetMetricInterval(name string) time.Duration
 	SetMetricIntervals(main, standby metrics.MetricIntervals)
 	Close()
@@ -106,6 +111,22 @@ func NewSourceConn(s Source) SourceConn {
 // GetSource returns a copy of the embedded Source.
 func (md *DbConn) GetSource() Source {
 	return md.Source
+}
+
+// GetRuntimeInfo returns a copy of the runtime info read under the read lock.
+// The maps of the copy are cloned, so changing them leaves the connection as is.
+func (md *DbConn) GetRuntimeInfo() RuntimeInfo {
+	md.RLock()
+	defer md.RUnlock()
+	ri := md.RuntimeInfo
+	ri.Extensions = maps.Clone(md.Extensions)
+	if md.ChangeState != nil {
+		ri.ChangeState = make(map[string]map[string]string, len(md.ChangeState))
+		for k, v := range md.ChangeState {
+			ri.ChangeState[k] = maps.Clone(v)
+		}
+	}
+	return ri
 }
 
 // ActiveMetrics returns a snapshot of the currently active metric intervals
@@ -611,6 +632,7 @@ func (pc *PromConn) Ping(ctx context.Context) error {
 
 func (pc *PromConn) IsPostgresSource() bool                           { return false }
 func (pc *PromConn) GetSource() Source                                { return pc.Source }
+func (pc *PromConn) GetRuntimeInfo() RuntimeInfo                      { return RuntimeInfo{} }
 func (pc *PromConn) FetchRuntimeInfo(_ context.Context, _ bool) error { return nil }
 func (pc *PromConn) Close()                                           {}
 

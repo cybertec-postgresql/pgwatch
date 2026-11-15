@@ -43,6 +43,9 @@ type Readier interface {
 type ReadierReaper interface {
 	Reaper
 	Readier
+	// MonitoredSources returns a copy of the sources of the last LoadSources,
+	// discovered databases included. It returns nil before the first one.
+	MonitoredSources() sources.SourceConns
 }
 
 // reaper is the struct that responsible for fetching metrics measurements from the sources and storing them to the sinks
@@ -58,6 +61,9 @@ type reaper struct {
 	// while per-source workers run, so they need no lock.
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
+	// published holds a copy of monitoredSources for readers on other
+	// goroutines. Only LoadSources stores it.
+	published atomic.Pointer[sources.SourceConns]
 	// mu guards srcRecoveryStatus and cancelFuncs.
 	mu                sync.Mutex
 	srcRecoveryStatus map[string]bool
@@ -365,6 +371,7 @@ func (r *reaper) LoadSources(ctx context.Context) (err error) {
 	if DoesEmergencyTriggerfileExist(r.Metrics.EmergencyPauseTriggerfile) {
 		r.logger.Warningf("Emergency pause triggerfile detected at %s, ignoring currently configured DBs", r.Metrics.EmergencyPauseTriggerfile)
 		r.monitoredSources = make(sources.SourceConns, 0)
+		r.publishSources()
 		return nil
 	}
 
@@ -399,7 +406,26 @@ func (r *reaper) LoadSources(ctx context.Context) (err error) {
 		r.ShutdownWorker(ctx, md.GetSource().Name)
 	}
 	r.monitoredSources = newSrcs
+	r.publishSources()
 	r.logger.WithField("sources", len(r.monitoredSources)).Info("sources refreshed")
+	return nil
+}
+
+// publishSources stores a copy of monitoredSources for MonitoredSources.
+func (r *reaper) publishSources() {
+	srcs := slices.Clone(r.monitoredSources)
+	if srcs == nil {
+		srcs = make(sources.SourceConns, 0)
+	}
+	r.published.Store(&srcs)
+}
+
+// MonitoredSources returns a copy of the sources of the last LoadSources. It
+// returns nil before the first LoadSources. It is safe to call from any goroutine.
+func (r *reaper) MonitoredSources() sources.SourceConns {
+	if p := r.published.Load(); p != nil {
+		return slices.Clone(*p)
+	}
 	return nil
 }
 

@@ -24,6 +24,120 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestReaper_MonitoredSources(t *testing.T) {
+	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+	source1 := sources.Source{Name: "Source 1", IsEnabled: true, Kind: sources.SourcePostgres}
+	source2 := sources.Source{Name: "Source 2", IsEnabled: true, Kind: sources.SourcePostgres}
+	reader := &testutil.MockSourcesReaderWriter{
+		GetSourcesFunc: func() (sources.Sources, error) {
+			return sources.Sources{source1, source2}, nil
+		},
+	}
+
+	t.Run("nil before the first LoadSources", func(t *testing.T) {
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		assert.Nil(t, r.MonitoredSources())
+	})
+
+	t.Run("same names as monitoredSources after LoadSources", func(t *testing.T) {
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		require.NoError(t, r.LoadSources(ctx))
+		got := r.MonitoredSources()
+		require.Len(t, got, len(r.monitoredSources))
+		for i, c := range got {
+			assert.Equal(t, r.monitoredSources[i].GetSource().Name, c.GetSource().Name)
+			assert.Same(t, r.monitoredSources[i], c, "entries are the live connections")
+		}
+	})
+
+	t.Run("empty after the emergency pause", func(t *testing.T) {
+		pausefile := filepath.Join(t.TempDir(), "pausefile")
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader, Metrics: metrics.CmdOpts{EmergencyPauseTriggerfile: pausefile}})
+		require.NoError(t, r.LoadSources(ctx))
+		require.Len(t, r.MonitoredSources(), 2)
+		require.NoError(t, os.WriteFile(pausefile, []byte("foo"), 0644))
+		require.NoError(t, r.LoadSources(ctx))
+		got := r.MonitoredSources()
+		assert.NotNil(t, got)
+		assert.Empty(t, got)
+	})
+
+	t.Run("unchanged after a failed LoadSources", func(t *testing.T) {
+		fail := false
+		reader := &testutil.MockSourcesReaderWriter{
+			GetSourcesFunc: func() (sources.Sources, error) {
+				if fail {
+					return nil, assert.AnError
+				}
+				return sources.Sources{source1}, nil
+			},
+		}
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		require.NoError(t, r.LoadSources(ctx))
+		fail = true
+		require.Error(t, r.LoadSources(ctx))
+		assert.Len(t, r.MonitoredSources(), 1)
+	})
+
+	t.Run("the result is a copy", func(t *testing.T) {
+		r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+		require.NoError(t, r.LoadSources(ctx))
+		got := r.MonitoredSources()
+		got[0] = nil
+		assert.NotNil(t, r.monitoredSources[0])
+		assert.NotNil(t, r.MonitoredSources()[0])
+	})
+}
+
+func TestReaper_MonitoredSourcesRace(t *testing.T) {
+	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
+	var n atomic.Int32
+	reader := &testutil.MockSourcesReaderWriter{
+		GetSourcesFunc: func() (sources.Sources, error) {
+			// alternate the list so that LoadSources replaces monitoredSources
+			if n.Add(1)%2 == 0 {
+				return sources.Sources{{Name: "a", IsEnabled: true, Kind: sources.SourcePostgres}}, nil
+			}
+			return sources.Sources{
+				{Name: "a", IsEnabled: true, Kind: sources.SourcePostgres},
+				{Name: "b", IsEnabled: true, Kind: sources.SourcePostgres},
+			}, nil
+		},
+	}
+	r := newReaper(ctx, &cmdopts.Options{SourcesReaderWriter: reader})
+
+	var wg sync.WaitGroup
+	done := make(chan struct{})
+	wg.Go(func() {
+		defer close(done)
+		for range 200 {
+			assert.NoError(t, r.LoadSources(ctx))
+			for _, c := range r.monitoredSources {
+				if md, ok := c.(*sources.DbConn); ok {
+					md.Lock()
+					md.Version++
+					md.Extensions["x"]++
+					md.Unlock()
+				}
+			}
+		}
+	})
+	wg.Go(func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+			}
+			for _, c := range r.MonitoredSources() {
+				_ = c.GetSource().Name
+				_ = c.GetRuntimeInfo().Version
+			}
+		}
+	})
+	wg.Wait()
+}
+
 func TestReaper_LoadSources(t *testing.T) {
 	ctx := log.WithLogger(context.Background(), log.NewNoopLogger())
 
@@ -1040,6 +1154,7 @@ func (f *fakeSourceConn) Connect(ctx context.Context, _ sources.CmdOpts) error {
 func (f *fakeSourceConn) Ping(context.Context) error                      { return nil }
 func (f *fakeSourceConn) IsPostgresSource() bool                          { return false }
 func (f *fakeSourceConn) GetSource() sources.Source                       { return f.src }
+func (f *fakeSourceConn) GetRuntimeInfo() sources.RuntimeInfo             { return sources.RuntimeInfo{} }
 func (f *fakeSourceConn) GetMetricInterval(string) time.Duration          { return 0 }
 func (f *fakeSourceConn) SetMetricIntervals(_, _ metrics.MetricIntervals) {}
 func (f *fakeSourceConn) Close()                                          {}

@@ -13,6 +13,7 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/cmdopts"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/log"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/reaper"
+	"github.com/cybertec-postgresql/pgwatch/v7/pkg/sources"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/ui"
 	"github.com/cybertec-postgresql/pgwatch/v7/pkg/webserver"
 )
@@ -63,6 +64,17 @@ func (a *App) Logger() log.Logger { return a.logger }
 // Ready reports whether the collector is up and gathering measurements. It
 // backs the /readiness endpoint.
 func (a *App) Ready() bool { return a.reaper != nil && a.reaper.Ready() }
+
+// MonitoredSources returns a copy of the sources the reaper monitors, as of its
+// last refresh, discovered databases included. Entries are the live
+// connections; GetSource and GetRuntimeInfo return their plain values. It
+// returns nil before the first refresh and while the reaper does not exist.
+func (a *App) MonitoredSources() sources.SourceConns {
+	if a.reaper == nil {
+		return nil
+	}
+	return a.reaper.MonitoredSources()
+}
 
 // Run executes the startup sequence — configuration readers, sink writer,
 // schema check, web server — and then blocks in the measurement gathering loop
