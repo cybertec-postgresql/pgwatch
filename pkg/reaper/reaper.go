@@ -58,11 +58,13 @@ type reaper struct {
 	// monitoredSources and prevLoopMonitoredDBs are only mutated in the
 	// sequential sections of the main loop (LoadSources before the sweep and
 	// CleanupRemovedWorkers after the sweep barrier); they are read-only
-	// while per-source workers run, so they need no lock.
+	// while per-source workers run, so they need no lock. monitoredSources is
+	// only ever replaced by a new slice, never changed in place, because
+	// published shares its backing array.
 	monitoredSources     sources.SourceConns
 	prevLoopMonitoredDBs sources.SourceConns
-	// published holds a copy of monitoredSources for readers on other
-	// goroutines. Only LoadSources stores it.
+	// published points at the monitoredSources of the last LoadSources, for
+	// readers on other goroutines. Only LoadSources stores it.
 	published atomic.Pointer[sources.SourceConns]
 	// mu guards srcRecoveryStatus and cancelFuncs.
 	mu                sync.Mutex
@@ -411,9 +413,10 @@ func (r *reaper) LoadSources(ctx context.Context) (err error) {
 	return nil
 }
 
-// publishSources stores a copy of monitoredSources for MonitoredSources.
+// publishSources shares monitoredSources with MonitoredSources. A nil list is
+// stored as an empty one, so that nil keeps meaning "never loaded".
 func (r *reaper) publishSources() {
-	srcs := slices.Clone(r.monitoredSources)
+	srcs := r.monitoredSources
 	if srcs == nil {
 		srcs = make(sources.SourceConns, 0)
 	}

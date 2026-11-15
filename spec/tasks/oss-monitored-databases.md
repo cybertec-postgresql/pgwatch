@@ -87,9 +87,9 @@ Write these first. They must fail until T013 to T016 land.
 ### Implementation for user story 2
 
 - [x] T011 [US2] Add a field `published atomic.Pointer[sources.SourceConns]` to `reaper` in `pkg/reaper/reaper.go:49`. Its comment says that only `LoadSources` writes it and that readers on other goroutines load it. Covers CON-001.
-- [x] T012 [US2] Add a private method `publishSources()` in `pkg/reaper/reaper.go` that stores `slices.Clone(r.monitoredSources)` in `r.published`. Depends on T011.
+- [x] T012 [US2] Add a private method `publishSources()` in `pkg/reaper/reaper.go` that stores a pointer to `r.monitoredSources` in `r.published`, with nil stored as an empty slice. It does not clone: `monitoredSources` is replaced, never changed in place (CON-001). Depends on T011.
 - [x] T013 [US2] Call `publishSources()` in `LoadSources` (`pkg/reaper/reaper.go:364`) on both successful exits: after the emergency pause reset at `:367` and after `r.monitoredSources = newSrcs` at `:401`. The error return from `GetSources()` does not publish. Depends on T012. Covers REQ-002.
-- [x] T014 [US2] Add `func (r *reaper) MonitoredSources() sources.SourceConns` in `pkg/reaper/reaper.go`. It returns `*p` when `r.published.Load()` is not nil, and nil otherwise. Depends on T011. Covers REQ-002.
+- [x] T014 [US2] Add `func (r *reaper) MonitoredSources() sources.SourceConns` in `pkg/reaper/reaper.go`. It returns `slices.Clone(*p)` when `r.published.Load()` is not nil, and nil otherwise, so a caller that changes the result cannot change what other readers see. Depends on T011. Covers REQ-002.
 - [x] T015 [US2] Add `MonitoredSources() sources.SourceConns` to `ReadierReaper` in `pkg/reaper/reaper.go:43`. The type `reaper` stays private. Depends on T014. Covers REQ-003 and CON-002.
 - [x] T016 [US2] Add `func (a *App) MonitoredSources() sources.SourceConns` in `pkg/app/app.go`, next to `Ready()` at `:65`. It returns nil while `a.reaper` is nil and delegates otherwise. Depends on T015. Covers REQ-003.
 

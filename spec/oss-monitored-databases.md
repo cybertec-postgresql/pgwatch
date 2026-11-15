@@ -53,14 +53,16 @@ the reaper collects; exporting the type `reaper`.
 - **REQ-001**: `SourceConn` gains `GetRuntimeInfo() RuntimeInfo`, the twin of `GetSource()`.
   `DbConn` returns a copy read under its `RLock`, with `Extensions` and `ChangeState` cloned.
   `PromConn` returns `RuntimeInfo{}`.
-- **REQ-002**: The reaper publishes a copy of `monitoredSources` at the end of every
-  `LoadSources`, the emergency pause included, and returns it from `MonitoredSources()
-  sources.SourceConns`. Before the first `LoadSources` it returns nil.
+- **REQ-002**: The reaper publishes `monitoredSources` at the end of every successful
+  `LoadSources`, the emergency pause included. `MonitoredSources() sources.SourceConns` returns
+  a copy of the published slice on each call. Before the first `LoadSources` it returns nil.
+  A failed `GetSources()` leaves the published slice as it was.
 - **REQ-003**: `ReadierReaper` gains `MonitoredSources()`. `App` gains
   `MonitoredSources() sources.SourceConns`, which delegates as `App.Ready()` does and returns nil
   while the reaper does not exist.
-- **CON-001**: The main loop keeps reading `monitoredSources` without a lock. The published copy
-  is a separate slice behind an `atomic.Pointer`.
+- **CON-001**: The main loop keeps reading `monitoredSources` without a lock. Readers on other
+  goroutines load the same slice through an `atomic.Pointer`, so the reaper replaces
+  `monitoredSources` and never changes it in place.
 - **CON-002**: No new exported type. The type `reaper` stays private.
 - **GUD-001**: A caller trusts `RuntimeInfo` only when `IsPostgresSource()` is true and
   `Version > 0`. A pooler `DbConn` holds the pooler's version, and an info never fetched holds
