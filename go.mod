@@ -12,7 +12,7 @@ require (
 	github.com/pashagolub/pgxmock/v6 v6.0.0-beta2
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
-	github.com/prometheus/common v0.73.1
+	github.com/prometheus/common v0.74.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sethvargo/go-retry v0.5.0
 	github.com/shirou/gopsutil/v4 v4.26.10
