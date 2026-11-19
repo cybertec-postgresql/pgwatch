@@ -336,6 +336,71 @@ func TestPromReaper_ScrapeAllMode(t *testing.T) {
 	})
 }
 
+// only families listed in the source's metrics (e.g. expanded from preset_metrics)
+// are forwarded; unlisted families such as go_* and process_* are dropped.
+// In scrape-all mode (no metrics configured) every family is still forwarded.
+func TestPromReaper_PresetFiltering(t *testing.T) {
+	const body = "# HELP go_goroutines Number of goroutines that currently exist.\n# TYPE go_goroutines gauge\ngo_goroutines 12\n" +
+		"# HELP process_open_fds Number of open file descriptors.\n# TYPE process_open_fds gauge\nprocess_open_fds 9\n" +
+		"# HELP namedprocess_namegroup_num_procs Number of processes in this group.\n# TYPE namedprocess_namegroup_num_procs gauge\nnamedprocess_namegroup_num_procs{groupname=\"postgres\"} 42\n" +
+		"# HELP namedprocess_namegroup_memory_bytes Bytes of memory in use.\n# TYPE namedprocess_namegroup_memory_bytes gauge\nnamedprocess_namegroup_memory_bytes{groupname=\"postgres\",memtype=\"resident\"} 1.2e+08\n" +
+		"# HELP namedprocess_namegroup_cpu_seconds_total CPU usage in seconds.\n# TYPE namedprocess_namegroup_cpu_seconds_total counter\nnamedprocess_namegroup_cpu_seconds_total{groupname=\"postgres\",mode=\"user\"} 123.4\n"
+
+	testCases := []struct {
+		name    string
+		metrics metrics.MetricIntervals
+		want    []string
+	}{
+		{
+			name: "preset filters unlisted families",
+			metrics: metrics.MetricIntervals{
+				"namedprocess_namegroup_num_procs":    60,
+				"namedprocess_namegroup_memory_bytes": 60,
+				"metric_absent_from_exporter":         60, // listed but not exposed: must not break anything
+			},
+			want: []string{"namedprocess_namegroup_num_procs", "namedprocess_namegroup_memory_bytes"},
+		},
+		{
+			name:    "scrape-all mode forwards everything",
+			metrics: nil,
+			want: []string{
+				"go_goroutines",
+				"process_open_fds",
+				"namedprocess_namegroup_num_procs",
+				"namedprocess_namegroup_memory_bytes",
+				"namedprocess_namegroup_cpu_seconds_total",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				r := &reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}
+				md := fakePromConn(t, sources.Source{
+					Name:    "preset_filter_test",
+					Kind:    sources.SourcePrometheus,
+					Metrics: tc.metrics,
+				}, func(*http.Request) (*http.Response, error) {
+					return fakeResponse(body), nil
+				})
+
+				ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+				go NewPromSourceReaper(r, md).Reap(ctx)
+
+				// first tick (t=0) completes, then the loop blocks on the next interval
+				synctest.Wait()
+
+				var got []string
+				for len(r.measurementCh) > 0 {
+					got = append(got, (<-r.measurementCh).MetricName)
+				}
+				assert.ElementsMatch(t, tc.want, got)
+			})
+		})
+	}
+}
+
 // per-family emit gating — families respect their configured intervals.
 func TestPromReaper_EmitGating(t *testing.T) {
 	const gatingBody = "# HELP fast Fast metric\n# TYPE fast gauge\nfast 1\n" +
