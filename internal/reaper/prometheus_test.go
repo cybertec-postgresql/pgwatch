@@ -361,6 +361,14 @@ func TestPromReaper_PresetFiltering(t *testing.T) {
 			want: []string{"namedprocess_namegroup_num_procs", "namedprocess_namegroup_memory_bytes"},
 		},
 		{
+			name: "zero interval disables family",
+			metrics: metrics.MetricIntervals{
+				"namedprocess_namegroup_num_procs":    60,
+				"namedprocess_namegroup_memory_bytes": 0,
+			},
+			want: []string{"namedprocess_namegroup_num_procs"},
+		},
+		{
 			name:    "scrape-all mode forwards everything",
 			metrics: nil,
 			want: []string{
