@@ -393,101 +393,174 @@
 <span id="L336" class="ln">   336  </span>	})
 <span id="L337" class="ln">   337  </span>}
 <span id="L338" class="ln">   338  </span>
-<span id="L339" class="ln">   339  </span><span class="comment">// per-family emit gating — families respect their configured intervals.</span>
-<span id="L340" class="ln">   340  </span>func TestPromReaper_EmitGating(t *testing.T) {
-<span id="L341" class="ln">   341  </span>	const gatingBody = &#34;# HELP fast Fast metric\n# TYPE fast gauge\nfast 1\n&#34; +
-<span id="L342" class="ln">   342  </span>		&#34;# HELP slow Slow metric\n# TYPE slow gauge\nslow 2\n&#34;
-<span id="L343" class="ln">   343  </span>
-<span id="L344" class="ln">   344  </span>	synctest.Test(t, func(t *testing.T) {
-<span id="L345" class="ln">   345  </span>		const fastEnv = &#34;fast&#34;
-<span id="L346" class="ln">   346  </span>		const slowEnv = &#34;slow&#34;
-<span id="L347" class="ln">   347  </span>
-<span id="L348" class="ln">   348  </span>		r := &amp;reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}
-<span id="L349" class="ln">   349  </span>		md := fakePromConn(t, sources.Source{
-<span id="L350" class="ln">   350  </span>			Name:    &#34;gating_test&#34;,
-<span id="L351" class="ln">   351  </span>			Kind:    sources.SourcePrometheus,
-<span id="L352" class="ln">   352  </span>			Metrics: metrics.MetricIntervals{&#34;fast&#34;: 30, &#34;slow&#34;: 60},
-<span id="L353" class="ln">   353  </span>		}, func(*http.Request) (*http.Response, error) {
-<span id="L354" class="ln">   354  </span>			return fakeResponse(gatingBody), nil
-<span id="L355" class="ln">   355  </span>		})
-<span id="L356" class="ln">   356  </span>
-<span id="L357" class="ln">   357  </span>		pr := NewPromSourceReaper(r, md)
-<span id="L358" class="ln">   358  </span>
-<span id="L359" class="ln">   359  </span>		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
-<span id="L360" class="ln">   360  </span>		go pr.Reap(ctx)
-<span id="L361" class="ln">   361  </span>
-<span id="L362" class="ln">   362  </span>		drain := func() []string {
-<span id="L363" class="ln">   363  </span>			var names []string
-<span id="L364" class="ln">   364  </span>			for {
-<span id="L365" class="ln">   365  </span>				select {
-<span id="L366" class="ln">   366  </span>				case env := &lt;-r.measurementCh:
-<span id="L367" class="ln">   367  </span>					names = append(names, env.MetricName)
-<span id="L368" class="ln">   368  </span>				default:
-<span id="L369" class="ln">   369  </span>					return names
-<span id="L370" class="ln">   370  </span>				}
-<span id="L371" class="ln">   371  </span>			}
-<span id="L372" class="ln">   372  </span>		}
-<span id="L373" class="ln">   373  </span>
-<span id="L374" class="ln">   374  </span>		<span class="comment">// Tick 1 (t=0): lastEmitted is zero for both → both emitted.</span>
-<span id="L375" class="ln">   375  </span>		synctest.Wait()
-<span id="L376" class="ln">   376  </span>		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), &#34;tick 1: both families emitted&#34;)
-<span id="L377" class="ln">   377  </span>
-<span id="L378" class="ln">   378  </span>		<span class="comment">// Tick 2 (t=30s): only &#34;fast&#34; due; &#34;slow&#34; still within its 60 s window.</span>
-<span id="L379" class="ln">   379  </span>		time.Sleep(30*time.Second + time.Millisecond)
-<span id="L380" class="ln">   380  </span>		synctest.Wait()
-<span id="L381" class="ln">   381  </span>		assert.ElementsMatch(t, []string{fastEnv}, drain(), &#34;tick 2: only &#39;fast&#39; emitted&#34;)
-<span id="L382" class="ln">   382  </span>
-<span id="L383" class="ln">   383  </span>		<span class="comment">// Tick 3 (t=60s): both families now due.</span>
-<span id="L384" class="ln">   384  </span>		time.Sleep(30 * time.Second)
-<span id="L385" class="ln">   385  </span>		synctest.Wait()
-<span id="L386" class="ln">   386  </span>		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), &#34;tick 3: both families emitted again&#34;)
-<span id="L387" class="ln">   387  </span>	})
-<span id="L388" class="ln">   388  </span>}
-<span id="L389" class="ln">   389  </span>
-<span id="L390" class="ln">   390  </span><span class="comment">// ScrapeAll error path — warning is logged, lastEmitted stays unchanged, loop continues.</span>
-<span id="L391" class="ln">   391  </span>func TestPromReaper_ScrapeError(t *testing.T) {
-<span id="L392" class="ln">   392  </span>	synctest.Test(t, func(t *testing.T) {
-<span id="L393" class="ln">   393  </span>		ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
-<span id="L394" class="ln">   394  </span>		r := &amp;reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 10)}
+<span id="L339" class="ln">   339  </span><span class="comment">// only families listed in the source&#39;s metrics (e.g. expanded from preset_metrics)</span>
+<span id="L340" class="ln">   340  </span><span class="comment">// are forwarded; unlisted families such as go_* and process_* are dropped.</span>
+<span id="L341" class="ln">   341  </span><span class="comment">// In scrape-all mode (no metrics configured) every family is still forwarded.</span>
+<span id="L342" class="ln">   342  </span>func TestPromReaper_PresetFiltering(t *testing.T) {
+<span id="L343" class="ln">   343  </span>	const body = &#34;# HELP go_goroutines Number of goroutines that currently exist.\n# TYPE go_goroutines gauge\ngo_goroutines 12\n&#34; +
+<span id="L344" class="ln">   344  </span>		&#34;# HELP process_open_fds Number of open file descriptors.\n# TYPE process_open_fds gauge\nprocess_open_fds 9\n&#34; +
+<span id="L345" class="ln">   345  </span>		&#34;# HELP namedprocess_namegroup_num_procs Number of processes in this group.\n# TYPE namedprocess_namegroup_num_procs gauge\nnamedprocess_namegroup_num_procs{groupname=\&#34;postgres\&#34;} 42\n&#34; +
+<span id="L346" class="ln">   346  </span>		&#34;# HELP namedprocess_namegroup_memory_bytes Bytes of memory in use.\n# TYPE namedprocess_namegroup_memory_bytes gauge\nnamedprocess_namegroup_memory_bytes{groupname=\&#34;postgres\&#34;,memtype=\&#34;resident\&#34;} 1.2e+08\n&#34; +
+<span id="L347" class="ln">   347  </span>		&#34;# HELP namedprocess_namegroup_cpu_seconds_total CPU usage in seconds.\n# TYPE namedprocess_namegroup_cpu_seconds_total counter\nnamedprocess_namegroup_cpu_seconds_total{groupname=\&#34;postgres\&#34;,mode=\&#34;user\&#34;} 123.4\n&#34;
+<span id="L348" class="ln">   348  </span>
+<span id="L349" class="ln">   349  </span>	testCases := []struct {
+<span id="L350" class="ln">   350  </span>		name    string
+<span id="L351" class="ln">   351  </span>		metrics metrics.MetricIntervals
+<span id="L352" class="ln">   352  </span>		want    []string
+<span id="L353" class="ln">   353  </span>	}{
+<span id="L354" class="ln">   354  </span>		{
+<span id="L355" class="ln">   355  </span>			name: &#34;preset filters unlisted families&#34;,
+<span id="L356" class="ln">   356  </span>			metrics: metrics.MetricIntervals{
+<span id="L357" class="ln">   357  </span>				&#34;namedprocess_namegroup_num_procs&#34;:    60,
+<span id="L358" class="ln">   358  </span>				&#34;namedprocess_namegroup_memory_bytes&#34;: 60,
+<span id="L359" class="ln">   359  </span>				&#34;metric_absent_from_exporter&#34;:         60, <span class="comment">// listed but not exposed: must not break anything</span>
+<span id="L360" class="ln">   360  </span>			},
+<span id="L361" class="ln">   361  </span>			want: []string{&#34;namedprocess_namegroup_num_procs&#34;, &#34;namedprocess_namegroup_memory_bytes&#34;},
+<span id="L362" class="ln">   362  </span>		},
+<span id="L363" class="ln">   363  </span>		{
+<span id="L364" class="ln">   364  </span>			name: &#34;zero interval disables family&#34;,
+<span id="L365" class="ln">   365  </span>			metrics: metrics.MetricIntervals{
+<span id="L366" class="ln">   366  </span>				&#34;namedprocess_namegroup_num_procs&#34;:    60,
+<span id="L367" class="ln">   367  </span>				&#34;namedprocess_namegroup_memory_bytes&#34;: 0,
+<span id="L368" class="ln">   368  </span>			},
+<span id="L369" class="ln">   369  </span>			want: []string{&#34;namedprocess_namegroup_num_procs&#34;},
+<span id="L370" class="ln">   370  </span>		},
+<span id="L371" class="ln">   371  </span>		{
+<span id="L372" class="ln">   372  </span>			name:    &#34;scrape-all mode forwards everything&#34;,
+<span id="L373" class="ln">   373  </span>			metrics: nil,
+<span id="L374" class="ln">   374  </span>			want: []string{
+<span id="L375" class="ln">   375  </span>				&#34;go_goroutines&#34;,
+<span id="L376" class="ln">   376  </span>				&#34;process_open_fds&#34;,
+<span id="L377" class="ln">   377  </span>				&#34;namedprocess_namegroup_num_procs&#34;,
+<span id="L378" class="ln">   378  </span>				&#34;namedprocess_namegroup_memory_bytes&#34;,
+<span id="L379" class="ln">   379  </span>				&#34;namedprocess_namegroup_cpu_seconds_total&#34;,
+<span id="L380" class="ln">   380  </span>			},
+<span id="L381" class="ln">   381  </span>		},
+<span id="L382" class="ln">   382  </span>	}
+<span id="L383" class="ln">   383  </span>
+<span id="L384" class="ln">   384  </span>	for _, tc := range testCases {
+<span id="L385" class="ln">   385  </span>		t.Run(tc.name, func(t *testing.T) {
+<span id="L386" class="ln">   386  </span>			synctest.Test(t, func(t *testing.T) {
+<span id="L387" class="ln">   387  </span>				r := &amp;reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}
+<span id="L388" class="ln">   388  </span>				md := fakePromConn(t, sources.Source{
+<span id="L389" class="ln">   389  </span>					Name:    &#34;preset_filter_test&#34;,
+<span id="L390" class="ln">   390  </span>					Kind:    sources.SourcePrometheus,
+<span id="L391" class="ln">   391  </span>					Metrics: tc.metrics,
+<span id="L392" class="ln">   392  </span>				}, func(*http.Request) (*http.Response, error) {
+<span id="L393" class="ln">   393  </span>					return fakeResponse(body), nil
+<span id="L394" class="ln">   394  </span>				})
 <span id="L395" class="ln">   395  </span>
-<span id="L396" class="ln">   396  </span>		md := fakePromConn(t, sources.Source{
-<span id="L397" class="ln">   397  </span>			Name:    &#34;error_test&#34;,
-<span id="L398" class="ln">   398  </span>			Kind:    sources.SourcePrometheus,
-<span id="L399" class="ln">   399  </span>			Metrics: metrics.MetricIntervals{&#34;some_metric&#34;: 30},
-<span id="L400" class="ln">   400  </span>		}, func(*http.Request) (*http.Response, error) {
-<span id="L401" class="ln">   401  </span>			return &amp;http.Response{
-<span id="L402" class="ln">   402  </span>				StatusCode: http.StatusInternalServerError,
-<span id="L403" class="ln">   403  </span>				Status:     &#34;500 Internal Server Error&#34;,
-<span id="L404" class="ln">   404  </span>				Body:       io.NopCloser(strings.NewReader(&#34;&#34;)),
-<span id="L405" class="ln">   405  </span>			}, nil
-<span id="L406" class="ln">   406  </span>		})
-<span id="L407" class="ln">   407  </span>
-<span id="L408" class="ln">   408  </span>		pr := NewPromSourceReaper(r, md)
-<span id="L409" class="ln">   409  </span>		go pr.Reap(ctx)
-<span id="L410" class="ln">   410  </span>
-<span id="L411" class="ln">   411  </span>		<span class="comment">// First (failing) scrape completes; goroutine blocks on time.After.</span>
-<span id="L412" class="ln">   412  </span>		synctest.Wait()
-<span id="L413" class="ln">   413  </span>		assert.Contains(t, out.String(), &#34;scrape failed&#34;, &#34;warning should be logged on scrape error&#34;)
-<span id="L414" class="ln">   414  </span>		assert.Empty(t, pr.lastEmitted, &#34;lastEmitted should not change on error&#34;)
-<span id="L415" class="ln">   415  </span>
-<span id="L416" class="ln">   416  </span>		select {
-<span id="L417" class="ln">   417  </span>		case &lt;-r.measurementCh:
-<span id="L418" class="ln">   418  </span>			t.Error(&#34;no measurements should be dispatched on scrape error&#34;)
-<span id="L419" class="ln">   419  </span>		default:
-<span id="L420" class="ln">   420  </span>		}
-<span id="L421" class="ln">   421  </span>
-<span id="L422" class="ln">   422  </span>		<span class="comment">// Advance to trigger a second tick; loop must continue without crashing.</span>
-<span id="L423" class="ln">   423  </span>		time.Sleep(30*time.Second + time.Millisecond)
-<span id="L424" class="ln">   424  </span>		synctest.Wait()
-<span id="L425" class="ln">   425  </span>
-<span id="L426" class="ln">   426  </span>		select {
-<span id="L427" class="ln">   427  </span>		case &lt;-r.measurementCh:
-<span id="L428" class="ln">   428  </span>			t.Error(&#34;no measurements should be dispatched on repeated scrape errors&#34;)
-<span id="L429" class="ln">   429  </span>		default:
-<span id="L430" class="ln">   430  </span>		}
-<span id="L431" class="ln">   431  </span>	})
-<span id="L432" class="ln">   432  </span>}
-<span id="L433" class="ln">   433  </span>
+<span id="L396" class="ln">   396  </span>				ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L397" class="ln">   397  </span>				go NewPromSourceReaper(r, md).Reap(ctx)
+<span id="L398" class="ln">   398  </span>
+<span id="L399" class="ln">   399  </span>				<span class="comment">// first tick (t=0) completes, then the loop blocks on the next interval</span>
+<span id="L400" class="ln">   400  </span>				synctest.Wait()
+<span id="L401" class="ln">   401  </span>
+<span id="L402" class="ln">   402  </span>				var got []string
+<span id="L403" class="ln">   403  </span>				for len(r.measurementCh) &gt; 0 {
+<span id="L404" class="ln">   404  </span>					got = append(got, (&lt;-r.measurementCh).MetricName)
+<span id="L405" class="ln">   405  </span>				}
+<span id="L406" class="ln">   406  </span>				assert.ElementsMatch(t, tc.want, got)
+<span id="L407" class="ln">   407  </span>			})
+<span id="L408" class="ln">   408  </span>		})
+<span id="L409" class="ln">   409  </span>	}
+<span id="L410" class="ln">   410  </span>}
+<span id="L411" class="ln">   411  </span>
+<span id="L412" class="ln">   412  </span><span class="comment">// per-family emit gating — families respect their configured intervals.</span>
+<span id="L413" class="ln">   413  </span>func TestPromReaper_EmitGating(t *testing.T) {
+<span id="L414" class="ln">   414  </span>	const gatingBody = &#34;# HELP fast Fast metric\n# TYPE fast gauge\nfast 1\n&#34; +
+<span id="L415" class="ln">   415  </span>		&#34;# HELP slow Slow metric\n# TYPE slow gauge\nslow 2\n&#34;
+<span id="L416" class="ln">   416  </span>
+<span id="L417" class="ln">   417  </span>	synctest.Test(t, func(t *testing.T) {
+<span id="L418" class="ln">   418  </span>		const fastEnv = &#34;fast&#34;
+<span id="L419" class="ln">   419  </span>		const slowEnv = &#34;slow&#34;
+<span id="L420" class="ln">   420  </span>
+<span id="L421" class="ln">   421  </span>		r := &amp;reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 100)}
+<span id="L422" class="ln">   422  </span>		md := fakePromConn(t, sources.Source{
+<span id="L423" class="ln">   423  </span>			Name:    &#34;gating_test&#34;,
+<span id="L424" class="ln">   424  </span>			Kind:    sources.SourcePrometheus,
+<span id="L425" class="ln">   425  </span>			Metrics: metrics.MetricIntervals{&#34;fast&#34;: 30, &#34;slow&#34;: 60},
+<span id="L426" class="ln">   426  </span>		}, func(*http.Request) (*http.Response, error) {
+<span id="L427" class="ln">   427  </span>			return fakeResponse(gatingBody), nil
+<span id="L428" class="ln">   428  </span>		})
+<span id="L429" class="ln">   429  </span>
+<span id="L430" class="ln">   430  </span>		pr := NewPromSourceReaper(r, md)
+<span id="L431" class="ln">   431  </span>
+<span id="L432" class="ln">   432  </span>		ctx := log.WithLogger(t.Context(), log.NewNoopLogger())
+<span id="L433" class="ln">   433  </span>		go pr.Reap(ctx)
+<span id="L434" class="ln">   434  </span>
+<span id="L435" class="ln">   435  </span>		drain := func() []string {
+<span id="L436" class="ln">   436  </span>			var names []string
+<span id="L437" class="ln">   437  </span>			for {
+<span id="L438" class="ln">   438  </span>				select {
+<span id="L439" class="ln">   439  </span>				case env := &lt;-r.measurementCh:
+<span id="L440" class="ln">   440  </span>					names = append(names, env.MetricName)
+<span id="L441" class="ln">   441  </span>				default:
+<span id="L442" class="ln">   442  </span>					return names
+<span id="L443" class="ln">   443  </span>				}
+<span id="L444" class="ln">   444  </span>			}
+<span id="L445" class="ln">   445  </span>		}
+<span id="L446" class="ln">   446  </span>
+<span id="L447" class="ln">   447  </span>		<span class="comment">// Tick 1 (t=0): lastEmitted is zero for both → both emitted.</span>
+<span id="L448" class="ln">   448  </span>		synctest.Wait()
+<span id="L449" class="ln">   449  </span>		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), &#34;tick 1: both families emitted&#34;)
+<span id="L450" class="ln">   450  </span>
+<span id="L451" class="ln">   451  </span>		<span class="comment">// Tick 2 (t=30s): only &#34;fast&#34; due; &#34;slow&#34; still within its 60 s window.</span>
+<span id="L452" class="ln">   452  </span>		time.Sleep(30*time.Second + time.Millisecond)
+<span id="L453" class="ln">   453  </span>		synctest.Wait()
+<span id="L454" class="ln">   454  </span>		assert.ElementsMatch(t, []string{fastEnv}, drain(), &#34;tick 2: only &#39;fast&#39; emitted&#34;)
+<span id="L455" class="ln">   455  </span>
+<span id="L456" class="ln">   456  </span>		<span class="comment">// Tick 3 (t=60s): both families now due.</span>
+<span id="L457" class="ln">   457  </span>		time.Sleep(30 * time.Second)
+<span id="L458" class="ln">   458  </span>		synctest.Wait()
+<span id="L459" class="ln">   459  </span>		assert.ElementsMatch(t, []string{fastEnv, slowEnv}, drain(), &#34;tick 3: both families emitted again&#34;)
+<span id="L460" class="ln">   460  </span>	})
+<span id="L461" class="ln">   461  </span>}
+<span id="L462" class="ln">   462  </span>
+<span id="L463" class="ln">   463  </span><span class="comment">// ScrapeAll error path — warning is logged, lastEmitted stays unchanged, loop continues.</span>
+<span id="L464" class="ln">   464  </span>func TestPromReaper_ScrapeError(t *testing.T) {
+<span id="L465" class="ln">   465  </span>	synctest.Test(t, func(t *testing.T) {
+<span id="L466" class="ln">   466  </span>		ctx, out := testutil.NewTestLogger(t, logrus.WarnLevel)
+<span id="L467" class="ln">   467  </span>		r := &amp;reaper{measurementCh: make(chan metrics.MeasurementEnvelope, 10)}
+<span id="L468" class="ln">   468  </span>
+<span id="L469" class="ln">   469  </span>		md := fakePromConn(t, sources.Source{
+<span id="L470" class="ln">   470  </span>			Name:    &#34;error_test&#34;,
+<span id="L471" class="ln">   471  </span>			Kind:    sources.SourcePrometheus,
+<span id="L472" class="ln">   472  </span>			Metrics: metrics.MetricIntervals{&#34;some_metric&#34;: 30},
+<span id="L473" class="ln">   473  </span>		}, func(*http.Request) (*http.Response, error) {
+<span id="L474" class="ln">   474  </span>			return &amp;http.Response{
+<span id="L475" class="ln">   475  </span>				StatusCode: http.StatusInternalServerError,
+<span id="L476" class="ln">   476  </span>				Status:     &#34;500 Internal Server Error&#34;,
+<span id="L477" class="ln">   477  </span>				Body:       io.NopCloser(strings.NewReader(&#34;&#34;)),
+<span id="L478" class="ln">   478  </span>			}, nil
+<span id="L479" class="ln">   479  </span>		})
+<span id="L480" class="ln">   480  </span>
+<span id="L481" class="ln">   481  </span>		pr := NewPromSourceReaper(r, md)
+<span id="L482" class="ln">   482  </span>		go pr.Reap(ctx)
+<span id="L483" class="ln">   483  </span>
+<span id="L484" class="ln">   484  </span>		<span class="comment">// First (failing) scrape completes; goroutine blocks on time.After.</span>
+<span id="L485" class="ln">   485  </span>		synctest.Wait()
+<span id="L486" class="ln">   486  </span>		assert.Contains(t, out.String(), &#34;scrape failed&#34;, &#34;warning should be logged on scrape error&#34;)
+<span id="L487" class="ln">   487  </span>		assert.Empty(t, pr.lastEmitted, &#34;lastEmitted should not change on error&#34;)
+<span id="L488" class="ln">   488  </span>
+<span id="L489" class="ln">   489  </span>		select {
+<span id="L490" class="ln">   490  </span>		case &lt;-r.measurementCh:
+<span id="L491" class="ln">   491  </span>			t.Error(&#34;no measurements should be dispatched on scrape error&#34;)
+<span id="L492" class="ln">   492  </span>		default:
+<span id="L493" class="ln">   493  </span>		}
+<span id="L494" class="ln">   494  </span>
+<span id="L495" class="ln">   495  </span>		<span class="comment">// Advance to trigger a second tick; loop must continue without crashing.</span>
+<span id="L496" class="ln">   496  </span>		time.Sleep(30*time.Second + time.Millisecond)
+<span id="L497" class="ln">   497  </span>		synctest.Wait()
+<span id="L498" class="ln">   498  </span>
+<span id="L499" class="ln">   499  </span>		select {
+<span id="L500" class="ln">   500  </span>		case &lt;-r.measurementCh:
+<span id="L501" class="ln">   501  </span>			t.Error(&#34;no measurements should be dispatched on repeated scrape errors&#34;)
+<span id="L502" class="ln">   502  </span>		default:
+<span id="L503" class="ln">   503  </span>		}
+<span id="L504" class="ln">   504  </span>	})
+<span id="L505" class="ln">   505  </span>}
+<span id="L506" class="ln">   506  </span>
 </pre><p></p>
 
 <div id="footer">

@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -2332,7 +2332,7 @@
 </span></code></pre></div>
 </li>
 <li>
-<p>Wait for the next refresh cycle (default 120 seconds). pgwatch fetches the URL, parses the Prometheus text, and forwards every metric family to the sink.</p>
+<p>Wait for the next refresh cycle (default 120 seconds). pgwatch fetches the URL, parses the Prometheus text, and forwards the metric families from the source's preset or <code>custom_metrics</code> to the sink. Other families on the endpoint (e.g. <code>go_*</code>, <code>process_*</code>) are dropped.</p>
 </li>
 </ol>
 <h2 id="verifying-metrics-are-flowing">Verifying metrics are flowing</h2>

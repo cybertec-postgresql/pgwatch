@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -2383,7 +2383,7 @@
 
   <h1>Prometheus Source</h1>
 
-<p>When you set <code>kind: prometheus</code> on a source, pgwatch scrapes an HTTP endpoint that exposes data in the <a href="https://prometheus.io/docs/instrumenting/exposition_formats/">Prometheus text exposition format</a> and forwards every metric family to the configured sink. This page documents the connection-string format and the presets that ship out of the box. For the recipe to wire pgwatch to Patroni or <code>postgres_exporter</code>, see <a href="../howto/monitor_prometheus_exporter.html">How-to: Monitor a Prometheus exporter</a>.</p>
+<p>When you set <code>kind: prometheus</code> on a source, pgwatch scrapes an HTTP endpoint that exposes data in the <a href="https://prometheus.io/docs/instrumenting/exposition_formats/">Prometheus text exposition format</a> and forwards the metric families listed in the source's <code>preset_metrics</code> or <code>custom_metrics</code> to the configured sink; all other families (e.g. <code>go_*</code>, <code>process_*</code>) are dropped. If no metrics are configured, every metric family is forwarded every 60 seconds. This page documents the connection-string format and the presets that ship out of the box. For the recipe to wire pgwatch to Patroni or <code>postgres_exporter</code>, see <a href="../howto/monitor_prometheus_exporter.html">How-to: Monitor a Prometheus exporter</a>.</p>
 <h2 id="connection-string">Connection string</h2>
 <p>The <code>conn_str</code> field is a plain HTTP or HTTPS URL. Optional query parameters control TLS validation and are stripped before the request is sent to the exporter.</p>
 <table>
