@@ -77,10 +77,11 @@ func (pr *PromReaper) Reap(ctx context.Context) {
 			for _, env := range envelopes {
 				if !scrapeAll {
 					emitInterval := pr.md.GetMetricInterval(env.MetricName)
-					if emitInterval > 0 {
-						if last := pr.lastEmitted[env.MetricName]; !last.IsZero() && now.Sub(last) < emitInterval {
-							continue
-						}
+					if emitInterval <= 0 {
+						continue // family not configured for this source (e.g. go_*, process_*) or disabled
+					}
+					if last := pr.lastEmitted[env.MetricName]; !last.IsZero() && now.Sub(last) < emitInterval {
+						continue
 					}
 				}
 				env.DBName = pr.md.Name

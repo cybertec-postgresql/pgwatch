@@ -2,7 +2,7 @@
 title: Prometheus source
 ---
 
-When you set `kind: prometheus` on a source, pgwatch scrapes an HTTP endpoint that exposes data in the [Prometheus text exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/) and forwards every metric family to the configured sink. This page documents the connection-string format and the presets that ship out of the box. For the recipe to wire pgwatch to Patroni or `postgres_exporter`, see [How-to: Monitor a Prometheus exporter](../howto/monitor_prometheus_exporter.md).
+When you set `kind: prometheus` on a source, pgwatch scrapes an HTTP endpoint that exposes data in the [Prometheus text exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/) and forwards the metric families listed in the source's `preset_metrics` or `custom_metrics` to the configured sink; all other families (e.g. `go_*`, `process_*`) are dropped. If no metrics are configured, every metric family is forwarded every 60 seconds. This page documents the connection-string format and the presets that ship out of the box. For the recipe to wire pgwatch to Patroni or `postgres_exporter`, see [How-to: Monitor a Prometheus exporter](../howto/monitor_prometheus_exporter.md).
 
 ## Connection string
 
