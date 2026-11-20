@@ -47,7 +47,7 @@ For the connection-string format, query parameters, and full preset/metric table
       is_enabled: true
     ```
 
-4. Wait for the next refresh cycle (default 120 seconds). pgwatch fetches the URL, parses the Prometheus text, and forwards every metric family to the sink.
+4. Wait for the next refresh cycle (default 120 seconds). pgwatch fetches the URL, parses the Prometheus text, and forwards the metric families from the source's preset or `custom_metrics` to the sink. Other families on the endpoint (e.g. `go_*`, `process_*`) are dropped.
 
 ## Verifying metrics are flowing
 
