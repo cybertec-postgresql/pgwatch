@@ -620,15 +620,6 @@ func (pc *PromConn) GetMetricInterval(name string) time.Duration {
 	return time.Duration(pc.Metrics[name]) * time.Second
 }
 
-// LookupMetricInterval returns the configured interval for the metric family
-// and whether the family is configured for this source at all.
-func (pc *PromConn) LookupMetricInterval(name string) (time.Duration, bool) {
-	pc.RLock()
-	defer pc.RUnlock()
-	interval, ok := pc.Metrics[name]
-	return time.Duration(interval) * time.Second, ok
-}
-
 func (pc *PromConn) SetMetricIntervals(main, _ metrics.MetricIntervals) {
 	pc.Lock()
 	defer pc.Unlock()
