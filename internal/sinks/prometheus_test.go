@@ -12,6 +12,8 @@ import (
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -251,7 +253,7 @@ func TestPrometheusWriteEmpty(t *testing.T) {
 	promw := newTestPrometheusWriter("test")
 	assert.NoError(t, promw.Write(metrics.MeasurementEnvelope{}))
 	ch := make(chan prometheus.Metric, 100)
-	written, errCount := promw.WritePromMetrics(metrics.MeasurementEnvelope{}, ch)
+	written, errCount := promw.WritePromMetrics(metrics.MeasurementEnvelope{}, ch, nil)
 	assert.Zero(t, errCount)
 	assert.Zero(t, written)
 	close(ch)
@@ -409,6 +411,74 @@ func TestPrometheusWriter_PromSourcedEnvelope(t *testing.T) {
 	})
 }
 
+// TestPrometheusWriter_PromSourceHelpTypeAndClashes covers #1649: families
+// scraped from Prometheus sources keep their HELP and TYPE, families clashing
+// with pgwatch's own runtime metrics are dropped (warned once), and the same
+// family from several sources gets one consistent HELP/TYPE. The registry
+// mirrors the default one pgwatch serves (Go and process collectors).
+func TestPrometheusWriter_PromSourceHelpTypeAndClashes(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+
+	ctx, logOut := testutil.NewTestLogger(t, logrus.WarnLevel)
+	promw := newTestPrometheusWriter("pgwatch")
+	promw.logger = log.GetLogger(ctx)
+	promw.ownMetricNames = gatheredMetricNames(reg)
+	reg.MustRegister(promw)
+
+	epoch := time.Now().UnixNano()
+	promEnv := func(db, family, help, typ string, value float64) metrics.MeasurementEnvelope {
+		return metrics.MeasurementEnvelope{
+			DBName:     db,
+			MetricName: family,
+			SourceKind: "prometheus",
+			PromHelp:   help,
+			PromType:   typ,
+			Data:       metrics.Measurements{{family: value, metrics.EpochColumnName: epoch}},
+		}
+	}
+	for range 3 { // repeated writes must not repeat the clash warning
+		require.NoError(t, promw.Write(promEnv("exporter-a", "go_goroutines", "Number of goroutines.", "gauge", 12)))
+	}
+	require.NoError(t, promw.Write(promEnv("exporter-a", "namedprocess_namegroup_num_procs", "Processes in this group.", "gauge", 42)))
+	require.NoError(t, promw.Write(promEnv("exporter-a", "namedprocess_namegroup_cpu_seconds_total", "CPU usage in seconds.", "counter", 1.5)))
+	// same family from another exporter version with a different HELP text
+	require.NoError(t, promw.Write(promEnv("exporter-b", "namedprocess_namegroup_num_procs", "Number of processes.", "gauge", 7)))
+
+	mfs, err := reg.Gather()
+	require.NoError(t, err, "forwarded families must not conflict with pgwatch's own metrics")
+	families := make(map[string]*dto.MetricFamily, len(mfs))
+	for _, mf := range mfs {
+		families[mf.GetName()] = mf
+	}
+
+	t.Run("clashing family dropped, pgwatch's own kept", func(t *testing.T) {
+		mf := families["go_goroutines"]
+		require.NotNil(t, mf)
+		require.Len(t, mf.GetMetric(), 1)
+		assert.Empty(t, mf.GetMetric()[0].GetLabel(), "only pgwatch's own unlabelled series is expected")
+		assert.Equal(t, 1, strings.Count(logOut.String(), "dropping scraped metric family"), "clash is warned once")
+	})
+
+	t.Run("HELP and TYPE preserved", func(t *testing.T) {
+		mf := families["namedprocess_namegroup_cpu_seconds_total"]
+		require.NotNil(t, mf)
+		assert.Equal(t, "CPU usage in seconds.", mf.GetHelp())
+		assert.Equal(t, dto.MetricType_COUNTER, mf.GetType())
+	})
+
+	t.Run("first seen HELP/TYPE used for all sources", func(t *testing.T) {
+		mf := families["namedprocess_namegroup_num_procs"]
+		require.NotNil(t, mf)
+		assert.Equal(t, "Processes in this group.", mf.GetHelp(), "exporter-a sorts first")
+		assert.Equal(t, dto.MetricType_GAUGE, mf.GetType())
+		assert.Len(t, mf.GetMetric(), 2, "series from both exporters are kept")
+	})
+}
+
 // TestPrometheusWriter_NonPromSourced_NamespacePrefix covers T043: the pgwatch
 // namespace IS still prepended for non-prometheus-sourced envelopes.
 func TestPrometheusWriter_NonPromSourced_NamespacePrefix(t *testing.T) {
@@ -466,7 +536,7 @@ func BenchmarkWritePromMetrics(b *testing.B) {
 	ch := make(chan prometheus.Metric, rows*fields+1)
 	b.ReportAllocs()
 	for b.Loop() {
-		promw.WritePromMetrics(msg, ch)
+		promw.WritePromMetrics(msg, ch, nil)
 		for len(ch) > 0 {
 			<-ch
 		}

@@ -110,6 +110,51 @@ func TestScrapeAll(t *testing.T) {
 	}
 }
 
+// HELP text and type of each family are carried in the envelope; families
+// flattened to a single value (histogram, summary) and untyped ones report
+// an empty type.
+func TestScrapeAll_PromHelpAndType(t *testing.T) {
+	const body = `# HELP g_metric A gauge.
+# TYPE g_metric gauge
+g_metric 1
+# HELP c_metric_total A counter.
+# TYPE c_metric_total counter
+c_metric_total 2
+# HELP h_metric A histogram.
+# TYPE h_metric histogram
+h_metric_bucket{le="+Inf"} 3
+h_metric_sum 4
+h_metric_count 3
+# HELP s_metric A summary.
+# TYPE s_metric summary
+s_metric_sum 5
+s_metric_count 1
+# TYPE u_metric untyped
+u_metric 6
+`
+	got, err := (&PromReaper{md: newTestPromConn(t, body)}).ScrapeAll(t.Context())
+	require.NoError(t, err)
+
+	testCases := []struct {
+		family   string
+		wantHelp string
+		wantType string
+	}{
+		{"g_metric", "A gauge.", "gauge"},
+		{"c_metric_total", "A counter.", "counter"},
+		{"h_metric", "A histogram.", ""},
+		{"s_metric", "A summary.", ""},
+		{"u_metric", "", ""},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.family, func(t *testing.T) {
+			env := requireEnvelope(t, got, tc.family)
+			assert.Equal(t, tc.wantHelp, env.PromHelp)
+			assert.Equal(t, tc.wantType, env.PromType)
+		})
+	}
+}
+
 func TestScrapeAll_NonFinite(t *testing.T) {
 	const fixture = `# HELP mymetric A metric
 # TYPE mymetric gauge

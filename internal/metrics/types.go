@@ -178,6 +178,11 @@ type MeasurementEnvelope struct {
 	SourceKind string
 	CustomTags map[string]string
 	Data       Measurements
+	// PromHelp and PromType carry the "# HELP" text and the type ("gauge" or
+	// "counter"; empty means untyped) of a family scraped from a Prometheus
+	// source. They are empty for all other sources.
+	PromHelp string
+	PromType string
 }
 
 type Metrics struct {

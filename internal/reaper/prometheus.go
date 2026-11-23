@@ -9,6 +9,7 @@ import (
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/log"
 	"github.com/cybertec-postgresql/pgwatch/v6/internal/metrics"
@@ -154,9 +155,26 @@ func (pr *PromReaper) ScrapeAll(ctx context.Context) ([]metrics.MeasurementEnvel
 			MetricName: familyName,
 			SourceKind: string(pr.md.Kind),
 			Data:       samples,
+			PromHelp:   mf.GetHelp(),
+			PromType:   promEnvelopeType(mf.GetType()),
 		})
 	}
 	return result, nil
+}
+
+// promEnvelopeType returns the type that matches the single value
+// promMetricValue keeps for a family. Gauges and counters keep their type.
+// Histograms and summaries are flattened to one number, so, like any other
+// type, they are reported as untyped (empty string).
+func promEnvelopeType(mtype dto.MetricType) string {
+	switch mtype {
+	case dto.MetricType_GAUGE:
+		return string(model.MetricTypeGauge)
+	case dto.MetricType_COUNTER:
+		return string(model.MetricTypeCounter)
+	default:
+		return ""
+	}
 }
 
 // promMetricValue extracts the primary float64 sample value from a metric
