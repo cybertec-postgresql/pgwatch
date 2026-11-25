@@ -53,6 +53,15 @@ type PrometheusWriter struct {
 	lastScrapeErrors    prometheus.Gauge
 	totalScrapes        prometheus.Counter
 	totalScrapeFailures prometheus.Counter
+
+	ownMetricNames map[string]struct{}
+	clashWarned    sync.Map
+}
+
+type promDescMeta struct {
+	fqName    string
+	help      string
+	valueType prometheus.ValueType
 }
 
 const promInstanceUpStateMetric = "instance_up"
@@ -89,6 +98,7 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 			Help:      "Number of errors while executing metric queries",
 		}),
 	}
+	promw.ownMetricNames = gatheredMetricNames(prometheus.DefaultGatherer)
 
 	if err = prometheus.Register(promw); err != nil {
 		return
@@ -116,6 +126,15 @@ func NewPrometheusWriter(ctx context.Context, connstr string) (promw *Prometheus
 	return
 }
 
+func gatheredMetricNames(g prometheus.Gatherer) map[string]struct{} {
+	mfs, _ := g.Gather()
+	names := make(map[string]struct{}, len(mfs))
+	for _, mf := range mfs {
+		names[mf.GetName()] = struct{}{}
+	}
+	return names
+}
+
 // Println implements promhttp.Logger
 func (promw *PrometheusWriter) Println(v ...any) {
 	promw.logger.Errorln(v...)
@@ -137,8 +156,20 @@ func (promw *PrometheusWriter) Write(msg metrics.MeasurementEnvelope) error {
 	if len(msg.Data) == 0 {
 		return nil
 	}
+	if msg.SourceKind == "prometheus" && promw.isOwnMetric(msg.MetricName) {
+		if _, warned := promw.clashWarned.LoadOrStore(msg.DBName+"\x00"+msg.MetricName, struct{}{}); !warned {
+			promw.logger.WithField("source", msg.DBName).WithField("metric", msg.MetricName).
+				Warning("dropping scraped metric family: pgwatch already exposes a metric with this name")
+		}
+		return nil
+	}
 	promw.AddCacheEntry(msg.DBName, msg.MetricName, msg)
 	return nil
+}
+
+func (promw *PrometheusWriter) isOwnMetric(name string) bool {
+	_, ok := promw.ownMetricNames[name]
+	return ok
 }
 
 // SyncMetric is called by reaper when a metric or monitored source is removed or added,
@@ -218,10 +249,12 @@ func (promw *PrometheusWriter) Collect(ch chan<- prometheus.Metric) {
 	var rows int
 	var lastScrapeErrors float64
 
+	promFamilies := make(map[string]promDescMeta)
+
 	t1 := time.Now()
-	for _, metricsMessages := range snapshot {
-		for _, envelope := range metricsMessages {
-			written, errors := promw.WritePromMetrics(envelope, ch)
+	for _, db := range slices.Sorted(maps.Keys(snapshot)) {
+		for _, envelope := range snapshot[db] {
+			written, errors := promw.WritePromMetrics(envelope, ch, promFamilies)
 			lastScrapeErrors += float64(errors)
 			rows += written
 		}
@@ -250,9 +283,12 @@ func (promw *PrometheusWriter) snapshotCache() PromMetricCache {
 // For prom-sourced envelopes (SourceKind == "prometheus") the original family
 // name is used as the fully-qualified metric name with no pgwatch namespace
 // prefix, and each measurement's own epoch_ns is used as the timestamp.
+// The scraped HELP text and type are kept; promFamilies (may be nil) records
+// the HELP/TYPE used per family name, and an already recorded entry takes
+// precedence, keeping families consistent across Prometheus sources.
 // For all other sources the existing namespace+family+field naming and a
 // single envelope-level timestamp are applied.
-func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope, ch chan<- prometheus.Metric) (written int, errorCount int) {
+func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope, ch chan<- prometheus.Metric, promFamilies map[string]promDescMeta) (written int, errorCount int) {
 	if len(msg.Data) == 0 {
 		return
 	}
@@ -274,14 +310,10 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 
 	seen := make(map[string]any)
 
-	// fqName and the value type depend only on the field name, and a Desc
+	// fqName, help and the value type depend only on the field name, and a Desc
 	// only on (fqName, help, label keys); both are therefore memoized per
 	// envelope instead of being rebuilt for every row.
-	type fieldMeta struct {
-		fqName    string
-		valueType prometheus.ValueType
-	}
-	metaByField := make(map[string]fieldMeta)
+	metaByField := make(map[string]promDescMeta)
 	type descKey struct {
 		fqName    string
 		labelKeys string
@@ -360,8 +392,19 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 					if field != msg.MetricName {
 						continue
 					}
-					meta = fieldMeta{fqName: field, valueType: prometheus.UntypedValue}
+					if first, found := promFamilies[field]; found {
+						meta = first
+					} else {
+						meta = promDescMeta{fqName: field, help: msg.PromHelp, valueType: promValueType(msg.PromType)}
+						if meta.help == "" {
+							meta.help = msg.MetricName
+						}
+						if promFamilies != nil {
+							promFamilies[field] = meta
+						}
+					}
 				} else {
+					meta.help = msg.MetricName
 					meta.valueType = prometheus.CounterValue
 					if msg.MetricName == promInstanceUpStateMetric ||
 						len(gauges) > 0 && (gauges[0] == "*" || slices.Contains(gauges, field)) {
@@ -390,7 +433,7 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 			dk := descKey{meta.fqName, joinedLabelKeys}
 			desc, ok := descs[dk]
 			if !ok {
-				desc = prometheus.NewDesc(meta.fqName, msg.MetricName, labelKeys, nil)
+				desc = prometheus.NewDesc(meta.fqName, meta.help, labelKeys, nil)
 				descs[dk] = desc
 			}
 			m, err := prometheus.NewConstMetric(desc, meta.valueType, value, labelValues...)
@@ -404,4 +447,15 @@ func (promw *PrometheusWriter) WritePromMetrics(msg metrics.MeasurementEnvelope,
 		}
 	}
 	return
+}
+
+func promValueType(t string) prometheus.ValueType {
+	switch model.MetricType(t) {
+	case model.MetricTypeGauge:
+		return prometheus.GaugeValue
+	case model.MetricTypeCounter:
+		return prometheus.CounterValue
+	default:
+		return prometheus.UntypedValue
+	}
 }

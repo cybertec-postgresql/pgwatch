@@ -88,3 +88,9 @@ Use `custom_tags` to attach arbitrary key-value pairs to every stored data point
     node: node1
   is_enabled: true
 ```
+
+## Forwarding to the Prometheus sink
+
+With `--sink=prometheus://...`, forwarded families keep the exporter's original `# HELP` text and `# TYPE`. Gauges and counters keep their type; histograms and summaries are forwarded as a single untyped value. If several sources expose the same family with different `# HELP` texts, the text of the first source in alphabetical order is used for all of them.
+
+pgwatch exposes its own runtime metrics (`go_*`, `process_*`) on the same endpoint. A forwarded family with the same name as one of them is dropped, and a warning is logged once per source and family.
