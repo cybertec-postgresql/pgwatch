@@ -2291,6 +2291,25 @@ metrics:
             - fastpath_exceeded
             - stats_reset_s
         is_instance_level: true
+    stat_slru:
+        description: >
+            This metric collects cumulative per-SLRU (Simple Least Recently Used cache) statistics from the `pg_stat_slru` view.
+            High blocks read / written counts may hint at too small pertinent buffers, e.g. multixact_offset_buffers.
+        sqls:
+            13: |-
+                SELECT /* pgwatch_generated */
+                    (extract(epoch from now()) * 1e9)::int8 as epoch_ns,
+                    name as tag_name,
+                    blks_zeroed,
+                    blks_hit,
+                    blks_read,
+                    blks_written,
+                    blks_exists,
+                    flushes,
+                    truncates
+                FROM
+                    pg_stat_slru
+        is_instance_level: true
     stat_io:
         description: >
             This metric collects I/O statistics from the `pg_stat_io` view.
@@ -5025,6 +5044,7 @@ presets:
             reco_superusers: 93600
             recovery: 30
             stat_lock: 30
+            stat_slru: 30
             replication: 120
             replication_slots: 120
             sequence_health: 3600
@@ -5262,6 +5282,7 @@ presets:
             sproc_stats: 30
             stat_activity: 30
             stat_io: 30
+            stat_slru: 30
             stat_ssl: 30
             stat_statements: 30
             stat_statements_calls: 30
